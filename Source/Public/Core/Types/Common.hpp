@@ -22,8 +22,10 @@
 #include <string_view>
 #include <variant>
 
+#include "Core/Types/Constants.hpp"
+
 // Third-party includes
-#include "../Utilities/JSON/JSON.hpp"
+#include "Communication/Serialization/JSON.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -62,4 +64,4 @@ using Cursor = string; // An opaque token used to represent a cursor for paginat
 using Passthrough = unordered_map<string, JSON>; // A passthrough property is a property that is not part of the schema, but is used to pass additional information to the server or client.
 using ProgressToken = variant<string, int>; // A progress token, used to associate progress notifications with the original request.
 
-} // namespace MCP
+MCP_NAMESPACE_END

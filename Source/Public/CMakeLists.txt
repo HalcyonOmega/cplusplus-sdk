@@ -22,7 +22,4 @@ endif()
 # Add headers as sources for IDE organization
 if(PUBLIC_HEADERS)
     target_sources(${PROJECT_NAME} PRIVATE ${PUBLIC_HEADERS})
-endif()
-
-# Make sure public headers are properly included
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}) 
+endif() 

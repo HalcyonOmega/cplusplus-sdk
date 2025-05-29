@@ -1,0 +1,26 @@
+CompileFlags:
+  # Use compile_commands.json for all flags
+  Remove: 
+    - "-std=*"  # Remove any std flags from compile commands
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+Hover:
+  ShowAKA: true
+
+Completion:
+  AllScopes: true
+
+Diagnostics:
+  ClangTidy:
+    Add: 
+      - "modernize-*"
+      - "readability-*"
+    Remove:
+      - "modernize-use-trailing-return-type" 

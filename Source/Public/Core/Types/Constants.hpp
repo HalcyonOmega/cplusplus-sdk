@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "Core/Types/Common.hpp"
 
 // Namespace macros for consistent usage across the codebase

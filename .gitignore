@@ -33,3 +33,13 @@
 
 # Cursor
 .cursor/
+
+build
+
+*.idx
+*.idx.gz
+*.idx.bz2
+*.idx.lzma
+*.idx.zstd
+*.idx.lz4
+*.idx.snappy

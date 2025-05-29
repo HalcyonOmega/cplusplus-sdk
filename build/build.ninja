@@ -42,6 +42,18 @@ include CMakeFiles/rules.ninja
 cmake_ninja_workdir = /workspaces/cplusplus-sdk/build/
 
 #############################################
+# Utility command for test
+
+build CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ctest
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build test: phony CMakeFiles/test.util
+
+
+#############################################
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
@@ -107,7 +119,393 @@ build CMakeFiles/install/strip.util: CUSTOM_COMMAND all
 build install/strip: phony CMakeFiles/install/strip.util
 
 # =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /workspaces/cplusplus-sdk/CMakeLists.txt
+# =============================================================================
+
+# =============================================================================
+# Object build statements for STATIC_LIBRARY target cplusplus-sdk
+
+
+#############################################
+# Order-only phony target for cplusplus-sdk
+
+build cmake_object_order_depends_target_cplusplus-sdk: phony || .
+
+build Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/Autocomplete/Completable.cpp.o: CXX_COMPILER__cplusplus-sdk_unscanned_Debug /workspaces/cplusplus-sdk/Source/Private/Utilities/Autocomplete/Completable.cpp || cmake_object_order_depends_target_cplusplus-sdk
+  CONFIG = Debug
+  DEP_FILE = Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/Autocomplete/Completable.cpp.o.d
+  FLAGS = -g -std=c++20 -Wall -Wextra -Wpedantic -Werror -g3 -O0
+  INCLUDES = -I/workspaces/cplusplus-sdk/Source/Public -I/workspaces/cplusplus-sdk/Source/Private
+  OBJECT_DIR = Source/CMakeFiles/cplusplus-sdk.dir
+  OBJECT_FILE_DIR = Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/Autocomplete
+
+build Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/CLI/CLI.cpp.o: CXX_COMPILER__cplusplus-sdk_unscanned_Debug /workspaces/cplusplus-sdk/Source/Private/Utilities/CLI/CLI.cpp || cmake_object_order_depends_target_cplusplus-sdk
+  CONFIG = Debug
+  DEP_FILE = Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/CLI/CLI.cpp.o.d
+  FLAGS = -g -std=c++20 -Wall -Wextra -Wpedantic -Werror -g3 -O0
+  INCLUDES = -I/workspaces/cplusplus-sdk/Source/Public -I/workspaces/cplusplus-sdk/Source/Private
+  OBJECT_DIR = Source/CMakeFiles/cplusplus-sdk.dir
+  OBJECT_FILE_DIR = Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/CLI
+
+build Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/URI/URI_Template.cpp.o: CXX_COMPILER__cplusplus-sdk_unscanned_Debug /workspaces/cplusplus-sdk/Source/Private/Utilities/URI/URI_Template.cpp || cmake_object_order_depends_target_cplusplus-sdk
+  CONFIG = Debug
+  DEP_FILE = Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/URI/URI_Template.cpp.o.d
+  FLAGS = -g -std=c++20 -Wall -Wextra -Wpedantic -Werror -g3 -O0
+  INCLUDES = -I/workspaces/cplusplus-sdk/Source/Public -I/workspaces/cplusplus-sdk/Source/Private
+  OBJECT_DIR = Source/CMakeFiles/cplusplus-sdk.dir
+  OBJECT_FILE_DIR = Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/URI
+
+
+# =============================================================================
+# Link build statements for STATIC_LIBRARY target cplusplus-sdk
+
+
+#############################################
+# Link the static library Source/libcplusplus-sdk.a
+
+build Source/libcplusplus-sdk.a: CXX_STATIC_LIBRARY_LINKER__cplusplus-sdk_Debug Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/Autocomplete/Completable.cpp.o Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/CLI/CLI.cpp.o Source/CMakeFiles/cplusplus-sdk.dir/Private/Utilities/URI/URI_Template.cpp.o
+  CONFIG = Debug
+  LANGUAGE_COMPILE_FLAGS = -g
+  OBJECT_DIR = Source/CMakeFiles/cplusplus-sdk.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = Source/libcplusplus-sdk.a
+  TARGET_PDB = cplusplus-sdk.a.dbg
+
+
+#############################################
+# Utility command for test
+
+build Source/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ctest
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build Source/test: phony Source/CMakeFiles/test.util
+
+
+#############################################
+# Utility command for edit_cache
+
+build Source/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ccmake -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake cache editor...
+  pool = console
+  restat = 1
+
+build Source/edit_cache: phony Source/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build Source/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake --regenerate-during-build -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build Source/rebuild_cache: phony Source/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build Source/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build Source/CMakeFiles/install.util: CUSTOM_COMMAND Source/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build Source/install: phony Source/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build Source/CMakeFiles/install/local.util: CUSTOM_COMMAND Source/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build Source/install/local: phony Source/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build Source/CMakeFiles/install/strip.util: CUSTOM_COMMAND Source/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build Source/install/strip: phony Source/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /workspaces/cplusplus-sdk/Source/CMakeLists.txt
+# =============================================================================
+
+
+#############################################
+# Utility command for test
+
+build Source/Private/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Private && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ctest
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build Source/Private/test: phony Source/Private/CMakeFiles/test.util
+
+
+#############################################
+# Utility command for edit_cache
+
+build Source/Private/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Private && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ccmake -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake cache editor...
+  pool = console
+  restat = 1
+
+build Source/Private/edit_cache: phony Source/Private/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build Source/Private/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Private && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake --regenerate-during-build -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build Source/Private/rebuild_cache: phony Source/Private/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build Source/Private/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build Source/Private/CMakeFiles/install.util: CUSTOM_COMMAND Source/Private/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Private && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build Source/Private/install: phony Source/Private/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build Source/Private/CMakeFiles/install/local.util: CUSTOM_COMMAND Source/Private/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Private && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build Source/Private/install/local: phony Source/Private/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build Source/Private/CMakeFiles/install/strip.util: CUSTOM_COMMAND Source/Private/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Private && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build Source/Private/install/strip: phony Source/Private/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /workspaces/cplusplus-sdk/Source/CMakeLists.txt
+# =============================================================================
+
+
+#############################################
+# Utility command for test
+
+build Source/Public/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Public && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ctest
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build Source/Public/test: phony Source/Public/CMakeFiles/test.util
+
+
+#############################################
+# Utility command for edit_cache
+
+build Source/Public/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Public && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ccmake -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake cache editor...
+  pool = console
+  restat = 1
+
+build Source/Public/edit_cache: phony Source/Public/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build Source/Public/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Public && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake --regenerate-during-build -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build Source/Public/rebuild_cache: phony Source/Public/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build Source/Public/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build Source/Public/CMakeFiles/install.util: CUSTOM_COMMAND Source/Public/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Public && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build Source/Public/install: phony Source/Public/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build Source/Public/CMakeFiles/install/local.util: CUSTOM_COMMAND Source/Public/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Public && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build Source/Public/install/local: phony Source/Public/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build Source/Public/CMakeFiles/install/strip.util: CUSTOM_COMMAND Source/Public/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Source/Public && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build Source/Public/install/strip: phony Source/Public/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /workspaces/cplusplus-sdk/CMakeLists.txt
+# =============================================================================
+
+
+#############################################
+# Utility command for test
+
+build Testing/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Testing && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ctest
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build Testing/test: phony Testing/CMakeFiles/test.util
+
+
+#############################################
+# Utility command for edit_cache
+
+build Testing/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Testing && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/ccmake -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake cache editor...
+  pool = console
+  restat = 1
+
+build Testing/edit_cache: phony Testing/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build Testing/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Testing && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake --regenerate-during-build -S/workspaces/cplusplus-sdk -B/workspaces/cplusplus-sdk/build
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build Testing/rebuild_cache: phony Testing/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build Testing/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build Testing/CMakeFiles/install.util: CUSTOM_COMMAND Testing/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Testing && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build Testing/install: phony Testing/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build Testing/CMakeFiles/install/local.util: CUSTOM_COMMAND Testing/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Testing && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build Testing/install/local: phony Testing/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build Testing/CMakeFiles/install/strip.util: CUSTOM_COMMAND Testing/all
+  COMMAND = cd /workspaces/cplusplus-sdk/build/Testing && /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build Testing/install/strip: phony Testing/CMakeFiles/install/strip.util
+
+# =============================================================================
 # Target aliases.
+
+build cplusplus-sdk: phony Source/libcplusplus-sdk.a
+
+build libcplusplus-sdk.a: phony Source/libcplusplus-sdk.a
 
 # =============================================================================
 # Folder targets.
@@ -117,7 +515,35 @@ build install/strip: phony CMakeFiles/install/strip.util
 #############################################
 # Folder: /workspaces/cplusplus-sdk/build
 
-build all: phony
+build all: phony Source/all Testing/all
+
+# =============================================================================
+
+#############################################
+# Folder: /workspaces/cplusplus-sdk/build/Source
+
+build Source/all: phony Source/libcplusplus-sdk.a Source/Private/all Source/Public/all
+
+# =============================================================================
+
+#############################################
+# Folder: /workspaces/cplusplus-sdk/build/Source/Private
+
+build Source/Private/all: phony
+
+# =============================================================================
+
+#############################################
+# Folder: /workspaces/cplusplus-sdk/build/Source/Public
+
+build Source/Public/all: phony
+
+# =============================================================================
+
+#############################################
+# Folder: /workspaces/cplusplus-sdk/build/Testing
+
+build Testing/all: phony
 
 # =============================================================================
 # Built-in targets
@@ -126,14 +552,14 @@ build all: phony
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja /workspaces/cplusplus-sdk/build/cmake_install.cmake: RERUN_CMAKE | /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCommonLanguageInclude.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeGenericSystem.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeInitializeConfigs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeLanguageInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInitialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckCXXSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckIncludeFileCXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckLibraryExists.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageHandleStandardArgs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageMessage.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindThreads.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/GNUInstallDirs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CheckSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Initialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/UnixPaths.cmake /workspaces/cplusplus-sdk/CMakeLists.txt CMakeCache.txt CMakeFiles/4.0.2/CMakeCXXCompiler.cmake CMakeFiles/4.0.2/CMakeSystem.cmake
+build build.ninja /workspaces/cplusplus-sdk/build/cmake_install.cmake /workspaces/cplusplus-sdk/build/Source/cmake_install.cmake /workspaces/cplusplus-sdk/build/Source/Private/cmake_install.cmake /workspaces/cplusplus-sdk/build/Source/Public/cmake_install.cmake /workspaces/cplusplus-sdk/build/Testing/cmake_install.cmake /workspaces/cplusplus-sdk/build/CTestTestfile.cmake /workspaces/cplusplus-sdk/build/Testing/CTestTestfile.cmake: RERUN_CMAKE | /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCommonLanguageInclude.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeGenericSystem.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeInitializeConfigs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeLanguageInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInitialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckCXXSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckIncludeFileCXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckLibraryExists.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageHandleStandardArgs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageMessage.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindThreads.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/GNUInstallDirs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CheckSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Initialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/UnixPaths.cmake /workspaces/cplusplus-sdk/CMakeLists.txt /workspaces/cplusplus-sdk/Source/CMakeLists.txt /workspaces/cplusplus-sdk/Source/Private/CMakeLists.txt /workspaces/cplusplus-sdk/Source/Public/CMakeLists.txt /workspaces/cplusplus-sdk/Testing/CMakeLists.txt CMakeCache.txt CMakeFiles/4.0.2/CMakeCXXCompiler.cmake CMakeFiles/4.0.2/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCommonLanguageInclude.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeGenericSystem.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeInitializeConfigs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeLanguageInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInitialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckCXXSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckIncludeFileCXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckLibraryExists.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageHandleStandardArgs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageMessage.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindThreads.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/GNUInstallDirs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CheckSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Initialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/UnixPaths.cmake /workspaces/cplusplus-sdk/CMakeLists.txt CMakeCache.txt CMakeFiles/4.0.2/CMakeCXXCompiler.cmake CMakeFiles/4.0.2/CMakeSystem.cmake: phony
+build /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCXXInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeCommonLanguageInclude.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeGenericSystem.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeInitializeConfigs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeLanguageInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CMakeSystemSpecificInitialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckCXXSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckIncludeFileCXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/CheckLibraryExists.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/Clang.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Compiler/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageHandleStandardArgs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindPackageMessage.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/FindThreads.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/GNUInstallDirs.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Internal/CheckSourceCompiles.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linker/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Clang-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU-CXX.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-GNU.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux-Initialize.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/Linux.cmake /usr/local/lib/cmake/cmake-4.0.2-linux-x86_64/share/cmake-4.0/Modules/Platform/UnixPaths.cmake /workspaces/cplusplus-sdk/CMakeLists.txt /workspaces/cplusplus-sdk/Source/CMakeLists.txt /workspaces/cplusplus-sdk/Source/Private/CMakeLists.txt /workspaces/cplusplus-sdk/Source/Public/CMakeLists.txt /workspaces/cplusplus-sdk/Testing/CMakeLists.txt CMakeCache.txt CMakeFiles/4.0.2/CMakeCXXCompiler.cmake CMakeFiles/4.0.2/CMakeSystem.cmake: phony
 
 
 #############################################
