@@ -8,21 +8,13 @@
 #include <vector>
 #include <optional>
 #include <future>
-#include <random>
-#include <sstream>
-#include <iomanip>
 #include <stdexcept>
-#include <iostream>
-#include <fstream>
-#include <chrono>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
 #include <string_view>
 #include <variant>
 
-#include "Core/Types/Constants.hpp"
+// Namespace macros for consistent usage across the codebase
+#define MCP_NAMESPACE_BEGIN namespace MCP {
+#define MCP_NAMESPACE_END   } // namespace MCP
 
 // Third-party includes
 #include "Communication/Serialization/JSON.hpp"
@@ -51,7 +43,7 @@ using std::variant;
 using std::string_view;
 
 // JSON type alias
-using JSON = nlohmann::json;
+using JSON = nlohmann::JSON;
 
 // Common type aliases used across MCP
 using StreamID = string;

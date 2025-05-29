@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Types/Constants.hpp"
+#include "Core/Types/Common.hpp"
 #include <codecvt>
 #include <locale>
 #include <string>

@@ -1,18 +1,14 @@
 #pragma once
 
-#include <vector>
+#include <array>
 
 #include "Core/Types/Common.hpp"
-
-// Namespace macros for consistent usage across the codebase
-#define MCP_NAMESPACE_BEGIN namespace MCP {
-#define MCP_NAMESPACE_END   } // namespace MCP
 
 MCP_NAMESPACE_BEGIN
 
 // MCP Constants
 static constexpr const char* LATEST_PROTOCOL_VERSION = "2025-03-26";
-static constexpr const std::vector<char*> SUPPORTED_PROTOCOL_VERSIONS = {
+static constexpr const std::array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
   LATEST_PROTOCOL_VERSION,
   "2024-11-05",
   "2024-10-07",

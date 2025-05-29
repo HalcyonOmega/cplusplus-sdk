@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include <utility>
+#include "../../Core/Types/Common.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
 string EncodeURI(const string& value);
@@ -65,4 +66,4 @@ private:
     vector<pair<string, string>> PartToRegExp(const TemplatePart& part) const;
 };
 
-} // namespace MCP
+MCP_NAMESPACE_END
