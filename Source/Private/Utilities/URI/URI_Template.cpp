@@ -1,6 +1,4 @@
-#pragma once
-
-#include "../Core/Common.hpp"
+#include "../../Utilities/URI/URI_Template.h"
 
 namespace MCP {
 
