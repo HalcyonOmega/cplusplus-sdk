@@ -9,6 +9,15 @@
 		"ghcr.io/devcontainers-extra/features/cmake:1": {
 			"version": "latest"
 		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"aaron-bond.better-comments",
+				"usernamehw.errorlens",
+				"jeff-hykin.better-cpp-syntax"
+			]
+		}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
