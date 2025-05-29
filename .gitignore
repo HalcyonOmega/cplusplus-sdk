@@ -34,7 +34,8 @@
 # Cursor
 .cursor/
 
-build
+build/
+.cache/
 
 *.idx
 *.idx.gz
