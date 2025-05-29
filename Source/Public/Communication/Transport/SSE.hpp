@@ -710,4 +710,4 @@ optional<URL> SSEClientTransport::extractResourceMetadataUrl(const HttpResponse&
     return nullopt;
 }
 
-} // namespace MCP::Transport
+MCP_NAMESPACE_END

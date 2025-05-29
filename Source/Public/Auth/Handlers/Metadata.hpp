@@ -36,4 +36,4 @@ RequestHandler MetadataHandler(const MetadataType& Metadata) {
     return Router;
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

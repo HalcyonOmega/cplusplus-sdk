@@ -6,7 +6,7 @@
 #include "../Provider.hpp"
 #include "../AuthErrors.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Response (express equivalent)
 // TODO: Fix External Ref: URL encoding functionality

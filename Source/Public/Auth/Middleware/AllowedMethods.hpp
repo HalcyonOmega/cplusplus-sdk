@@ -57,4 +57,4 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
     };
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

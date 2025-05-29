@@ -215,4 +215,4 @@ public:
     }
 };
 
-} // namespace MCP::Transport
+MCP_NAMESPACE_END

@@ -529,4 +529,4 @@ shared_ptr<TokenHandler> CreateTokenHandler(const TokenHandlerOptions& Options) 
     return make_shared<TokenHandler>(Options);
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

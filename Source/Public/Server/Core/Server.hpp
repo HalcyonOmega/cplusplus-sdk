@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // Forward declarations - these should exist in MCP namespace
 struct ProtocolOptions;

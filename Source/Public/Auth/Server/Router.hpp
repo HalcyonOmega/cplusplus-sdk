@@ -527,4 +527,4 @@ string GetOAuthProtectedResourceMetadataURL(const URLHelper& ServerURL) {
     return URLHelper("/.well-known/oauth-protected-resource", ServerURL).Href;
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

@@ -38,4 +38,4 @@ struct AudioContent : public Content {
   }
 };
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

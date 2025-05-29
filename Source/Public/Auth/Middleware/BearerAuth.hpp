@@ -198,4 +198,4 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
     };
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

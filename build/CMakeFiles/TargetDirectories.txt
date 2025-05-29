@@ -1,0 +1,6 @@
+/workspaces/cplusplus-sdk/build/CMakeFiles/edit_cache.dir
+/workspaces/cplusplus-sdk/build/CMakeFiles/rebuild_cache.dir
+/workspaces/cplusplus-sdk/build/CMakeFiles/list_install_components.dir
+/workspaces/cplusplus-sdk/build/CMakeFiles/install.dir
+/workspaces/cplusplus-sdk/build/CMakeFiles/install/local.dir
+/workspaces/cplusplus-sdk/build/CMakeFiles/install/strip.dir

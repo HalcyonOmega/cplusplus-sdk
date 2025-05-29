@@ -147,4 +147,4 @@ using ServerNotification = variant<
   PromptListChangedNotification
 >;
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

@@ -25,7 +25,7 @@
 // Third-party includes
 #include "../Utilities/JSON/JSON.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // Common using declarations
 using std::string;

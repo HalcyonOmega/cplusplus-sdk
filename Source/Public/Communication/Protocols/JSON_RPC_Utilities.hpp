@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: JSON_RPC_Message type definition
 // TODO: Fix External Ref: JSON_RPC_MessageSchema validation (Zod equivalent)

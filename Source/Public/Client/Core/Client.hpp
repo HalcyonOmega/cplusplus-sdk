@@ -2,35 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP {
-
-// Forward declarations
-class Transport;
-class Protocol;
-struct RequestOptions;
-struct ClientCapabilities;
-struct ServerCapabilities;
-struct Implementation;
-struct Request;
-struct Notification;
-struct Result;
-struct ClientRequest;
-struct ClientNotification;
-struct ClientResult;
-enum class LoggingLevel;
-struct CallToolRequest;
-struct CompleteRequest;
-struct GetPromptRequest;
-struct ListPromptsRequest;
-struct ListResourcesRequest;
-struct ListResourceTemplatesRequest;
-struct ListToolsRequest;
-struct ReadResourceRequest;
-struct SubscribeRequest;
-struct UnsubscribeRequest;
-struct Tool;
-enum class ErrorCode : int64_t;
-class MCP_Error;
+MCP_NAMESPACE_BEGIN
 
 // Basic validation function type (TODO: Implement proper Ajv equivalent)
 using ValidateFunction = function<bool(const JSON&)>;

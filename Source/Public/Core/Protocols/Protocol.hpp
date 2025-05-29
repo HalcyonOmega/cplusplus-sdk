@@ -4,7 +4,7 @@
 #include "../Core/Types/JSON_RPC.hpp"
 #include "../Transport/Transport.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: ZodType, ZodObject, ZodLiteral - Schema validation library
 // TODO: Fix External Ref: AuthInfo - Authentication information types

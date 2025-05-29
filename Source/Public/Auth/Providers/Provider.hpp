@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express Response type - using basic HTTP response interface
 struct HTTP_Response {

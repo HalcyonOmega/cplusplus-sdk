@@ -226,4 +226,4 @@ AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlew
 }
 #endif
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

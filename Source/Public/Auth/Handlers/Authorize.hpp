@@ -401,4 +401,4 @@ unique_ptr<AuthorizationHandler> CreateAuthorizationHandler(const AuthorizationH
     return make_unique<AuthorizationHandler>(Options);
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

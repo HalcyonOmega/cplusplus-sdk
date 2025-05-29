@@ -310,4 +310,4 @@ function isElectron() {
   return "type" in process;
 }
 
-} // namespace MCP::Transport
+MCP_NAMESPACE_END

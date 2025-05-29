@@ -158,4 +158,4 @@ using ServerResult = variant<
   ListToolsResult
 >;
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

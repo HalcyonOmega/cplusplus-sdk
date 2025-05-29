@@ -10,4 +10,4 @@ struct Implementation {
   string Version;
 };
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

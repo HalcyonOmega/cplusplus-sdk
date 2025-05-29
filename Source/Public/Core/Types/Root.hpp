@@ -14,4 +14,4 @@ struct Root {
   Passthrough Additional;
 };
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

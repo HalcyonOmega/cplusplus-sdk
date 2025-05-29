@@ -221,4 +221,4 @@ using ServerRequest = variant<
   ListRootsRequest
 >;
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

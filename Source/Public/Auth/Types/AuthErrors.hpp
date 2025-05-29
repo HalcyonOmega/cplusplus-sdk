@@ -203,4 +203,4 @@ public:
         : OAuthError("insufficient_scope", Message, ErrorURI) {}
 };
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

@@ -40,4 +40,4 @@ public:
     const optional<JSON>& getData() const { return data_; }
 };
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

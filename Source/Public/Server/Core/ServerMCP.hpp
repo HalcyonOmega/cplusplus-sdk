@@ -4,7 +4,7 @@
 #include "../URI_Template.hpp"
 #include "../Client/Client.hpp"  // For AjvValidator
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Server class
 // TODO: Fix External Ref: ServerOptions

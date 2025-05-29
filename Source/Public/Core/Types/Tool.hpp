@@ -47,4 +47,4 @@ struct Tool {
   Passthrough Additional; // Additional properties.
 };
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

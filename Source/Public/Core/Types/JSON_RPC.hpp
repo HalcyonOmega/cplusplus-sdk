@@ -2,7 +2,7 @@
 
 #include "Core/Types/Common.hpp"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // A notification which does not expect a response.
 struct JSON_RPC_Notification : public Notification {

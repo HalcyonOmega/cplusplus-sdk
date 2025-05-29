@@ -8,7 +8,7 @@
 // TODO: Fix External Ref: LATEST_PROTOCOL_VERSION from "../types.js"
 // TODO: Fix External Ref: Zod schemas validation
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 /**
  * Implements an end-to-end OAuth client to be used with one MCP server.

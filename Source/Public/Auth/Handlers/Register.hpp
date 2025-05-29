@@ -298,4 +298,4 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
     };
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END

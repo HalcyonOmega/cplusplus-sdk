@@ -15,4 +15,4 @@ enum class LoggingLevel {
 };
 
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

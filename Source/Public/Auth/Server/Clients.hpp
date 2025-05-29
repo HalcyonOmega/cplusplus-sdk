@@ -4,7 +4,7 @@
 
 // TODO: Fix External Ref: OAuthClientInformationFull from "../../shared/auth.js"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 /**
  * Stores information about registered OAuth clients for this server.

@@ -55,4 +55,4 @@ struct ServerCapabilities {
   optional<Passthrough> Additional; // Additional properties.
 };
 
-} // namespace MCP::Types
+MCP_NAMESPACE_END

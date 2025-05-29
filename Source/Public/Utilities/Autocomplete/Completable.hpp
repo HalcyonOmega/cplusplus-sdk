@@ -3,7 +3,7 @@
 #include "../Core/Common.hpp"
 #include <variant>
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: ZodTypeAny - Using template parameter T instead
 // TODO: Fix External Ref: ZodTypeDef - Using custom TypeDef struct

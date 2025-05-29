@@ -281,4 +281,4 @@ shared_ptr<HttpRouter> create_revocation_router(const RevocationHandlerOptions& 
     return router;
 }
 
-} // namespace MCP::Auth
+MCP_NAMESPACE_END
