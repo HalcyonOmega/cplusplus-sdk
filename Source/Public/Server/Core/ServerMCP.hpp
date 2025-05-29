@@ -12,7 +12,7 @@ namespace MCP {
 // TODO: Fix External Ref: Transport
 // TODO: Fix External Ref: RequestHandlerExtra
 // TODO: Fix External Ref: ZodToJSONSchema functionality
-// TODO: Fix External Ref: UriTemplate class
+// TODO: Fix External Ref: URI_Template class
 // TODO: Fix External Ref: Variables type
 
 // Forward declarations
@@ -75,7 +75,7 @@ using ReadResourceTemplateCallback = function<ReadResourceResult(const string& u
  */
 class ResourceTemplate {
 private:
-    string UriTemplate_;
+    string URI_Template_;
     optional<ListResourcesCallback> ListCallback_;
     unordered_map<string, CompleteResourceTemplateCallback> CompleteCallbacks_;
 
@@ -84,7 +84,7 @@ public:
         const string& uriTemplate,
         const optional<ListResourcesCallback>& listCallback,
         const optional<unordered_map<string, CompleteResourceTemplateCallback>>& completeCallbacks = nullopt
-    ) : UriTemplate_(uriTemplate), ListCallback_(listCallback) {
+    ) : URI_Template_(uriTemplate), ListCallback_(listCallback) {
         if (completeCallbacks) {
             CompleteCallbacks_ = *completeCallbacks;
         }
@@ -93,7 +93,7 @@ public:
     /**
      * Gets the URI template pattern.
      */
-    const string& GetUriTemplate() const { return UriTemplate_; }
+    const string& GetURI_Template() const { return URI_Template_; }
 
     /**
      * Gets the list callback, if one was provided.
@@ -112,7 +112,7 @@ public:
      * Matches a URI against this template and returns variables if successful.
      */
     optional<unordered_map<string, string>> Match(const string& uri) const {
-        UriTemplate uriTemplate(UriTemplate_);
+        URI_Template uriTemplate(URI_Template_);
         auto variables = uriTemplate.Match(uri);
 
         if (variables.empty()) {
@@ -518,7 +518,7 @@ private:
             for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
                 ResourceTemplate resTmpl;
                 resTmpl.Name = name;
-                resTmpl.URI_Template = templateEntry.Template.GetUriTemplate();
+                resTmpl.URI_Template = templateEntry.Template.GetURI_Template();
                 if (templateEntry.Metadata) {
                     // TODO: Copy metadata fields
                 }

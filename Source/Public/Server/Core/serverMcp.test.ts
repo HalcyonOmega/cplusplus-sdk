@@ -17,7 +17,7 @@ import {
 } from "../types.js";
 import { ResourceTemplate } from "./mcp.js";
 import { completable } from "./completable.js";
-import { UriTemplate } from "../shared/uriTemplate.js";
+import { URI_Template } from "../shared/uriTemplate.js";
 
 describe("McpServer", () => {
   /***
@@ -187,10 +187,10 @@ describe("ResourceTemplate", () => {
   });
 
   /***
-   * Test: ResourceTemplate Creation with UriTemplate Instance
+   * Test: ResourceTemplate Creation with URI_Template Instance
    */
-  test("should create ResourceTemplate with UriTemplate", () => {
-    const uriTemplate = new UriTemplate("test://{category}/{id}");
+  test("should create ResourceTemplate with URI_Template", () => {
+    const uriTemplate = new URI_Template("test://{category}/{id}");
     const template = new ResourceTemplate(uriTemplate, { list: undefined });
     expect(template.uriTemplate).toBe(uriTemplate);
     expect(template.listCallback).toBeUndefined();

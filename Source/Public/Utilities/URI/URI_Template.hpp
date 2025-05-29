@@ -54,7 +54,7 @@ constexpr size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
 constexpr size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
 constexpr size_t MAX_REGEX_LENGTH = 1000000; // 1MB
 
-class UriTemplate {
+class URI_Template {
 public:
     /**
      * Returns true if the given string contains any URI template expressions.
@@ -79,7 +79,7 @@ public:
         return names;
     }
 
-    explicit UriTemplate(const string& templateStr) : template_(templateStr) {
+    explicit URI_Template(const string& templateStr) : template_(templateStr) {
         ValidateLength(templateStr, MAX_TEMPLATE_LENGTH, "Template");
         parts_ = Parse(templateStr);
     }

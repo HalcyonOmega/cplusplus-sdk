@@ -92,10 +92,10 @@ enum class AuthResult {
     REDIRECT
 };
 
-class UnauthorizedError : public runtime_error {
+class UnauthorizedError : public Error {
 public:
     explicit UnauthorizedError(const string& Message = "Unauthorized")
-        : runtime_error(Message) {}
+        : Error(Message) {}
 };
 
 struct AuthParams {
