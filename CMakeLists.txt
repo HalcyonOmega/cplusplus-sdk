@@ -1,0 +1,2 @@
+# CMakeLists.txt
+install(FILES THIRD_PARTY_LICENSES.txt DESTINATION share/doc/${PROJECT_NAME})
