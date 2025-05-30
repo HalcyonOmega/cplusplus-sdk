@@ -11,10 +11,10 @@ MCP_NAMESPACE_BEGIN
  * Buffers a continuous stdio stream into discrete JSON-RPC messages.
  */
 class ReadBuffer {
-private:
+  private:
     optional<vector<uint8_t>> _buffer;
 
-public:
+  public:
     void append(const vector<uint8_t>& chunk) {
         if (_buffer.has_value()) {
             _buffer->insert(_buffer->end(), chunk.begin(), chunk.end());

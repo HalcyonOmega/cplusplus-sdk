@@ -47,6 +47,7 @@ find_package(Threads REQUIRED)
 
 # Include directories
 include_directories(Source/Public)
+include_directories(Source/Public/Core/Includes)
 
 # Add subdirectories
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Source/CMakeLists.txt)

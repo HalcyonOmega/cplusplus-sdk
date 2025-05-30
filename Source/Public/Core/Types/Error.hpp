@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Types/Common.hpp"
+#include "Core.h"
 
 namespace MCP::Types {
 
@@ -19,13 +19,13 @@ enum class ErrorCode : int32_t {
 }
 
 class Error {
-private:
+  private:
     ErrorCode code_;
     string message_;
     optional<JSON> data_;
     string full_message_;
 
-public:
+  public:
     Error(ErrorCode code, const string& message, optional<JSON> data = nullopt)
         : code_(code), message_(message), data_(data) {
         full_message_ = "MCP error " + to_string(code) + ": " + message;
@@ -35,9 +35,15 @@ public:
         return full_message_.c_str();
     }
 
-    ErrorCode getCode() const { return code_; }
-    const string& getMessage() const { return message_; }
-    const optional<JSON>& getData() const { return data_; }
+    ErrorCode getCode() const {
+        return code_;
+    }
+    const string& getMessage() const {
+        return message_;
+    }
+    const optional<JSON>& getData() const {
+        return data_;
+    }
 };
 
 MCP_NAMESPACE_END

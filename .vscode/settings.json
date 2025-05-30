@@ -25,5 +25,9 @@
         "--background-index",
         "--clang-tidy",
         "--header-insertion=iwyu"
-    ]
+    ],
+    "editor.formatOnSave": true,
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    }
 } 

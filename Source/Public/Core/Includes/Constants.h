@@ -1,22 +1,20 @@
 #pragma once
 
-#include <array>
-
-#include "Core/Types/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
 // MCP Constants
 static constexpr const char* LATEST_PROTOCOL_VERSION = "2025-03-26";
-static constexpr const std::array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
-  LATEST_PROTOCOL_VERSION,
-  "2024-11-05",
-  "2024-10-07",
+static constexpr const array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
+    LATEST_PROTOCOL_VERSION,
+    "2024-11-05",
+    "2024-10-07",
 };
 
 // Message Constants
-static constexpr const char* JSON_RPC_VERSION = "2.0";
-static constexpr const char* MSG_KEY_JSONRPC = "jsonrpc";
+static constexpr const char* MSG_KEY_JSON_RPC = "jsonrpc";
+static constexpr const char* MSG_KEY_JSON_RPC_VERSION = "2.0";
 static constexpr const char* MSG_KEY_ID = "id";
 static constexpr const char* MSG_KEY_METHOD = "method";
 static constexpr const char* MSG_KEY_PARAMS = "params";
@@ -25,7 +23,7 @@ static constexpr const char* MSG_KEY_ERROR = "error";
 static constexpr const char* MSG_KEY_CODE = "code";
 static constexpr const char* MSG_KEY_MESSAGE = "message";
 static constexpr const char* MSG_KEY_DATA = "data";
-static constexpr const char* MSG_KEY_PROTOCOL_VERSION = "protocolVersion";	
+static constexpr const char* MSG_KEY_PROTOCOL_VERSION = "protocolVersion";
 static constexpr const char* MSG_KEY_CLIENT_INFO = "clientInfo";
 static constexpr const char* MSG_KEY_NAME = "name";
 static constexpr const char* MSG_KEY_VERSION = "version";
@@ -64,8 +62,8 @@ static constexpr const char* MTHD_TOOLS_CALL = "tools/call";
 
 static constexpr const char* CONST_TEXT = "text";
 static constexpr const char* CONST_IMAGE = "image";
+static constexpr const char* CONST_AUDIO = "audio";
 static constexpr const char* CONST_RESOURCE = "resource";
-
 
 /* Errors */
 static constexpr const char* ERRMSG_PARSE_ERROR = u8"parse error";

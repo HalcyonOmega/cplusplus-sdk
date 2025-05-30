@@ -1,6 +1,6 @@
-#include "../../Utilities/URI/URI_Template.h"
+#include "Utilities/URI/URI_Template.h"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
 string EncodeURI(const string& value) {
@@ -412,4 +412,4 @@ vector<pair<string, string>> URI_Template::PartToRegExp(const TemplatePart& part
     return patterns;
 }
 
-} // namespace MCP 
+MCP_NAMESPACE_END

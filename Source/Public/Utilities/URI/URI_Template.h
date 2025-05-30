@@ -1,7 +1,7 @@
 #pragma once
 
 #include <utility>
-#include "../../Core/Types/Common.hpp"
+#include "Core/Types/Common.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -63,7 +63,7 @@ private:
 
     string EscapeRegExp(const string& str) const;
 
-    vector<pair<string, string>> PartToRegExp(const TemplatePart& part) const;
+    vector<std::pair<string, string>> PartToRegExp(const TemplatePart& part) const;
 };
 
 MCP_NAMESPACE_END

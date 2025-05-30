@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Core.h"
 
-namespace MCP::Transport {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: HTTP Server Response functionality
 // TODO: Fix External Ref: HTTP Request/Response handling
@@ -39,7 +39,6 @@ struct ServerResponse {
     }
 };
 
-
 // TODO: Fix External Ref: UUID generation
 string generateRandomUUID() {
     // TODO: Implement proper UUID generation
@@ -65,7 +64,7 @@ struct ContentTypeResult {
 ContentTypeResult parseContentType(const string& content_type_header) {
     // TODO: Implement content-type parsing equivalent to contentType.parse()
     ContentTypeResult result;
-    result.type = "application/json"; // Placeholder
+    result.type = "application/json";       // Placeholder
     result.parameters["charset"] = "utf-8"; // Placeholder
     return result;
 }
@@ -79,24 +78,27 @@ string getRawBodyEquivalent(IncomingMessage* req, const string& limit, const str
 const string MAXIMUM_MESSAGE_SIZE = "4mb";
 
 /**
- * Server transport for SSE: this will send messages over an SSE connection and receive messages from HTTP POST requests.
+ * Server transport for SSE: this will send messages over an SSE connection and receive messages
+ * from HTTP POST requests.
  *
  * This transport is only available in Node.js environments.
  */
 class SSEServerTransport {
-private:
+  private:
     optional<ServerResponse*> _sseResponse;
     string _sessionId;
     string _endpoint;
     ServerResponse* res;
 
-public:
+  public:
     optional<function<void()>> onclose;
     optional<function<void(const Error&)>> onerror;
-    optional<function<void(const JSONRPCMessage&, const optional<map<string, AuthInfo>>& extra)>> onmessage;
+    optional<function<void(const JSONRPCMessage&, const optional<map<string, AuthInfo>>& extra)>>
+        onmessage;
 
     /**
-     * Creates a new SSE server transport, which will direct the client to POST messages to the relative or absolute URL identified by _endpoint.
+     * Creates a new SSE server transport, which will direct the client to POST messages to the
+     * relative or absolute URL identified by _endpoint.
      */
     SSEServerTransport(const string& endpoint, ServerResponse* res_param)
         : _endpoint(endpoint), res(res_param), _sseResponse(nullopt) {
@@ -110,14 +112,13 @@ public:
      */
     void start() {
         if (_sseResponse.has_value()) {
-            throw runtime_error("SSEServerTransport already started! If using Server class, note that connect() calls start() automatically.");
+            throw runtime_error("SSEServerTransport already started! If using Server class, note "
+                                "that connect() calls start() automatically.");
         }
 
-        map<string, string> headers = {
-            {"Content-Type", "text/event-stream"},
-            {"Cache-Control", "no-cache, no-transform"},
-            {"Connection", "keep-alive"}
-        };
+        map<string, string> headers = {{"Content-Type", "text/event-stream"},
+                                       {"Cache-Control", "no-cache, no-transform"},
+                                       {"Connection", "keep-alive"}};
         res->writeHead(200, headers);
 
         // Send the endpoint event
@@ -143,7 +144,8 @@ public:
      *
      * This should be called when a POST request is made to send a message to the server.
      */
-    void handlePostMessage(IncomingMessage* req, ServerResponse* res_param, const optional<JSON>& parsedBody = nullopt) {
+    void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
+                           const optional<JSON>& parsedBody = nullopt) {
         if (!_sseResponse.has_value()) {
             string message = "SSE connection not established";
             res_param->writeHead(500);
@@ -204,9 +206,11 @@ public:
     }
 
     /**
-     * Handle a client message, regardless of how it arrived. This can be used to inform the server of messages that arrive via a means different than HTTP POST.
+     * Handle a client message, regardless of how it arrived. This can be used to inform the server
+     * of messages that arrive via a means different than HTTP POST.
      */
-    void handleMessage(const JSON& message, const optional<map<string, AuthInfo>>& extra = nullopt) {
+    void handleMessage(const JSON& message,
+                       const optional<map<string, AuthInfo>>& extra = nullopt) {
         JSONRPCMessage parsedMessage;
         try {
             parsedMessage = JSONRPCMessageSchema::parse(message);
@@ -239,9 +243,9 @@ public:
 
         // Convert JSONRPCMessage to JSON
         JSON jsonMessage;
-        jsonMessage["jsonrpc"] = message.jsonrpc;
+        jsonMessage[MSG_KEY_JSON_RPC] = message.jsonrpc;
         if (message.id.has_value()) {
-            jsonMessage["id"] = message.id.value();
+            jsonMessage[MSG_KEY_ID] = message.id.value();
         }
         if (message.method.has_value()) {
             jsonMessage["method"] = message.method.value();
@@ -270,7 +274,6 @@ public:
     }
 };
 
-
 // ##########################################################
 // ##########################################################
 // ===================== CLIENT SECTION =====================
@@ -292,7 +295,7 @@ struct HttpResponse {
 // URL class placeholder
 // TODO: Fix External Ref: Implement proper URL class
 class URL {
-public:
+  public:
     string href;
     string origin;
 
@@ -325,7 +328,7 @@ struct ErrorEvent {
 };
 
 class SseError : public exception {
-public:
+  public:
     SseError(optional<int> code, const string& message, const ErrorEvent& event)
         : code_(code), event_(event) {
         message_ = "SSE error: " + message;
@@ -335,10 +338,14 @@ public:
         return message_.c_str();
     }
 
-    optional<int> GetCode() const { return code_; }
-    const ErrorEvent& GetEvent() const { return event_; }
+    optional<int> GetCode() const {
+        return code_;
+    }
+    const ErrorEvent& GetEvent() const {
+        return event_;
+    }
 
-private:
+  private:
     optional<int> code_;
     string message_;
     ErrorEvent event_;
@@ -354,13 +361,19 @@ struct SSEClientTransportOptions {
      * When an authProvider is specified and the SSE connection is started:
      * 1. The connection is attempted with any existing access token from the authProvider.
      * 2. If the access token has expired, the authProvider is used to refresh the token.
-     * 3. If token refresh fails or no access token exists, and auth is required, OAuthClientProvider.redirectToAuthorization is called, and an UnauthorizedError will be thrown from connect/start.
+     * 3. If token refresh fails or no access token exists, and auth is required,
+     * OAuthClientProvider.redirectToAuthorization is called, and an UnauthorizedError will be
+     * thrown from connect/start.
      *
-     * After the user has finished authorizing via their user agent, and is redirected back to the MCP client application, call SSEClientTransport.finishAuth with the authorization code before retrying the connection.
+     * After the user has finished authorizing via their user agent, and is redirected back to the
+     * MCP client application, call SSEClientTransport.finishAuth with the authorization code before
+     * retrying the connection.
      *
-     * If an authProvider is not provided, and auth is required, an UnauthorizedError will be thrown.
+     * If an authProvider is not provided, and auth is required, an UnauthorizedError will be
+     * thrown.
      *
-     * UnauthorizedError might also be thrown when sending any message over the SSE transport, indicating that the session has expired, and needs to be re-authed and reconnected.
+     * UnauthorizedError might also be thrown when sending any message over the SSE transport,
+     * indicating that the session has expired, and needs to be re-authed and reconnected.
      */
     shared_ptr<OAuthClientProvider> authProvider = nullptr;
 
@@ -385,7 +398,7 @@ struct SSEClientTransportOptions {
  * messages and make separate POST requests for sending messages.
  */
 class SSEClientTransport : public Transport {
-private:
+  private:
     // TODO: Fix External Ref: EventSource equivalent
     void* _eventSource; // Placeholder for EventSource
     optional<URL> _endpoint;
@@ -397,7 +410,7 @@ private:
     optional<RequestInit> _requestInit;
     shared_ptr<OAuthClientProvider> _authProvider;
 
-public:
+  public:
     // Callback function types (exactly matching TypeScript)
     function<void()> onclose;
     function<void(const exception& error)> onerror;
@@ -411,14 +424,15 @@ public:
     future<void> close();
     future<void> send(const JSONRPCMessage& message);
 
-private:
+  private:
     // Private methods (exactly matching TypeScript structure)
     future<void> _authThenStart();
     future<HeadersInit> _commonHeaders();
     future<void> _startOrAuth();
 
     // TODO: Fix External Ref: Auth function
-    future<AuthResult> auth(shared_ptr<OAuthClientProvider> authProvider, const map<string, variant<URL, string>>& params);
+    future<AuthResult> auth(shared_ptr<OAuthClientProvider> authProvider,
+                            const map<string, variant<URL, string>>& params);
 
     // TODO: Fix External Ref: extractResourceMetadataUrl function
     optional<URL> extractResourceMetadataUrl(const HttpResponse& response);
@@ -429,16 +443,13 @@ private:
 
 // Implementation
 
-SSEClientTransport::SSEClientTransport(const URL& url, const optional<SSEClientTransportOptions>& opts)
-    : _eventSource(nullptr)
-    , _endpoint(nullopt)
-    , _abortController(nullptr)
-    , _url(url)
-    , _resourceMetadataUrl(nullopt)
-    , _eventSourceInit(opts.has_value() ? opts.value().eventSourceInit : nullopt)
-    , _requestInit(opts.has_value() ? opts.value().requestInit : nullopt)
-    , _authProvider(opts.has_value() ? opts.value().authProvider : nullptr) {
-}
+SSEClientTransport::SSEClientTransport(const URL& url,
+                                       const optional<SSEClientTransportOptions>& opts)
+    : _eventSource(nullptr), _endpoint(nullopt), _abortController(nullptr), _url(url),
+      _resourceMetadataUrl(nullopt),
+      _eventSourceInit(opts.has_value() ? opts.value().eventSourceInit : nullopt),
+      _requestInit(opts.has_value() ? opts.value().requestInit : nullopt),
+      _authProvider(opts.has_value() ? opts.value().authProvider : nullptr) {}
 
 future<void> SSEClientTransport::_authThenStart() {
     return async(launch::async, [this]() -> void {
@@ -526,7 +537,8 @@ future<void> SSEClientTransport::_startOrAuth() {
         //         _endpoint = URL(event.data, _url);
         //         if (_endpoint.value().origin != _url.origin) {
         //             throw runtime_error(
-        //                 "Endpoint origin does not match connection origin: " + _endpoint.value().origin
+        //                 "Endpoint origin does not match connection origin: " +
+        //                 _endpoint.value().origin
         //             );
         //         }
         //     } catch (const exception& error) {
@@ -563,9 +575,8 @@ future<void> SSEClientTransport::_startOrAuth() {
 future<void> SSEClientTransport::start() {
     return async(launch::async, [this]() -> void {
         if (_eventSource != nullptr) {
-            throw runtime_error(
-                "SSEClientTransport already started! If using Client class, note that connect() calls start() automatically."
-            );
+            throw runtime_error("SSEClientTransport already started! If using Client class, note "
+                                "that connect() calls start() automatically.");
         }
 
         return _startOrAuth().get();
@@ -673,9 +684,8 @@ future<void> SSEClientTransport::send(const JSONRPCMessage& message) {
                     text = "";
                 }
 
-                throw runtime_error(
-                    "Error POSTing to endpoint (HTTP " + to_string(response.status) + "): " + text
-                );
+                throw runtime_error("Error POSTing to endpoint (HTTP " + to_string(response.status)
+                                    + "): " + text);
             }
         } catch (const exception& error) {
             if (onerror) {
@@ -688,7 +698,7 @@ future<void> SSEClientTransport::send(const JSONRPCMessage& message) {
 
 // TODO: Implement these placeholder methods with actual functionality
 future<AuthResult> SSEClientTransport::auth(shared_ptr<OAuthClientProvider> authProvider,
-                                           const map<string, variant<URL, string>>& params) {
+                                            const map<string, variant<URL, string>>& params) {
     return async(launch::async, []() -> AuthResult {
         // TODO: Fix External Ref: Actual auth implementation
         return AuthResult::AUTHORIZED;

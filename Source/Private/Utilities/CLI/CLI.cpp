@@ -1,17 +1,10 @@
-#include <string>
-#include <vector>
-#include <memory>
-#include <functional>
-#include <future>
-#include <iostream>
-#include <exception>
-
 #include "Utilities/CLI/CLI.h"
 
 // TODO: Implement WebSocket
 class WebSocket;
 
 using namespace std;
+using namespace MCP;
 
 
 static future<void> CLI::RunClient(const string& url_or_command, const vector<string>& args) {

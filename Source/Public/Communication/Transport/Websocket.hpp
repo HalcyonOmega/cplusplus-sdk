@@ -1,9 +1,10 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Constants.h"
+#include "Core.h"
 #include "Transport.hpp"
 
-namespace MCP::Transport {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: WebSocket implementation (platform-specific)
 // TODO: Fix External Ref: URL parsing (consider std::string or custom URL class)
@@ -15,21 +16,22 @@ const string SUBPROTOCOL = "mcp";
  * Client transport for WebSocket: this will connect to a server over the WebSocket protocol.
  */
 class WebSocket_Client_Transport : public Transport {
-private:
+  private:
     // TODO: Fix External Ref: WebSocket - replace with actual WebSocket implementation
     optional<void*> Socket_; // Optional WebSocket instance (was _socket?: WebSocket)
-    string URL_; // URL was not optional in TypeScript
+    string URL_;             // URL was not optional in TypeScript
 
     // Helper method to validate JSON-RPC message structure
     bool ValidateJSON_RPC_Message(const JSON& json) const {
         // Basic JSON-RPC validation equivalent to JSON_RPC_MessageSchema.parse()
-        if (!json.contains("jsonrpc") || json["jsonrpc"] != "2.0") {
+        if (!json.contains(MSG_KEY_JSON_RPC)
+            || json[MSG_KEY_JSON_RPC] != MSG_KEY_JSON_RPC_VERSION) {
             return false;
         }
 
         // Check if it's a request, notification, response, or error
-        bool hasId = json.contains("id");
-        bool hasMethod = json.contains("method");
+        bool hasId = json.contains(MSG_KEY_ID);
+        bool hasMethod = json.contains(MSG_KEY_METHOD);
         bool hasResult = json.contains("result");
         bool hasError = json.contains("error");
 
@@ -72,7 +74,7 @@ private:
         return JSON{};
     }
 
-public:
+  public:
     // Event handlers - optional callbacks matching TypeScript interface
     optional<function<void()>> OnClose;
     optional<function<void(const exception&)>> OnError;
@@ -85,9 +87,8 @@ public:
 
     future<void> Start() override {
         if (Socket_.has_value()) {
-            throw runtime_error(
-                "WebSocket_Client_Transport already started! If using Client class, note that Connect() calls Start() automatically."
-            );
+            throw runtime_error("WebSocket_Client_Transport already started! If using Client "
+                                "class, note that Connect() calls Start() automatically.");
         }
 
         // Create promise/future pair to match TypeScript Promise pattern
@@ -127,10 +128,11 @@ public:
                 //     try {
                 //         JSON parsed = JSON::parse(event.data);
                 //
-                //         // Validate JSON-RPC message structure (equivalent to JSON_RPC_MessageSchema.parse)
-                //         if (!ValidateJSON_RPC_Message(parsed)) {
+                //         // Validate JSON-RPC message structure (equivalent to
+                //         JSON_RPC_MessageSchema.parse) if (!ValidateJSON_RPC_Message(parsed)) {
                 //             if (OnError.has_value()) {
-                //                 OnError.value()(runtime_error("Invalid JSON-RPC message format"));
+                //                 OnError.value()(runtime_error("Invalid JSON-RPC message
+                //                 format"));
                 //             }
                 //             return;
                 //         }
@@ -139,18 +141,21 @@ public:
                 //         auto message = JSONToMessage(parsed);
                 //         if (!message.has_value()) {
                 //             if (OnError.has_value()) {
-                //                 OnError.value()(runtime_error("Failed to convert JSON to JSON_RPC_Message"));
+                //                 OnError.value()(runtime_error("Failed to convert JSON to
+                //                 JSON_RPC_Message"));
                 //             }
                 //             return;
                 //         }
                 //
                 //         // Call message handler with message and optional auth info
                 //         if (OnMessage.has_value()) {
-                //             OnMessage.value()(message.value(), nullopt); // No auth info for basic WebSocket
+                //             OnMessage.value()(message.value(), nullopt); // No auth info for
+                //             basic WebSocket
                 //         }
                 //     } catch (const JSON::parse_error& error) {
                 //         if (OnError.has_value()) {
-                //             OnError.value()(runtime_error("JSON parse error: " + string(error.what())));
+                //             OnError.value()(runtime_error("JSON parse error: " +
+                //             string(error.what())));
                 //         }
                 //     } catch (const exception& error) {
                 //         if (OnError.has_value()) {
@@ -180,7 +185,8 @@ public:
     }
 
     // Updated Send method to match Transport interface signature
-    future<void> Send(const JSON_RPC_Message& Message, const optional<TransportSendOptions>& Options = nullopt) override {
+    future<void> Send(const JSON_RPC_Message& Message,
+                      const optional<TransportSendOptions>& Options = nullopt) override {
         // Create promise/future pair to match TypeScript Promise pattern
         auto promise_ptr = make_shared<promise<void>>();
         auto future_result = promise_ptr->get_future();

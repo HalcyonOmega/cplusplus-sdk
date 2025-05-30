@@ -1,0 +1,75 @@
+---
+# Clang-tidy configuration for MCP C++ SDK naming conventions
+# 
+# NOTE: clang-tidy naming is confusing:
+# - "CamelCase" = PascalCase (FirstLetterCapitalized) ✓ This is what we want
+# - "camelBack" = camelCase (firstLetterLowercase)
+# - "lower_case" = snake_case
+# - "UPPER_CASE" = SCREAMING_SNAKE_CASE
+
+Checks: >
+  readability-identifier-naming,
+  -*
+
+CheckOptions:
+  # Classes, Structs, Enums - PascalCase (CamelCase in clang-tidy terms)
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+
+  # Functions and Methods - PascalCase (CamelCase in clang-tidy terms)
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.MethodCase
+    value: CamelCase
+
+  # Variables - PascalCase (CamelCase in clang-tidy terms)
+  - key: readability-identifier-naming.VariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.MemberCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: CamelCase
+
+  # Constants - UPPER_CASE for non-acronym constants
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+
+  # Namespaces - PascalCase (CamelCase in clang-tidy terms)
+  - key: readability-identifier-naming.NamespaceCase
+    value: CamelCase
+
+  # Template Parameters - PascalCase (CamelCase in clang-tidy terms)
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+
+  # Allow acronym patterns (HTTP, JSON, API, MCP, XML, RPC, JSON_RPC, etc.)
+  - key: readability-identifier-naming.ClassIgnoredRegexp
+    value: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+  - key: readability-identifier-naming.FunctionIgnoredRegexp
+    value: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+  - key: readability-identifier-naming.VariableIgnoredRegexp
+    value: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle: 'file' 

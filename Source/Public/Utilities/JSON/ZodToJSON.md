@@ -68,7 +68,7 @@ struct User {
         validateUserSchema(JSON);
 
         User user;
-        user.id = JSON["id"].get<int>();
+        user.id = JSON[MSG_KEY_ID].get<int>();
         user.name = JSON["name"].get<std::string>();
         user.email = JSON["email"].get<std::string>();
 
@@ -86,7 +86,7 @@ private:
         }
 
         // Required fields
-        if (!JSON.contains("id") || !JSON["id"].is_number_integer()) {
+        if (!JSON.contains(MSG_KEY_ID) || !JSON[MSG_KEY_ID].is_number_integer()) {
             throw std::invalid_argument("Missing or invalid 'id' field");
         }
 
