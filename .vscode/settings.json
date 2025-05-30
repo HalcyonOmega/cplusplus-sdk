@@ -10,6 +10,21 @@
     "cmake.configureOnOpen": true,
     "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.generator": "Ninja",
+    "cmake.preferredGenerators": ["Ninja"],
+    "cmake.defaultConfigurePreset": "clang-debug",
+    "cmake.configureSettings": {
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_BUILD_TYPE": "Debug"
+    },
+    "cmake.defaultVariants": {
+        "buildType": {
+            "default": "debug",
+            "description": "The build type to use"
+        }
+    },
+    "cmake.askConfigureProjects": false,
+    "cmake.automaticReconfigure": true,
     "files.associations": {
         "*.h": "cpp",
         "*.hpp": "cpp",
@@ -19,6 +34,8 @@
     },
     "clangd.onConfigChanged": "ignore",
     "clangd.detectExtensionConflicts": false,
+    "clangd.path": "/usr/bin/clangd",
+    "clangd.checkUpdates": false,
     "extensions.ignoreRecommendations": true,
     "clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}",
