@@ -4,9 +4,21 @@ This document outlines the key architectural diagrams for the C++ SDK, providing
 
 ## Streamlined SDK Class Structure
 
-This section outlines the revised, streamlined class and struct organization for the C++ SDK, emphasizing generic message handling and specific, typed payloads. This approach aims to improve developer experience and maintainability while strictly adhering to the MCP specification.
+This section outlines the revised, streamlined class and struct organization for the C++ SDK, emphasizing generic message handling, specific typed payloads, and a user-friendly method-based client API. This approach aims to improve developer experience and maintainability while strictly adhering to the MCP specification.
 
-### I. Core Message Envelopes
+### I. SDK Client API (Primary User Interaction)
+
+The primary way developers will interact with the SDK is through methods on client objects. These methods correspond directly to MCP operations, abstracting the underlying request/response lifecycle.
+
+*   **`SDK_Client`**: The main entry point for the SDK.
+    *   Provides access to feature-specific client stubs/objects (e.g., `resources()`, `prompts()`).
+    *   Handles session management, connection, and overall client state.
+*   **Feature-Specific Client Stubs (e.g., `ResourcesClientStub`, `PromptsClientStub`)**:
+    *   Group related MCP operations (e.g., `ResourcesClientStub` would have `list()`, `read()`, `subscribe()`).
+    *   Each method (e.g., `list(const MCP_ResourcesListParams& params)`) takes relevant parameters (often as a specific `Params` struct) and returns the corresponding `Result` struct (or a future/promise of it, e.g., `std::future<MCP_ResourcesListResult>`).
+    *   Internally, these methods use the generic message envelopes and payload definitions (described below) to communicate with the server.
+
+### II. Core Message Envelopes (Internal SDK Mechanism)
 
 These are the primary classes developers will interact with for sending and receiving messages.
 
@@ -34,7 +46,7 @@ These are the primary classes developers will interact with for sending and rece
         *   Inherits from `MCP_NotificationBase`.
         *   Holds a `ParamsType params;` member.
 
-### II. Payload Definitions (Structs for `ParamsType` and `ResultType`)
+### III. Payload Definitions (Structs for `ParamsType` and `ResultType`)
 
 These structs represent the specific `params` or `result` objects for each MCP method, ensuring type safety and spec accuracy.
 
@@ -121,7 +133,7 @@ These structs represent the specific `params` or `result` objects for each MCP m
         *   `MCP_CompletionValue`: (`values`, `total?`, `hasMore?`)
         *   `MCP_CompletionCompleteResult`: (`completion`: `MCP_CompletionValue`)
 
-### III. Conceptual SDK Components and Transport Layer
+### IV. Conceptual SDK Components and Transport Layer
 
 These remain largely the same as they define higher-level roles and communication mechanisms.
 
@@ -135,12 +147,60 @@ These remain largely the same as they define higher-level roles and communicatio
         *   `MCP_StdioTransport`
         *   `MCP_HttpTransport`
 
-## Class Diagram (Streamlined)
+## Class Diagram (Streamlined with Client API)
 
 ```mermaid
 classDiagram
     direction TB
 
+    %% ======== SDK Client API Facade ========
+    class SDK_Client {
+        +ResourcesClientStub resources()
+        +PromptsClientStub prompts()
+        +ToolsClientStub tools()
+        +initialize(MCP_InitializeParams): std::future~MCP_InitializeResult~
+        +ping(): std::future~MCP_EmptyResult~
+        %% ... other global utility methods ...
+    }
+
+    class ResourcesClientStub {
+        +list(MCP_ResourcesListParams): std::future~MCP_ListResult~MCP_Resource~~
+        +read(MCP_ResourcesReadParams): std::future~MCP_ResourcesReadResult~
+        +subscribe(MCP_ResourcesSubscribeParams): std::future~MCP_EmptyResult~
+        +unsubscribe(MCP_ResourcesUnsubscribeParams): std::future~MCP_EmptyResult~
+        %% +handle_listChanged_notification(handler)
+        %% +handle_updated_notification(handler)
+    }
+    SDK_Client o--> ResourcesClientStub : provides
+
+    class PromptsClientStub {
+        +list(MCP_PromptsListParams): std::future~MCP_ListResult~MCP_Prompt~~
+        +get(MCP_PromptsGetParams): std::future~MCP_PromptsGetResult~
+        %% +handle_listChanged_notification(handler)
+    }
+    SDK_Client o--> PromptsClientStub : provides
+
+    class ToolsClientStub {
+        +list(MCP_ToolsListParams): std::future~MCP_ListResult~MCP_Tool~~
+        +call(MCP_ToolsCallParams): std::future~MCP_CallToolResult~
+        %% +handle_listChanged_notification(handler)
+    }
+    SDK_Client o--> ToolsClientStub : provides
+
+    %% Client Stubs use Generic Wrappers and Payloads
+    ResourcesClientStub ..> MCP_Request~ParamsType~ : uses internally
+    ResourcesClientStub ..> MCP_Response~ResultType~ : uses internally
+    ResourcesClientStub ..> MCP_Notification~ParamsType~ : uses for notifications
+    ResourcesClientStub ..> MCP_ResourcesListParams : uses
+    ResourcesClientStub ..> MCP_ListResult~MCP_Resource~ : uses
+
+    PromptsClientStub ..> MCP_Request~ParamsType~ : uses internally
+    PromptsClientStub ..> MCP_Response~ResultType~ : uses internally
+    PromptsClientStub ..> MCP_Notification~ParamsType~ : uses for notifications
+    PromptsClientStub ..> MCP_PromptsGetParams : uses
+    PromptsClientStub ..> MCP_PromptsGetResult : uses
+
+    %% ======== Core Message Envelopes (Internal) ========
     class MCP_MessageBase {
         +jsonrpc: string
     }
@@ -287,6 +347,8 @@ classDiagram
     MCP_Client o-- MCP_Session : maintains
     MCP_Server o-- MCP_Session : maintains
 
+    note "SDK_Client and Feature Stubs provide a method-based API."
+    note "These methods internally use MCP_Request~T~, MCP_Response~T~, and payload structs."
     note "Generic wrappers MCP_Request~T~, MCP_Response~T~, MCP_Notification~T~ use specific Params/Result structs."
     note "Only a few example Params/Result structs are shown for brevity."
     note "The 'MCP_ListResult~ItemType~' class is a conceptual representation of how list results (e.g. vector of items + cursor) would be structured for various ItemTypes."
