@@ -1,22 +1,23 @@
 #pragma once
 
+#include "Constants.h"
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 // Error codes defined by the JSON-RPC specification.
 enum class ErrorCode : int32_t {
-  // SDK error codes
-  ConnectionClosed = -32000,
-  RequestTimeout = -32001,
+    // SDK error codes
+    ConnectionClosed = ERRCODE_CONNECTION_CLOSED,
+    RequestTimeout = ERRCODE_REQUEST_TIMEOUT,
 
-  // Standard JSON-RPC error codes
-  ParseError = -32700,
-  InvalidRequest = -32600,
-  MethodNotFound = -32601,
-  InvalidParams = -32602,
-  InternalError = -32603,
-}
+    // Standard JSON-RPC error codes
+    ParseError = ERRCODE_PARSE_ERROR,
+    InvalidRequest = ERRCODE_INVALID_REQUEST,
+    MethodNotFound = ERRCODE_METHOD_NOT_FOUND,
+    InvalidParams = ERRCODE_INVALID_PARAMS,
+    InternalError = ERRCODE_INTERNAL_ERROR,
+};
 
 class Error {
   private:

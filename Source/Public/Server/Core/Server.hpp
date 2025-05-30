@@ -45,28 +45,28 @@ struct ServerOptions : public ProtocolOptions {
  *
  * This server will automatically respond to the initialization flow as initiated from the client.
  *
- * To use with custom types, extend the base Request/Notification/Result types and pass them as type parameters.
+ * To use with custom types, extend the base Request/Notification/Result types and pass them as type
+ * parameters.
  */
-template<
-    typename RequestT = Request,
-    typename NotificationT = Notification,
-    typename ResultT = Result
->
-class Server : public Protocol<
-    ServerRequest, // TODO: Should be ServerRequest | RequestT in TypeScript
-    ServerNotification, // TODO: Should be ServerNotification | NotificationT in TypeScript
-    ServerResult // TODO: Should be ServerResult | ResultT in TypeScript
-> {
-private:
+template <typename RequestT = Request, typename NotificationT = Notification,
+          typename ResultT = Result>
+class Server
+    : public Protocol<ServerRequest,      // TODO: Should be ServerRequest | RequestT in TypeScript
+                      ServerNotification, // TODO: Should be ServerNotification | NotificationT in
+                                          // TypeScript
+                      ServerResult        // TODO: Should be ServerResult | ResultT in TypeScript
+                      > {
+  private:
     optional<ClientCapabilities> ClientCapabilities_;
     optional<Implementation> ClientVersion_;
     ServerCapabilities Capabilities_;
     optional<string> Instructions_;
     Implementation ServerInfo_;
 
-public:
+  public:
     /**
-     * Callback for when initialization has fully completed (i.e., the client has sent an `initialized` notification).
+     * Callback for when initialization has fully completed (i.e., the client has sent an
+     * `initialized` notification).
      */
     optional<function<void()>> OnInitialized;
 
@@ -74,8 +74,8 @@ public:
      * Initializes this server with the given name and version information.
      */
     Server(const Implementation& serverInfo, const optional<ServerOptions>& options = nullopt)
-        : Protocol<ServerRequest, ServerNotification, ServerResult>(options), ServerInfo_(serverInfo) {
-
+        : Protocol<ServerRequest, ServerNotification, ServerResult>(options),
+          ServerInfo_(serverInfo) {
         if (options) {
             Capabilities_ = options->capabilities.value_or(ServerCapabilities{});
             Instructions_ = options->instructions;
@@ -99,35 +99,31 @@ public:
     /**
      * Registers new capabilities. This can only be called before connecting to a transport.
      *
-     * The new capabilities will be merged with any existing capabilities previously given (e.g., at initialization).
+     * The new capabilities will be merged with any existing capabilities previously given (e.g., at
+     * initialization).
      */
     void RegisterCapabilities(const ServerCapabilities& capabilities) {
         if (this->transport) {
-            throw runtime_error(
-                "Cannot register capabilities after connecting to transport"
-            );
+            throw runtime_error("Cannot register capabilities after connecting to transport");
         }
 
         Capabilities_ = MergeCapabilities(Capabilities_, capabilities);
     }
 
-protected:
+  protected:
     void AssertCapabilityForMethod(const string& method) {
         if (method == "sampling/createMessage") {
-            if (!ClientCapabilities_ || !ClientCapabilities_->sampling) { // TODO: Access sampling field
-                throw runtime_error(
-                    "Client does not support sampling (required for " + method + ")"
-                );
+            if (!ClientCapabilities_
+                || !ClientCapabilities_->sampling) { // TODO: Access sampling field
+                throw runtime_error("Client does not support sampling (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "roots/list") {
+        } else if (method == "roots/list") {
             if (!ClientCapabilities_ || !ClientCapabilities_->roots) { // TODO: Access roots field
-                throw runtime_error(
-                    "Client does not support listing roots (required for " + method + ")"
-                );
+                throw runtime_error("Client does not support listing roots (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "ping") {
+        } else if (method == MTHD_PING) {
             // No specific capability required for ping
         }
     }
@@ -135,35 +131,29 @@ protected:
     void AssertNotificationCapability(const string& method) {
         if (method == "notifications/message") {
             if (!Capabilities_.logging) { // TODO: Access logging field
-                throw runtime_error(
-                    "Server does not support logging (required for " + method + ")"
-                );
+                throw runtime_error("Server does not support logging (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "notifications/resources/updated" ||
-                 method == "notifications/resources/list_changed") {
+        } else if (method == "notifications/resources/updated"
+                   || method == "notifications/resources/list_changed") {
             if (!Capabilities_.resources) { // TODO: Access resources field
                 throw runtime_error(
-                    "Server does not support notifying about resources (required for " + method + ")"
-                );
+                    "Server does not support notifying about resources (required for " + method
+                    + ")");
             }
-        }
-        else if (method == "notifications/tools/list_changed") {
+        } else if (method == "notifications/tools/list_changed") {
             if (!Capabilities_.tools) { // TODO: Access tools field
                 throw runtime_error(
-                    "Server does not support notifying of tool list changes (required for " + method + ")"
-                );
+                    "Server does not support notifying of tool list changes (required for " + method
+                    + ")");
             }
-        }
-        else if (method == "notifications/prompts/list_changed") {
+        } else if (method == "notifications/prompts/list_changed") {
             if (!Capabilities_.prompts) { // TODO: Access prompts field
                 throw runtime_error(
-                    "Server does not support notifying of prompt list changes (required for " + method + ")"
-                );
+                    "Server does not support notifying of prompt list changes (required for "
+                    + method + ")");
             }
-        }
-        else if (method == "notifications/cancelled" ||
-                 method == "notifications/progress") {
+        } else if (method == MTHD_NOTIFICATION_CANCELLED || method == MTHD_NOTIFICATION_PROGRESS) {
             // Cancellation and progress notifications are always allowed
         }
     }
@@ -171,52 +161,41 @@ protected:
     void AssertRequestHandlerCapability(const string& method) {
         if (method == "sampling/createMessage") {
             if (!Capabilities_.sampling) { // TODO: Access sampling field
-                throw runtime_error(
-                    "Server does not support sampling (required for " + method + ")"
-                );
+                throw runtime_error("Server does not support sampling (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "logging/setLevel") {
+        } else if (method == "logging/setLevel") {
             if (!Capabilities_.logging) { // TODO: Access logging field
-                throw runtime_error(
-                    "Server does not support logging (required for " + method + ")"
-                );
+                throw runtime_error("Server does not support logging (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "prompts/get" || method == "prompts/list") {
+        } else if (method == "prompts/get" || method == "prompts/list") {
             if (!Capabilities_.prompts) { // TODO: Access prompts field
-                throw runtime_error(
-                    "Server does not support prompts (required for " + method + ")"
-                );
+                throw runtime_error("Server does not support prompts (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "resources/list" ||
-                 method == "resources/templates/list" ||
-                 method == "resources/read") {
+        } else if (method == "resources/list" || method == "resources/templates/list"
+                   || method == "resources/read") {
             if (!Capabilities_.resources) { // TODO: Access resources field
-                throw runtime_error(
-                    "Server does not support resources (required for " + method + ")"
-                );
+                throw runtime_error("Server does not support resources (required for " + method
+                                    + ")");
             }
-        }
-        else if (method == "tools/call" || method == "tools/list") {
+        } else if (method == MTHD_TOOLS_CALL || method == MTHD_TOOLS_LIST) {
             if (!Capabilities_.tools) { // TODO: Access tools field
-                throw runtime_error(
-                    "Server does not support tools (required for " + method + ")"
-                );
+                throw runtime_error("Server does not support tools (required for " + method + ")");
             }
-        }
-        else if (method == "ping" || method == "initialize") {
+        } else if (method == MTHD_PING || method == MTHD_INITIALIZE) {
             // No specific capability required for these methods
         }
     }
 
-private:
+  private:
     future<JSON> OnInitialize(const InitializeRequest& request) {
-        const string& requestedVersion = request.params.protocolVersion; // TODO: Access protocolVersion field
+        const string& requestedVersion =
+            request.params.protocolVersion; // TODO: Access protocolVersion field
 
         ClientCapabilities_ = request.params.capabilities; // TODO: Access capabilities field
-        ClientVersion_ = request.params.clientInfo; // TODO: Access clientInfo field
+        ClientVersion_ = request.params.clientInfo;        // TODO: Access clientInfo field
 
         InitializeResult result; // TODO: Create InitializeResult
 
@@ -229,9 +208,11 @@ private:
             }
         }
 
-        result.protocolVersion = versionSupported ? requestedVersion : LATEST_PROTOCOL_VERSION; // TODO: Set protocolVersion field
-        result.capabilities = GetCapabilities(); // TODO: Set capabilities field
-        result.serverInfo = ServerInfo_; // TODO: Set serverInfo field
+        result.protocolVersion = versionSupported
+                                     ? requestedVersion
+                                     : LATEST_PROTOCOL_VERSION; // TODO: Set protocolVersion field
+        result.capabilities = GetCapabilities();                // TODO: Set capabilities field
+        result.serverInfo = ServerInfo_;                        // TODO: Set serverInfo field
 
         if (Instructions_) {
             result.instructions = Instructions_; // TODO: Set instructions field
@@ -241,80 +222,84 @@ private:
         return async(launch::deferred, []() { return JSON{}; });
     }
 
-public:
+  public:
     /**
-     * After initialization has completed, this will be populated with the client's reported capabilities.
+     * After initialization has completed, this will be populated with the client's reported
+     * capabilities.
      */
     optional<ClientCapabilities> GetClientCapabilities() const {
         return ClientCapabilities_;
     }
 
     /**
-     * After initialization has completed, this will be populated with information about the client's name and version.
+     * After initialization has completed, this will be populated with information about the
+     * client's name and version.
      */
     optional<Implementation> GetClientVersion() const {
         return ClientVersion_;
     }
 
-private:
+  private:
     ServerCapabilities GetCapabilities() const {
         return Capabilities_;
     }
 
-public:
+  public:
     future<JSON> Ping() {
         JSON request;
-        request["method"] = "ping";
+        request[MSG_KEY_METHOD] = MTHD_PING;
         return this->Request(request, EmptyResultSchema{});
     }
 
-    future<JSON> CreateMessage(const JSON& params, const optional<RequestOptions>& options = nullopt) {
+    future<JSON> CreateMessage(const JSON& params,
+                               const optional<RequestOptions>& options = nullopt) {
         JSON request;
-        request["method"] = "sampling/createMessage";
-        request["params"] = params;
+        request[MSG_KEY_METHOD] = "sampling/createMessage";
+        request[MSG_KEY_PARAMS] = params;
         return this->Request(request, CreateMessageResultSchema{}, options);
     }
 
-    future<JSON> ListRoots(const optional<JSON>& params = nullopt, const optional<RequestOptions>& options = nullopt) {
+    future<JSON> ListRoots(const optional<JSON>& params = nullopt,
+                           const optional<RequestOptions>& options = nullopt) {
         JSON request;
-        request["method"] = "roots/list";
+        request[MSG_KEY_METHOD] = "roots/list";
         if (params) {
-            request["params"] = *params;
+            request[MSG_KEY_PARAMS] = *params;
         }
         return this->Request(request, ListRootsResultSchema{}, options);
     }
 
     future<void> SendLoggingMessage(const JSON& params) {
         JSON notification;
-        notification["method"] = "notifications/message";
-        notification["params"] = params;
+        notification[MSG_KEY_METHOD] = "notifications/message";
+        notification[MSG_KEY_PARAMS] = params;
         return this->Notification(notification);
     }
 
     future<void> SendResourceUpdated(const JSON& params) {
         JSON notification;
-        notification["method"] = "notifications/resources/updated";
-        notification["params"] = params;
+        notification[MSG_KEY_METHOD] = "notifications/resources/updated";
+        notification[MSG_KEY_PARAMS] = params;
         return this->Notification(notification);
     }
 
     future<void> SendResourceListChanged() {
         JSON notification;
-        notification["method"] = "notifications/resources/list_changed";
+        notification[MSG_KEY_METHOD] = "notifications/resources/list_changed";
         return this->Notification(notification);
     }
 
     future<void> SendToolListChanged() {
         JSON notification;
-        notification["method"] = "notifications/tools/list_changed";
+        notification[MSG_KEY_METHOD] = "notifications/tools/list_changed";
         return this->Notification(notification);
     }
 
     future<void> SendPromptListChanged() {
         JSON notification;
-        notification["method"] = "notifications/prompts/list_changed";
+        notification[MSG_KEY_METHOD] = "notifications/prompts/list_changed";
         return this->Notification(notification);
     }
 };
 
-} // namespace MCP
+MCP_NAMESPACE_END

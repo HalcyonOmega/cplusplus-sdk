@@ -248,16 +248,16 @@ class SSEServerTransport {
             jsonMessage[MSG_KEY_ID] = message.id.value();
         }
         if (message.method.has_value()) {
-            jsonMessage["method"] = message.method.value();
+            jsonMessage[MSG_KEY_METHOD] = message.method.value();
         }
         if (message.params.has_value()) {
-            jsonMessage["params"] = message.params.value();
+            jsonMessage[MSG_KEY_PARAMS] = message.params.value();
         }
         if (message.result.has_value()) {
-            jsonMessage["result"] = message.result.value();
+            jsonMessage[MSG_KEY_RESULT] = message.result.value();
         }
         if (message.error.has_value()) {
-            jsonMessage["error"] = message.error.value();
+            jsonMessage[MSG_KEY_ERROR] = message.error.value();
         }
 
         string eventData = "event: message\ndata: " + jsonMessage.dump() + "\n\n";
@@ -649,7 +649,7 @@ future<void> SSEClientTransport::send(const JSONRPCMessage& message) {
             if (_requestInit.has_value()) {
                 init = _requestInit.value();
             }
-            init["method"] = string("POST");
+            init[MSG_KEY_METHOD] = string("POST");
             init["headers"] = headers;
             // TODO: Fix External Ref: JSON.stringify(message)
             init["body"] = string("{}"); // JSON::stringify(message);

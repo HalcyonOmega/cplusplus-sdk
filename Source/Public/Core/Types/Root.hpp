@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 // Represents a root directory or file that the server can operate on.
 struct Root {

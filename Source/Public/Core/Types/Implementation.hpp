@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 // Describes the name and version of an MCP implementation.
 struct Implementation {

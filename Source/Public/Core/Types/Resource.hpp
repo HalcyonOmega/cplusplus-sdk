@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 // The contents of a specific resource or sub-resource.
 struct ResourceContents {
@@ -51,7 +51,7 @@ struct ResourceTemplate {
 
 // The contents of a resource, embedded into a prompt or tool call result.
 struct EmbeddedResource {
-    z.literal("resource") Type;
+    z.literal(MSG_KEY_RESOURCE) Type;
     variant<TextResourceContents, BLOB_ResourceContents> Resource;
     Passthrough Additional;
 };

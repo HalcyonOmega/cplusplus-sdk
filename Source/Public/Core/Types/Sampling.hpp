@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 // Hints to use for model selection.
 struct ModelHint {

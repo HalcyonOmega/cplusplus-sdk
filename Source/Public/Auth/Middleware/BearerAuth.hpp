@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: RequestHandler (Express equivalent)
 // TODO: Fix External Ref: InsufficientScopeError
@@ -71,7 +71,8 @@ struct MiddlewareResponse {
 /**
  * Middleware function type
  */
-using MiddlewareFunction = function<void(AuthenticatedRequest&, MiddlewareResponse&, function<void()>)>;
+using MiddlewareFunction =
+    function<void(AuthenticatedRequest&, MiddlewareResponse&, function<void()>)>;
 
 /**
  * Helper function for case-insensitive header lookup
@@ -93,13 +94,15 @@ string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string
 /**
  * Middleware that requires a valid Bearer token in the Authorization header.
  *
- * This will validate the token with the auth provider and add the resulting auth info to the request object.
+ * This will validate the token with the auth provider and add the resulting auth info to the
+ * request object.
  *
  * If ResourceMetadataUrl is provided, it will be included in the WWW-Authenticate header
  * for 401 responses as per the OAuth 2.0 Protected Resource Metadata spec.
  */
 MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options) {
-    return [Options](AuthenticatedRequest& Request, MiddlewareResponse& Response, function<void()> Next) {
+    return [Options](AuthenticatedRequest& Request, MiddlewareResponse& Response,
+                     function<void()> Next) {
         try {
             // Check for Authorization header (case-insensitive)
             string AuthHeader = GetHeaderCaseInsensitive(Request.Headers, "authorization");
@@ -110,7 +113,8 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
             // Parse Bearer token - handle multiple spaces properly
             size_t SpacePos = AuthHeader.find(' ');
             if (SpacePos == string::npos) {
-                throw InvalidTokenError("Invalid Authorization header format, expected 'Bearer TOKEN'");
+                throw InvalidTokenError(
+                    "Invalid Authorization header format, expected 'Bearer TOKEN'");
             }
 
             string Type = AuthHeader.substr(0, SpacePos);
@@ -124,7 +128,8 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
             transform(Type.begin(), Type.end(), Type.begin(), ::tolower);
 
             if (Type != "bearer" || Token.empty()) {
-                throw InvalidTokenError("Invalid Authorization header format, expected 'Bearer TOKEN'");
+                throw InvalidTokenError(
+                    "Invalid Authorization header format, expected 'Bearer TOKEN'");
             }
 
             // Verify the access token (should be async in real implementation)
@@ -154,7 +159,10 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
             }
 
             // Check if the token is expired
-            if (TokenAuthInfo.ExpiresAt.has_value() && *TokenAuthInfo.ExpiresAt < chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count()) {
+            if (TokenAuthInfo.ExpiresAt.has_value()
+                && *TokenAuthInfo.ExpiresAt < chrono::duration_cast<chrono::seconds>(
+                                                  chrono::system_clock::now().time_since_epoch())
+                                                  .count()) {
                 throw InvalidTokenError("Token has expired");
             }
 
@@ -165,9 +173,12 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
         } catch (const InvalidTokenError& Error) {
             string WWW_AuthValue;
             if (Options.ResourceMetadataUrl.has_value()) {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode() + "\", error_description=\"" + Error.GetMessage() + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage()
+                                + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
             } else {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode() + "\", error_description=\"" + Error.GetMessage() + "\"";
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage() + "\"";
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
             Response.SetStatus(401);
@@ -175,9 +186,12 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
         } catch (const InsufficientScopeError& Error) {
             string WWW_AuthValue;
             if (Options.ResourceMetadataUrl.has_value()) {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode() + "\", error_description=\"" + Error.GetMessage() + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage()
+                                + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
             } else {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode() + "\", error_description=\"" + Error.GetMessage() + "\"";
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage() + "\"";
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
             Response.SetStatus(403);

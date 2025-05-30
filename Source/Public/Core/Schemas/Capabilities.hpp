@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 struct ExperimentalCapability {
     Passthrough Additional; // For passthrough properties

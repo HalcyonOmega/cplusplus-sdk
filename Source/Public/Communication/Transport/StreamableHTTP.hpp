@@ -7,7 +7,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Transport {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: HTTP request/response types
 struct IncomingMessage {
@@ -177,9 +177,9 @@ class StreamableHTTPServerTransport : public Transport {
                 || acceptIt->second.find("text/event-stream") == string::npos) {
                 JSON errorResponse = {
                     {MSG_KEY_JSON_RPC, "2.0"},
-                    {"error",
-                     {{"code", -32000},
-                      {"message", "Not Acceptable: Client must accept text/event-stream"}}},
+                    {MSG_KEY_ERROR,
+                     {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                      {MSG_KEY_MESSAGE, "Not Acceptable: Client must accept text/event-stream"}}},
                     {MSG_KEY_ID, nullptr}};
                 res->writeHead(406, {});
                 res->end(errorResponse.dump());
@@ -218,9 +218,9 @@ class StreamableHTTPServerTransport : public Transport {
                 // Only one GET SSE stream is allowed per session
                 JSON errorResponse = {
                     {MSG_KEY_JSON_RPC, "2.0"},
-                    {"error",
-                     {{"code", -32000},
-                      {"message", "Conflict: Only one SSE stream is allowed per session"}}},
+                    {MSG_KEY_ERROR,
+                     {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                      {MSG_KEY_MESSAGE, "Conflict: Only one SSE stream is allowed per session"}}},
                     {MSG_KEY_ID, nullptr}};
                 res->writeHead(409, {});
                 res->end(errorResponse.dump());
@@ -305,7 +305,9 @@ class StreamableHTTPServerTransport : public Transport {
     future<void> handleUnsupportedRequest(shared_ptr<ServerResponse> res) {
         return async(launch::async, [res]() {
             JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
-                                  {"error", {{"code", -32000}, {"message", "Method not allowed."}}},
+                                  {MSG_KEY_ERROR,
+                                   {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                                    {MSG_KEY_MESSAGE, "Method not allowed."}}},
                                   {MSG_KEY_ID, nullptr}};
             unordered_map<string, string> headers = {{"Allow", "GET, POST, DELETE"}};
             res->writeHead(405, headers);
@@ -327,12 +329,13 @@ class StreamableHTTPServerTransport : public Transport {
                 if (acceptIt == req.headers.end()
                     || acceptIt->second.find("application/json") == string::npos
                     || acceptIt->second.find("text/event-stream") == string::npos) {
-                    JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
-                                          {"error",
-                                           {{"code", -32000},
-                                            {"message", "Not Acceptable: Client must accept both "
-                                                        "application/json and text/event-stream"}}},
-                                          {MSG_KEY_ID, nullptr}};
+                    JSON errorResponse = {
+                        {MSG_KEY_JSON_RPC, "2.0"},
+                        {MSG_KEY_ERROR,
+                         {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                          {MSG_KEY_MESSAGE, "Not Acceptable: Client must accept both "
+                                            "application/json and text/event-stream"}}},
+                        {MSG_KEY_ID, nullptr}};
                     res->writeHead(406, {});
                     res->end(errorResponse.dump());
                     return;
@@ -343,9 +346,9 @@ class StreamableHTTPServerTransport : public Transport {
                     || ctIt->second.find("application/json") == string::npos) {
                     JSON errorResponse = {
                         {MSG_KEY_JSON_RPC, "2.0"},
-                        {"error",
-                         {{"code", -32000},
-                          {"message",
+                        {MSG_KEY_ERROR,
+                         {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                          {MSG_KEY_MESSAGE,
                            "Unsupported Media Type: Content-Type must be application/json"}}},
                         {MSG_KEY_ID, nullptr}};
                     res->writeHead(415, {});
@@ -384,7 +387,8 @@ class StreamableHTTPServerTransport : public Transport {
                 bool isInitializationRequest = false;
                 for (const auto& msg : messages) {
                     // Placeholder check - would need actual implementation
-                    if (msg.data.contains("method") && msg.data["method"] == "initialize") {
+                    if (msg.data.contains(MSG_KEY_METHOD)
+                        && msg.data[MSG_KEY_METHOD] == MTHD_INITIALIZE) {
                         isInitializationRequest = true;
                         break;
                     }
@@ -396,9 +400,9 @@ class StreamableHTTPServerTransport : public Transport {
                     if (_initialized && SessionID.has_value()) {
                         JSON errorResponse = {
                             {MSG_KEY_JSON_RPC, "2.0"},
-                            {"error",
-                             {{"code", -32600},
-                              {"message", "Invalid Request: Server already initialized"}}},
+                            {MSG_KEY_ERROR,
+                             {{MSG_KEY_CODE, ERRCODE_INVALID_REQUEST},
+                              {MSG_KEY_MESSAGE, "Invalid Request: Server already initialized"}}},
                             {MSG_KEY_ID, nullptr}};
                         res->writeHead(400, {});
                         res->end(errorResponse.dump());
@@ -407,9 +411,9 @@ class StreamableHTTPServerTransport : public Transport {
                     if (messages.size() > 1) {
                         JSON errorResponse = {
                             {MSG_KEY_JSON_RPC, "2.0"},
-                            {"error",
-                             {{"code", -32600},
-                              {"message",
+                            {MSG_KEY_ERROR,
+                             {{MSG_KEY_CODE, ERRCODE_INVALID_REQUEST},
+                              {MSG_KEY_MESSAGE,
                                "Invalid Request: Only one initialization request is allowed"}}},
                             {MSG_KEY_ID, nullptr}};
                         res->writeHead(400, {});
@@ -441,7 +445,7 @@ class StreamableHTTPServerTransport : public Transport {
                 bool hasRequests = false;
                 for (const auto& msg : messages) {
                     // Placeholder check - would need actual implementation
-                    if (msg.data.contains("method") && msg.data.contains(MSG_KEY_ID)) {
+                    if (msg.data.contains(MSG_KEY_METHOD) && msg.data.contains(MSG_KEY_ID)) {
                         hasRequests = true;
                         break;
                     }
@@ -479,7 +483,8 @@ class StreamableHTTPServerTransport : public Transport {
                     // connection We need to track by request ID to maintain the connection
                     for (const auto& message : messages) {
                         // TODO: Fix External Ref: isJSON_RPC_Request function
-                        if (message.data.contains("method") && message.data.contains(MSG_KEY_ID)) {
+                        if (message.data.contains(MSG_KEY_METHOD)
+                            && message.data.contains(MSG_KEY_ID)) {
                             _streamMapping[StreamID] = res;
                             _requestToStreamMapping[message.data[MSG_KEY_ID]] = StreamID;
                         }
@@ -498,11 +503,12 @@ class StreamableHTTPServerTransport : public Transport {
                 }
             } catch (const exception& error) {
                 // return JSON-RPC formatted error
-                JSON errorResponse = {
-                    {MSG_KEY_JSON_RPC, "2.0"},
-                    {"error",
-                     {{"code", -32700}, {"message", "Parse error"}, {"data", error.what()}}},
-                    {MSG_KEY_ID, nullptr}};
+                JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
+                                      {MSG_KEY_ERROR,
+                                       {{MSG_KEY_CODE, ERRCODE_PARSE_ERROR},
+                                        {MSG_KEY_MESSAGE, "Parse error"},
+                                        {MSG_KEY_DATA, error.what()}}},
+                                      {MSG_KEY_ID, nullptr}};
                 res->writeHead(400, {});
                 res->end(errorResponse.dump());
                 if (onerror) {
@@ -538,10 +544,11 @@ class StreamableHTTPServerTransport : public Transport {
         }
         if (!_initialized) {
             // If the server has not been initialized yet, reject all requests
-            JSON errorResponse = {
-                {MSG_KEY_JSON_RPC, "2.0"},
-                {"error", {{"code", -32000}, {"message", "Bad Request: Server not initialized"}}},
-                {MSG_KEY_ID, nullptr}};
+            JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
+                                  {MSG_KEY_ERROR,
+                                   {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                                    {MSG_KEY_MESSAGE, "Bad Request: Server not initialized"}}},
+                                  {MSG_KEY_ID, nullptr}};
             res->writeHead(400, {});
             res->end(errorResponse.dump());
             return false;
@@ -553,17 +560,20 @@ class StreamableHTTPServerTransport : public Transport {
             // Non-initialization requests without a session ID should return 400 Bad Request
             JSON errorResponse = {
                 {MSG_KEY_JSON_RPC, "2.0"},
-                {"error",
-                 {{"code", -32000}, {"message", "Bad Request: Mcp-Session-Id header is required"}}},
+                {MSG_KEY_ERROR,
+                 {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
+                  {MSG_KEY_MESSAGE, "Bad Request: Mcp-Session-Id header is required"}}},
                 {MSG_KEY_ID, nullptr}};
             res->writeHead(400, {});
             res->end(errorResponse.dump());
             return false;
         } else if (SessionIDIt->second != SessionID.value_or("")) {
             // Reject requests with invalid session ID with 404 Not Found
-            JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
-                                  {"error", {{"code", -32001}, {"message", "Session not found"}}},
-                                  {MSG_KEY_ID, nullptr}};
+            JSON errorResponse = {
+                {MSG_KEY_JSON_RPC, "2.0"},
+                {MSG_KEY_ERROR,
+                 {{MSG_KEY_CODE, ERRCODE_REQUEST_TIMEOUT}, {MSG_KEY_MESSAGE, "Session not found"}}},
+                {MSG_KEY_ID, nullptr}};
             res->writeHead(404, {});
             res->end(errorResponse.dump());
             return false;
@@ -595,7 +605,8 @@ class StreamableHTTPServerTransport : public Transport {
             optional<RequestID> RequestID = relatedRequestID;
 
             // TODO: Fix External Ref: isJSON_RPC_Response and isJSON_RPC_Error functions
-            bool isResponse = message.data.contains("result") || message.data.contains("error");
+            bool isResponse =
+                message.data.contains(MSG_KEY_RESULT) || message.data.contains(MSG_KEY_ERROR);
             if (isResponse) {
                 // If the message is a response, use the request ID from the message
                 if (message.data.contains(MSG_KEY_ID)) {
@@ -983,7 +994,7 @@ class StreamableHTTPClientTransport {
             //         }
             //     }
             //
-            //     if (event.event.empty() || event.event == "message") {
+            //     if (event.event.empty() || event.event == MSG_KEY_MESSAGE) {
             //         try {
             //             // TODO: Fix External Ref: JSON_RPC_MessageSchema validation
             //             auto message = JSON::parse(event.data);

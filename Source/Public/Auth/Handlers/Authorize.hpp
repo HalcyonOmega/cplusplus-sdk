@@ -1,17 +1,18 @@
 #pragma once
 
-#include "../Core/Common.hpp"
-#include <coroutine>
-#include <memory>
-#include <string>
-#include <vector>
-#include <unordered_set>
-#include <functional>
-#include <optional>
 #include <chrono>
+#include <coroutine>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <regex>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
-namespace MCP::Auth {
+#include "../Core/Common.hpp"
+
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express RequestHandler equivalent
 // TODO: Fix External Ref: OAuthServerProvider
@@ -78,7 +79,8 @@ struct ClientAuthorizationParams {
     string ClientId;
     optional<string> RedirectUri;
 
-    static bool Validate(const map<string, string>& Params, ClientAuthorizationParams& Output, string& ErrorMessage) {
+    static bool Validate(const map<string, string>& Params, ClientAuthorizationParams& Output,
+                         string& ErrorMessage) {
         auto ClientIdIt = Params.find("client_id");
         if (ClientIdIt == Params.end() || ClientIdIt->second.empty()) {
             ErrorMessage = "client_id is required";
@@ -109,9 +111,10 @@ struct RequestAuthorizationParams {
     optional<string> Scope;
     optional<string> State;
 
-    static bool Validate(const map<string, string>& Params, RequestAuthorizationParams& Output, string& ErrorMessage) {
+    static bool Validate(const map<string, string>& Params, RequestAuthorizationParams& Output,
+                         string& ErrorMessage) {
         auto ResponseTypeIt = Params.find("response_type");
-        if (ResponseTypeIt == Params.end() || ResponseTypeIt->second != "code") {
+        if (ResponseTypeIt == Params.end() || ResponseTypeIt->second != MSG_KEY_CODE) {
             ErrorMessage = "response_type must be 'code'";
             return false;
         }
@@ -161,8 +164,7 @@ struct AuthorizationRequest {
 };
 
 // Coroutine return type for async operations
-template<typename T>
-struct Task {
+template <typename T> struct Task {
     struct promise_type {
         T Value;
         exception_ptr Exception = nullptr;
@@ -171,8 +173,12 @@ struct Task {
             return Task<T>{coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        suspend_never initial_suspend() { return {}; }
-        suspend_never final_suspend() noexcept { return {}; }
+        suspend_never initial_suspend() {
+            return {};
+        }
+        suspend_never final_suspend() noexcept {
+            return {};
+        }
 
         void return_value(T Value) {
             this->Value = move(Value);
@@ -203,11 +209,11 @@ struct Task {
 
 // Rate limiter class
 class RateLimiter {
-private:
+  private:
     RateLimitOptions Options;
     map<string, pair<chrono::steady_clock::time_point, int>> ClientRequests;
 
-public:
+  public:
     RateLimiter(const RateLimitOptions& Options) : Options(Options) {}
 
     bool CheckRateLimit(const string& ClientIp) {
@@ -231,11 +237,12 @@ public:
 
 // Authorization handler class
 class AuthorizationHandler {
-private:
+  private:
     shared_ptr<OAuthServerProvider> Provider;
     unique_ptr<RateLimiter> Limiter;
 
-    string CreateErrorRedirect(const string& RedirectUri, const OAuthError& Error, const optional<string>& State) {
+    string CreateErrorRedirect(const string& RedirectUri, const OAuthError& Error,
+                               const optional<string>& State) {
         string ErrorUrl = RedirectUri;
         char Separator = (RedirectUri.find('?') != string::npos) ? '&' : '?';
 
@@ -268,20 +275,21 @@ private:
         return Result;
     }
 
-public:
-    AuthorizationHandler(const AuthorizationHandlerOptions& Options)
-        : Provider(Options.Provider) {
+  public:
+    AuthorizationHandler(const AuthorizationHandlerOptions& Options) : Provider(Options.Provider) {
         if (Options.RateLimit.has_value()) {
             Limiter = make_unique<RateLimiter>(Options.RateLimit.value());
         }
     }
 
-    Task<void> HandleRequest(const HTTP_Request& Request, HTTP_Response& Response, const string& ClientIp) {
+    Task<void> HandleRequest(const HTTP_Request& Request, HTTP_Response& Response,
+                             const string& ClientIp) {
         Response.SetHeader("Cache-Control", "no-store");
 
         // Check rate limiting if enabled
         if (Limiter && !Limiter->CheckRateLimit(ClientIp)) {
-            auto Error = TooManyRequestsError("You have exceeded the rate limit for authorization requests");
+            auto Error =
+                TooManyRequestsError("You have exceeded the rate limit for authorization requests");
             Response.Status(429);
             Response.JsonResponse(Error.ToResponseObject());
             co_return;
@@ -316,13 +324,15 @@ public:
             if (ClientParams.RedirectUri.has_value()) {
                 RedirectUri = ClientParams.RedirectUri.value();
                 auto& RedirectUris = Client->RedirectUris;
-                if (find(RedirectUris.begin(), RedirectUris.end(), RedirectUri) == RedirectUris.end()) {
+                if (find(RedirectUris.begin(), RedirectUris.end(), RedirectUri)
+                    == RedirectUris.end()) {
                     throw InvalidRequestError("Unregistered redirect_uri");
                 }
             } else if (Client->RedirectUris.size() == 1) {
                 RedirectUri = Client->RedirectUris[0];
             } else {
-                throw InvalidRequestError("redirect_uri must be specified when client has multiple registered URIs");
+                throw InvalidRequestError(
+                    "redirect_uri must be specified when client has multiple registered URIs");
             }
 
         } catch (const OAuthError& Error) {
@@ -366,18 +376,17 @@ public:
 
                 for (const auto& RequestedScope : RequestedScopes) {
                     if (AllowedScopes.find(RequestedScope) == AllowedScopes.end()) {
-                        throw InvalidScopeError("Client was not registered with scope " + RequestedScope);
+                        throw InvalidScopeError("Client was not registered with scope "
+                                                + RequestedScope);
                     }
                 }
             }
 
             // All validation passed, proceed with authorization
-            AuthorizationRequest AuthReq{
-                .State = State,
-                .Scopes = RequestedScopes,
-                .RedirectUri = RedirectUri,
-                .CodeChallenge = CodeChallenge
-            };
+            AuthorizationRequest AuthReq{.State = State,
+                                         .Scopes = RequestedScopes,
+                                         .RedirectUri = RedirectUri,
+                                         .CodeChallenge = CodeChallenge};
 
             // TODO: Fix External Ref: Provider->Authorize
             // co_await Provider->Authorize(Client, AuthReq, Response);
@@ -397,7 +406,8 @@ public:
 };
 
 // Factory function to create authorization handler
-unique_ptr<AuthorizationHandler> CreateAuthorizationHandler(const AuthorizationHandlerOptions& Options) {
+unique_ptr<AuthorizationHandler>
+CreateAuthorizationHandler(const AuthorizationHandlerOptions& Options) {
     return make_unique<AuthorizationHandler>(Options);
 }
 

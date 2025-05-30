@@ -1,20 +1,21 @@
 #pragma once
 
-#include "../Core/Common.hpp"
-#include <coroutine>
-#include <ranges>
-#include <concepts>
-#include <future>
-#include <thread>
 #include <chrono>
-#include <regex>
+#include <concepts>
+#include <coroutine>
 #include <functional>
+#include <future>
+#include <ranges>
+#include <regex>
+#include <thread>
+
+#include "../Core/Common.hpp"
 
 // TODO: Fix External Ref: express framework integration
 // TODO: Fix External Ref: cors library integration
 // TODO: Fix External Ref: OAuthServerProvider base class
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // Forward declarations
 class OAuthServerProvider;
@@ -22,14 +23,13 @@ class ClientsStore;
 struct Client;
 
 // C++20 concept for validatable schemas
-template<typename T>
+template <typename T>
 concept ValidatableSchema = requires(const JSON& body, T& out, string& error) {
     { T::Validate(body, out, error) } -> std::convertible_to<bool>;
 };
 
 // Proper C++20 coroutine task type with real async scheduling
-template<typename T = void>
-struct Task {
+template <typename T = void> struct Task {
     struct promise_type {
         T Value;
         exception_ptr Exception;
@@ -40,24 +40,35 @@ struct Task {
             return Task{coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        suspend_never initial_suspend() { return {}; }
-        suspend_always final_suspend() noexcept { return {}; }
-
-        void return_value(T value) requires (!std::same_as<T, void>) {
-            Value = move(value);
-            Ready = true;
-            if (Continuation) Continuation();
+        suspend_never initial_suspend() {
+            return {};
+        }
+        suspend_always final_suspend() noexcept {
+            return {};
         }
 
-        void return_void() requires std::same_as<T, void> {
+        void return_value(T value)
+            requires(!std::same_as<T, void>)
+        {
+            Value = move(value);
             Ready = true;
-            if (Continuation) Continuation();
+            if (Continuation)
+                Continuation();
+        }
+
+        void return_void()
+            requires std::same_as<T, void>
+        {
+            Ready = true;
+            if (Continuation)
+                Continuation();
         }
 
         void unhandled_exception() {
             Exception = current_exception();
             Ready = true;
-            if (Continuation) Continuation();
+            if (Continuation)
+                Continuation();
         }
     };
 
@@ -66,13 +77,15 @@ struct Task {
     Task(coroutine_handle<promise_type> h) : Handle(h) {}
 
     ~Task() {
-        if (Handle) Handle.destroy();
+        if (Handle)
+            Handle.destroy();
     }
 
     Task(Task&& other) noexcept : Handle(exchange(other.Handle, {})) {}
     Task& operator=(Task&& other) noexcept {
         if (this != &other) {
-            if (Handle) Handle.destroy();
+            if (Handle)
+                Handle.destroy();
             Handle = exchange(other.Handle, {});
         }
         return *this;
@@ -87,35 +100,41 @@ struct Task {
         if (Handle) {
             Handle.promise().Continuation = [continuation]() {
                 // Schedule continuation on thread pool
-                thread([continuation]() {
-                    continuation.resume();
-                }).detach();
+                thread([continuation]() { continuation.resume(); }).detach();
             };
         }
     }
 
-    T await_resume() const requires (!std::same_as<T, void>) {
+    T await_resume() const
+        requires(!std::same_as<T, void>)
+    {
         if (Handle.promise().Exception) {
             rethrow_exception(Handle.promise().Exception);
         }
         return Handle.promise().Value;
     }
 
-    void await_resume() const requires std::same_as<T, void> {
+    void await_resume() const
+        requires std::same_as<T, void>
+    {
         if (Handle.promise().Exception) {
             rethrow_exception(Handle.promise().Exception);
         }
     }
 
     // For blocking wait (when needed)
-    T Get() requires (!std::same_as<T, void>) {
+    T Get()
+        requires(!std::same_as<T, void>)
+    {
         while (!Handle.promise().Ready) {
             this_thread::sleep_for(chrono::milliseconds(1));
         }
         return await_resume();
     }
 
-    void Get() requires std::same_as<T, void> {
+    void Get()
+        requires std::same_as<T, void>
+    {
         while (!Handle.promise().Ready) {
             this_thread::sleep_for(chrono::milliseconds(1));
         }
@@ -125,7 +144,7 @@ struct Task {
 
 // OAuth Error hierarchy - exactly matching TypeScript functionality
 class OAuthError : public exception {
-public:
+  public:
     string ErrorCode;
     string Description;
     string ErrorType;
@@ -137,42 +156,41 @@ public:
         return Description.c_str();
     }
 
-    string GetType() const { return ErrorType; }
+    string GetType() const {
+        return ErrorType;
+    }
 
     JSON ToResponseObject() const {
-        return JSON{
-            {"error", ErrorCode},
-            {"error_description", Description}
-        };
+        return JSON{{MSG_KEY_ERROR, ErrorCode}, {"error_description", Description}};
     }
 };
 
 class InvalidRequestError : public OAuthError {
-public:
+  public:
     InvalidRequestError(const string& description)
         : OAuthError("invalid_request", description, "InvalidRequestError") {}
 };
 
 class InvalidGrantError : public OAuthError {
-public:
+  public:
     InvalidGrantError(const string& description)
         : OAuthError("invalid_grant", description, "InvalidGrantError") {}
 };
 
 class UnsupportedGrantTypeError : public OAuthError {
-public:
+  public:
     UnsupportedGrantTypeError(const string& description)
         : OAuthError("unsupported_grant_type", description, "UnsupportedGrantTypeError") {}
 };
 
 class ServerError : public OAuthError {
-public:
+  public:
     ServerError(const string& description)
         : OAuthError("server_error", description, "ServerError") {}
 };
 
 class TooManyRequestsError : public OAuthError {
-public:
+  public:
     TooManyRequestsError(const string& description)
         : OAuthError("too_many_requests", description, "TooManyRequestsError") {}
 };
@@ -198,8 +216,8 @@ struct RateLimitState {
 
         auto& times = RequestTimes[identifier];
         times.erase(remove_if(times.begin(), times.end(),
-                             [windowStart](const auto& time) { return time < windowStart; }),
-                   times.end());
+                              [windowStart](const auto& time) { return time < windowStart; }),
+                    times.end());
 
         if (times.size() >= maxRequests) {
             return false;
@@ -228,8 +246,9 @@ struct AuthorizationCodeGrantSchema {
     string CodeVerifier;
     optional<string> RedirectURI;
 
-    static bool Validate(const JSON& Body, AuthorizationCodeGrantSchema& Out, string& ErrorMessage) {
-        if (!Body.contains("code") || !Body["code"].is_string()) {
+    static bool Validate(const JSON& Body, AuthorizationCodeGrantSchema& Out,
+                         string& ErrorMessage) {
+        if (!Body.contains(MSG_KEY_CODE) || !Body[MSG_KEY_CODE].is_string()) {
             ErrorMessage = "Missing or invalid code";
             return false;
         }
@@ -238,7 +257,7 @@ struct AuthorizationCodeGrantSchema {
             return false;
         }
 
-        Out.Code = Body["code"];
+        Out.Code = Body[MSG_KEY_CODE];
         Out.CodeVerifier = Body["code_verifier"];
 
         if (Body.contains("redirect_uri") && Body["redirect_uri"].is_string()) {
@@ -271,7 +290,7 @@ struct RefreshTokenGrantSchema {
 
 struct RateLimitOptions {
     int WindowMs = 15 * 60 * 1000; // 15 minutes
-    int Max = 50; // 50 requests per windowMs
+    int Max = 50;                  // 50 requests per windowMs
     bool StandardHeaders = true;
     bool LegacyHeaders = false;
     JSON Message;
@@ -279,14 +298,16 @@ struct RateLimitOptions {
 
 // Placeholder OAuth Server Provider interface
 class OAuthServerProvider {
-public:
+  public:
     virtual ~OAuthServerProvider() = default;
     virtual bool GetSkipLocalPKCEValidation() const = 0;
-    virtual Task<string> ChallengeForAuthorizationCodeAsync(shared_ptr<Client> client, const string& code) = 0;
+    virtual Task<string> ChallengeForAuthorizationCodeAsync(shared_ptr<Client> client,
+                                                            const string& code) = 0;
     virtual Task<JSON> ExchangeAuthorizationCodeAsync(shared_ptr<Client> client, const string& code,
                                                       const optional<string>& codeVerifier,
                                                       const optional<string>& redirectURI) = 0;
-    virtual Task<JSON> ExchangeRefreshTokenAsync(shared_ptr<Client> client, const string& refreshToken,
+    virtual Task<JSON> ExchangeRefreshTokenAsync(shared_ptr<Client> client,
+                                                 const string& refreshToken,
                                                  const optional<vector<string>>& scopes) = 0;
     // TODO: Add clientsStore property
 };
@@ -298,14 +319,14 @@ struct TokenHandlerOptions {
 
 // PKCE implementation matching pkce-challenge library
 class PKCEVerifier {
-public:
+  public:
     static Task<bool> VerifyChallenge(const string& codeVerifier, const string& codeChallenge) {
         // Implement SHA256 PKCE verification
         // This should match the original verifyChallenge from pkce-challenge
         co_return VerifyChallengeSync(codeVerifier, codeChallenge);
     }
 
-private:
+  private:
     static bool VerifyChallengeSync(const string& codeVerifier, const string& codeChallenge) {
         // Base64url encode SHA256 hash of code_verifier
         // For now, simplified verification - should implement proper SHA256 + base64url
@@ -315,7 +336,7 @@ private:
 };
 
 class TokenHandler {
-public:
+  public:
     TokenHandlerOptions Options;
     shared_ptr<RateLimitState> RateLimitState_;
 
@@ -331,7 +352,7 @@ public:
     };
 
     MiddlewareResult ApplyMiddleware(const JSON& RequestBody, const JSON& Headers,
-                                   const string& Method, const string& ClientIP) {
+                                     const string& Method, const string& ClientIP) {
         MiddlewareResult result;
 
         // 1. CORS middleware equivalent
@@ -350,10 +371,12 @@ public:
         // 3. Rate limiting
         if (Options.RateLimit.has_value()) {
             const auto& rateLimitConfig = Options.RateLimit.value();
-            if (!RateLimitState_->CheckRateLimit(ClientIP, rateLimitConfig.Max, rateLimitConfig.WindowMs)) {
+            if (!RateLimitState_->CheckRateLimit(ClientIP, rateLimitConfig.Max,
+                                                 rateLimitConfig.WindowMs)) {
                 result.ShouldContinue = false;
                 result.StatusCode = 429;
-                auto error = TooManyRequestsError("You have exceeded the rate limit for token requests");
+                auto error =
+                    TooManyRequestsError("You have exceeded the rate limit for token requests");
                 result.ErrorResponse = error.ToResponseObject().dump();
                 return result;
             }
@@ -417,21 +440,16 @@ public:
 
             if (GrantType == "authorization_code") {
                 co_return co_await HandleAuthorizationCodeGrantAsync(RequestBody, client);
-            }
-            else if (GrantType == "refresh_token") {
+            } else if (GrantType == "refresh_token") {
                 co_return co_await HandleRefreshTokenGrantAsync(RequestBody, client);
-            }
-            else {
+            } else {
                 throw UnsupportedGrantTypeError(
-                    "The grant type is not supported by this authorization server."
-                );
+                    "The grant type is not supported by this authorization server.");
             }
-        }
-        catch (const OAuthError& Error) {
+        } catch (const OAuthError& Error) {
             ResponseStatus = (Error.GetType() == "ServerError") ? "500" : "400";
             co_return Error.ToResponseObject();
-        }
-        catch (const exception& Error) {
+        } catch (const exception& Error) {
             // Log unexpected error (equivalent to console.error)
             // TODO: Implement proper logging
 
@@ -441,8 +459,9 @@ public:
         }
     }
 
-private:
-    Task<JSON> HandleAuthorizationCodeGrantAsync(const JSON& RequestBody, shared_ptr<Client> client) {
+  private:
+    Task<JSON> HandleAuthorizationCodeGrantAsync(const JSON& RequestBody,
+                                                 shared_ptr<Client> client) {
         string ErrorMessage;
         AuthorizationCodeGrantSchema Grant;
         if (!AuthorizationCodeGrantSchema::Validate(RequestBody, Grant, ErrorMessage)) {
@@ -457,7 +476,8 @@ private:
 
         // Perform local PKCE validation unless explicitly skipped
         if (!SkipLocalPKCEValidation) {
-            string CodeChallenge = co_await Options.Provider->ChallengeForAuthorizationCodeAsync(client, Code);
+            string CodeChallenge =
+                co_await Options.Provider->ChallengeForAuthorizationCodeAsync(client, Code);
 
             bool IsValid = co_await PKCEVerifier::VerifyChallenge(CodeVerifier, CodeChallenge);
             if (!IsValid) {
@@ -472,11 +492,7 @@ private:
         }
 
         JSON Tokens = co_await Options.Provider->ExchangeAuthorizationCodeAsync(
-            client,
-            Code,
-            CodeVerifierParam,
-            RedirectURI
-        );
+            client, Code, CodeVerifierParam, RedirectURI);
 
         co_return Tokens;
     }
@@ -496,13 +512,15 @@ private:
             Scopes = SplitStringWithRanges(Scope.value(), " ");
         }
 
-        JSON Tokens = co_await Options.Provider->ExchangeRefreshTokenAsync(client, RefreshToken, Scopes);
+        JSON Tokens =
+            co_await Options.Provider->ExchangeRefreshTokenAsync(client, RefreshToken, Scopes);
         co_return Tokens;
     }
 
     // Fixed C++20 ranges-based string splitting
     vector<string> SplitStringWithRanges(const string& Str, const string& Delimiter) {
-        if (Str.empty()) return {};
+        if (Str.empty())
+            return {};
 
         vector<string> Result;
         size_t Start = 0;

@@ -9,9 +9,10 @@
 // TODO: Fix External Ref: OAuthClientMetadataSchema
 // TODO: Fix External Ref: OAuthRegisteredClientsStore
 // TODO: Fix External Ref: allowedMethods middleware
-// TODO: Fix External Ref: Error classes (InvalidClientMetadataError, ServerError, TooManyRequestsError, OAuthError)
+// TODO: Fix External Ref: Error classes (InvalidClientMetadataError, ServerError,
+// TooManyRequestsError, OAuthError)
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // Forward declarations for external types
 struct OAuthClientInformationFull;
@@ -20,45 +21,48 @@ class OAuthRegisteredClientsStore;
 
 // Error classes that need to be defined elsewhere
 class OAuthError {
-public:
+  public:
     virtual ~OAuthError() = default;
     virtual JSON ToResponseObject() const = 0;
 };
 
 class InvalidClientMetadataError : public OAuthError {
-private:
+  private:
     string Message;
-public:
+
+  public:
     InvalidClientMetadataError(const string& message) : Message(message) {}
     JSON ToResponseObject() const override {
-        return JSON{{"error", "invalid_client_metadata"}, {"error_description", Message}};
+        return JSON{{MSG_KEY_ERROR, "invalid_client_metadata"}, {"error_description", Message}};
     }
 };
 
 class ServerError : public OAuthError {
-private:
+  private:
     string Message;
-public:
+
+  public:
     ServerError(const string& message) : Message(message) {}
     JSON ToResponseObject() const override {
-        return JSON{{"error", "server_error"}, {"error_description", Message}};
+        return JSON{{MSG_KEY_ERROR, "server_error"}, {"error_description", Message}};
     }
 };
 
 class TooManyRequestsError : public OAuthError {
-private:
+  private:
     string Message;
-public:
+
+  public:
     TooManyRequestsError(const string& message) : Message(message) {}
     JSON ToResponseObject() const override {
-        return JSON{{"error", "too_many_requests"}, {"error_description", Message}};
+        return JSON{{MSG_KEY_ERROR, "too_many_requests"}, {"error_description", Message}};
     }
 };
 
 // Rate limit options structure
 struct RateLimitOptions {
-    int WindowMs = 60 * 60 * 1000;  // 1 hour in milliseconds
-    int Max = 20;                   // Maximum requests
+    int WindowMs = 60 * 60 * 1000; // 1 hour in milliseconds
+    int Max = 20;                  // Maximum requests
     bool StandardHeaders = true;
     bool LegacyHeaders = false;
     JSON Message;
@@ -72,8 +76,9 @@ struct ClientRegistrationHandlerOptions {
     shared_ptr<OAuthRegisteredClientsStore> ClientsStore;
 
     /**
-     * The number of seconds after which to expire issued client secrets, or 0 to prevent expiration of client secrets (not recommended).
-     * 
+     * The number of seconds after which to expire issued client secrets, or 0 to prevent expiration
+     * of client secrets (not recommended).
+     *
      * If not set, defaults to 30 days.
      */
     optional<int> ClientSecretExpirySeconds;
@@ -102,15 +107,15 @@ struct HTTP_Response {
     int StatusCode = 200;
     JSON Body;
     map<string, string> Headers;
-    
+
     void SetHeader(const string& name, const string& value) {
         Headers[name] = value;
     }
-    
+
     void Status(int code) {
         StatusCode = code;
     }
-    
+
     void SendJSON(const JSON& json) {
         Body = json;
     }
@@ -121,10 +126,10 @@ using RequestHandler = function<task<void>(const HTTP_Request&, HTTP_Response&)>
 
 // OAuth client metadata validation
 class OAuthClientMetadata {
-public:
+  public:
     string TokenEndpointAuthMethod;
     // Add other OAuth metadata fields as needed
-    
+
     static expected<OAuthClientMetadata, string> SafeParse(const JSON& json) {
         try {
             OAuthClientMetadata metadata;
@@ -145,7 +150,7 @@ struct OAuthClientInformation {
     int ClientIdIssuedAt;
     optional<int> ClientSecretExpiresAt;
     string TokenEndpointAuthMethod;
-    
+
     JSON ToJSON() const {
         JSON result;
         result["client_id"] = ClientId;
@@ -163,9 +168,10 @@ struct OAuthClientInformation {
 
 // OAuth registered clients store interface
 class OAuthRegisteredClientsStore {
-public:
+  public:
     virtual ~OAuthRegisteredClientsStore() = default;
-    virtual task<OAuthClientInformation> RegisterClient(const OAuthClientInformation& clientInfo) = 0;
+    virtual task<OAuthClientInformation>
+    RegisterClient(const OAuthClientInformation& clientInfo) = 0;
     virtual bool SupportsRegistration() const = 0;
 };
 
@@ -176,7 +182,7 @@ string GenerateUUID() {
     mt19937 gen(rd());
     uniform_int_distribution<> dis(0, 15);
     uniform_int_distribution<> dis2(8, 11);
-    
+
     stringstream ss;
     ss << hex;
     for (int i = 0; i < 8; i++) {
@@ -206,7 +212,7 @@ string GenerateRandomBytes(int length) {
     random_device rd;
     mt19937 gen(rd());
     uniform_int_distribution<> dis(0, 255);
-    
+
     stringstream ss;
     ss << hex;
     for (int i = 0; i < length; i++) {
@@ -216,8 +222,9 @@ string GenerateRandomBytes(int length) {
 }
 
 int GetCurrentTimestamp() {
-    return static_cast<int>(chrono::duration_cast<chrono::seconds>(
-        chrono::system_clock::now().time_since_epoch()).count());
+    return static_cast<int>(
+        chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch())
+            .count());
 }
 
 // Main client registration handler function
@@ -227,7 +234,8 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
     }
 
     auto clientsStore = options.ClientsStore;
-    int clientSecretExpirySeconds = options.ClientSecretExpirySeconds.value_or(DEFAULT_CLIENT_SECRET_EXPIRY_SECONDS);
+    int clientSecretExpirySeconds =
+        options.ClientSecretExpirySeconds.value_or(DEFAULT_CLIENT_SECRET_EXPIRY_SECONDS);
     auto rateLimitConfig = options.RateLimit;
     bool rateLimitDisabled = options.RateLimitDisabled;
 
@@ -258,15 +266,16 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
             // Generate client credentials
             string clientId = GenerateUUID();
-            optional<string> clientSecret = isPublicClient 
-                ? nullopt 
-                : optional<string>(GenerateRandomBytes(32));
+            optional<string> clientSecret =
+                isPublicClient ? nullopt : optional<string>(GenerateRandomBytes(32));
             int clientIdIssuedAt = GetCurrentTimestamp();
 
             // Calculate client secret expiry time
             bool clientsDoExpire = clientSecretExpirySeconds > 0;
-            int secretExpiryTime = clientsDoExpire ? clientIdIssuedAt + clientSecretExpirySeconds : 0;
-            optional<int> clientSecretExpiresAt = isPublicClient ? nullopt : optional<int>(secretExpiryTime);
+            int secretExpiryTime =
+                clientsDoExpire ? clientIdIssuedAt + clientSecretExpirySeconds : 0;
+            optional<int> clientSecretExpiresAt =
+                isPublicClient ? nullopt : optional<int>(secretExpiryTime);
 
             // Create client information
             OAuthClientInformation clientInfo;
@@ -278,7 +287,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
             // Register client with store
             auto registeredClient = co_await clientsStore->RegisterClient(clientInfo);
-            
+
             // Send response
             res.Status(201);
             res.SendJSON(registeredClient.ToJSON());

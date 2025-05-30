@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express Router functionality
 // TODO: Fix External Ref: HTTP Request/Response handling
@@ -24,7 +24,7 @@ using RequestHandler = function<void(const JSON&, JSON&)>;
 
 // Robust URL helper class for C++ equivalent of JavaScript URL class
 class URLHelper {
-public:
+  public:
     string Href;
     string Protocol;
     string Hostname;
@@ -80,7 +80,7 @@ public:
         ParseURL(BaseURL + BasePath + Path);
     }
 
-private:
+  private:
     void ParseURL(const string& URLString) {
         Href = URLString;
 
@@ -121,7 +121,8 @@ private:
             size_t QueryStart = PathQueryFragment.find('?');
             size_t FragmentStart = PathQueryFragment.find('#');
 
-            if (QueryStart != string::npos && (FragmentStart == string::npos || QueryStart < FragmentStart)) {
+            if (QueryStart != string::npos
+                && (FragmentStart == string::npos || QueryStart < FragmentStart)) {
                 // Has query
                 Pathname = PathQueryFragment.substr(0, QueryStart);
 
@@ -163,7 +164,8 @@ struct AuthRouterOptions {
     shared_ptr<OAuthServerProvider> Provider;
 
     /**
-     * The authorization server's issuer identifier, which is a URL that uses the "https" scheme and has no query or fragment components.
+     * The authorization server's issuer identifier, which is a URL that uses the "https" scheme and
+     * has no query or fragment components.
      */
     URLHelper IssuerURL;
 
@@ -175,7 +177,8 @@ struct AuthRouterOptions {
     optional<URLHelper> BaseURL;
 
     /**
-     * An optional URL of a page containing human-readable information that developers might want or need to know when using the authorization server.
+     * An optional URL of a page containing human-readable information that developers might want or
+     * need to know when using the authorization server.
      */
     optional<URLHelper> ServiceDocumentationURL;
 
@@ -197,8 +200,10 @@ struct AuthRouterOptions {
 };
 
 void CheckIssuerURL(const URLHelper& Issuer) {
-    // Technically RFC 8414 does not permit a localhost HTTPS exemption, but this will be necessary for ease of testing
-    if (Issuer.Protocol != "https:" && Issuer.Hostname != "localhost" && Issuer.Hostname != "127.0.0.1") {
+    // Technically RFC 8414 does not permit a localhost HTTPS exemption, but this will be necessary
+    // for ease of testing
+    if (Issuer.Protocol != "https:" && Issuer.Hostname != "localhost"
+        && Issuer.Hostname != "127.0.0.1") {
         throw runtime_error("Issuer URL must be HTTPS");
     }
     if (!Issuer.Hash.empty()) {
@@ -217,7 +222,8 @@ struct CreateOAuthMetadataOptions {
     optional<vector<string>> ScopesSupported;
 };
 
-// Helper function to check if a method is implemented by checking if it returns a default/null response
+// Helper function to check if a method is implemented by checking if it returns a default/null
+// response
 bool HasClientRegistrationSupport(const shared_ptr<OAuthServerProvider>& Provider) {
     // Check if the RegisterClient method is meaningfully implemented
     // We do this by creating a dummy client and seeing if it gets processed
@@ -242,7 +248,8 @@ bool HasTokenRevocationSupport(const shared_ptr<OAuthServerProvider>& Provider) 
         auto Future = Provider->RevokeToken(DummyClient, DummyRequest);
         // If it completes immediately without doing anything, it's the default implementation
         auto Status = Future.wait_for(std::chrono::milliseconds(1));
-        return Status != std::future_status::ready; // If it's not immediately ready, it's doing real work
+        return Status
+               != std::future_status::ready; // If it's not immediately ready, it's doing real work
     } catch (...) {
         return false;
     }
@@ -258,21 +265,22 @@ OAuthMetadata CreateOAuthMetadata(const CreateOAuthMetadataOptions& Options) {
     const string TokenEndpoint = "/token";
 
     // Properly check if registration is supported
-    const optional<string> RegistrationEndpoint = HasClientRegistrationSupport(Options.Provider) ?
-        optional<string>("/register") : nullopt;
+    const optional<string> RegistrationEndpoint =
+        HasClientRegistrationSupport(Options.Provider) ? optional<string>("/register") : nullopt;
 
     // Properly check if revocation is supported
-    const optional<string> RevocationEndpoint = HasTokenRevocationSupport(Options.Provider) ?
-        optional<string>("/revoke") : nullopt;
+    const optional<string> RevocationEndpoint =
+        HasTokenRevocationSupport(Options.Provider) ? optional<string>("/revoke") : nullopt;
 
     OAuthMetadata Metadata{};
     Metadata.Issuer = Issuer.Href;
-    Metadata.ServiceDocumentation = Options.ServiceDocumentationURL ?
-        optional<string>(Options.ServiceDocumentationURL->Href) : nullopt;
+    Metadata.ServiceDocumentation = Options.ServiceDocumentationURL
+                                        ? optional<string>(Options.ServiceDocumentationURL->Href)
+                                        : nullopt;
 
     URLHelper BaseToUse = BaseURL ? *BaseURL : Issuer;
     Metadata.AuthorizationEndpoint = URLHelper(AuthorizationEndpoint, BaseToUse).Href;
-    Metadata.ResponseTypesSupported = {"code"};
+    Metadata.ResponseTypesSupported = {MSG_KEY_CODE};
     Metadata.CodeChallengeMethodsSupported = {"S256"};
 
     Metadata.TokenEndpoint = URLHelper(TokenEndpoint, BaseToUse).Href;
@@ -297,11 +305,11 @@ OAuthMetadata CreateOAuthMetadata(const CreateOAuthMetadataOptions& Options) {
  * Express Router equivalent - handles HTTP routing
  */
 class ExpressRouter {
-private:
+  private:
     unordered_map<string, RequestHandler> Routes;
     vector<RequestHandler> Middleware;
 
-public:
+  public:
     void Use(const string& Path, RequestHandler Handler) {
         Routes[Path] = Handler;
     }
@@ -328,9 +336,10 @@ public:
 };
 
 /**
- * Installs standard MCP authorization server endpoints, including dynamic client registration and token revocation (if supported).
- * Also advertises standard authorization server metadata, for easier discovery of supported configurations by clients.
- * Note: if your MCP server is only a resource server and not an authorization server, use MCP_AuthMetadataRouter instead.
+ * Installs standard MCP authorization server endpoints, including dynamic client registration and
+ * token revocation (if supported). Also advertises standard authorization server metadata, for
+ * easier discovery of supported configurations by clients. Note: if your MCP server is only a
+ * resource server and not an authorization server, use MCP_AuthMetadataRouter instead.
  *
  * By default, rate limiting is applied to all endpoints to prevent abuse.
  *
@@ -340,67 +349,60 @@ public:
  *  app.use(MCP_AuthRouter(...));
  */
 RequestHandler MCP_AuthRouter(const AuthRouterOptions& Options) {
-    OAuthMetadata OAuthMetadata = CreateOAuthMetadata({
-        .Provider = Options.Provider,
-        .IssuerURL = Options.IssuerURL,
-        .BaseURL = Options.BaseURL,
-        .ServiceDocumentationURL = Options.ServiceDocumentationURL,
-        .ScopesSupported = Options.ScopesSupported
-    });
+    OAuthMetadata OAuthMetadata =
+        CreateOAuthMetadata({.Provider = Options.Provider,
+                             .IssuerURL = Options.IssuerURL,
+                             .BaseURL = Options.BaseURL,
+                             .ServiceDocumentationURL = Options.ServiceDocumentationURL,
+                             .ScopesSupported = Options.ScopesSupported});
 
     ExpressRouter Router;
 
     // Add authorization endpoint
-    Router.Use(
-        URLHelper(OAuthMetadata.AuthorizationEndpoint).Pathname,
-        [=](const JSON& Request, JSON& Response) {
-            // TODO: Call AuthorizationHandler({ provider: Options.Provider, ...Options.AuthorizationOptions })
-            Response["error"] = "authorization_handler_not_implemented";
-        }
-    );
+    Router.Use(URLHelper(OAuthMetadata.AuthorizationEndpoint).Pathname,
+               [=](const JSON& Request, JSON& Response) {
+                   // TODO: Call AuthorizationHandler({ provider: Options.Provider,
+                   // ...Options.AuthorizationOptions })
+                   Response[MSG_KEY_ERROR] = "authorization_handler_not_implemented";
+               });
 
     // Add token endpoint
-    Router.Use(
-        URLHelper(OAuthMetadata.TokenEndpoint).Pathname,
-        [=](const JSON& Request, JSON& Response) {
-            // TODO: Call TokenHandler({ provider: Options.Provider, ...Options.TokenOptions })
-            Response["error"] = "token_handler_not_implemented";
-        }
-    );
+    Router.Use(URLHelper(OAuthMetadata.TokenEndpoint).Pathname,
+               [=](const JSON& Request, JSON& Response) {
+                   // TODO: Call TokenHandler({ provider: Options.Provider, ...Options.TokenOptions
+                   // })
+                   Response[MSG_KEY_ERROR] = "token_handler_not_implemented";
+               });
 
     // Add metadata router
-    Router.Use(MCP_AuthMetadataRouter({
-        .OAuthMetadata = OAuthMetadata,
-        // This router is used for AS+RS combo's, so the issuer is also the resource server
-        .ResourceServerURL = URLHelper(OAuthMetadata.Issuer),
-        .ServiceDocumentationURL = Options.ServiceDocumentationURL,
-        .ScopesSupported = Options.ScopesSupported,
-        .ResourceName = Options.ResourceName
-    }));
+    Router.Use(MCP_AuthMetadataRouter(
+        {.OAuthMetadata = OAuthMetadata,
+         // This router is used for AS+RS combo's, so the issuer is also the resource server
+         .ResourceServerURL = URLHelper(OAuthMetadata.Issuer),
+         .ServiceDocumentationURL = Options.ServiceDocumentationURL,
+         .ScopesSupported = Options.ScopesSupported,
+         .ResourceName = Options.ResourceName}));
 
     // Add registration endpoint if supported
     if (OAuthMetadata.RegistrationEndpoint) {
-        Router.Use(
-            URLHelper(*OAuthMetadata.RegistrationEndpoint).Pathname,
-            [=](const JSON& Request, JSON& Response) {
-                // TODO: Call ClientRegistrationHandler({
-                //   clientsStore: Options.Provider->GetClientsStore(),
-                //   ...Options.ClientRegistrationOptions,
-                // })
-                Response["error"] = "registration_handler_not_implemented";
-            }
-        );
+        Router.Use(URLHelper(*OAuthMetadata.RegistrationEndpoint).Pathname,
+                   [=](const JSON& Request, JSON& Response) {
+                       // TODO: Call ClientRegistrationHandler({
+                       //   clientsStore: Options.Provider->GetClientsStore(),
+                       //   ...Options.ClientRegistrationOptions,
+                       // })
+                       Response[MSG_KEY_ERROR] = "registration_handler_not_implemented";
+                   });
     }
 
     // Add revocation endpoint if supported
     if (OAuthMetadata.RevocationEndpoint) {
-        Router.Use(
-            URLHelper(*OAuthMetadata.RevocationEndpoint).Pathname,
-            [=](const JSON& Request, JSON& Response) {
-                // TODO: Call RevocationHandler({ provider: Options.Provider, ...Options.RevocationOptions })
-                Response["error"] = "revocation_handler_not_implemented";
-            }
-        );
+        Router.Use(URLHelper(*OAuthMetadata.RevocationEndpoint).Pathname,
+                   [=](const JSON& Request, JSON& Response) {
+                       // TODO: Call RevocationHandler({ provider: Options.Provider,
+                       // ...Options.RevocationOptions })
+                       Response[MSG_KEY_ERROR] = "revocation_handler_not_implemented";
+                   });
     }
 
     return Router.CreateHandler();
@@ -440,10 +442,11 @@ RequestHandler MetadataHandler(const JSON& Metadata) {
         // TODO: Configure CORS to allow any origin, to make accessible to web-based MCP clients
         // TODO: Use allowedMethods(['GET'])
 
-        string Method = Request.value("method", "GET");
+        string Method = Request.value(MSG_KEY_METHOD, "GET");
         if (Method != "GET") {
-            Response["error"] = "method_not_allowed";
-            Response["error_description"] = "The method " + Method + " is not allowed for this endpoint";
+            Response[MSG_KEY_ERROR] = "method_not_allowed";
+            Response["error_description"] =
+                "The method " + Method + " is not allowed for this endpoint";
             Response["status"] = 405;
             Response["headers"] = JSON{{"Allow", "GET"}};
             return;
@@ -461,8 +464,9 @@ RequestHandler MCP_AuthMetadataRouter(const AuthMetadataOptions& Options) {
 
     // Create protected resource metadata
     JSON ProtectedResourceMetadata = JSON::object();
-    ProtectedResourceMetadata["resource"] = Options.ResourceServerURL.Href;
-    ProtectedResourceMetadata["authorization_servers"] = JSON::array({Options.OAuthMetadata.Issuer});
+    ProtectedResourceMetadata[MSG_KEY_RESOURCE] = Options.ResourceServerURL.Href;
+    ProtectedResourceMetadata["authorization_servers"] =
+        JSON::array({Options.OAuthMetadata.Issuer});
 
     if (Options.ScopesSupported) {
         ProtectedResourceMetadata["scopes_supported"] = *Options.ScopesSupported;
@@ -483,10 +487,12 @@ RequestHandler MCP_AuthMetadataRouter(const AuthMetadataOptions& Options) {
     OAuthMetadataJSON["grant_types_supported"] = Options.OAuthMetadata.GrantTypesSupported;
 
     if (Options.OAuthMetadata.CodeChallengeMethodsSupported) {
-        OAuthMetadataJSON["code_challenge_methods_supported"] = *Options.OAuthMetadata.CodeChallengeMethodsSupported;
+        OAuthMetadataJSON["code_challenge_methods_supported"] =
+            *Options.OAuthMetadata.CodeChallengeMethodsSupported;
     }
     if (Options.OAuthMetadata.TokenEndpointAuthMethodsSupported) {
-        OAuthMetadataJSON["token_endpoint_auth_methods_supported"] = *Options.OAuthMetadata.TokenEndpointAuthMethodsSupported;
+        OAuthMetadataJSON["token_endpoint_auth_methods_supported"] =
+            *Options.OAuthMetadata.TokenEndpointAuthMethodsSupported;
     }
     if (Options.OAuthMetadata.RegistrationEndpoint) {
         OAuthMetadataJSON["registration_endpoint"] = *Options.OAuthMetadata.RegistrationEndpoint;
@@ -494,7 +500,8 @@ RequestHandler MCP_AuthMetadataRouter(const AuthMetadataOptions& Options) {
     if (Options.OAuthMetadata.RevocationEndpoint) {
         OAuthMetadataJSON["revocation_endpoint"] = *Options.OAuthMetadata.RevocationEndpoint;
         if (Options.OAuthMetadata.RevocationEndpointAuthMethodsSupported) {
-            OAuthMetadataJSON["revocation_endpoint_auth_methods_supported"] = *Options.OAuthMetadata.RevocationEndpointAuthMethodsSupported;
+            OAuthMetadataJSON["revocation_endpoint_auth_methods_supported"] =
+                *Options.OAuthMetadata.RevocationEndpointAuthMethodsSupported;
         }
     }
     if (Options.OAuthMetadata.ScopesSupported) {

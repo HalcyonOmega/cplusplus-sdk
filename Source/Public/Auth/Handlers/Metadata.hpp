@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: express
 // TODO: Fix External Ref: RequestHandler
@@ -29,9 +29,8 @@ RequestHandler MetadataHandler(const MetadataType& Metadata) {
 
     Router.Use(AllowedMethods({"GET"}));
 
-    Router.Get("/", [Metadata](const Request& Req, Response& Res) {
-        Res.Status(200).JSON(Metadata);
-    });
+    Router.Get("/",
+               [Metadata](const Request& Req, Response& Res) { Res.Status(200).JSON(Metadata); });
 
     return Router;
 }

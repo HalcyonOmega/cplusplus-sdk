@@ -29,9 +29,10 @@ static constexpr const char* MSG_KEY_NAME = "name";
 static constexpr const char* MSG_KEY_VERSION = "version";
 static constexpr const char* MSG_KEY_SERVER_INFO = "serverInfo";
 static constexpr const char* MSG_KEY_CAPABILITIES = "capabilities";
-static constexpr const char* MSG_KEY_PROMPTS = "prompts";
-static constexpr const char* MSG_KEY_RESOURCES = "resources";
-static constexpr const char* MSG_KEY_TOOLS = "tools";
+static constexpr const char* MSG_KEY_PROMPTS =
+    "prompts"; // TODO: Need extensibility for keys - ex. 'prompts/list'
+static constexpr const char* MSG_KEY_RESOURCES = "resources"; // TODO: Same as above
+static constexpr const char* MSG_KEY_TOOLS = "tools";         // TODO: Same as above
 static constexpr const char* MSG_KEY_LIST_CHANGED = "listChanged";
 static constexpr const char* MSG_KEY_SUBSCRIBE = "subscribe";
 static constexpr const char* MSG_KEY_CURSOR = "cursor";
@@ -54,6 +55,7 @@ static constexpr const char* MSG_KEY_TOTAL = "total";
 static constexpr const char* MSG_KEY_REQUEST_ID = "requestId";
 
 static constexpr const char* MTHD_INITIALIZE = "initialize";
+static constexpr const char* MTHD_PING = "ping";
 static constexpr const char* MTHD_NOTIFICATION_INITIALIZED = "notifications/initialized";
 static constexpr const char* MTHD_NOTIFICATION_CANCELLED = "notifications/cancelled";
 static constexpr const char* MTHD_NOTIFICATION_PROGRESS = "notifications/progress";
@@ -81,12 +83,11 @@ static constexpr const int ERRCODE_INVALID_PARAMS = -32602;
 static constexpr const int ERRCODE_INTERNAL_ERROR = -32603;
 
 // Server Error Codes
-static constexpr const int ERRCODE_SERVER_ERROR_FIRST = -32000;
-static constexpr const int ERRCODE_INVALID_RESPONSE = -32001;
+static constexpr const int ERRCODE_CONNECTION_CLOSED = -32000;
+static constexpr const int ERRCODE_REQUEST_TIMEOUT = -32001;
 static constexpr const int ERRCODE_INVALID_NOTIFICATION = -32002;
 static constexpr const int ERRCODE_INTERNAL_INPUT_TERMINATE = -32003;
 static constexpr const int ERRCODE_INTERNAL_INPUT_ERROR = -32004;
 static constexpr const int ERRCODE_INTERNAL_OUTPUT_ERROR = -32005;
-static constexpr const int ERRCODE_SERVER_ERROR_LAST = -32099;
 
 MCP_NAMESPACE_END

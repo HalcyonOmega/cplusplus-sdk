@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 struct ResultMeta {
     Passthrough Additional; // Additional properties.
@@ -123,7 +123,7 @@ struct CreateMessageResult : public Result {
     z.enum(["user", "assistant"]) Role; // The role of the message.
 
     // The content of the message.
-    z.discriminatedUnion("type", [TextContent, ImageContent, AudioContent]) Content;
+    z.discriminatedUnion(MSG_KEY_TYPE, [TextContent, ImageContent, AudioContent]) Content;
 };
 
 // The server's response to a completion/complete request

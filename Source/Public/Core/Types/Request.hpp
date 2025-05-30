@@ -2,7 +2,7 @@
 
 #include "Core.h"
 
-namespace MCP::Types {
+MCP_NAMESPACE_BEGIN
 
 struct RequestMeta {
     optional<ProgressToken>
@@ -37,7 +37,7 @@ struct InitializeRequest : public Request {
     } Params;
 
     InitializeRequest() {
-        Method = "initialize";
+        Method = MTHD_INITIALIZE;
     }
 };
 
@@ -49,7 +49,7 @@ const isInitializeRequest =
 // The receiver must promptly respond, or else may be disconnected.
 struct PingRequest : public Request {
     PingRequest() {
-        Method = "ping";
+        Method = MTHD_PING;
     }
 };
 
@@ -141,7 +141,7 @@ struct GetPromptRequest : public Request {
 // Sent from the client to request a list of tools the server has.
 struct ListToolsRequest : public PaginatedRequest {
     ListToolsRequest() {
-        Method = "tools/list";
+        Method = MTHD_TOOLS_LIST;
     }
 };
 
@@ -154,7 +154,7 @@ struct CallToolRequest : public Request {
     } Params;
 
     CallToolRequest() {
-        Method = "tools/call";
+        Method = MTHD_TOOLS_CALL;
     }
 };
 

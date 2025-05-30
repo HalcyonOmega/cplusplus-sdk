@@ -73,4 +73,4 @@ string serializeMessage(const JSON& message) {
     return message.dump() + "\n";
 }
 
-} // namespace MCP
+MCP_NAMESPACE_END

@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: OAuthServerProvider
 // TODO: Fix External Ref: HttpRouter (Express equivalent)
@@ -13,11 +13,11 @@ namespace MCP::Auth {
 // TODO: Fix External Ref: OAuthTokenRevocationRequestSchema
 // TODO: Fix External Ref: HttpMethod restrictions
 
+#include <chrono>
 #include <coroutine>
+#include <functional>
 #include <memory>
 #include <optional>
-#include <functional>
-#include <chrono>
 #include <string>
 #include <unordered_map>
 
@@ -47,24 +47,21 @@ struct RevocationHandlerOptions {
 
 // OAuth Error classes
 class OAuthError : public exception {
-public:
+  public:
     virtual ~OAuthError() = default;
     virtual JSON to_response_object() const = 0;
     virtual const char* what() const noexcept override = 0;
 };
 
 class InvalidRequestError : public OAuthError {
-private:
+  private:
     string message_;
 
-public:
+  public:
     explicit InvalidRequestError(const string& message) : message_(message) {}
 
     JSON to_response_object() const override {
-        return JSON{
-            {"error", "invalid_request"},
-            {"error_description", message_}
-        };
+        return JSON{{MSG_KEY_ERROR, "invalid_request"}, {"error_description", message_}};
     }
 
     const char* what() const noexcept override {
@@ -73,17 +70,14 @@ public:
 };
 
 class ServerError : public OAuthError {
-private:
+  private:
     string message_;
 
-public:
+  public:
     explicit ServerError(const string& message) : message_(message) {}
 
     JSON to_response_object() const override {
-        return JSON{
-            {"error", "server_error"},
-            {"error_description", message_}
-        };
+        return JSON{{MSG_KEY_ERROR, "server_error"}, {"error_description", message_}};
     }
 
     const char* what() const noexcept override {
@@ -92,17 +86,14 @@ public:
 };
 
 class TooManyRequestsError : public OAuthError {
-private:
+  private:
     string message_;
 
-public:
+  public:
     explicit TooManyRequestsError(const string& message) : message_(message) {}
 
     JSON to_response_object() const override {
-        return JSON{
-            {"error", "too_many_requests"},
-            {"error_description", message_}
-        };
+        return JSON{{MSG_KEY_ERROR, "too_many_requests"}, {"error_description", message_}};
     }
 
     const char* what() const noexcept override {
@@ -120,8 +111,8 @@ struct OAuthTokenRevocationRequest {
             return false;
         }
 
-        if (request_body.contains("token_type_hint") &&
-            !request_body["token_type_hint"].is_string()) {
+        if (request_body.contains("token_type_hint")
+            && !request_body["token_type_hint"].is_string()) {
             return false;
         }
 
@@ -150,8 +141,12 @@ struct AsyncRequestHandler {
             return AsyncRequestHandler{handle_type::from_promise(*this)};
         }
 
-        suspend_never initial_suspend() { return {}; }
-        suspend_never final_suspend() noexcept { return {}; }
+        suspend_never initial_suspend() {
+            return {};
+        }
+        suspend_never final_suspend() noexcept {
+            return {};
+        }
 
         void return_void() {}
         void unhandled_exception() {
@@ -196,7 +191,8 @@ RequestHandler revocation_handler(const RevocationHandlerOptions& options) {
         throw runtime_error("Auth provider does not support revoking tokens");
     }
 
-    return [options](shared_ptr<HttpRequest> req, shared_ptr<HttpResponse> res) -> AsyncRequestHandler {
+    return [options](shared_ptr<HttpRequest> req,
+                     shared_ptr<HttpResponse> res) -> AsyncRequestHandler {
         try {
             // Set cache control header
             res->set_header("Cache-Control", "no-store");
@@ -264,8 +260,7 @@ shared_ptr<HttpRouter> create_revocation_router(const RevocationHandlerOptions& 
         // Set default rate limit message if not provided
         if (rate_limit_config.message.empty()) {
             TooManyRequestsError rate_limit_error(
-                "You have exceeded the rate limit for token revocation requests"
-            );
+                "You have exceeded the rate limit for token revocation requests");
             rate_limit_config.message = rate_limit_error.to_response_object().dump();
         }
 

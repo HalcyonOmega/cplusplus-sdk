@@ -45,14 +45,14 @@ struct CancelledNotification : public Notification {
     } Params;
 
     CancelledNotification() {
-        Method = "notifications/cancelled";
+        Method = MTHD_NOTIFICATION_CANCELLED;
     }
 };
 
 // This notification is sent from the client to the server after initialization has finished.
 struct InitializedNotification : public Notification {
     InitializedNotification() {
-        Method = "notifications/initialized";
+        Method = MTHD_NOTIFICATION_INITIALIZED;
     }
 };
 
@@ -79,7 +79,7 @@ struct ProgressNotification : public Notification {
     } Params;
 
     ProgressNotification() {
-        Method = "notifications/progress";
+        Method = MTHD_NOTIFICATION_PROGRESS;
     }
 };
 

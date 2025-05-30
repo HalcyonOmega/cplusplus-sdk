@@ -226,11 +226,11 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     explicit Protocol(const optional<ProtocolOptions>& options = nullopt) : Options_(options) {
         // Set up default handlers for cancelled notifications and progress notifications
         SetNotificationHandler(
-            "notifications/cancelled",
+            MTHD_NOTIFICATION_CANCELLED,
             [this](const JSON_RPC_Notification& notification) -> future<void> {
                 // Extract RequestID and reason from notification params
-                if (notification.params && notification.params->contains("requestId")) {
-                    RequestID requestId = (*notification.params)["requestId"];
+                if (notification.params && notification.params->contains(MSG_KEY_REQUEST_ID)) {
+                    RequestID requestId = (*notification.params)[MSG_KEY_REQUEST_ID];
 
                     lock_guard<mutex> lock(HandlersMutex_);
                     auto it = RequestHandlerAbortControllers_.find(requestId);
@@ -245,7 +245,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 return p.get_future();
             });
 
-        SetNotificationHandler("notifications/progress",
+        SetNotificationHandler(MTHD_NOTIFICATION_PROGRESS,
                                [this](const JSON_RPC_Notification& notification) -> future<void> {
                                    OnProgress(notification);
                                    promise<void> p;
@@ -254,7 +254,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                                });
 
         // Automatic pong by default for ping requests
-        SetRequestHandler("ping",
+        SetRequestHandler(MTHD_PING,
                           [](const JSON_RPC_Request& request,
                              const RequestHandlerExtra<SendRequestT, SendNotificationT>& extra)
                               -> future<SendResultT> {
@@ -267,13 +267,13 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
   private:
     void OnProgress(const JSON_RPC_Notification& notification) {
-        if (!notification.params || !notification.params->contains("progressToken")) {
+        if (!notification.params || !notification.params->contains(MSG_KEY_PROGRESS_TOKEN)) {
             OnErrorInternal(runtime_error("Received a progress notification without progressToken: "
                                           + notification.method));
             return;
         }
 
-        int64_t progressToken = (*notification.params)["progressToken"];
+        int64_t progressToken = (*notification.params)[MSG_KEY_PROGRESS_TOKEN];
 
         ProgressCallback handler;
         {
@@ -308,8 +308,8 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         progressData.progressToken = progressToken;
 
         // Extract the params excluding progressToken (equivalent to TypeScript destructuring)
-        if (notification.params->contains("data")) {
-            progressData.data = (*notification.params)["data"];
+        if (notification.params->contains(MSG_KEY_DATA)) {
+            progressData.data = (*notification.params)[MSG_KEY_DATA];
         }
 
         handler(progressData);
@@ -481,7 +481,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         extra.Signal = abortSignal;
         extra.SessionID = Transport_ ? Transport_->SessionID : nullopt;
         extra.AuthInfo = authInfo;
-        extra.Meta = (request.params && request.params->contains("_meta"))
+        extra.Meta = (request.params && request.params->contains(MSG_KEY_META))
                          ? optional<RequestMeta>{RequestMeta{}} // Basic extraction
                          : nullopt;
         extra.RequestID = request.id;
@@ -616,16 +616,16 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                     JSON_RPC_Response response;
                     response.jsonrpc = message[MSG_KEY_JSON_RPC];
                     response.id = message[MSG_KEY_ID];
-                    response.result = message["result"];
+                    response.result = message[MSG_KEY_RESULT];
                     OnResponse(response);
                 } else {
                     JSON_RPC_Error error;
                     error.jsonrpc = message[MSG_KEY_JSON_RPC];
                     error.id = message[MSG_KEY_ID];
-                    error.error.code = message["error"]["code"];
-                    error.error.message = message["error"]["message"];
-                    if (message["error"].contains("data")) {
-                        error.error.data = message["error"]["data"];
+                    error.error.code = message[MSG_KEY_ERROR][MSG_KEY_CODE];
+                    error.error.message = message[MSG_KEY_ERROR][MSG_KEY_MESSAGE];
+                    if (message[MSG_KEY_ERROR].contains(MSG_KEY_DATA)) {
+                        error.error.data = message[MSG_KEY_ERROR][MSG_KEY_DATA];
                     }
                     OnResponse(error);
                 }
@@ -633,17 +633,17 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 JSON_RPC_Request request;
                 request.jsonrpc = message[MSG_KEY_JSON_RPC];
                 request.id = message[MSG_KEY_ID];
-                request.method = message["method"];
-                if (message.contains("params")) {
-                    request.params = message["params"];
+                request.method = message[MSG_KEY_METHOD];
+                if (message.contains(MSG_KEY_PARAMS)) {
+                    request.params = message[MSG_KEY_PARAMS];
                 }
                 OnRequest(request, extra);
             } else if (IsJSONRPCNotification(message)) {
                 JSON_RPC_Notification notification;
                 notification.jsonrpc = message[MSG_KEY_JSON_RPC];
-                notification.method = message["method"];
-                if (message.contains("params")) {
-                    notification.params = message["params"];
+                notification.method = message[MSG_KEY_METHOD];
+                if (message.contains(MSG_KEY_PARAMS)) {
+                    notification.params = message[MSG_KEY_PARAMS];
                 }
                 OnNotification(notification);
             } else {
@@ -735,10 +735,10 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             if (!jsonRpcRequest.params) {
                 jsonRpcRequest.params = JSON::object();
             }
-            if (!jsonRpcRequest.params->contains("_meta")) {
-                (*jsonRpcRequest.params)["_meta"] = JSON::object();
+            if (!jsonRpcRequest.params->contains(MSG_KEY_META)) {
+                (*jsonRpcRequest.params)[MSG_KEY_META] = JSON::object();
             }
-            (*jsonRpcRequest.params)["_meta"]["progressToken"] = messageId;
+            (*jsonRpcRequest.params)[MSG_KEY_META][MSG_KEY_PROGRESS_TOKEN] = messageId;
         }
 
         auto cancel = [this, messageId](const string& reason) {
@@ -753,9 +753,9 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             if (Transport_) {
                 JSON_RPC_Notification cancelNotification;
                 cancelNotification.jsonrpc = "2.0";
-                cancelNotification.method = "notifications/cancelled";
+                cancelNotification.method = MTHD_NOTIFICATION_CANCELLED;
                 cancelNotification.params = JSON::object();
-                (*cancelNotification.params)["requestId"] = messageId;
+                (*cancelNotification.params)[MSG_KEY_REQUEST_ID] = messageId;
                 (*cancelNotification.params)["reason"] = reason;
 
                 // TODO: Fix External Ref: Transport - Send cancellation notification
@@ -811,9 +811,9 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         try {
             JSON requestJson = {{MSG_KEY_JSON_RPC, jsonRpcRequest.jsonrpc},
                                 {MSG_KEY_ID, jsonRpcRequest.id},
-                                {"method", jsonRpcRequest.method}};
+                                {MSG_KEY_METHOD, jsonRpcRequest.method}};
             if (jsonRpcRequest.params) {
-                requestJson["params"] = *jsonRpcRequest.params;
+                requestJson[MSG_KEY_PARAMS] = *jsonRpcRequest.params;
             }
 
             Transport::TransportSendOptions transportOptions;
@@ -850,9 +850,9 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         jsonRpcNotification.params = notification.params;
 
         JSON notificationJson = {{MSG_KEY_JSON_RPC, jsonRpcNotification.jsonrpc},
-                                 {"method", jsonRpcNotification.method}};
+                                 {MSG_KEY_METHOD, jsonRpcNotification.method}};
         if (jsonRpcNotification.params) {
-            notificationJson["params"] = *jsonRpcNotification.params;
+            notificationJson[MSG_KEY_PARAMS] = *jsonRpcNotification.params;
         }
 
         Transport::TransportSendOptions transportOptions;
@@ -937,4 +937,4 @@ template <typename T> T MergeCapabilities(const T& base, const T& additional) {
     return result;
 }
 
-} // namespace MCP
+MCP_NAMESPACE_END

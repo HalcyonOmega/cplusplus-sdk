@@ -32,8 +32,8 @@ class WebSocket_Client_Transport : public Transport {
         // Check if it's a request, notification, response, or error
         bool hasId = json.contains(MSG_KEY_ID);
         bool hasMethod = json.contains(MSG_KEY_METHOD);
-        bool hasResult = json.contains("result");
-        bool hasError = json.contains("error");
+        bool hasResult = json.contains(MSG_KEY_RESULT);
+        bool hasError = json.contains(MSG_KEY_ERROR);
 
         // Request: must have id and method
         if (hasId && hasMethod && !hasResult && !hasError) {

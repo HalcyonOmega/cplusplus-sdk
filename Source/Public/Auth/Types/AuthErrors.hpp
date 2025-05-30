@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: OAuthErrorResponse from shared auth
 
@@ -10,22 +10,29 @@ namespace MCP::Auth {
  * Base class for all OAuth errors
  */
 class OAuthError : public Error {
-private:
+  private:
     string errorCode_;
     string message_;
     optional<string> errorURI_;
 
-public:
-    OAuthError(const string& ErrorCode, const string& Message, const optional<string>& ErrorURI = nullopt)
+  public:
+    OAuthError(const string& ErrorCode, const string& Message,
+               const optional<string>& ErrorURI = nullopt)
         : errorCode_(ErrorCode), message_(Message), errorURI_(ErrorURI) {}
 
     const char* what() const noexcept override {
         return message_.c_str();
     }
 
-    const string& GetErrorCode() const { return errorCode_; }
-    const string& GetMessage() const { return message_; }
-    const optional<string>& GetErrorURI() const { return errorURI_; }
+    const string& GetErrorCode() const {
+        return errorCode_;
+    }
+    const string& GetMessage() const {
+        return message_;
+    }
+    const optional<string>& GetErrorURI() const {
+        return errorURI_;
+    }
 
     /**
      * Converts the error to a standard OAuth error response object
@@ -49,7 +56,7 @@ public:
  * or is otherwise malformed.
  */
 class InvalidRequestError : public OAuthError {
-public:
+  public:
     InvalidRequestError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("invalid_request", Message, ErrorURI) {}
 };
@@ -59,7 +66,7 @@ public:
  * authentication included, or unsupported authentication method).
  */
 class InvalidClientError : public OAuthError {
-public:
+  public:
     InvalidClientError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("invalid_client", Message, ErrorURI) {}
 };
@@ -70,7 +77,7 @@ public:
  * authorization request, or was issued to another client.
  */
 class InvalidGrantError : public OAuthError {
-public:
+  public:
     InvalidGrantError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("invalid_grant", Message, ErrorURI) {}
 };
@@ -80,7 +87,7 @@ public:
  * this authorization grant type.
  */
 class UnauthorizedClientError : public OAuthError {
-public:
+  public:
     UnauthorizedClientError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("unauthorized_client", Message, ErrorURI) {}
 };
@@ -90,7 +97,7 @@ public:
  * by the authorization server.
  */
 class UnsupportedGrantTypeError : public OAuthError {
-public:
+  public:
     UnsupportedGrantTypeError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("unsupported_grant_type", Message, ErrorURI) {}
 };
@@ -100,7 +107,7 @@ public:
  * exceeds the scope granted by the resource owner.
  */
 class InvalidScopeError : public OAuthError {
-public:
+  public:
     InvalidScopeError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("invalid_scope", Message, ErrorURI) {}
 };
@@ -109,7 +116,7 @@ public:
  * Access denied error - The resource owner or authorization server denied the request.
  */
 class AccessDeniedError : public OAuthError {
-public:
+  public:
     AccessDeniedError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("access_denied", Message, ErrorURI) {}
 };
@@ -119,7 +126,7 @@ public:
  * that prevented it from fulfilling the request.
  */
 class ServerError : public OAuthError {
-public:
+  public:
     ServerError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("server_error", Message, ErrorURI) {}
 };
@@ -129,7 +136,7 @@ public:
  * handle the request due to a temporary overloading or maintenance of the server.
  */
 class TemporarilyUnavailableError : public OAuthError {
-public:
+  public:
     TemporarilyUnavailableError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("temporarily_unavailable", Message, ErrorURI) {}
 };
@@ -139,7 +146,7 @@ public:
  * obtaining an authorization code using this method.
  */
 class UnsupportedResponseTypeError : public OAuthError {
-public:
+  public:
     UnsupportedResponseTypeError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("unsupported_response_type", Message, ErrorURI) {}
 };
@@ -149,7 +156,7 @@ public:
  * the requested token type.
  */
 class UnsupportedTokenTypeError : public OAuthError {
-public:
+  public:
     UnsupportedTokenTypeError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("unsupported_token_type", Message, ErrorURI) {}
 };
@@ -159,7 +166,7 @@ public:
  * or invalid for other reasons.
  */
 class InvalidTokenError : public OAuthError {
-public:
+  public:
     InvalidTokenError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("invalid_token", Message, ErrorURI) {}
 };
@@ -169,7 +176,7 @@ public:
  * (Custom, non-standard error)
  */
 class MethodNotAllowedError : public OAuthError {
-public:
+  public:
     MethodNotAllowedError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("method_not_allowed", Message, ErrorURI) {}
 };
@@ -179,7 +186,7 @@ public:
  * (Custom, non-standard error based on RFC 6585)
  */
 class TooManyRequestsError : public OAuthError {
-public:
+  public:
     TooManyRequestsError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("too_many_requests", Message, ErrorURI) {}
 };
@@ -189,16 +196,17 @@ public:
  * (Custom error for dynamic client registration - RFC 7591)
  */
 class InvalidClientMetadataError : public OAuthError {
-public:
+  public:
     InvalidClientMetadataError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("invalid_client_metadata", Message, ErrorURI) {}
 };
 
 /**
- * Insufficient scope error - The request requires higher privileges than provided by the access token.
+ * Insufficient scope error - The request requires higher privileges than provided by the access
+ * token.
  */
 class InsufficientScopeError : public OAuthError {
-public:
+  public:
     InsufficientScopeError(const string& Message, const optional<string>& ErrorURI = nullopt)
         : OAuthError("insufficient_scope", Message, ErrorURI) {}
 };

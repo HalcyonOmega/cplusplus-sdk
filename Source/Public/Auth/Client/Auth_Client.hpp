@@ -18,7 +18,7 @@ MCP_NAMESPACE_BEGIN
  * code verifiers should not cross different sessions.
  */
 class OAuthClientProvider {
-public:
+  public:
     virtual ~OAuthClientProvider() = default;
 
     /**
@@ -43,7 +43,9 @@ public:
      * server, or returns `nullopt` if the client is not registered with the
      * server.
      */
-    virtual variant<optional<Auth::OAuthClientInformation>, future<optional<Auth::OAuthClientInformation>>> GetClientInformation() = 0;
+    virtual variant<optional<Auth::OAuthClientInformation>,
+                    future<optional<Auth::OAuthClientInformation>>>
+    GetClientInformation() = 0;
 
     /**
      * If implemented, this permits the OAuth client to dynamically register with
@@ -53,7 +55,8 @@ public:
      * This method is not required to be implemented if client information is
      * statically known (e.g., pre-registered).
      */
-    virtual variant<void, future<void>> SaveClientInformation(const Auth::OAuthClientInformationFull& ClientInformation) {
+    virtual variant<void, future<void>>
+    SaveClientInformation(const Auth::OAuthClientInformationFull& ClientInformation) {
         // Default implementation does nothing
     }
 
@@ -61,7 +64,8 @@ public:
      * Loads any existing OAuth tokens for the current session, or returns
      * `nullopt` if there are no saved tokens.
      */
-    virtual variant<optional<Auth::OAuthTokens>, future<optional<Auth::OAuthTokens>>> GetTokens() = 0;
+    virtual variant<optional<Auth::OAuthTokens>, future<optional<Auth::OAuthTokens>>>
+    GetTokens() = 0;
 
     /**
      * Stores new OAuth tokens for the current session, after a successful
@@ -72,7 +76,8 @@ public:
     /**
      * Invoked to redirect the user agent to the given URL to begin the authorization flow.
      */
-    virtual variant<void, future<void>> RedirectToAuthorization(const string& AuthorizationURL) = 0; // TODO: Ingest URL Type, not string
+    virtual variant<void, future<void>> RedirectToAuthorization(
+        const string& AuthorizationURL) = 0; // TODO: Ingest URL Type, not string
 
     /**
      * Saves a PKCE code verifier for the current session, before redirecting to
@@ -87,15 +92,11 @@ public:
     virtual variant<string, future<string>> GetCodeVerifier() = 0;
 };
 
-enum class AuthResult {
-    AUTHORIZED,
-    REDIRECT
-};
+enum class AuthResult { AUTHORIZED, REDIRECT };
 
 class UnauthorizedError : public Error {
-public:
-    explicit UnauthorizedError(const string& Message = "Unauthorized")
-        : Error(Message) {}
+  public:
+    explicit UnauthorizedError(const string& Message = "Unauthorized") : Error(Message) {}
 };
 
 struct AuthParams {
@@ -167,8 +168,7 @@ optional<string> ExtractResourceMetadataURL(const unordered_map<string, string>&
  * throw an exception. Any other errors will be thrown as exceptions.
  */
 future<Auth::OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
-    const string& ServerURL,
-    const optional<DiscoverMetadataOptions>& Options = nullopt);
+    const string& ServerURL, const optional<DiscoverMetadataOptions>& Options = nullopt);
 
 /**
  * Looks up RFC 8414 OAuth 2.0 Authorization Server Metadata.
@@ -176,37 +176,34 @@ future<Auth::OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetad
  * If the server returns a 404 for the well-known endpoint, this function will
  * return `nullopt`. Any other errors will be thrown as exceptions.
  */
-future<optional<Auth::OAuthMetadata>> DiscoverOAuthMetadataAsync(
-    const string& AuthorizationServerURL,
-    const optional<DiscoverMetadataOptions>& Options = nullopt);
+future<optional<Auth::OAuthMetadata>>
+DiscoverOAuthMetadataAsync(const string& AuthorizationServerURL,
+                           const optional<DiscoverMetadataOptions>& Options = nullopt);
 
 /**
- * Begins the authorization flow with the given server, by generating a PKCE challenge and constructing the authorization URL.
+ * Begins the authorization flow with the given server, by generating a PKCE challenge and
+ * constructing the authorization URL.
  */
-future<AuthorizationResult> StartAuthorizationAsync(
-    const string& AuthorizationServerURL,
-    const StartAuthorizationParams& Params);
+future<AuthorizationResult> StartAuthorizationAsync(const string& AuthorizationServerURL,
+                                                    const StartAuthorizationParams& Params);
 
 /**
  * Exchanges an authorization code for an access token with the given server.
  */
-future<Auth::OAuthTokens> ExchangeAuthorizationAsync(
-    const string& AuthorizationServerURL,
-    const ExchangeAuthorizationParams& Params);
+future<Auth::OAuthTokens> ExchangeAuthorizationAsync(const string& AuthorizationServerURL,
+                                                     const ExchangeAuthorizationParams& Params);
 
 /**
  * Exchange a refresh token for an updated access token.
  */
-future<Auth::OAuthTokens> RefreshAuthorizationAsync(
-    const string& AuthorizationServerURL,
-    const RefreshAuthorizationParams& Params);
+future<Auth::OAuthTokens> RefreshAuthorizationAsync(const string& AuthorizationServerURL,
+                                                    const RefreshAuthorizationParams& Params);
 
 /**
  * Performs OAuth 2.0 Dynamic Client Registration according to RFC 7591.
  */
-future<Auth::OAuthClientInformationFull> RegisterClientAsync(
-    const string& AuthorizationServerURL,
-    const RegisterClientParams& Params);
+future<Auth::OAuthClientInformationFull> RegisterClientAsync(const string& AuthorizationServerURL,
+                                                             const RegisterClientParams& Params);
 
 // Helper functions and TODO implementations
 PKCE_Challenge GeneratePKCE_Challenge();
@@ -215,11 +212,15 @@ struct HTTP_Response {
     int StatusCode;
     unordered_map<string, string> Headers;
     string Body;
-    bool IsOK() const { return StatusCode >= 200 && StatusCode < 300; }
+    bool IsOK() const {
+        return StatusCode >= 200 && StatusCode < 300;
+    }
 };
 
-future<HTTP_Response> FetchAsync(const string& URL, const unordered_map<string, string>& Headers = {});
-future<HTTP_Response> FetchPostAsync(const string& URL, const string& Body, const unordered_map<string, string>& Headers = {});
+future<HTTP_Response> FetchAsync(const string& URL,
+                                 const unordered_map<string, string>& Headers = {});
+future<HTTP_Response> FetchPostAsync(const string& URL, const string& Body,
+                                     const unordered_map<string, string>& Headers = {});
 
 // JSON schema validation functions (replacing Zod)
 bool ValidateOAuthProtectedResourceMetadata(const JSON& Data);
@@ -232,4 +233,4 @@ Auth::OAuthMetadata ParseOAuthMetadata(const JSON& Data);
 Auth::OAuthTokens ParseOAuthTokens(const JSON& Data);
 Auth::OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& Data);
 
-} // namespace MCP
+MCP_NAMESPACE_END

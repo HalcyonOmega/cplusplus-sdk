@@ -2,7 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Transport {
+MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Transport interface
 // TODO: Fix External Ref: JSON_RPC_Message type
@@ -10,22 +10,27 @@ namespace MCP::Transport {
 // TODO: Fix External Ref: AuthInfo type
 
 struct QueuedMessage {
-  JSON_RPC_Message Message;
-  optional<struct {optional<AuthInfo> AuthInfo;}> Extra;
+    JSON_RPC_Message Message;
+    optional < struct {
+        optional<AuthInfo> AuthInfo;
+    } > Extra;
 };
 
 /**
- * In-memory transport for creating clients and servers that talk to each other within the same process.
+ * In-memory transport for creating clients and servers that talk to each other within the same
+ * process.
  */
 class InMemoryTransport : public Transport {
-private:
+  private:
     InMemoryTransport* _otherTransport = nullptr;
     vector<QueuedMessage> _messageQueue;
 
-public:
+  public:
     optional<function<void()>> onclose;
     optional<function<void(const string&)>> onerror;
-    optional<function<void(const JSON_RPC_Message&, const optional<struct { optional<AuthInfo> AuthInfo; }>&)>> onmessage;
+    optional<function<void(const JSON_RPC_Message&,
+                           const optional<struct { optional<AuthInfo> AuthInfo; }>&)>>
+        onmessage;
     optional<string> SessionID;
 
     InMemoryTransport() = default;
@@ -36,13 +41,9 @@ public:
 
     // Enable move constructor and assignment operator
     InMemoryTransport(InMemoryTransport&& other) noexcept
-        : _otherTransport(other._otherTransport)
-        , _messageQueue(move(other._messageQueue))
-        , onclose(move(other.onclose))
-        , onerror(move(other.onerror))
-        , onmessage(move(other.onmessage))
-        , SessionID(move(other.SessionID))
-    {
+        : _otherTransport(other._otherTransport), _messageQueue(move(other._messageQueue)),
+          onclose(move(other.onclose)), onerror(move(other.onerror)),
+          onmessage(move(other.onmessage)), SessionID(move(other.SessionID)) {
         other._otherTransport = nullptr;
         if (_otherTransport) {
             _otherTransport->_otherTransport = this;
@@ -106,7 +107,10 @@ public:
      * Sends a message with optional auth info.
      * This is useful for testing authentication scenarios.
      */
-    void send(const JSON_RPC_Message& message, const optional<struct { optional<RequestID> relatedRequestID; optional<AuthInfo> authInfo; }>& options = nullopt) {
+    void send(const JSON_RPC_Message& message, const optional<struct {
+                                                   optional<RequestID> relatedRequestID;
+                                                   optional<AuthInfo> authInfo;
+                                               }>& options = nullopt) {
         if (!_otherTransport) {
             if (onerror.has_value()) {
                 onerror.value()("Not connected");
@@ -114,9 +118,13 @@ public:
             return;
         }
 
-        optional<struct { optional<AuthInfo> AuthInfo; }> extra;
+        optional < struct {
+            optional<AuthInfo> AuthInfo;
+        } > extra;
         if (options.has_value() && options.value().authInfo.has_value()) {
-            extra = struct { optional<AuthInfo> AuthInfo; }{ options.value().authInfo };
+            extra = struct {
+                optional<AuthInfo> AuthInfo;
+            } {options.value().authInfo};
         }
 
         if (_otherTransport->onmessage.has_value()) {

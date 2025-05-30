@@ -2,20 +2,20 @@
 
 #include "../Core/Common.hpp"
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // RFC 9728 OAuth Protected Resource Metadata
 struct OAuthProtectedResourceMetadata {
-    string Resource; // TODO: string.url()
+    string Resource;                               // TODO: string.url()
     optional<vector<string>> AuthorizationServers; // TODO: array(string.url())
-    optional<string> JWKS_URI; // TODO: string.url()
+    optional<string> JWKS_URI;                     // TODO: string.url()
     optional<vector<string>> ScopesSupported;
     optional<vector<string>> BearerMethodsSupported;
     optional<vector<string>> ResourceSigningAlgValuesSupported;
     optional<string> ResourceName;
     optional<string> ResourceDocumentation;
     optional<string> ResourcePolicyURI; // TODO: string.url()
-    optional<string> Resource_TOS_URI; // TODO: string.url()
+    optional<string> Resource_TOS_URI;  // TODO: string.url()
     optional<bool> TLS_ClientCertificateBoundAccessTokens;
     optional<vector<string>> AuthorizationDetailsTypesSupported;
     optional<vector<string>> DPOP_SigningAlgValuesSupported;
@@ -64,7 +64,9 @@ struct OAuthErrorResponse {
 
 // RFC 7591 OAuth 2.0 Dynamic Client Registration metadata
 struct OAuthClientMetadata {
-    vector<string> RedirectURIs; // TODO: z.array(z.string()).refine((uris) => uris.every((uri) => URL.canParse(uri)), { message: "redirect_uris must contain valid URLs" }),
+    vector<string>
+        RedirectURIs; // TODO: z.array(z.string()).refine((uris) => uris.every((uri) =>
+                      // URL.canParse(uri)), { message: "redirect_uris must contain valid URLs" }),
     optional<string> TokenEndpointAuthMethod;
     optional<vector<string>> GrantTypes;
     optional<vector<string>> ResponseTypes;
@@ -107,7 +109,6 @@ struct OAuthTokenRevocationRequest {
     optional<string> TokenTypeHint;
 };
 
-
 /**
  * Information about a validated access token, provided to request handlers.
  */
@@ -138,5 +139,4 @@ struct AuthInfo {
      */
     optional<unordered_map<string, any>> extra;
 };
-
 }

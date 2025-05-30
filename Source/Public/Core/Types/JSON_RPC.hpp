@@ -11,7 +11,7 @@ struct JSON_RPC_Notification : public Notification {
 
 bool IsJSON_RPC_Notification(const JSON& value) {
     return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == JSON_RPC_VERSION
-           && value.contains("method") && !value.contains(MSG_KEY_ID);
+           && value.contains(MSG_KEY_METHOD) && !value.contains(MSG_KEY_ID);
 }
 
 // A response to a request that indicates an error occurred.
@@ -30,7 +30,8 @@ struct JSON_RPC_Error {
 
 bool IsJSON_RPC_Error(const JSON& value) {
     return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == JSON_RPC_VERSION
-           && value.contains(MSG_KEY_ID) && value.contains("error") && !value.contains("result");
+           && value.contains(MSG_KEY_ID) && value.contains(MSG_KEY_ERROR)
+           && !value.contains(MSG_KEY_RESULT);
 }
 
 // A request that expects a response.
@@ -40,8 +41,8 @@ struct JSON_RPC_Request : public Request {
 };
 bool IsJSON_RPC_Request(const JSON& value) {
     return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == JSON_RPC_VERSION
-           && value.contains(MSG_KEY_ID) && value.contains("method") && !value.contains("error")
-           && !value.contains("result");
+           && value.contains(MSG_KEY_ID) && value.contains(MSG_KEY_METHOD)
+           && !value.contains(MSG_KEY_ERROR) && !value.contains(MSG_KEY_RESULT);
 }
 
 // A successful (non-error) response to a request.
@@ -53,10 +54,11 @@ struct JSON_RPC_Response {
 
 bool IsJSON_RPC_Response(const JSON& value) {
     return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == JSON_RPC_VERSION
-           && value.contains(MSG_KEY_ID) && value.contains("result") && !value.contains("error");
+           && value.contains(MSG_KEY_ID) && value.contains(MSG_KEY_RESULT)
+           && !value.contains(MSG_KEY_ERROR);
 }
 
 using JSON_RPC_Message =
     variant<JSON_RPC_Request, JSON_RPC_Notification, JSON_RPC_Response, JSON_RPC_Error, >;
 
-} // namespace MCP
+MCP_NAMESPACE_END

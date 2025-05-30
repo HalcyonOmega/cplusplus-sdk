@@ -5,7 +5,7 @@
 
 // TODO: Fix External Ref: MethodNotAllowedError
 
-namespace MCP::Auth {
+MCP_NAMESPACE_BEGIN
 
 // Forward declarations for HTTP types (to avoid duplication with other middleware)
 struct HTTPRequest;
@@ -39,7 +39,8 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
         }
 
         // Create MethodNotAllowedError (exactly matching original TypeScript)
-        const auto Error = MethodNotAllowedError("The method " + Req.Method + " is not allowed for this endpoint");
+        const auto Error =
+            MethodNotAllowedError("The method " + Req.Method + " is not allowed for this endpoint");
 
         // Create Allow header with comma-separated methods (matching allowedMethods.join(', '))
         string AllowHeader = "";
@@ -50,7 +51,8 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
             AllowHeader += AllowedMethods[i];
         }
 
-        // Set response exactly like original: res.status(405).set('Allow', ...).json(error.toResponseObject())
+        // Set response exactly like original: res.status(405).set('Allow',
+        // ...).json(error.toResponseObject())
         Res.SetStatus(405);
         Res.SetHeader("Allow", AllowHeader);
         Res.SetJSON(Error.ToResponseObject());
