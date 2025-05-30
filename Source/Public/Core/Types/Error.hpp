@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "Constants.h"
 #include "Core.h"
 
@@ -29,10 +31,10 @@ class Error {
   public:
     Error(ErrorCode code, const string& message, optional<JSON> data = nullopt)
         : code_(code), message_(message), data_(data) {
-        full_message_ = "MCP error " + to_string(code) + ": " + message;
+        full_message_ = "MCP error " + std::to_string(code) + ": " + message;
     }
 
-    const char* what() const noexcept override {
+    const char* what() const noexcept {
         return full_message_.c_str();
     }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Macros.h"
+
 MCP_NAMESPACE_BEGIN
 
 // The severity of a log message.

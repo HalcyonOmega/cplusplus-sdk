@@ -12,6 +12,12 @@ static constexpr const array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
     "2024-10-07",
 };
 
+// URI Template Constants
+constexpr size_t MAX_TEMPLATE_LENGTH = 1000000; // 1MB
+constexpr size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
+constexpr size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
+constexpr size_t MAX_REGEX_LENGTH = 1000000; // 1MB
+
 // Message Constants
 static constexpr const char* MSG_KEY_JSON_RPC = "jsonrpc";
 static constexpr const char* MSG_KEY_JSON_RPC_VERSION = "2.0";

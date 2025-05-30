@@ -25,7 +25,7 @@ class WebSocket_Client_Transport : public Transport {
     bool ValidateJSON_RPC_Message(const JSON& json) const {
         // Basic JSON-RPC validation equivalent to JSON_RPC_MessageSchema.parse()
         if (!json.contains(MSG_KEY_JSON_RPC)
-            || json[MSG_KEY_JSON_RPC] != MSG_KEY_JSON_RPC_VERSION) {
+            || json[MSG_KEY_JSON_RPC] != MSG_KEY_MSG_KEY_JSON_RPC_VERSION) {
             return false;
         }
 

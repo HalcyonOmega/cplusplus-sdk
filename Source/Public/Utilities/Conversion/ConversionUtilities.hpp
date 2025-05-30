@@ -1,9 +1,5 @@
 #pragma once
 
-#include <codecvt>
-#include <locale>
-#include <string>
-
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <utility>
-#include "Core/Types/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -12,13 +11,8 @@ string EncodeURIComponent(const string& value);
 
 using Variables = unordered_map<string, variant<string, vector<string>>>;
 
-constexpr size_t MAX_TEMPLATE_LENGTH = 1000000; // 1MB
-constexpr size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
-constexpr size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
-constexpr size_t MAX_REGEX_LENGTH = 1000000; // 1MB
-
 class URI_Template {
-public:
+  public:
     /**
      * Returns true if the given string contains any URI template expressions.
      * A template expression is a sequence of characters enclosed in curly braces,
@@ -36,7 +30,7 @@ public:
 
     Variables Match(const string& uri) const;
 
-private:
+  private:
     struct TemplatePart {
         string name;
         string operatorChar;

@@ -1,19 +1,13 @@
 #pragma once
 
-#include "../Client/Client.hpp" // For AjvValidator
-#include "../Core/Common.hpp"
-#include "../URI_Template.hpp"
+#include "Constants.h"
+#include "Core.h"
+
+// Additional Includes
+#include "Client/Core/Client.hpp" // For AjvValidator
+#include "Utilities/URI/URI_Template.h"
 
 MCP_NAMESPACE_BEGIN
-
-// TODO: Fix External Ref: Server class
-// TODO: Fix External Ref: ServerOptions
-// TODO: Fix External Ref: Implementation
-// TODO: Fix External Ref: Transport
-// TODO: Fix External Ref: RequestHandlerExtra
-// TODO: Fix External Ref: ZodToJSONSchema functionality
-// TODO: Fix External Ref: URI_Template class
-// TODO: Fix External Ref: Variables type
 
 // Forward declarations
 struct Tool;
@@ -35,9 +29,7 @@ struct ServerRequest;
 struct ServerNotification;
 struct ToolAnnotations;
 class Server;
-
-using MCP_Error = MCP::Types::MCP_Error;
-using ErrorCode = MCP::Types::ErrorCode;
+struct RequestHandlerExtra;
 
 /**
  * Callback to complete one variable within a resource template's URI template.
@@ -58,7 +50,7 @@ struct ResourceMetadata {
  * Callback to list all resources matching a given template.
  */
 using ListResourcesCallback =
-    function<ListResourcesResult(const RequestHandlerExtra<ServerRequest, ServerNotification>&)>;
+    function<ListResourcesResult>(const RequestHandlerExtra<ServerRequest, ServerNotification>&);
 
 /**
  * Callback to read a resource at a given URI.
@@ -131,11 +123,11 @@ class ResourceTemplate {
         // Convert Variables type to unordered_map<string, string>
         unordered_map<string, string> result;
         for (const auto& [key, value] : variables) {
-            if (holds_alternative<string>(value)) {
-                result[key] = get<string>(value);
-            } else if (holds_alternative<vector<string>>(value)) {
+            if (std::holds_alternative<string>(value)) {
+                result[key] = std::get<string>(value);
+            } else if (std::holds_alternative<vector<string>>(value)) {
                 // Join vector values with comma for compatibility
-                const auto& values = get<vector<string>>(value);
+                const auto& values = std::get<vector<string>>(value);
                 string joined;
                 for (size_t i = 0; i < values.size(); ++i) {
                     if (i > 0)
@@ -151,16 +143,16 @@ class ResourceTemplate {
 
 // Type aliases for tool callbacks
 template <typename Args = void>
-using ToolCallback = typename conditional<
-    is_same_v<Args, void>,
+using ToolCallback = typename std::conditional<
+    std::is_same_v<Args, void>,
     function<CallToolResult(const RequestHandlerExtra<ServerRequest, ServerNotification>&)>,
     function<CallToolResult(const Args&,
                             const RequestHandlerExtra<ServerRequest, ServerNotification>&)>>::type;
 
 // Type aliases for prompt callbacks
 template <typename Args = void>
-using PromptCallback = typename conditional<
-    is_same_v<Args, void>,
+using PromptCallback = typename std::conditional<
+    std::is_same_v<Args, void>,
     function<GetPromptResult(const RequestHandlerExtra<ServerRequest, ServerNotification>&)>,
     function<GetPromptResult(const Args&,
                              const RequestHandlerExtra<ServerRequest, ServerNotification>&)>>::type;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Types/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -15,11 +15,9 @@ enum class MCP_TypeKind {
 constexpr string_view GetMCP_TypeKind(MCP_TypeKind Kind);
 
 // Forward declarations
-template<typename TOutput, typename TDef, typename TInput = TOutput>
-class MCP_Type;
+template <typename TOutput, typename TDef, typename TInput = TOutput> class MCP_Type;
 
-template<typename T>
-class Completable;
+template <typename T> class Completable;
 
 // Define ParseContext first before using it
 struct ParseContext {
@@ -32,7 +30,7 @@ struct ParseContext {
 using ErrorMapFunction = function<string(const string& issueCode, const ParseContext& ctx)>;
 
 // Unified callback type that can return either sync or async results (like original)
-template<typename T>
+template <typename T>
 using CompleteCallback = function<variant<vector<T>, future<vector<T>>>(const T&)>;
 
 struct TypeDef {
@@ -42,8 +40,7 @@ struct TypeDef {
 };
 
 // Create params structure (like original RawCreateParams & { complete: CompleteCallback<T> })
-template<typename T>
-struct CreateParams {
+template <typename T> struct CreateParams {
     CompleteCallback<T> Complete;
     optional<ErrorMapFunction> ErrorMap;
     optional<string> InvalidTypeError;
@@ -60,11 +57,9 @@ struct ProcessedCreateParams {
 };
 
 // Like original processCreateParams function - DECLARED EARLY
-template<typename T>
-ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params);
+template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params);
 
-template<typename T>
-struct CompletableDef : public TypeDef {
+template <typename T> struct CompletableDef : public TypeDef {
     shared_ptr<MCP_Type<T, TypeDef, T>> Type; // Store the wrapped type like original
     CompleteCallback<T> Complete;
 
@@ -73,9 +68,8 @@ struct CompletableDef : public TypeDef {
     }
 };
 
-template<typename TOutput, typename TInput>
-class ParseResult {
-public:
+template <typename TOutput, typename TInput> class ParseResult {
+  public:
     bool Success;
     optional<TOutput> Value;
     optional<string> Error;
@@ -85,21 +79,19 @@ public:
     ParseResult(const string& error) : Success(false), Error(error) {}
 };
 
-template<typename TOutput, typename TDef, typename TInput>
-class MCP_Type {
-public:
+template <typename TOutput, typename TDef, typename TInput> class MCP_Type {
+  public:
     TDef Definition;
 
     virtual ParseResult<TOutput, TInput> Parse(const ParseContext& input) = 0;
     virtual ~MCP_Type() = default;
 
-protected:
+  protected:
     ParseContext ProcessInputParams(const ParseContext& input);
 };
 
-template<typename T>
-class Completable : public MCP_Type<T, CompletableDef<T>, T> {
-public:
+template <typename T> class Completable : public MCP_Type<T, CompletableDef<T>, T> {
+  public:
     // Delegate parsing to the wrapped type (like original _parse method)
     ParseResult<T, T> Parse(const ParseContext& input) override;
 
@@ -111,34 +103,29 @@ public:
     future<vector<T>> GetAsyncCompletions(const T& value);
 
     // Like original static create method
-    static shared_ptr<Completable<T>> Create(
-        shared_ptr<MCP_Type<T, TypeDef, T>> type,
-        const CreateParams<T>& params
-    );
+    static shared_ptr<Completable<T>> Create(shared_ptr<MCP_Type<T, TypeDef, T>> type,
+                                             const CreateParams<T>& params);
 };
 
 /**
  * Wraps an MCP type to provide autocompletion capabilities.
- * Equivalent to original completable<T extends ZodTypeAny>(schema: T, complete: CompleteCallback<T>)
+ * Equivalent to original completable<T extends ZodTypeAny>(schema: T, complete:
+ * CompleteCallback<T>)
  */
-template<typename T>
-shared_ptr<Completable<T>> CreateCompletable(
-    shared_ptr<MCP_Type<T, TypeDef, T>> schema,
-    CompleteCallback<T> complete
-);
+template <typename T>
+shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> schema,
+                                             CompleteCallback<T> complete);
 
 // Template implementations (must be in header)
 
 // Like original processCreateParams function
-template<typename T>
-ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params) {
+template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params) {
     ProcessedCreateParams result;
 
-    if (params.ErrorMap.has_value() &&
-        (params.InvalidTypeError.has_value() || params.RequiredError.has_value())) {
-        throw runtime_error(
-            "Can't use \"InvalidTypeError\" or \"RequiredError\" in conjunction with custom error map."
-        );
+    if (params.ErrorMap.has_value()
+        && (params.InvalidTypeError.has_value() || params.RequiredError.has_value())) {
+        throw runtime_error("Can't use \"InvalidTypeError\" or \"RequiredError\" in conjunction "
+                            "with custom error map.");
     }
 
     if (params.ErrorMap.has_value()) {
@@ -155,14 +142,13 @@ ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params) {
             return !message.empty() ? message : "Invalid enum value";
         }
         if (ctx.Data.is_null()) {
-            return !message.empty() ? message :
-                   params.RequiredError.value_or("Required field missing");
+            return !message.empty() ? message
+                                    : params.RequiredError.value_or("Required field missing");
         }
         if (issueCode != "invalid_type") {
             return "Validation error";
         }
-        return !message.empty() ? message :
-               params.InvalidTypeError.value_or("Invalid type");
+        return !message.empty() ? message : params.InvalidTypeError.value_or("Invalid type");
     };
 
     result.ErrorMap = customMap;
@@ -171,8 +157,7 @@ ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params) {
 }
 
 // Delegate parsing to the wrapped type (like original _parse method)
-template<typename T>
-ParseResult<T, T> Completable<T>::Parse(const ParseContext& input) {
+template <typename T> ParseResult<T, T> Completable<T>::Parse(const ParseContext& input) {
     auto ctx = this->ProcessInputParams(input);
     if (this->Definition.Type) {
         return this->Definition.Type->Parse(ctx);
@@ -188,13 +173,11 @@ ParseResult<T, T> Completable<T>::Parse(const ParseContext& input) {
 }
 
 // Return the wrapped type (like original unwrap method)
-template<typename T>
-shared_ptr<MCP_Type<T, TypeDef, T>> Completable<T>::Unwrap() {
+template <typename T> shared_ptr<MCP_Type<T, TypeDef, T>> Completable<T>::Unwrap() {
     return this->Definition.Type;
 }
 
-template<typename T>
-vector<T> Completable<T>::GetCompletions(const T& value) {
+template <typename T> vector<T> Completable<T>::GetCompletions(const T& value) {
     if (this->Definition.Complete) {
         auto result = this->Definition.Complete(value);
 
@@ -210,8 +193,7 @@ vector<T> Completable<T>::GetCompletions(const T& value) {
     return vector<T>{};
 }
 
-template<typename T>
-future<vector<T>> Completable<T>::GetAsyncCompletions(const T& value) {
+template <typename T> future<vector<T>> Completable<T>::GetAsyncCompletions(const T& value) {
     if (this->Definition.Complete) {
         auto result = this->Definition.Complete(value);
 
@@ -233,11 +215,9 @@ future<vector<T>> Completable<T>::GetAsyncCompletions(const T& value) {
 }
 
 // Like original static create method
-template<typename T>
-shared_ptr<Completable<T>> Completable<T>::Create(
-    shared_ptr<MCP_Type<T, TypeDef, T>> type,
-    const CreateParams<T>& params
-) {
+template <typename T>
+shared_ptr<Completable<T>> Completable<T>::Create(shared_ptr<MCP_Type<T, TypeDef, T>> type,
+                                                  const CreateParams<T>& params) {
     auto completable = make_shared<Completable<T>>();
     completable->Definition.Type = type;
     completable->Definition.Complete = params.Complete;
@@ -252,13 +232,12 @@ shared_ptr<Completable<T>> Completable<T>::Create(
 
 /**
  * Wraps an MCP type to provide autocompletion capabilities.
- * Equivalent to original completable<T extends ZodTypeAny>(schema: T, complete: CompleteCallback<T>)
+ * Equivalent to original completable<T extends ZodTypeAny>(schema: T, complete:
+ * CompleteCallback<T>)
  */
-template<typename T>
-shared_ptr<Completable<T>> CreateCompletable(
-    shared_ptr<MCP_Type<T, TypeDef, T>> schema,
-    CompleteCallback<T> complete
-) {
+template <typename T>
+shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> schema,
+                                             CompleteCallback<T> complete) {
     CreateParams<T> params;
     params.Complete = complete;
     // Copy schema definition like original: { ...schema._def, complete }
