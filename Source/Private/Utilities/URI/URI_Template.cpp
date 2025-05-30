@@ -3,133 +3,142 @@
 MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
-string EncodeURI(const string& value) {
+string EncodeURI(const string& Value) {
     // RFC 3986: Encode everything except unreserved and reserved characters
     // Unreserved: A-Z a-z 0-9 - . _ ~
     // Reserved: : / ? # [ ] @ ! $ & ' ( ) * + , ; =
-    string result;
-    result.reserve(value.length() * 3); // Worst case: every char becomes %XX
+    string Result;
+    Result.reserve(Value.length() * 3); // Worst case: every char becomes %XX
 
-    for (unsigned char c : value) {
-        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
-            c == '-' || c == '.' || c == '_' || c == '~' ||  // unreserved
-            c == ':' || c == '/' || c == '?' || c == '#' || c == '[' || c == ']' ||
-            c == '@' || c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' ||
-            c == ')' || c == '*' || c == '+' || c == ',' || c == ';' || c == '=') { // reserved
-            result += c;
+    for (unsigned char Char : Value) {
+        if ((Char >= 'A' && Char <= 'Z') || (Char >= 'a' && Char <= 'z')
+            || (Char >= '0' && Char <= '9') || Char == '-' || Char == '.'
+            || Char == '_' || Char == '~' || // unreserved
+            Char == ':' || Char == '/' || Char == '?' || Char == '#'
+            || Char == '[' || Char == ']' || Char == '@' || Char == '!'
+            || Char == '$' || Char == '&' || Char == '\'' || Char == '('
+            || Char == ')' || Char == '*' || Char == '+' || Char == ','
+            || Char == ';') { // reserved
+            Result += Char;
         } else {
-            result += '%';
-            result += "0123456789ABCDEF"[c >> 4];
-            result += "0123456789ABCDEF"[c & 0x0F];
+            Result += '%';
+            Result += "0123456789ABCDEF"[Char >> 4];
+            Result += "0123456789ABCDEF"[Char & 0x0F];
         }
     }
-    return result;
+    return Result;
 }
 
-string EncodeURIComponent(const string& value) {
+string EncodeURIComponent(const string& Value) {
     // RFC 3986: Encode everything except unreserved characters
     // Unreserved: A-Z a-z 0-9 - . _ ~
-    string result;
-    result.reserve(value.length() * 3); // Worst case: every char becomes %XX
+    string Result;
+    Result.reserve(Value.length() * 3); // Worst case: every char becomes %XX
 
-    for (unsigned char c : value) {
-        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
-            c == '-' || c == '.' || c == '_' || c == '~') { // unreserved only
-            result += c;
+    for (unsigned char Char : Value) {
+        if ((Char >= 'A' && Char <= 'Z') || (Char >= 'a' && Char <= 'z')
+            || (Char >= '0' && Char <= '9') || Char == '-' || Char == '.'
+            || Char == '_' || Char == '~') { // unreserved only
+            Result += Char;
         } else {
-            result += '%';
-            result += "0123456789ABCDEF"[c >> 4];
-            result += "0123456789ABCDEF"[c & 0x0F];
+            Result += '%';
+            Result += "0123456789ABCDEF"[Char >> 4];
+            Result += "0123456789ABCDEF"[Char & 0x0F];
         }
     }
-    return result;
+    return Result;
 }
 
 // URI_Template method implementations
 
-bool URI_Template::IsTemplate(const string& str) {
+bool URI_Template::IsTemplate(const string& Str) {
     // Look for any sequence of characters between curly braces
     // that isn't just whitespace
-    regex pattern(R"(\{[^}\s]+\})");
-    return regex_search(str, pattern);
+    regex Pattern(R"(\{[^}\s]+\})");
+    return regex_search(Str, Pattern);
 }
 
 vector<string> URI_Template::GetVariableNames() const {
-    vector<string> names;
-    for (const auto& part : parts_) {
-        if (holds_alternative<TemplatePart>(part)) {
-            const auto& templatePart = get<TemplatePart>(part);
-            names.insert(names.end(), templatePart.names.begin(), templatePart.names.end());
+    vector<string> Names;
+    for (const auto& Part : Parts_) {
+        if (holds_alternative<TemplatePart>(Part)) {
+            const auto& TemplatePart = get<TemplatePart>(Part);
+            Names.insert(Names.end(), TemplatePart.Names.begin(),
+                         TemplatePart.Names.end());
         }
     }
-    return names;
+    return Names;
 }
 
-URI_Template::URI_Template(const string& templateStr) : template_(templateStr) {
-    ValidateLength(templateStr, MAX_TEMPLATE_LENGTH, "Template");
-    parts_ = Parse(templateStr);
+URI_Template::URI_Template(const string& TemplateStr) : Template_(TemplateStr) {
+    ValidateLength(TemplateStr, MAX_TEMPLATE_LENGTH, "Template");
+    Parts_ = Parse(TemplateStr);
 }
 
 string URI_Template::ToString() const {
-    return template_;
+    return Template_;
 }
 
-string URI_Template::Expand(const Variables& variables) const {
-    string result;
-    bool hasQueryParam = false;
+string URI_Template::Expand(const Variables& Variables) const {
+    string Result;
+    bool HasQueryParam = false;
 
-    for (const auto& part : parts_) {
-        if (holds_alternative<string>(part)) {
-            result += get<string>(part);
+    for (const auto& Part : parts_) {
+        if (holds_alternative<string>(Part)) {
+            Result += get<string>(Part);
             continue;
         }
 
-        const auto& templatePart = get<TemplatePart>(part);
-        string expanded = ExpandPart(templatePart, variables);
-        if (expanded.empty()) continue;
+        const auto& TemplatePart = get<TemplatePart>(Part);
+        string Expanded = ExpandPart(TemplatePart, Variables);
+        if (Expanded.empty())
+            continue;
 
         // Convert ? to & if we already have a query parameter
-        if ((templatePart.operatorChar == "?" || templatePart.operatorChar == "&") && hasQueryParam) {
-            if (expanded[0] == '?') {
-                expanded[0] = '&';
+        if ((TemplatePart.OperatorChar == "?"
+             || TemplatePart.OperatorChar == "&")
+            && HasQueryParam) {
+            if (Expanded[0] == '?') {
+                Expanded[0] = '&';
             }
-            result += expanded;
+            Result += Expanded;
         } else {
-            result += expanded;
+            Result += Expanded;
         }
 
-        if (templatePart.operatorChar == "?" || templatePart.operatorChar == "&") {
-            hasQueryParam = true;
+        if (TemplatePart.OperatorChar == "?"
+            || TemplatePart.OperatorChar == "&") {
+            HasQueryParam = true;
         }
     }
 
-    return result;
+    return Result;
 }
 
-Variables URI_Template::Match(const string& uri) const {
-    ValidateLength(uri, MAX_TEMPLATE_LENGTH, "URI");
-    string pattern = "^";
-    vector<pair<string, bool>> names; // name, exploded
+Variables URI_Template::Match(const string& Uri) const {
+    ValidateLength(Uri, MAX_TEMPLATE_LENGTH, "URI");
+    string Pattern = "^";
+    vector<pair<string, bool>> Names; // name, exploded
 
     for (const auto& part : parts_) {
-        if (holds_alternative<string>(part)) {
-            pattern += EscapeRegExp(get<string>(part));
+        if (holds_alternative<string>(Part)) {
+            Pattern += EscapeRegExp(get<string>(Part));
         } else {
-            const auto& templatePart = get<TemplatePart>(part);
-            auto patterns = PartToRegExp(templatePart);
-            for (const auto& [partPattern, name] : patterns) {
-                pattern += partPattern;
-                names.emplace_back(name, templatePart.exploded);
+            const auto& TemplatePart = get<TemplatePart>(Part);
+            auto Patterns = PartToRegExp(TemplatePart);
+            for (const auto& [PartPattern, Name] : Patterns) {
+                Pattern += PartPattern;
+                Names.emplace_back(Name, TemplatePart.Exploded);
             }
         }
     }
 
-    pattern += "$";
-    ValidateLength(pattern, MAX_REGEX_LENGTH, "Generated regex pattern");
-    regex regexPattern(pattern);
-    smatch match;
+    Pattern += "$";
+    ValidateLength(Pattern, MAX_REGEX_LENGTH, "Generated regex pattern");
+    regex RegexPattern(Pattern);
+    smatch Match;
 
-    if (!regex_match(uri, match, regexPattern)) {
+    if (!regex_match(Uri, Match, RegexPattern)) {
         return {};
     }
 
@@ -159,10 +168,12 @@ Variables URI_Template::Match(const string& uri) const {
     return result;
 }
 
-void URI_Template::ValidateLength(const string& str, size_t max, const string& context) {
+void URI_Template::ValidateLength(const string& str, size_t max,
+                                  const string& context) {
     if (str.length() > max) {
-        throw runtime_error(context + " exceeds maximum length of " + to_string(max) +
-                          " characters (got " + to_string(str.length()) + ")");
+        throw runtime_error(context + " exceeds maximum length of "
+                            + to_string(max) + " characters (got "
+                            + to_string(str.length()) + ")");
     }
 }
 
@@ -185,8 +196,9 @@ vector<URI_Template::Part> URI_Template::Parse(const string& templateStr) {
 
             expressionCount++;
             if (expressionCount > MAX_TEMPLATE_EXPRESSIONS) {
-                throw runtime_error("Template contains too many expressions (max " +
-                                  to_string(MAX_TEMPLATE_EXPRESSIONS) + ")");
+                throw runtime_error(
+                    "Template contains too many expressions (max "
+                    + to_string(MAX_TEMPLATE_EXPRESSIONS) + ")");
             }
 
             string expr = templateStr.substr(i + 1, end - i - 1);
@@ -197,10 +209,12 @@ vector<URI_Template::Part> URI_Template::Parse(const string& templateStr) {
 
             // Validate variable name length
             for (const auto& variableName : names) {
-                ValidateLength(variableName, MAX_VARIABLE_LENGTH, "Variable name");
+                ValidateLength(variableName, MAX_VARIABLE_LENGTH,
+                               "Variable name");
             }
 
-            parts.emplace_back(TemplatePart{name, operatorChar, names, exploded});
+            parts.emplace_back(
+                TemplatePart{name, operatorChar, names, exploded});
             i = end + 1;
         } else {
             currentText += templateStr[i];
@@ -252,7 +266,8 @@ vector<string> URI_Template::GetNames(const string& expr) const {
     return names;
 }
 
-string URI_Template::EncodeValue(const string& value, const string& operatorChar) const {
+string URI_Template::EncodeValue(const string& value,
+                                 const string& operatorChar) const {
     ValidateLength(value, MAX_VARIABLE_LENGTH, "Variable value");
     if (operatorChar == "+" || operatorChar == "#") {
         return EncodeURI(value);
@@ -260,12 +275,14 @@ string URI_Template::EncodeValue(const string& value, const string& operatorChar
     return EncodeURIComponent(value);
 }
 
-string URI_Template::ExpandPart(const TemplatePart& part, const Variables& variables) const {
+string URI_Template::ExpandPart(const TemplatePart& part,
+                                const Variables& variables) const {
     if (part.operatorChar == "?" || part.operatorChar == "&") {
         vector<string> pairs;
         for (const auto& name : part.names) {
             auto it = variables.find(name);
-            if (it == variables.end()) continue;
+            if (it == variables.end())
+                continue;
 
             string encoded;
             if (holds_alternative<vector<string>>(it->second)) {
@@ -276,20 +293,24 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
                 }
                 encoded = "";
                 for (size_t i = 0; i < encodedValues.size(); i++) {
-                    if (i > 0) encoded += ",";
+                    if (i > 0)
+                        encoded += ",";
                     encoded += encodedValues[i];
                 }
             } else {
-                encoded = EncodeValue(get<string>(it->second), part.operatorChar);
+                encoded =
+                    EncodeValue(get<string>(it->second), part.operatorChar);
             }
             pairs.push_back(name + "=" + encoded);
         }
 
-        if (pairs.empty()) return "";
+        if (pairs.empty())
+            return "";
         string separator = part.operatorChar == "?" ? "?" : "&";
         string result = separator;
         for (size_t i = 0; i < pairs.size(); i++) {
-            if (i > 0) result += "&";
+            if (i > 0)
+                result += "&";
             result += pairs[i];
         }
         return result;
@@ -302,23 +323,27 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
             if (it != variables.end()) {
                 if (holds_alternative<vector<string>>(it->second)) {
                     const auto& vec = get<vector<string>>(it->second);
-                    if (!vec.empty()) values.push_back(vec[0]);
+                    if (!vec.empty())
+                        values.push_back(vec[0]);
                 } else {
                     values.push_back(get<string>(it->second));
                 }
             }
         }
-        if (values.empty()) return "";
+        if (values.empty())
+            return "";
         string result;
         for (size_t i = 0; i < values.size(); i++) {
-            if (i > 0) result += ",";
+            if (i > 0)
+                result += ",";
             result += values[i];
         }
         return result;
     }
 
     auto it = variables.find(part.name);
-    if (it == variables.end()) return "";
+    if (it == variables.end())
+        return "";
 
     vector<string> values;
     if (holds_alternative<vector<string>>(it->second)) {
@@ -334,7 +359,8 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
 
     string result;
     for (size_t i = 0; i < encoded.size(); i++) {
-        if (i > 0) result += ",";
+        if (i > 0)
+            result += ",";
         result += encoded[i];
     }
 
@@ -347,14 +373,16 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
     } else if (part.operatorChar == ".") {
         string dotResult = ".";
         for (size_t i = 0; i < encoded.size(); i++) {
-            if (i > 0) dotResult += ".";
+            if (i > 0)
+                dotResult += ".";
             dotResult += encoded[i];
         }
         return dotResult;
     } else if (part.operatorChar == "/") {
         string slashResult = "/";
         for (size_t i = 0; i < encoded.size(); i++) {
-            if (i > 0) slashResult += "/";
+            if (i > 0)
+                slashResult += "/";
             slashResult += encoded[i];
         }
         return slashResult;
@@ -366,9 +394,9 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
 string URI_Template::EscapeRegExp(const string& str) const {
     string result;
     for (char c : str) {
-        if (c == '.' || c == '*' || c == '+' || c == '?' || c == '^' ||
-            c == '$' || c == '{' || c == '}' || c == '(' || c == ')' ||
-            c == '|' || c == '[' || c == ']' || c == '\\') {
+        if (c == '.' || c == '*' || c == '+' || c == '?' || c == '^' || c == '$'
+            || c == '{' || c == '}' || c == '(' || c == ')' || c == '|'
+            || c == '[' || c == ']' || c == '\\') {
             result += '\\';
         }
         result += c;
@@ -376,7 +404,8 @@ string URI_Template::EscapeRegExp(const string& str) const {
     return result;
 }
 
-vector<pair<string, string>> URI_Template::PartToRegExp(const TemplatePart& part) const {
+vector<pair<string, string>>
+URI_Template::PartToRegExp(const TemplatePart& part) const {
     vector<pair<string, string>> patterns;
 
     // Validate variable name length for matching
@@ -388,7 +417,8 @@ vector<pair<string, string>> URI_Template::PartToRegExp(const TemplatePart& part
         for (size_t i = 0; i < part.names.size(); i++) {
             const string& name = part.names[i];
             string prefix = (i == 0) ? "\\" + part.operatorChar : "&";
-            patterns.emplace_back(prefix + EscapeRegExp(name) + "=([^&]+)", name);
+            patterns.emplace_back(prefix + EscapeRegExp(name) + "=([^&]+)",
+                                  name);
         }
         return patterns;
     }

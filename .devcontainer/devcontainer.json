@@ -15,9 +15,7 @@
 			"extensions": [
 				"aaron-bond.better-comments",
 				"usernamehw.errorlens",
-				"jeff-hykin.better-cpp-syntax",
-				"llvm-vs-code-extensions.vscode-clangd",
-				"ms-vscode.cmake-tools"
+				"jeff-hykin.better-cpp-syntax"
 			]
 		}
 	}

@@ -37,8 +37,9 @@ static constexpr const char* MSG_KEY_SERVER_INFO = "serverInfo";
 static constexpr const char* MSG_KEY_CAPABILITIES = "capabilities";
 static constexpr const char* MSG_KEY_PROMPTS =
     "prompts"; // TODO: Need extensibility for keys - ex. 'prompts/list'
-static constexpr const char* MSG_KEY_RESOURCES = "resources"; // TODO: Same as above
-static constexpr const char* MSG_KEY_TOOLS = "tools";         // TODO: Same as above
+static constexpr const char* MSG_KEY_RESOURCES =
+    "resources";                                      // TODO: Same as above
+static constexpr const char* MSG_KEY_TOOLS = "tools"; // TODO: Same as above
 static constexpr const char* MSG_KEY_LIST_CHANGED = "listChanged";
 static constexpr const char* MSG_KEY_SUBSCRIBE = "subscribe";
 static constexpr const char* MSG_KEY_CURSOR = "cursor";
@@ -62,9 +63,12 @@ static constexpr const char* MSG_KEY_REQUEST_ID = "requestId";
 
 static constexpr const char* MTHD_INITIALIZE = "initialize";
 static constexpr const char* MTHD_PING = "ping";
-static constexpr const char* MTHD_NOTIFICATION_INITIALIZED = "notifications/initialized";
-static constexpr const char* MTHD_NOTIFICATION_CANCELLED = "notifications/cancelled";
-static constexpr const char* MTHD_NOTIFICATION_PROGRESS = "notifications/progress";
+static constexpr const char* MTHD_NOTIFICATION_INITIALIZED =
+    "notifications/initialized";
+static constexpr const char* MTHD_NOTIFICATION_CANCELLED =
+    "notifications/cancelled";
+static constexpr const char* MTHD_NOTIFICATION_PROGRESS =
+    "notifications/progress";
 static constexpr const char* MTHD_TOOLS_LIST = "tools/list";
 static constexpr const char* MTHD_TOOLS_CALL = "tools/call";
 
@@ -74,11 +78,11 @@ static constexpr const char* CONST_AUDIO = "audio";
 static constexpr const char* CONST_RESOURCE = "resource";
 
 /* Errors */
-static constexpr const char* ERRMSG_PARSE_ERROR = u8"parse error";
-static constexpr const char* ERRMSG_INVALID_REQUEST = u8"invalid request";
-static constexpr const char* ERRMSG_METHOD_NOT_FOUND = u8"method not found";
-static constexpr const char* ERRMSG_INVALID_PARAMS = u8"invalid params";
-static constexpr const char* ERRMSG_INTERNAL_ERROR = u8"internal error";
+static constexpr const char* ERRMSG_PARSE_ERROR = "parse error";
+static constexpr const char* ERRMSG_INVALID_REQUEST = "invalid request";
+static constexpr const char* ERRMSG_METHOD_NOT_FOUND = "method not found";
+static constexpr const char* ERRMSG_INVALID_PARAMS = "invalid params";
+static constexpr const char* ERRMSG_INTERNAL_ERROR = "internal error";
 
 // JSON-RPC Error Codes
 static constexpr const int ERRCODE_OK = 0;

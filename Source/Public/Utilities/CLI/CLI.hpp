@@ -1,12 +1,6 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <memory>
-#include <functional>
-#include <future>
-#include <iostream>
-#include <exception>
+#include "Core.h"
 
 // TODO: Implement WebSocket
 class WebSocket;
@@ -14,16 +8,17 @@ class WebSocket;
 using namespace std;
 
 class CLI {
-public:
+  public:
     CLI() = default;
     ~CLI() = default;
 
     // Main entry point
     static int Run(int argc, char* argv[]);
 
-private:
+  private:
     // Client functionality
-    static future<void> RunClient(const string& url_or_command, const vector<string>& args);
+    static future<void> RunClient(const string& url_or_command,
+                                  const vector<string>& args);
 
     // Server functionality
     static future<void> RunServer(int port); // port = -1 for stdio

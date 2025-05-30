@@ -2,27 +2,30 @@
 
 #include "Core.h"
 
+// Constants
+#include "Constants.h"
+
 MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
-string EncodeURI(const string& value);
+string EncodeURI(const string& Value);
 
-string EncodeURIComponent(const string& value);
+string EncodeURIComponent(const string& Value);
 
-using Variables = unordered_map<string, variant<string, vector<string>>>;
+using Variables = unordered_map<string, std::variant<string, vector<string>>>;
 
 class URI_Template {
   public:
     /**
      * Returns true if the given string contains any URI template expressions.
-     * A template expression is a sequence of characters enclosed in curly braces,
-     * like {foo} or {?bar}.
+     * A template expression is a sequence of characters enclosed in curly
+     * braces, like {foo} or {?bar}.
      */
-    static bool IsTemplate(const string& str);
+    static bool IsTemplate(const string& Str);
 
     vector<string> GetVariableNames() const;
 
-    explicit URI_Template(const string& templateStr);
+    explicit URI_Template(const string& TemplateStr);
 
     string ToString() const;
 
@@ -43,7 +46,8 @@ class URI_Template {
     string template_;
     vector<Part> parts_;
 
-    static void ValidateLength(const string& str, size_t max, const string& context);
+    static void ValidateLength(const string& str, size_t max,
+                               const string& context);
 
     vector<Part> Parse(const string& templateStr);
 
@@ -53,11 +57,13 @@ class URI_Template {
 
     string EncodeValue(const string& value, const string& operatorChar) const;
 
-    string ExpandPart(const TemplatePart& part, const Variables& variables) const;
+    string ExpandPart(const TemplatePart& part,
+                      const Variables& variables) const;
 
     string EscapeRegExp(const string& str) const;
 
-    vector<std::pair<string, string>> PartToRegExp(const TemplatePart& part) const;
+    vector<std::pair<string, string>>
+    PartToRegExp(const TemplatePart& part) const;
 };
 
 MCP_NAMESPACE_END

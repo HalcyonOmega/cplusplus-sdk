@@ -1,4 +1,4 @@
-#include "Utilities/CLI/CLI.h"
+#include "Utilities/CLI/CLI.hpp"
 
 // TODO: Implement WebSocket
 class WebSocket;
@@ -6,36 +6,37 @@ class WebSocket;
 using namespace std;
 using namespace MCP;
 
-
-static future<void> CLI::RunClient(const string& url_or_command, const vector<string>& args) {
+future<void> CLI::RunClient(const string& url_or_command,
+                            const vector<string>& args) {
     return async(launch::async, [url_or_command, args]() {
         try {
             // Create client with info and capabilities
-            MCP::ClientInfo client_info{
-                "mcp-cpp test client",
-                "0.1.0"
-            };
+            ClientInfo client_info{"mcp-cpp test client", "0.1.0"};
 
-            MCP::ClientCapabilities capabilities{};
+            ClientCapabilities capabilities{};
             capabilities.sampling = true;
 
-            auto client = make_unique<MCP::Client>(client_info, capabilities);
+            auto client = make_unique<Client>(client_info, capabilities);
 
-            unique_ptr<MCP::ClientTransport> client_transport;
+            unique_ptr<ClientTransport> client_transport;
 
             // Determine transport type based on URL or command
             if (CLI::IsValidUrl(url_or_command)) {
                 string protocol = CLI::GetUrlProtocol(url_or_command);
 
                 if (protocol == "http:" || protocol == "https:") {
-                    client_transport = make_unique<MCP::SSEClientTransport>(url_or_command);
+                    client_transport =
+                        make_unique<SSEClientTransport>(url_or_command);
                 } else if (protocol == "ws:" || protocol == "wss:") {
-                    client_transport = make_unique<MCP::WebSocketClientTransport>(url_or_command);
+                    client_transport =
+                        make_unique<WebSocketClientTransport>(url_or_command);
                 } else {
-                    throw runtime_error("Unsupported URL protocol: " + protocol);
+                    throw runtime_error("Unsupported URL protocol: "
+                                        + protocol);
                 }
             } else {
-                client_transport = make_unique<MCP::StdioClientTransport>(url_or_command, args);
+                client_transport =
+                    make_unique<StdioClientTransport>(url_or_command, args);
             }
 
             CLI::LogMessage("Connected to server.");
@@ -45,7 +46,7 @@ static future<void> CLI::RunClient(const string& url_or_command, const vector<st
             CLI::LogMessage("Initialized.");
 
             // Make a test request
-            MCP::ListResourcesRequest request;
+            ListResourcesRequest request;
             client->Request(request).wait();
 
             // Clean shutdown
@@ -59,42 +60,44 @@ static future<void> CLI::RunClient(const string& url_or_command, const vector<st
     });
 }
 
-static future<void> CLI::RunServer(int port) {
+future<void> CLI::RunServer(int port) {
     return async(launch::async, [port]() {
         try {
             if (port != -1) {
                 // HTTP/SSE server mode
-                CLI::LogMessage("Starting HTTP server on port " + to_string(port));
+                CLI::LogMessage("Starting HTTP server on port "
+                                + to_string(port));
 
                 CLI::http_server_ = make_shared<HttpServer>();
 
                 // Setup SSE endpoint
-                CLI::http_server_->Get("/sse", [](HttpRequest& req, HttpResponse& res) {
-                    CLI::HandleSSEConnection(req, res);
-                });
+                CLI::http_server_->Get("/sse",
+                                       [](HttpRequest& req, HttpResponse& res) {
+                                           CLI::HandleSSEConnection(req, res);
+                                       });
 
                 // Setup message endpoint
-                CLI::http_server_->Post("/message", [](HttpRequest& req, HttpResponse& res) {
-                    CLI::HandlePostMessage(req, res);
-                });
+                CLI::http_server_->Post(
+                    "/message", [](HttpRequest& req, HttpResponse& res) {
+                        CLI::HandlePostMessage(req, res);
+                    });
 
                 CLI::http_server_->Listen(port);
-                CLI::LogMessage("Server running on http://localhost:" + to_string(port) + "/sse");
+                CLI::LogMessage("Server running on http://localhost:"
+                                + to_string(port) + "/sse");
 
             } else {
                 // Stdio server mode
-                MCP::ServerInfo server_info{
-                    "mcp-cpp test server",
-                    "0.1.0"
-                };
+                ServerInfo server_info{"mcp-cpp test server", "0.1.0"};
 
-                MCP::ServerCapabilities capabilities{};
+                ServerCapabilities capabilities{};
                 capabilities.prompts = true;
                 capabilities.resources = true;
                 capabilities.tools = true;
                 capabilities.logging = true;
 
-                auto server = make_shared<MCP::Server>(server_info, capabilities);
+                auto server =
+                    make_shared<MCP::Server>(server_info, capabilities);
                 auto transport = make_unique<MCP::StdioServerTransport>();
 
                 server->Connect(*transport).wait();
@@ -110,10 +113,6 @@ static future<void> CLI::RunServer(int port) {
         }
     });
 }
-
-// Static member definitions
-vector<shared_ptr<MCP::Server>> CLI::active_servers_;
-shared_ptr<HttpServer> CLI::http_server_;
 
 inline int CLI::Run(int argc, char* argv[]) {
     if (argc < 2) {
@@ -181,7 +180,8 @@ inline string CLI::GetUrlProtocol(const string& url) {
 inline void CLI::PrintUsage() {
     cout << "Usage:\n";
     cout << "  client <server_url_or_command> [args...]  - Run as MCP client\n";
-    cout << "  server [port]                            - Run as MCP server (default: stdio)\n";
+    cout << "  server [port]                            - Run as MCP server "
+            "(default: stdio)\n";
 }
 
 inline void CLI::LogMessage(const string& message) {
@@ -197,10 +197,7 @@ inline void CLI::HandleSSEConnection(HttpRequest& req, HttpResponse& res) {
 
     auto transport = make_shared<MCP::SSEServerTransport>("/message", res);
 
-    MCP::ServerInfo server_info{
-        "mcp-cpp test server",
-        "0.1.0"
-    };
+    MCP::ServerInfo server_info{"mcp-cpp test server", "0.1.0"};
 
     MCP::ServerCapabilities capabilities{};
 
@@ -210,7 +207,8 @@ inline void CLI::HandleSSEConnection(HttpRequest& req, HttpResponse& res) {
     server->SetCloseCallback([server]() {
         LogMessage("SSE connection closed");
         auto& servers = CLI::active_servers_;
-        servers.erase(remove(servers.begin(), servers.end(), server), servers.end());
+        servers.erase(remove(servers.begin(), servers.end(), server),
+                      servers.end());
     });
 
     server->Connect(*transport);
@@ -224,7 +222,8 @@ inline void CLI::HandlePostMessage(HttpRequest& req, HttpResponse& res) {
     // Find transport by session ID
     shared_ptr<MCP::SSEServerTransport> transport = nullptr;
     for (const auto& server : active_servers_) {
-        auto sse_transport = dynamic_pointer_cast<MCP::SSEServerTransport>(server->GetTransport());
+        auto sse_transport = dynamic_pointer_cast<MCP::SSEServerTransport>(
+            server->GetTransport());
         if (sse_transport && sse_transport->GetSessionID() == session_id) {
             transport = sse_transport;
             break;
