@@ -46,8 +46,7 @@ class URI_Template {
     string template_;
     vector<Part> parts_;
 
-    static void ValidateLength(const string& str, size_t max,
-                               const string& context);
+    static void ValidateLength(const string& str, size_t max, const string& context);
 
     vector<Part> Parse(const string& templateStr);
 
@@ -57,13 +56,11 @@ class URI_Template {
 
     string EncodeValue(const string& value, const string& operatorChar) const;
 
-    string ExpandPart(const TemplatePart& part,
-                      const Variables& variables) const;
+    string ExpandPart(const TemplatePart& part, const Variables& variables) const;
 
     string EscapeRegExp(const string& str) const;
 
-    vector<std::pair<string, string>>
-    PartToRegExp(const TemplatePart& part) const;
+    vector<std::pair<string, string>> PartToRegExp(const TemplatePart& part) const;
 };
 
 MCP_NAMESPACE_END
