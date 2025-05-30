@@ -1,0 +1,31 @@
+# Developer Guide
+
+-   **Content Structure:**
+    -   Getting Started
+        -   MCP Initialization (Client & Server perspectives, `initialize`, `initialized`) (SDK_FullReference 2.1)
+        -   Protocol Version Negotiation (SDK_FullReference 2.2)
+        -   Capability Negotiation (SDK_FullReference 2.3)
+    -   Core Concepts
+        -   JSON-RPC 2.0 Overview (Request, Response, Notification, Batching) (SDK_FullReference 1.2)
+        -   MCP Client-Host-Server Architecture (SDK_FullReference 1.1)
+        -   Lifecycle Management (Initialization, Operation, Shutdown, Timeouts) (SDK_FullReference 2)
+        -   Transports (stdio, Streamable HTTP with SSE, Custom) (SDK_FullReference 3)
+        -   MCP Schema (TypeScript & JSON) (SDK_FullReference 1.4)
+    -   Authentication
+        -   HTTP Transport Authorization (OAuth 2.1, Dynamic Client Reg, Server Metadata, Grant Types) (SDK_FullReference 4)
+        -   PKCE Requirement (SDK_FullReference 4.7)
+    -   Error Handling
+        -   JSON-RPC Errors (SDK_FullReference 1.2)
+        -   Cancellation (`notifications/cancelled`) (SDK_FullReference 2.6, 7.3)
+    -   Common Use Cases
+        -   Implementing Server Features: Resources (list, read, templates, subscribe/unsubscribe, notifications) (SDK_FullReference 5.1)
+        -   Implementing Server Features: Prompts (list, get, notifications) (SDK_FullReference 5.2)
+        -   Implementing Server Features: Tools (list, call, notifications, security/annotations) (SDK_FullReference 5.3)
+        -   Implementing Client Features: Roots (list, notifications) (SDK_FullReference 6.1)
+        -   Implementing Client Features: Sampling (createMessage) (SDK_FullReference 6.2)
+        -   Using Utilities: Ping, Progress Tracking, Logging, Completion, Pagination (SDK_FullReference 7)
+    -   Advanced Topics
+        -   Streamable HTTP: Sending, Listening, Multiple Connections, Resumability, Session Management (SDK_FullReference 3.2)
+        -   Third-Party Authorization Flow (SDK_FullReference 4.8)
+        -   Security and Trust & Safety Principles & Guidelines (SDK_FullReference 8)
+-   **Format:** 
