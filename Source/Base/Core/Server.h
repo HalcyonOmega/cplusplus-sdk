@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+class Transport;
 namespace CPP_MCP {
 
 using namespace std;
