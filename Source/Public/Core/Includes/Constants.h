@@ -13,10 +13,13 @@ static constexpr const array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
 };
 
 // URI Template Constants
-constexpr size_t MAX_TEMPLATE_LENGTH = 1000000; // 1MB
-constexpr size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
-constexpr size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
-constexpr size_t MAX_REGEX_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_TEMPLATE_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
+static constexpr const size_t MAX_REGEX_LENGTH = 1000000; // 1MB
+
+// The default request timeout, in milliseconds.
+static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
 
 // Message Constants
 static constexpr const char* MSG_KEY_JSON_RPC = "jsonrpc";
@@ -37,9 +40,8 @@ static constexpr const char* MSG_KEY_SERVER_INFO = "serverInfo";
 static constexpr const char* MSG_KEY_CAPABILITIES = "capabilities";
 static constexpr const char* MSG_KEY_PROMPTS =
     "prompts"; // TODO: Need extensibility for keys - ex. 'prompts/list'
-static constexpr const char* MSG_KEY_RESOURCES =
-    "resources";                                      // TODO: Same as above
-static constexpr const char* MSG_KEY_TOOLS = "tools"; // TODO: Same as above
+static constexpr const char* MSG_KEY_RESOURCES = "resources"; // TODO: Same as above
+static constexpr const char* MSG_KEY_TOOLS = "tools";         // TODO: Same as above
 static constexpr const char* MSG_KEY_LIST_CHANGED = "listChanged";
 static constexpr const char* MSG_KEY_SUBSCRIBE = "subscribe";
 static constexpr const char* MSG_KEY_CURSOR = "cursor";
@@ -63,12 +65,9 @@ static constexpr const char* MSG_KEY_REQUEST_ID = "requestId";
 
 static constexpr const char* MTHD_INITIALIZE = "initialize";
 static constexpr const char* MTHD_PING = "ping";
-static constexpr const char* MTHD_NOTIFICATION_INITIALIZED =
-    "notifications/initialized";
-static constexpr const char* MTHD_NOTIFICATION_CANCELLED =
-    "notifications/cancelled";
-static constexpr const char* MTHD_NOTIFICATION_PROGRESS =
-    "notifications/progress";
+static constexpr const char* MTHD_NOTIFICATION_INITIALIZED = "notifications/initialized";
+static constexpr const char* MTHD_NOTIFICATION_CANCELLED = "notifications/cancelled";
+static constexpr const char* MTHD_NOTIFICATION_PROGRESS = "notifications/progress";
 static constexpr const char* MTHD_TOOLS_LIST = "tools/list";
 static constexpr const char* MTHD_TOOLS_CALL = "tools/call";
 

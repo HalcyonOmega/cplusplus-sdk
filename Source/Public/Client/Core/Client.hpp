@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 

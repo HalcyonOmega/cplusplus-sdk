@@ -43,11 +43,6 @@ struct ProtocolOptions {
 };
 
 /**
- * The default request timeout, in milliseconds.
- */
-constexpr int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
-
-/**
  * Options that can be given per request.
  */
 struct RequestOptions : public Transport::TransportSendOptions {
