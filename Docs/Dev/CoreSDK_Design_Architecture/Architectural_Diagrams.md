@@ -11,11 +11,11 @@ This section outlines the revised, streamlined class and struct organization for
 The primary way developers will interact with the SDK is through methods on client objects. These methods correspond directly to MCP operations, abstracting the underlying request/response lifecycle.
 
 *   **`SDK_Client`**: The main entry point for the SDK.
-    *   Provides access to feature-specific client stubs/objects (e.g., `resources()`, `prompts()`).
+    *   Provides access to feature-specific client stubs/objects (e.g., `Resources()`, `Prompts()`).
     *   Handles session management, connection, and overall client state.
 *   **Feature-Specific Client Stubs (e.g., `ResourcesClientStub`, `PromptsClientStub`)**:
-    *   Group related MCP operations (e.g., `ResourcesClientStub` would have `list()`, `read()`, `subscribe()`).
-    *   Each method (e.g., `list(const MCP_ResourcesListParams& params)`) takes relevant parameters (often as a specific `Params` struct) and returns the corresponding `Result` struct (or a future/promise of it, e.g., `std::future<MCP_ResourcesListResult>`).
+    *   Group related MCP operations (e.g., `ResourcesClientStub` would have `List()`, `Read()`, `Subscribe()`).
+    *   Each method (e.g., `List(const MCP_ResourcesListParams& Params)`) takes relevant parameters (often as a specific `Params` struct) and returns the corresponding `Result` struct (or a future/promise of it, e.g., `std::future<MCP_ResourcesListResult>`).
     *   Internally, these methods use the generic message envelopes and payload definitions (described below) to communicate with the server.
 
 ### II. Core Message Envelopes (Internal SDK Mechanism)
@@ -23,28 +23,28 @@ The primary way developers will interact with the SDK is through methods on clie
 These are the primary classes developers will interact with for sending and receiving messages.
 
 1.  **Base Message Type:**
-    *   `MCP_MessageBase`: Common base for all MCP messages (contains `jsonrpc`).
+    *   `MCP_MessageBase`: Common base for all MCP messages (contains `JSON_RPC`).
 
 2.  **Generic Request Wrapper:**
-    *   `MCP_RequestBase`: Abstract base for requests (contains `id`, `method`).
+    *   `MCP_RequestBase`: Abstract base for requests (contains `ID`, `Method`).
     *   `MCP_Request<ParamsType>`: Template class for specific requests.
         *   Inherits from `MCP_RequestBase`.
-        *   Holds a `ParamsType params;` member.
-        *   The `method` string is associated with the `ParamsType`.
+        *   Holds a `ParamsType Params;` member.
+        *   The `Method` string is associated with the `ParamsType`.
 
 3.  **Generic Response Wrapper:**
-    *   `MCP_ResponseBase`: Abstract base for responses (contains `id`, `error?`).
+    *   `MCP_ResponseBase`: Abstract base for responses (contains `ID`, `Error?`).
     *   `MCP_Response<ResultType>`: Template class for specific responses.
         *   Inherits from `MCP_ResponseBase`.
-        *   Holds an `std::optional<ResultType> result;`
+        *   Holds an `std::optional<ResultType> Result;`
         *   A specialization `MCP_Response<void>` (or using `MCP_EmptyResult`) handles empty successful results.
     *   `MCP_ErrorObject`: Standard structure for error details within responses.
 
 4.  **Generic Notification Wrapper:**
-    *   `MCP_NotificationBase`: Abstract base for notifications (contains `method`).
+    *   `MCP_NotificationBase`: Abstract base for notifications (contains `Method`).
     *   `MCP_Notification<ParamsType>`: Template class for specific notifications.
         *   Inherits from `MCP_NotificationBase`.
-        *   Holds a `ParamsType params;` member.
+        *   Holds a `ParamsType Params;` member.
 
 ### III. Payload Definitions (Structs for `ParamsType` and `ResultType`)
 
@@ -53,10 +53,10 @@ These structs represent the specific `params` or `result` objects for each MCP m
 1.  **Utility Payloads:**
     *   `MCP_EmptyParams`: Used as `ParamsType` for requests/notifications without parameters.
     *   `MCP_EmptyResult`: Used as `ResultType` for responses with an empty success object (`{}`).
-    *   `MCP_ListResult<ItemType>` (Conceptual): Template struct for common list results (e.g., `std::vector<ItemType> items; std::optional<std::string> nextCursor;`). This would translate to specific instantiations or individual structs per list type if a direct template isn't used for the result itself, but the pattern is key.
+    *   `MCP_ListResult<ItemType>` (Conceptual): Template struct for common list results (e.g., `std::vector<ItemType> Items; std::optional<std::string> NextCursor;`). This would translate to specific instantiations or individual structs per list type if a direct template isn't used for the result itself, but the pattern is key.
 
 2.  **Common Data Structures:**
-    *   `MCP_ImplementationInfo`: (e.g., for `clientInfo`, `serverInfo`)
+    *   `MCP_ImplementationInfo`: (e.g., for `ClientInfo`, `ServerInfo`)
     *   `MCP_ClientCapabilities`: Contains various client capability flags/objects.
         *   `MCP_RootsCapability`
         *   `MCP_SamplingCapability`
@@ -80,58 +80,58 @@ These structs represent the specific `params` or `result` objects for each MCP m
 4.  **Specific Method Payloads (Examples - a full list is extensive but follows this pattern):**
 
     *   **Initialization:**
-        *   `MCP_InitializeParams`: (`protocolVersion`, `capabilities`, `clientInfo`)
-        *   `MCP_InitializeResult`: (`protocolVersion`, `capabilities`, `serverInfo`, `instructions?`)
+        *   `MCP_InitializeParams`: (`ProtocolVersion`, `Capabilities`, `ClientInfo`)
+        *   `MCP_InitializeResult`: (`ProtocolVersion`, `Capabilities`, `ServerInfo`, `Instructions?`)
         *   `MCP_InitializedParams`: (could be `MCP_EmptyParams`)
     *   **Resources Feature:**
         *   `MCP_Resource`: (Defines a resource item)
         *   `MCP_ResourceTemplate`
         *   `MCP_TextResourceContents`
         *   `MCP_BlobResourceContents`
-        *   `MCP_ResourcesListParams`: (`cursor?`) -> Result: `MCP_ListResult<MCP_Resource>`
-        *   `MCP_ResourcesReadParams`: (`uri`) -> Result: `MCP_ResourcesReadResult` (contains array of `MCP_TextResourceContents` | `MCP_BlobResourceContents`)
-        *   `MCP_ResourcesTemplatesListParams`: (`cursor?`) -> Result: `MCP_ListResult<MCP_ResourceTemplate>`
-        *   `MCP_ResourcesSubscribeParams`: (`uri`) -> Result: `MCP_EmptyResult`
-        *   `MCP_ResourcesUnsubscribeParams`: (`uri`) -> Result: `MCP_EmptyResult`
+        *   `MCP_ResourcesListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_Resource>`
+        *   `MCP_ResourcesReadParams`: (`URI`) -> Result: `MCP_ResourcesReadResult` (contains array of `MCP_TextResourceContents` | `MCP_BlobResourceContents`)
+        *   `MCP_ResourcesTemplatesListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_ResourceTemplate>`
+        *   `MCP_ResourcesSubscribeParams`: (`URI`) -> Result: `MCP_EmptyResult`
+        *   `MCP_ResourcesUnsubscribeParams`: (`URI`) -> Result: `MCP_EmptyResult`
         *   `MCP_NotificationsResourcesListChangedParams`: (likely `MCP_EmptyParams`)
-        *   `MCP_NotificationsResourcesUpdatedParams`: (`uri`)
+        *   `MCP_NotificationsResourcesUpdatedParams`: (`URI`)
     *   **Prompts Feature:**
         *   `MCP_PromptArgument`
         *   `MCP_Prompt`: (Defines a prompt, contains `MCP_PromptArgument`s)
-        *   `MCP_PromptMessage`: (`role`, `content` of `MCP_ContentBase` type)
-        *   `MCP_PromptsListParams`: (`cursor?`) -> Result: `MCP_ListResult<MCP_Prompt>`
-        *   `MCP_PromptsGetParams`: (`name`, `arguments?`)
-        *   `MCP_PromptsGetResult`: (`description?`, `messages`: array of `MCP_PromptMessage`)
+        *   `MCP_PromptMessage`: (`Role`, `Content` of `MCP_ContentBase` type)
+        *   `MCP_PromptsListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_Prompt>`
+        *   `MCP_PromptsGetParams`: (`Name`, `Arguments?`)
+        *   `MCP_PromptsGetResult`: (`Description?`, `Messages`: array of `MCP_PromptMessage`)
         *   `MCP_NotificationsPromptsListChangedParams`: (likely `MCP_EmptyParams`)
     *   **Tools Feature:**
         *   `MCP_JSONSchemaObject`
         *   `MCP_ToolAnnotations`
         *   `MCP_Tool`: (Defines a tool, contains `MCP_JSONSchemaObject`, `MCP_ToolAnnotations`)
-        *   `MCP_ToolsListParams`: (`cursor?`) -> Result: `MCP_ListResult<MCP_Tool>`
-        *   `MCP_ToolsCallParams`: (`name`, `arguments?`)
-        *   `MCP_CallToolResult`: (`content`: array of `MCP_ContentBase`, `isError?`)
+        *   `MCP_ToolsListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_Tool>`
+        *   `MCP_ToolsCallParams`: (`Name`, `Arguments?`)
+        *   `MCP_CallToolResult`: (`Content`: array of `MCP_ContentBase`, `IsError?`)
         *   `MCP_NotificationsToolsListChangedParams`: (likely `MCP_EmptyParams`)
     *   **Client Features (Roots, Sampling - Payloads for Server-to-Client Requests or Client-to-Server Notifications):**
         *   `MCP_Root`
-        *   `MCP_RootsListParams_S2C`: (likely `MCP_EmptyParams` from Server) -> Result from Client: `MCP_RootsListResult_S2C` (`roots`: array of `MCP_Root`)
+        *   `MCP_RootsListParams_S2C`: (likely `MCP_EmptyParams` from Server) -> Result from Client: `MCP_RootsListResult_S2C` (`Roots`: array of `MCP_Root`)
         *   `MCP_NotificationsRootsListChangedParams_C2S`: (likely `MCP_EmptyParams` from Client)
-        *   `MCP_SamplingMessage`: (`role`, `content`)
+        *   `MCP_SamplingMessage`: (`Role`, `Content`)
         *   `MCP_ModelHint`
         *   `MCP_ModelPreferences`
-        *   `MCP_SamplingCreateMessageParams_S2C`: (from Server, complex: `messages`, `modelPreferences?`, etc.) -> Result from Client: `MCP_SamplingCreateMessageResult_S2C` (`role`, `content`, `model`, `stopReason?`)
+        *   `MCP_SamplingCreateMessageParams_S2C`: (from Server, complex: `Messages`, `ModelPreferences?`, etc.) -> Result from Client: `MCP_SamplingCreateMessageResult_S2C` (`Role`, `Content`, `Model`, `StopReason?`)
     *   **Utilities:**
         *   `MCP_PingParams`: (could be `MCP_EmptyParams`) -> Result: `MCP_EmptyResult`
-        *   `MCP_ProgressMeta`: (Part of other request params: `_meta { progressToken }`)
-        *   `MCP_NotificationsProgressParams`: (`progressToken`, `progress`, `total?`, `message?`)
-        *   `MCP_NotificationsCancelledParams`: (`requestId`, `reason?`)
-        *   `MCP_LoggingSetLevelParams`: (`level`) -> Result: `MCP_EmptyResult`
-        *   `MCP_NotificationsMessageParams_S2C`: (`level`, `logger?`, `data`)
+        *   `MCP_ProgressMeta`: (Part of other request params: `_Meta { ProgressToken }`)
+        *   `MCP_NotificationsProgressParams`: (`ProgressToken`, `Progress`, `Total?`, `Message?`)
+        *   `MCP_NotificationsCancelledParams`: (`RequestID`, `Reason?`)
+        *   `MCP_LoggingSetLevelParams`: (`Level`) -> Result: `MCP_EmptyResult`
+        *   `MCP_NotificationsMessageParams_S2C`: (`Level`, `Logger?`, `Data`)
         *   `MCP_PromptReference`
         *   `MCP_ResourceReference`
         *   `MCP_CompletionArgument`
-        *   `MCP_CompletionCompleteParams`: (`ref`, `argument`)
-        *   `MCP_CompletionValue`: (`values`, `total?`, `hasMore?`)
-        *   `MCP_CompletionCompleteResult`: (`completion`: `MCP_CompletionValue`)
+        *   `MCP_CompletionCompleteParams`: (`Ref`, `Argument`)
+        *   `MCP_CompletionValue`: (`Values`, `Total?`, `HasMore?`)
+        *   `MCP_CompletionCompleteResult`: (`Completion`: `MCP_CompletionValue`)
 
 ### IV. Conceptual SDK Components and Transport Layer
 
@@ -155,35 +155,35 @@ classDiagram
 
     %% ======== SDK Client API Facade ========
     class SDK_Client {
-        +ResourcesClientStub resources()
-        +PromptsClientStub prompts()
-        +ToolsClientStub tools()
-        +initialize(MCP_InitializeParams): std::future~MCP_InitializeResult~
-        +ping(): std::future~MCP_EmptyResult~
+        +ResourcesClientStub Resources()
+        +PromptsClientStub Prompts()
+        +ToolsClientStub Tools()
+        +Initialize(MCP_InitializeParams): std::future~MCP_InitializeResult~
+        +Ping(): std::future~MCP_EmptyResult~
         %% ... other global utility methods ...
     }
 
     class ResourcesClientStub {
-        +list(MCP_ResourcesListParams): std::future~MCP_ListResult~MCP_Resource~~
-        +read(MCP_ResourcesReadParams): std::future~MCP_ResourcesReadResult~
-        +subscribe(MCP_ResourcesSubscribeParams): std::future~MCP_EmptyResult~
-        +unsubscribe(MCP_ResourcesUnsubscribeParams): std::future~MCP_EmptyResult~
-        %% +handle_listChanged_notification(handler)
-        %% +handle_updated_notification(handler)
+        +List(MCP_ResourcesListParams): std::future~MCP_ListResult~MCP_Resource~~
+        +Read(MCP_ResourcesReadParams): std::future~MCP_ResourcesReadResult~
+        +Subscribe(MCP_ResourcesSubscribeParams): std::future~MCP_EmptyResult~
+        +Unsubscribe(MCP_ResourcesUnsubscribeParams): std::future~MCP_EmptyResult~
+        %% +HandleListChangedNotification(Handler)
+        %% +HandleUpdatedNotification(Handler)
     }
     SDK_Client o--> ResourcesClientStub : provides
 
     class PromptsClientStub {
-        +list(MCP_PromptsListParams): std::future~MCP_ListResult~MCP_Prompt~~
-        +get(MCP_PromptsGetParams): std::future~MCP_PromptsGetResult~
-        %% +handle_listChanged_notification(handler)
+        +List(MCP_PromptsListParams): std::future~MCP_ListResult~MCP_Prompt~~
+        +Get(MCP_PromptsGetParams): std::future~MCP_PromptsGetResult~
+        %% +HandleListChangedNotification(Handler)
     }
     SDK_Client o--> PromptsClientStub : provides
 
     class ToolsClientStub {
-        +list(MCP_ToolsListParams): std::future~MCP_ListResult~MCP_Tool~~
-        +call(MCP_ToolsCallParams): std::future~MCP_CallToolResult~
-        %% +handle_listChanged_notification(handler)
+        +List(MCP_ToolsListParams): std::future~MCP_ListResult~MCP_Tool~~
+        +Call(MCP_ToolsCallParams): std::future~MCP_CallToolResult~
+        %% +HandleListChangedNotification(Handler)
     }
     SDK_Client o--> ToolsClientStub : provides
 
@@ -202,103 +202,103 @@ classDiagram
 
     %% ======== Core Message Envelopes (Internal) ========
     class MCP_MessageBase {
-        +jsonrpc: string
+        +JSON_RPC: string
     }
 
     class MCP_RequestBase {
         <<Abstract>>
-        +id: string | number
-        +method: string
+        +ID: string | number
+        +Method: string
     }
     MCP_MessageBase <|-- MCP_RequestBase
 
     class MCP_ResponseBase {
         <<Abstract>>
-        +id: string | number
-        +error?: MCP_ErrorObject
+        +ID: string | number
+        +Error?: MCP_ErrorObject
     }
     MCP_MessageBase <|-- MCP_ResponseBase
 
     class MCP_NotificationBase {
         <<Abstract>>
-        +method: string
+        +Method: string
     }
     MCP_MessageBase <|-- MCP_NotificationBase
 
     class MCP_ErrorObject {
-        +code: number
-        +message: string
-        +data?: unknown
+        +Code: number
+        +Message: string
+        +Data?: unknown
     }
 
     class MCP_Request~ParamsType~ {
-        +ParamsType params
+        +ParamsType Params
     }
     MCP_RequestBase <|-- MCP_Request~ParamsType~
 
     class MCP_Response~ResultType~ {
-        +optional~ResultType~ result
+        +optional~ResultType~ Result
     }
     MCP_ResponseBase <|-- MCP_Response~ResultType~
 
     class MCP_Notification~ParamsType~ {
-        +ParamsType params
+        +ParamsType Params
     }
     MCP_NotificationBase <|-- MCP_Notification~ParamsType~
 
     %% --- Payload Struct Examples (Used by Generic Wrappers) ---
     class MCP_InitializeParams {
-        +protocolVersion: string
-        +capabilities: MCP_ClientCapabilities
-        +clientInfo: MCP_ImplementationInfo
+        +ProtocolVersion: string
+        +Capabilities: MCP_ClientCapabilities
+        +ClientInfo: MCP_ImplementationInfo
     }
-    MCP_Request~ParamsType~ ..> MCP_InitializeParams : "params (e.g., if ParamsType is MCP_InitializeParams)"
+    MCP_Request~ParamsType~ ..> MCP_InitializeParams : "Params (e.g., if ParamsType is MCP_InitializeParams)"
 
     class MCP_InitializeResult {
-        +protocolVersion: string
-        +capabilities: MCP_ServerCapabilities
-        +serverInfo: MCP_ImplementationInfo
+        +ProtocolVersion: string
+        +Capabilities: MCP_ServerCapabilities
+        +ServerInfo: MCP_ImplementationInfo
     }
-    MCP_Response~ResultType~ ..> MCP_InitializeResult : "result (e.g., if ResultType is MCP_InitializeResult)"
+    MCP_Response~ResultType~ ..> MCP_InitializeResult : "Result (e.g., if ResultType is MCP_InitializeResult)"
 
     class MCP_Resource {
-        +uri: string
-        +name: string
+        +URI: string
+        +Name: string
     }
     class MCP_ListResult~MCP_Resource~ {
-        +items: MCP_Resource[]
-        +nextCursor?: string
+        +Items: MCP_Resource[]
+        +NextCursor?: string
     }
-    MCP_Response~ResultType~ ..> MCP_ListResult~MCP_Resource~ : "result (e.g., for resources/list)"
+    MCP_Response~ResultType~ ..> MCP_ListResult~MCP_Resource~ : "Result (e.g., for resources/list)"
 
 
     class MCP_ToolsCallParams {
-        +name: string
-        +arguments?: object
+        +Name: string
+        +Arguments?: object
     }
-    MCP_Request~ParamsType~ ..> MCP_ToolsCallParams : "params (e.g., if ParamsType is MCP_ToolsCallParams)"
+    MCP_Request~ParamsType~ ..> MCP_ToolsCallParams : "Params (e.g., if ParamsType is MCP_ToolsCallParams)"
 
     class MCP_CallToolResult {
-        +content: MCP_ContentBase[]
-        +isError?: boolean
+        +Content: MCP_ContentBase[]
+        +IsError?: boolean
     }
-    MCP_Response~ResultType~ ..> MCP_CallToolResult : "result (e.g., if ResultType is MCP_CallToolResult)"
+    MCP_Response~ResultType~ ..> MCP_CallToolResult : "Result (e.g., if ResultType is MCP_CallToolResult)"
 
     class MCP_InitializedParams {
       %% Typically empty or specific simple fields
     }
-    MCP_Notification~ParamsType~ ..> MCP_InitializedParams : "params (e.g., if ParamsType is MCP_InitializedParams)"
+    MCP_Notification~ParamsType~ ..> MCP_InitializedParams : "Params (e.g., if ParamsType is MCP_InitializedParams)"
 
 
     %% --- Common Data Structures ---
     class MCP_ImplementationInfo
     class MCP_ClientCapabilities
     class MCP_ServerCapabilities
-    MCP_ClientCapabilities o-- "0..1" MCP_RootsCapability : roots
-    MCP_ClientCapabilities o-- "0..1" MCP_SamplingCapability : sampling
-    MCP_ServerCapabilities o-- "0..1" MCP_ResourcesCapability : resources
-    MCP_ServerCapabilities o-- "0..1" MCP_PromptsCapability : prompts
-    MCP_ServerCapabilities o-- "0..1" MCP_ToolsCapability : tools
+    MCP_ClientCapabilities o-- "0..1" MCP_RootsCapability : Roots
+    MCP_ClientCapabilities o-- "0..1" MCP_SamplingCapability : Sampling
+    MCP_ServerCapabilities o-- "0..1" MCP_ResourcesCapability : Resources
+    MCP_ServerCapabilities o-- "0..1" MCP_PromptsCapability : Prompts
+    MCP_ServerCapabilities o-- "0..1" MCP_ToolsCapability : Tools
     class MCP_RootsCapability
     class MCP_SamplingCapability
     class MCP_ResourcesCapability
@@ -309,16 +309,16 @@ classDiagram
     %% --- Content Hierarchy ---
     class MCP_ContentBase {
         <<Abstract>>
-        +type: string
-        +annotations?: MCP_Annotations
+        +Type: string
+        +Annotations?: MCP_Annotations
     }
-    class MCP_TextContent { +text: string }
+    class MCP_TextContent { +Text: string }
     MCP_ContentBase <|-- MCP_TextContent
-    class MCP_ImageContent { +data: string, +mimeType: string }
+    class MCP_ImageContent { +Data: string, +MimeType: string }
     MCP_ContentBase <|-- MCP_ImageContent
-    class MCP_AudioContent { +data: string, +mimeType: string }
+    class MCP_AudioContent { +Data: string, +MimeType: string }
     MCP_ContentBase <|-- MCP_AudioContent
-    class MCP_EmbeddedResourceContent { +resource: object }
+    class MCP_EmbeddedResourceContent { +Resource: object }
     MCP_ContentBase <|-- MCP_EmbeddedResourceContent
 
     class MCP_Annotations
@@ -326,7 +326,7 @@ classDiagram
     %% --- Transport Layer ---
     class IMCP_Transport {
         <<Interface>>
-        +SendMessage(message: MCP_MessageBase)
+        +SendMessage(Message: MCP_MessageBase)
         +ReceiveMessage(): MCP_MessageBase
     }
     class MCP_StdioTransport
