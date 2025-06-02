@@ -234,17 +234,15 @@ MCP_NAMESPACE_BEGIN
 /**
  * Sent from the client to request a list of tools the server has.
  */
-export interface ListToolsRequest extends PaginatedRequest {
-method:
-  "tools/list";
+struct ListToolsRequest extends PaginatedRequest {
+  method : "tools/list";
 }
 
 /**
  * The server's response to a tools/list request from the client.
  */
-export interface ListToolsResult extends PaginatedResult {
-tools:
-  Tool[];
+struct ListToolsResult extends PaginatedResult {
+  tools : Tool[];
 }
 
 /**
@@ -259,9 +257,8 @@ tools:
  * server does not support tool calls, or any other exceptional conditions,
  * should be reported as an MCP error response.
  */
-export interface CallToolResult extends Result {
-content:
-  (TextContent | ImageContent | AudioContent | EmbeddedResource)[];
+struct CallToolResult extends Result {
+  content : (TextContent | ImageContent | AudioContent | EmbeddedResource)[];
 
   /**
    * Whether the tool call ended in an error.
@@ -274,14 +271,13 @@ content:
 /**
  * Used by the client to invoke a tool provided by the server.
  */
-export interface CallToolRequest extends Request {
-method:
-  "tools/call";
-params: {
-name:
-  string;
-  arguments ?: {[key:string] : unknown};
-};
+struct CallToolRequest extends Request {
+  method : "tools/call";
+  params : {
+  name:
+    string;
+    arguments ?: {[key:string] : unknown};
+  };
 }
 
 /**
@@ -289,9 +285,8 @@ name:
  * list of tools it offers has changed. This may be issued by servers without
  * any previous subscription from the client.
  */
-export interface ToolListChangedNotification extends Notification {
-method:
-  "notifications/tools/list_changed";
+struct ToolListChangedNotification extends Notification {
+  method : "notifications/tools/list_changed";
 }
 
 /**
@@ -304,7 +299,7 @@ method:
  * Clients should never make tool use decisions based on ToolAnnotations
  * received from untrusted servers.
  */
-export interface ToolAnnotations {
+struct ToolAnnotations {
   /**
    * A human-readable title for the tool.
    */
@@ -351,12 +346,11 @@ export interface ToolAnnotations {
 /**
  * Definition for a tool the client can call.
  */
-export interface Tool {
-/**
- * The name of the tool.
- */
-name:
-  string;
+struct Tool {
+  /**
+   * The name of the tool.
+   */
+  name : string;
 
   /**
    * A human-readable description of the tool.
@@ -366,15 +360,15 @@ name:
    */
   description ?: string;
 
-/**
- * A JSON Schema object defining the expected parameters for the tool.
- */
-inputSchema: {
-type:
-  "object";
-  properties ?: {[key:string] : object};
-  required ?: string[];
-};
+  /**
+   * A JSON Schema object defining the expected parameters for the tool.
+   */
+  inputSchema : {
+  type:
+    "object";
+    properties ?: {[key:string] : object};
+    required ?: string[];
+  };
 
   /**
    * Optional additional tool information.

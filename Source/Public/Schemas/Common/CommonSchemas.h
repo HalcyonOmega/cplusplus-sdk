@@ -70,84 +70,85 @@ MCP_NAMESPACE_BEGIN
 //                  "type" : "object"
 // };
 
-struct PingRequest {
-  "description" : "A ping, issued by either the server or the client, to "
-                  "check that the other party is still alive. The receiver "
-                  "must promptly respond, or else may be disconnected.",
-                  "properties"
-      : {
-        "method" : {"const" : "ping", "type" : "string"},
-        "params" : {
-          "additionalProperties" : {},
-          "properties" : {
-            "_meta" : {
-              "properties" : {
-                "progressToken" : {
-                  "$ref" : "#/definitions/ProgressToken",
-                  "description" :
-                      "If specified, the caller is requesting out-of-band "
-                      "progress notifications for this request (as represented "
-                      "by notifications/progress). The value of this parameter "
-                      "is an opaque token that will be attached to any "
-                      "subsequent notifications. The receiver is not obligated "
-                      "to provide these notifications."
-                }
-              },
-              "type" : "object"
-            }
-          },
-          "type" : "object"
-        }
-      },
-        "required" : ["method"],
-                     "type" : "object"
-};
+// struct PingRequest {
+//   "description" : "A ping, issued by either the server or the client, to "
+//                   "check that the other party is still alive. The receiver "
+//                   "must promptly respond, or else may be disconnected.",
+//                   "properties"
+//       : {
+//         "method" : {"const" : "ping", "type" : "string"},
+//         "params" : {
+//           "additionalProperties" : {},
+//           "properties" : {
+//             "_meta" : {
+//               "properties" : {
+//                 "progressToken" : {
+//                   "$ref" : "#/definitions/ProgressToken",
+//                   "description" :
+//                       "If specified, the caller is requesting out-of-band "
+//                       "progress notifications for this request (as
+//                       represented " "by notifications/progress). The value of
+//                       this parameter " "is an opaque token that will be
+//                       attached to any " "subsequent notifications. The
+//                       receiver is not obligated " "to provide these
+//                       notifications."
+//                 }
+//               },
+//               "type" : "object"
+//             }
+//           },
+//           "type" : "object"
+//         }
+//       },
+//         "required" : ["method"],
+//                      "type" : "object"
+// };
 
-struct ProgressNotification {
-  "description" : "An out-of-band notification used to inform the receiver "
-                  "of a progress update for a long-running request.",
-                  "properties"
-      : {
-        "method" : {"const" : "notifications/progress", "type" : "string"},
-        "params" : {
-          "properties" : {
-            "message" : {
-              "description" :
-                  "An optional message describing the current progress.",
-              "type" : "string"
-            },
-            "progress" : {
-              "description" :
-                  "The progress thus far. This should increase every time "
-                  "progress is made, even if the total is unknown.",
-              "type" : "number"
-            },
-            "progressToken" : {
-              "$ref" : "#/definitions/ProgressToken",
-              "description" :
-                  "The progress token which was given in the initial request, "
-                  "used to associate this notification with the request that "
-                  "is proceeding."
-            },
-            "total" : {
-              "description" : "Total number of items to process (or total "
-                              "progress required), if known.",
-              "type" : "number"
-            }
-          },
-          "required" : [ "progress", "progressToken" ],
-          "type" : "object"
-        }
-      },
-        "required" : [ "method", "params" ],
-                     "type" : "object"
-};
+// struct ProgressNotification {
+//   "description" : "An out-of-band notification used to inform the receiver "
+//                   "of a progress update for a long-running request.",
+//                   "properties"
+//       : {
+//         "method" : {"const" : "notifications/progress", "type" : "string"},
+//         "params" : {
+//           "properties" : {
+//             "message" : {
+//               "description" :
+//                   "An optional message describing the current progress.",
+//               "type" : "string"
+//             },
+//             "progress" : {
+//               "description" :
+//                   "The progress thus far. This should increase every time "
+//                   "progress is made, even if the total is unknown.",
+//               "type" : "number"
+//             },
+//             "progressToken" : {
+//               "$ref" : "#/definitions/ProgressToken",
+//               "description" :
+//                   "The progress token which was given in the initial request,
+//                   " "used to associate this notification with the request
+//                   that " "is proceeding."
+//             },
+//             "total" : {
+//               "description" : "Total number of items to process (or total "
+//                               "progress required), if known.",
+//               "type" : "number"
+//             }
+//           },
+//           "required" : [ "progress", "progressToken" ],
+//           "type" : "object"
+//         }
+//       },
+//         "required" : [ "method", "params" ],
+//                      "type" : "object"
+// };
 
-struct ProgressToken {
-  "description" : "A progress token, used to associate progress "
-                  "notifications with the original request.",
-                  "type" : [ "string", "integer" ]
-};
+// struct ProgressToken {
+//   "description" : "A progress token, used to associate progress "
+//                   "notifications with the original request.",
+//                   "type" : [ "string", "integer" ]
+// };
 
 // struct Request {
 //   "properties" : {
@@ -178,10 +179,10 @@ struct ProgressToken {
 //                               "type" : "object"
 // };
 
-struct RequestId {
-  "description" : "A uniquely identifying ID for a request in JSON-RPC.",
-                  "type" : [ "string", "integer" ]
-};
+// struct RequestId {
+//   "description" : "A uniquely identifying ID for a request in JSON-RPC.",
+//                   "type" : [ "string", "integer" ]
+// };
 
 // struct Result {
 //   "additionalProperties" : {},
@@ -206,40 +207,43 @@ struct RequestId {
 //                  "type" : "string"
 // };
 
-struct CancelledNotification {
-  "description"
-      : "This notification can be sent by either side to indicate that it is "
-        "cancelling a previously-issued request.\n\nThe request SHOULD still "
-        "be in-flight, but due to communication latency, it is always "
-        "possible that this notification MAY arrive after the request has "
-        "already finished.\n\nThis notification indicates that the result "
-        "will be unused, so any associated processing SHOULD cease.\n\nA "
-        "client MUST NOT attempt to cancel its `initialize` request.",
-        "properties"
-      : {
-        "method" : {"const" : "notifications/cancelled", "type" : "string"},
-        "params" : {
-          "properties" : {
-            "reason" : {
-              "description" :
-                  "An optional string describing the reason for the "
-                  "cancellation. This MAY be logged or presented to the user.",
-              "type" : "string"
-            },
-            "requestId" : {
-              "$ref" : "#/definitions/RequestId",
-              "description" :
-                  "The ID of the request to cancel.\n\nThis MUST correspond to "
-                  "the ID of a request previously issued in the same direction."
-            }
-          },
-          "required" : ["requestId"],
-          "type" : "object"
-        }
-      },
-        "required" : [ "method", "params" ],
-                     "type" : "object"
-};
+// struct CancelledNotification {
+//   "description"
+//       : "This notification can be sent by either side to indicate that it is
+//       "
+//         "cancelling a previously-issued request.\n\nThe request SHOULD still
+//         " "be in-flight, but due to communication latency, it is always "
+//         "possible that this notification MAY arrive after the request has "
+//         "already finished.\n\nThis notification indicates that the result "
+//         "will be unused, so any associated processing SHOULD cease.\n\nA "
+//         "client MUST NOT attempt to cancel its `initialize` request.",
+//         "properties"
+//       : {
+//         "method" : {"const" : "notifications/cancelled", "type" : "string"},
+//         "params" : {
+//           "properties" : {
+//             "reason" : {
+//               "description" :
+//                   "An optional string describing the reason for the "
+//                   "cancellation. This MAY be logged or presented to the
+//                   user.",
+//               "type" : "string"
+//             },
+//             "requestId" : {
+//               "$ref" : "#/definitions/RequestId",
+//               "description" :
+//                   "The ID of the request to cancel.\n\nThis MUST correspond
+//                   to " "the ID of a request previously issued in the same
+//                   direction."
+//             }
+//           },
+//           "required" : ["requestId"],
+//           "type" : "object"
+//         }
+//       },
+//         "required" : [ "method", "params" ],
+//                      "type" : "object"
+// };
 
 // struct Cursor {
 //   "description" : "An opaque token used to represent a cursor for
@@ -255,9 +259,8 @@ struct CancelledNotification {
 //                      "type" : "object"
 // };
 
-export interface Request {
-method:
-  string;
+struct Request {
+  method : string;
   params ?: {
     _meta ?: {
       /**
@@ -273,9 +276,8 @@ method:
   };
 }
 
-export interface Notification {
-method:
-  string;
+struct Notification {
+  method : string;
   params ?: {
     /**
      * This parameter name is reserved by MCP to allow clients and servers to
@@ -286,7 +288,7 @@ method:
   };
 }
 
-export interface Result {
+struct Result {
   /**
    * This result property is reserved by the protocol to allow clients and
    * servers to attach additional metadata to their responses.
@@ -296,7 +298,7 @@ export interface Result {
 }
 
 /* Pagination */
-export interface PaginatedRequest extends Request {
+struct PaginatedRequest extends Request {
   params ?: {
     /**
      * An opaque token representing the current pagination position.
@@ -306,7 +308,7 @@ export interface PaginatedRequest extends Request {
   };
 }
 
-export interface PaginatedResult extends Result {
+struct PaginatedResult extends Result {
   /**
    * An opaque token representing the pagination position after the last
    * returned result. If present, there may be more results available.
@@ -320,9 +322,8 @@ export interface PaginatedResult extends Result {
  * party is still alive. The receiver must promptly respond, or else may be
  * disconnected.
  */
-export interface PingRequest extends Request {
-method:
-  "ping";
+struct PingRequest extends Request {
+  method : "ping";
 }
 
 /* Cancellation */
@@ -339,25 +340,24 @@ method:
  *
  * A client MUST NOT attempt to cancel its `initialize` request.
  */
-export interface CancelledNotification extends Notification {
-method:
-  "notifications/cancelled";
-params: {
-/**
- * The ID of the request to cancel.
- *
- * This MUST correspond to the ID of a request previously issued in the same
- * direction.
- */
-requestId:
-  RequestId;
-
+struct CancelledNotification extends Notification {
+  method : "notifications/cancelled";
+  params : {
   /**
-   * An optional string describing the reason for the cancellation. This MAY be
-   * logged or presented to the user.
+   * The ID of the request to cancel.
+   *
+   * This MUST correspond to the ID of a request previously issued in the same
+   * direction.
    */
-  reason ?: string;
-};
+  requestId:
+    RequestId;
+
+    /**
+     * An optional string describing the reason for the cancellation. This MAY
+     * be logged or presented to the user.
+     */
+    reason ?: string;
+  };
 }
 
 /* Progress notifications */
@@ -365,72 +365,69 @@ requestId:
  * An out-of-band notification used to inform the receiver of a progress update
  * for a long-running request.
  */
-export interface ProgressNotification extends Notification {
-method:
-  "notifications/progress";
-params: {
-/**
- * The progress token which was given in the initial request, used to associate
- * this notification with the request that is proceeding.
- */
-progressToken:
-  ProgressToken;
-/**
- * The progress thus far. This should increase every time progress is made, even
- * if the total is unknown.
- *
- * @TJS-type number
- */
-progress:
-  number;
+struct ProgressNotification extends Notification {
+  method : "notifications/progress";
+  params : {
   /**
-   * Total number of items to process (or total progress required), if known.
+   * The progress token which was given in the initial request, used to
+   * associate this notification with the request that is proceeding.
+   */
+  progressToken:
+    ProgressToken;
+  /**
+   * The progress thus far. This should increase every time progress is made,
+   * even if the total is unknown.
    *
    * @TJS-type number
    */
-  total ?: number;
-  /**
-   * An optional message describing the current progress.
-   */
-  message ?: string;
-};
+  progress:
+    number;
+    /**
+     * Total number of items to process (or total progress required), if known.
+     *
+     * @TJS-type number
+     */
+    total ?: number;
+    /**
+     * An optional message describing the current progress.
+     */
+    message ?: string;
+  };
 }
 
 /**
  * An opaque token used to represent a cursor for pagination.
  */
-export type Cursor = string;
+type Cursor = string;
 
 /**
  * Describes the name and version of an MCP implementation.
  */
-export interface Implementation {
-name:
-  string;
-version:
-  string;
+struct Implementation {
+  name : string;
+  version : string;
 }
 
 /* Empty result */
 /**
  * A response that indicates success but carries no data.
  */
-export type EmptyResult = Result;
+type EmptyResult = Result;
 
 /**
  * The sender or recipient of messages and data in a conversation.
  */
-export type Role = "user" | "assistant";
+type Role = "user" | "assistant";
 
 /**
  * A progress token, used to associate progress notifications with the original
  * request.
  */
-export type ProgressToken = string | number;
+type ProgressToken = string | number;
 
 /**
  * A uniquely identifying ID for a request in JSON-RPC.
  */
-export type RequestId = string | number;
+type RequestId = string | number;
 
 MCP_NAMESPACE_END

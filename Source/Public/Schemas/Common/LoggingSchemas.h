@@ -76,18 +76,17 @@ MCP_NAMESPACE_BEGIN
  * A request from the client to the server, to enable or adjust logging.
  */
 
-export interface SetLevelRequest extends Request {
-method:
-    "logging/setLevel";
-params: {
-/**
- * The level of logging that the client wants to receive from the server. The
- * server should send all logs at this level and higher (i.e., more severe) to
- * the client as notifications/message.
- */
-level:
-    LoggingLevel;
-};
+struct SetLevelRequest extends Request {
+    method : "logging/setLevel";
+    params : {
+    /**
+     * The level of logging that the client wants to receive from the server. The
+     * server should send all logs at this level and higher (i.e., more severe) to
+     * the client as notifications/message.
+     */
+    level:
+        LoggingLevel;
+    };
 }
 
 /**
@@ -95,26 +94,25 @@ level:
  * logging/setLevel request has been sent from the client, the server MAY decide
  * which messages to send automatically.
  */
-export interface LoggingMessageNotification extends Notification {
-method:
-    "notifications/message";
-params: {
-/**
- * The severity of this log message.
- */
-level:
-    LoggingLevel;
+struct LoggingMessageNotification extends Notification {
+    method : "notifications/message";
+    params : {
     /**
-     * An optional name of the logger issuing this message.
+     * The severity of this log message.
      */
-    logger ?: string;
-/**
- * The data to be logged, such as a string message or an object. Any JSON
- * serializable type is allowed here.
- */
-data:
-    unknown;
-};
+    level:
+        LoggingLevel;
+        /**
+         * An optional name of the logger issuing this message.
+         */
+        logger ?: string;
+    /**
+     * The data to be logged, such as a string message or an object. Any JSON
+     * serializable type is allowed here.
+     */
+    data:
+        unknown;
+    };
 }
 
 /**
@@ -123,7 +121,7 @@ data:
  * These map to syslog message severities, as specified in RFC-5424:
  * https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1
  */
-export type LoggingLevel =
+type LoggingLevel =
     | "debug" | "info" | "notice" | "warning" | "error" | "critical" | "alert" | "emergency";
 
 MCP_NAMESPACE_END

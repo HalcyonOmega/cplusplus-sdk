@@ -72,15 +72,13 @@ MCP_NAMESPACE_BEGIN
 /**
  * Text provided to or from an LLM.
  */
-export interface TextContent {
-type:
-    "text";
+struct TextContent {
+    type : "text";
 
-/**
- * The text content of the message.
- */
-text:
-    string;
+    /**
+     * The text content of the message.
+     */
+    text : string;
 
     /**
      * Optional annotations for the client.
@@ -91,23 +89,20 @@ text:
 /**
  * An image provided to or from an LLM.
  */
-export interface ImageContent {
-type:
-    "image";
+struct ImageContent {
+    type : "image";
 
-/**
- * The base64-encoded image data.
- *
- * @format byte
- */
-data:
-    string;
+    /**
+     * The base64-encoded image data.
+     *
+     * @format byte
+     */
+    data : string;
 
-/**
- * The MIME type of the image. Different providers may support different image types.
- */
-mimeType:
-    string;
+    /**
+     * The MIME type of the image. Different providers may support different image types.
+     */
+    mimeType : string;
 
     /**
      * Optional annotations for the client.
@@ -118,23 +113,20 @@ mimeType:
 /**
  * Audio provided to or from an LLM.
  */
-export interface AudioContent {
-type:
-    "audio";
+struct AudioContent {
+    type : "audio";
 
-/**
- * The base64-encoded audio data.
- *
- * @format byte
- */
-data:
-    string;
+    /**
+     * The base64-encoded audio data.
+     *
+     * @format byte
+     */
+    data : string;
 
-/**
- * The MIME type of the audio. Different providers may support different audio types.
- */
-mimeType:
-    string;
+    /**
+     * The MIME type of the audio. Different providers may support different audio types.
+     */
+    mimeType : string;
 
     /**
      * Optional annotations for the client.

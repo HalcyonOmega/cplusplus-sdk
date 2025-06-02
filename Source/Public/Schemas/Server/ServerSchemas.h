@@ -115,7 +115,7 @@ MCP_NAMESPACE_BEGIN
  * in this schema, but this is not a closed set: any server can define its own,
  * additional capabilities.
  */
-export interface ServerCapabilities {
+struct ServerCapabilities {
   /**
    * Experimental, non-standard capabilities that the server supports.
    */

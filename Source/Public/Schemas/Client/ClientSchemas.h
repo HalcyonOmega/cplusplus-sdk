@@ -110,7 +110,7 @@ MCP_NAMESPACE_BEGIN
  * this schema, but this is not a closed set: any client can define its own,
  * additional capabilities.
  */
-export interface ClientCapabilities {
+struct ClientCapabilities {
   /**
    * Experimental, non-standard capabilities that the client supports.
    */
@@ -134,7 +134,7 @@ export interface ClientCapabilities {
  * Optional annotations for the client. The client can use annotations to inform
  * how objects are used or displayed
  */
-export interface Annotations {
+struct Annotations {
   /**
    * Describes who the intended customer of this object or data is.
    *

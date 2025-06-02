@@ -121,9 +121,8 @@ MCP_NAMESPACE_BEGIN
  * This request is typically used when the server needs to understand the file system
  * structure or access specific locations that the client has permission to read from.
  */
-export interface ListRootsRequest extends Request {
-method:
-    "roots/list";
+struct ListRootsRequest extends Request {
+    method : "roots/list";
 }
 
 /**
@@ -131,24 +130,22 @@ method:
  * This result contains an array of Root objects, each representing a root directory
  * or file that the server can operate on.
  */
-export interface ListRootsResult extends Result {
-roots:
-    Root[];
+struct ListRootsResult extends Result {
+    roots : Root[];
 }
 
 /**
  * Represents a root directory or file that the server can operate on.
  */
-export interface Root {
-/**
- * The URI identifying the root. This *must* start with file:// for now.
- * This restriction may be relaxed in future versions of the protocol to allow
- * other URI schemes.
- *
- * @format uri
- */
-uri:
-    string;
+struct Root {
+    /**
+     * The URI identifying the root. This *must* start with file:// for now.
+     * This restriction may be relaxed in future versions of the protocol to allow
+     * other URI schemes.
+     *
+     * @format uri
+     */
+    uri : string;
     /**
      * An optional name for the root. This can be used to provide a human-readable
      * identifier for the root, which may be useful for display purposes or for
@@ -162,9 +159,8 @@ uri:
  * This notification should be sent whenever the client adds, removes, or modifies any root.
  * The server should then request an updated list of roots using the ListRootsRequest.
  */
-export interface RootsListChangedNotification extends Notification {
-method:
-    "notifications/roots/list_changed";
+struct RootsListChangedNotification extends Notification {
+    method : "notifications/roots/list_changed";
 }
 
 MCP_NAMESPACE_END

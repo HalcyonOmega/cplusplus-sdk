@@ -166,82 +166,73 @@ MCP_NAMESPACE_BEGIN
  * Refers to any valid JSON-RPC object that can be decoded off the wire, or
  * encoded to be sent.
  */
-export type JSONRPCMessage = | JSONRPCRequest | JSONRPCNotification | JSONRPCBatchRequest
-                             | JSONRPCResponse | JSONRPCError | JSONRPCBatchResponse;
+type JSONRPCMessage = | JSONRPCRequest | JSONRPCNotification | JSONRPCBatchRequest | JSONRPCResponse
+                      | JSONRPCError | JSONRPCBatchResponse;
 
 /**
  * A JSON-RPC batch request, as described in
  * https://www.jsonrpc.org/specification#batch.
  */
-export type JSONRPCBatchRequest = (JSONRPCRequest | JSONRPCNotification)[];
+type JSONRPCBatchRequest = (JSONRPCRequest | JSONRPCNotification)[];
 
 /**
  * A JSON-RPC batch response, as described in
  * https://www.jsonrpc.org/specification#batch.
  */
-export type JSONRPCBatchResponse = (JSONRPCResponse | JSONRPCError)[];
+type JSONRPCBatchResponse = (JSONRPCResponse | JSONRPCError)[];
 
 /**
  * A request that expects a response.
  */
-export interface JSONRPCRequest extends Request {
-jsonrpc:
-    typeof JSONRPC_VERSION;
-id:
-    RequestId;
+struct JSONRPCRequest extends Request {
+    jsonrpc : typeof JSONRPC_VERSION;
+    id : RequestId;
 }
 
 /**
  * A notification which does not expect a response.
  */
-export interface JSONRPCNotification extends Notification {
-jsonrpc:
-    typeof JSONRPC_VERSION;
+struct JSONRPCNotification extends Notification {
+    jsonrpc : typeof JSONRPC_VERSION;
 }
 
 /**
  * A successful (non-error) response to a request.
  */
-export interface JSONRPCResponse {
-jsonrpc:
-    typeof JSONRPC_VERSION;
-id:
-    RequestId;
-result:
-    Result;
+struct JSONRPCResponse {
+    jsonrpc : typeof JSONRPC_VERSION;
+    id : RequestId;
+    result : Result;
 }
 
 // Standard JSON-RPC error codes
-export const PARSE_ERROR = -32700;
-export const INVALID_REQUEST = -32600;
-export const METHOD_NOT_FOUND = -32601;
-export const INVALID_PARAMS = -32602;
-export const INTERNAL_ERROR = -32603;
+const PARSE_ERROR = -32700;
+const INVALID_REQUEST = -32600;
+const METHOD_NOT_FOUND = -32601;
+const INVALID_PARAMS = -32602;
+const INTERNAL_ERROR = -32603;
 
 /**
  * A response to a request that indicates an error occurred.
  */
-export interface JSONRPCError {
-jsonrpc:
-    typeof JSONRPC_VERSION;
-id:
-    RequestId;
-error: {
-/**
- * The error type that occurred.
- */
-code:
-    number;
-/**
- * A short description of the error. The message SHOULD be limited to a concise single sentence.
- */
-message:
-    string;
+struct JSONRPCError {
+    jsonrpc : typeof JSONRPC_VERSION;
+    id : RequestId;
+    error : {
     /**
-     * Additional information about the error. The value of this member is defined by the sender
-     * (e.g. detailed error information, nested errors etc.).
+     * The error type that occurred.
      */
-    data ?: unknown;
-};
-}
-MCP_NAMESPACE_END
+    code:
+        number;
+    /**
+     * A short description of the error. The message SHOULD be limited to a concise single sentence.
+     */
+    message:
+        string;
+        /**
+         * Additional information about the error. The value of this member is defined by the sender
+         * (e.g. detailed error information, nested errors etc.).
+         */
+        data ?: unknown;
+    };
+} MCP_NAMESPACE_END

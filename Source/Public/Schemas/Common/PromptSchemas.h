@@ -216,59 +216,54 @@ MCP_NAMESPACE_BEGIN
  * Sent from the client to request a list of prompts and prompt templates the
  * server has.
  */
-export interface ListPromptsRequest extends PaginatedRequest {
-method:
-  "prompts/list";
+struct ListPromptsRequest extends PaginatedRequest {
+  method : "prompts/list";
 }
 
 /**
  * The server's response to a prompts/list request from the client.
  */
-export interface ListPromptsResult extends PaginatedResult {
-prompts:
-  Prompt[];
+struct ListPromptsResult extends PaginatedResult {
+  prompts : Prompt[];
 }
 
 /**
  * Used by the client to get a prompt provided by the server.
  */
-export interface GetPromptRequest extends Request {
-method:
-  "prompts/get";
-params: {
-/**
- * The name of the prompt or prompt template.
- */
-name:
-  string;
+struct GetPromptRequest extends Request {
+  method : "prompts/get";
+  params : {
   /**
-   * Arguments to use for templating the prompt.
+   * The name of the prompt or prompt template.
    */
-  arguments ?: {[key:string] : string};
-};
+  name:
+    string;
+    /**
+     * Arguments to use for templating the prompt.
+     */
+    arguments ?: {[key:string] : string};
+  };
 }
 
 /**
  * The server's response to a prompts/get request from the client.
  */
-export interface GetPromptResult extends Result {
+struct GetPromptResult extends Result {
   /**
    * An optional description for the prompt.
    */
   description ?: string;
-messages:
-  PromptMessage[];
+  messages : PromptMessage[];
 }
 
 /**
  * A prompt or prompt template that the server offers.
  */
-export interface Prompt {
-/**
- * The name of the prompt or prompt template.
- */
-name:
-  string;
+struct Prompt {
+  /**
+   * The name of the prompt or prompt template.
+   */
+  name : string;
   /**
    * An optional description of what this prompt provides
    */
@@ -282,12 +277,11 @@ name:
 /**
  * Describes an argument that a prompt can accept.
  */
-export interface PromptArgument {
-/**
- * The name of the argument.
- */
-name:
-  string;
+struct PromptArgument {
+  /**
+   * The name of the argument.
+   */
+  name : string;
   /**
    * A human-readable description of the argument.
    */
@@ -304,11 +298,9 @@ name:
  * This is similar to `SamplingMessage`, but also supports the embedding of
  * resources from the MCP server.
  */
-export interface PromptMessage {
-role:
-  Role;
-content:
-  TextContent | ImageContent | AudioContent | EmbeddedResource;
+struct PromptMessage {
+  role : Role;
+  content : TextContent | ImageContent | AudioContent | EmbeddedResource;
 }
 
 /**
@@ -316,22 +308,19 @@ content:
  * list of prompts it offers has changed. This may be issued by servers without
  * any previous subscription from the client.
  */
-export interface PromptListChangedNotification extends Notification {
-method:
-  "notifications/prompts/list_changed";
+struct PromptListChangedNotification extends Notification {
+  method : "notifications/prompts/list_changed";
 }
 
 /**
  * Identifies a prompt.
  */
-export interface PromptReference {
-type:
-  "ref/prompt";
-/**
- * The name of the prompt or prompt template
- */
-name:
-  string;
+struct PromptReference {
+  type : "ref/prompt";
+  /**
+   * The name of the prompt or prompt template
+   */
+  name : string;
 }
 
 MCP_NAMESPACE_END

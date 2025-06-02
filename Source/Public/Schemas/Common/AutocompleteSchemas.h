@@ -88,51 +88,50 @@ MCP_NAMESPACE_BEGIN
 /**
  * A request from the client to the server, to ask for completion options.
  */
-export interface CompleteRequest extends Request {
-method:
-    "completion/complete";
-params: {
-ref:
-    PromptReference | ResourceReference;
-/**
- * The argument's information
- */
-argument: {
-/**
- * The name of the argument
- */
-name:
-    string;
-/**
- * The value of the argument to use for completion matching.
- */
-value:
-    string;
-};
-};
+struct CompleteRequest extends Request {
+    method : "completion/complete";
+    params : {
+    ref:
+        PromptReference | ResourceReference;
+    /**
+     * The argument's information
+     */
+    argument: {
+    /**
+     * The name of the argument
+     */
+    name:
+        string;
+    /**
+     * The value of the argument to use for completion matching.
+     */
+    value:
+        string;
+    };
+    };
 }
 
 /**
  * The server's response to a completion/complete request
  */
-export interface CompleteResult extends Result {
-completion: {
-/**
- * An array of completion values. Must not exceed 100 items.
- */
-values:
-    string[];
+struct CompleteResult extends Result {
+    completion : {
     /**
-     * The total number of completion options available. This can exceed the number of values
-     * actually sent in the response.
+     * An array of completion values. Must not exceed 100 items.
      */
-    total ?: number;
-    /**
-     * Indicates whether there are additional completion options beyond those provided in the
-     * current response, even if the exact total is unknown.
-     */
-    hasMore ?: boolean;
-};
+    values:
+        string[];
+        /**
+         * The total number of completion options available. This can exceed the number of values
+         * actually sent in the response.
+         */
+        total ?: number;
+        /**
+         * Indicates whether there are additional completion options beyond those provided in the
+         * current response, even if the exact total is unknown.
+         */
+        hasMore ?: boolean;
+    };
 }
 
 MCP_NAMESPACE_END

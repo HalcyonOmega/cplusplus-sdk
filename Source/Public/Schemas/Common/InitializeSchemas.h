@@ -94,57 +94,52 @@ MCP_NAMESPACE_BEGIN
  * This request is sent from the client to the server when it first connects,
  * asking it to begin initialization.
  */
-export interface InitializeRequest extends Request {
-method:
-  "initialize";
-params: {
-/**
- * The latest version of the Model Context Protocol that the client supports.
- * The client MAY decide to support older versions as well.
- */
-protocolVersion:
-  string;
-capabilities:
-  ClientCapabilities;
-clientInfo:
-  Implementation;
-};
+struct InitializeRequest extends Request {
+    method : "initialize";
+    params : {
+    /**
+     * The latest version of the Model Context Protocol that the client supports.
+     * The client MAY decide to support older versions as well.
+     */
+    protocolVersion:
+        string;
+    capabilities:
+        ClientCapabilities;
+    clientInfo:
+        Implementation;
+    };
 }
 
 /**
  * After receiving an initialize request from the client, the server sends this
  * response.
  */
-export interface InitializeResult extends Result {
-/**
- * The version of the Model Context Protocol that the server wants to use. This
- * may not match the version that the client requested. If the client cannot
- * support this version, it MUST disconnect.
- */
-protocolVersion:
-  string;
-capabilities:
-  ServerCapabilities;
-serverInfo:
-  Implementation;
+struct InitializeResult extends Result {
+    /**
+     * The version of the Model Context Protocol that the server wants to use. This
+     * may not match the version that the client requested. If the client cannot
+     * support this version, it MUST disconnect.
+     */
+    protocolVersion : string;
+    capabilities : ServerCapabilities;
+    serverInfo : Implementation;
 
-  /**
-   * Instructions describing how to use the server and its features.
-   *
-   * This can be used by clients to improve the LLM's understanding of available
-   * tools, resources, etc. It can be thought of like a "hint" to the model. For
-   * example, this information MAY be added to the system prompt.
-   */
-  instructions ?: string;
+    /**
+     * Instructions describing how to use the server and its features.
+     *
+     * This can be used by clients to improve the LLM's understanding of available
+     * tools, resources, etc. It can be thought of like a "hint" to the model. For
+     * example, this information MAY be added to the system prompt.
+     */
+    instructions ?: string;
 }
 
 /**
  * This notification is sent from the client to the server after initialization
  * has finished.
  */
-export interface InitializedNotification extends Notification {
-method:
-  "notifications/initialized";
+struct InitializedNotification extends Notification {
+    method : "notifications/initialized";
 }
 
 MCP_NAMESPACE_END

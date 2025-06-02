@@ -457,33 +457,29 @@ struct ResourceReference {
 /**
  * Sent from the client to request a list of resources the server has.
  */
-export interface ListResourcesRequest extends PaginatedRequest {
-method:
-  "resources/list";
+struct ListResourcesRequest extends PaginatedRequest {
+  method : "resources/list";
 }
 
 /**
  * The server's response to a resources/list request from the client.
  */
-export interface ListResourcesResult extends PaginatedResult {
-resources:
-  Resource[];
+struct ListResourcesResult extends PaginatedResult {
+  resources : Resource[];
 }
 
 /**
  * Sent from the client to request a list of resource templates the server has.
  */
-export interface ListResourceTemplatesRequest extends PaginatedRequest {
-method:
-  "resources/templates/list";
+struct ListResourceTemplatesRequest extends PaginatedRequest {
+  method : "resources/templates/list";
 }
 
 /**
  * The server's response to a resources/templates/list request from the client.
  */
-export interface ListResourceTemplatesResult extends PaginatedResult {
-resourceTemplates:
-  ResourceTemplate[];
+struct ListResourceTemplatesResult extends PaginatedResult {
+  resourceTemplates : ResourceTemplate[];
 }
 
 /**
@@ -491,40 +487,37 @@ resourceTemplates:
  * has changed and may need to be read again. This should only be sent if the
  * client previously sent a resources/subscribe request.
  */
-export interface ResourceUpdatedNotification extends Notification {
-method:
-  "notifications/resources/updated";
-params: {
-/**
- * The URI of the resource that has been updated. This might be a sub-resource
- * of the one that the client actually subscribed to.
- *
- * @format uri
- */
-uri:
-  string;
-};
+struct ResourceUpdatedNotification extends Notification {
+  method : "notifications/resources/updated";
+  params : {
+  /**
+   * The URI of the resource that has been updated. This might be a sub-resource
+   * of the one that the client actually subscribed to.
+   *
+   * @format uri
+   */
+  uri:
+    string;
+  };
 }
 
 /**
  * A known resource that the server is capable of reading.
  */
-export interface Resource {
-/**
- * The URI of this resource.
- *
- * @format uri
- */
-uri:
-  string;
+struct Resource {
+  /**
+   * The URI of this resource.
+   *
+   * @format uri
+   */
+  uri : string;
 
-/**
- * A human-readable name for this resource.
- *
- * This can be used by clients to populate UI elements.
- */
-name:
-  string;
+  /**
+   * A human-readable name for this resource.
+   *
+   * This can be used by clients to populate UI elements.
+   */
+  name : string;
 
   /**
    * A description of what this resource represents.
@@ -557,23 +550,21 @@ name:
 /**
  * A template description for resources available on the server.
  */
-export interface ResourceTemplate {
-/**
- * A URI template (according to RFC 6570) that can be used to construct resource
- * URIs.
- *
- * @format uri-template
- */
-uriTemplate:
-  string;
+struct ResourceTemplate {
+  /**
+   * A URI template (according to RFC 6570) that can be used to construct
+   * resource URIs.
+   *
+   * @format uri-template
+   */
+  uriTemplate : string;
 
-/**
- * A human-readable name for the type of resource this template refers to.
- *
- * This can be used by clients to populate UI elements.
- */
-name:
-  string;
+  /**
+   * A human-readable name for the type of resource this template refers to.
+   *
+   * This can be used by clients to populate UI elements.
+   */
+  name : string;
 
   /**
    * A description of what this template is for.
@@ -598,56 +589,52 @@ name:
 /**
  * The contents of a specific resource or sub-resource.
  */
-export interface ResourceContents {
-/**
- * The URI of this resource.
- *
- * @format uri
- */
-uri:
-  string;
+struct ResourceContents {
+  /**
+   * The URI of this resource.
+   *
+   * @format uri
+   */
+  uri : string;
   /**
    * The MIME type of this resource, if known.
    */
   mimeType ?: string;
 }
 
-export interface TextResourceContents extends ResourceContents {
-/**
- * The text of the item. This must only be set if the item can actually be
- * represented as text (not binary data).
- */
-text:
-  string;
+struct TextResourceContents extends ResourceContents {
+  /**
+   * The text of the item. This must only be set if the item can actually be
+   * represented as text (not binary data).
+   */
+  text : string;
 }
 
-export interface BlobResourceContents extends ResourceContents {
-/**
- * A base64-encoded string representing the binary data of the item.
- *
- * @format byte
- */
-blob:
-  string;
+struct BlobResourceContents extends ResourceContents {
+  /**
+   * A base64-encoded string representing the binary data of the item.
+   *
+   * @format byte
+   */
+  blob : string;
 }
 
 /**
  * Sent from the client to request resources/updated notifications from the
  * server whenever a particular resource changes.
  */
-export interface SubscribeRequest extends Request {
-method:
-  "resources/subscribe";
-params: {
-/**
- * The URI of the resource to subscribe to. The URI can use any protocol; it is
- * up to the server how to interpret it.
- *
- * @format uri
- */
-uri:
-  string;
-};
+struct SubscribeRequest extends Request {
+  method : "resources/subscribe";
+  params : {
+  /**
+   * The URI of the resource to subscribe to. The URI can use any protocol; it
+   * is up to the server how to interpret it.
+   *
+   * @format uri
+   */
+  uri:
+    string;
+  };
 }
 
 /**
@@ -655,44 +642,41 @@ uri:
  * notifications from the server. This should follow a previous
  * resources/subscribe request.
  */
-export interface UnsubscribeRequest extends Request {
-method:
-  "resources/unsubscribe";
-params: {
-/**
- * The URI of the resource to unsubscribe from.
- *
- * @format uri
- */
-uri:
-  string;
-};
+struct UnsubscribeRequest extends Request {
+  method : "resources/unsubscribe";
+  params : {
+  /**
+   * The URI of the resource to unsubscribe from.
+   *
+   * @format uri
+   */
+  uri:
+    string;
+  };
 }
 
 /**
  * Sent from the client to the server, to read a specific resource URI.
  */
-export interface ReadResourceRequest extends Request {
-method:
-  "resources/read";
-params: {
-/**
- * The URI of the resource to read. The URI can use any protocol; it is up to
- * the server how to interpret it.
- *
- * @format uri
- */
-uri:
-  string;
-};
+struct ReadResourceRequest extends Request {
+  method : "resources/read";
+  params : {
+  /**
+   * The URI of the resource to read. The URI can use any protocol; it is up to
+   * the server how to interpret it.
+   *
+   * @format uri
+   */
+  uri:
+    string;
+  };
 }
 
 /**
  * The server's response to a resources/read request from the client.
  */
-export interface ReadResourceResult extends Result {
-contents:
-  (TextResourceContents | BlobResourceContents)[];
+struct ReadResourceResult extends Result {
+  contents : (TextResourceContents | BlobResourceContents)[];
 }
 
 /**
@@ -700,9 +684,8 @@ contents:
  * list of resources it can read from has changed. This may be issued by servers
  * without any previous subscription from the client.
  */
-export interface ResourceListChangedNotification extends Notification {
-method:
-  "notifications/resources/list_changed";
+struct ResourceListChangedNotification extends Notification {
+  method : "notifications/resources/list_changed";
 }
 
 /**
@@ -711,11 +694,9 @@ method:
  * It is up to the client how best to render embedded resources for the benefit
  * of the LLM and/or the user.
  */
-export interface EmbeddedResource {
-type:
-  "resource";
-resource:
-  TextResourceContents | BlobResourceContents;
+struct EmbeddedResource {
+  type : "resource";
+  resource : TextResourceContents | BlobResourceContents;
 
   /**
    * Optional annotations for the client.
@@ -726,16 +707,14 @@ resource:
 /**
  * A reference to a resource or resource template definition.
  */
-export interface ResourceReference {
-type:
-  "ref/resource";
-/**
- * The URI or URI template of the resource.
- *
- * @format uri-template
- */
-uri:
-  string;
+struct ResourceReference {
+  type : "ref/resource";
+  /**
+   * The URI or URI template of the resource.
+   *
+   * @format uri-template
+   */
+  uri : string;
 }
 
 MCP_NAMESPACE_END
