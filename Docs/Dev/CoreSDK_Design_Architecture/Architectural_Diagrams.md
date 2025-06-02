@@ -15,7 +15,7 @@ The primary way developers will interact with the SDK is through methods on clie
     *   Handles session management, connection, and overall client state.
 *   **Feature-Specific Client Stubs (e.g., `ResourcesClientStub`, `PromptsClientStub`)**:
     *   Group related MCP operations (e.g., `ResourcesClientStub` would have `List()`, `Read()`, `Subscribe()`).
-    *   Each method (e.g., `List(const MCP_ResourcesListParams& Params)`) takes relevant parameters (often as a specific `Params` struct) and returns the corresponding `Result` struct (or a future/promise of it, e.g., `std::future<MCP_ResourcesListResult>`).
+    *   Each method (e.g., `List(const std::optional<std::string>& cursor)`) takes relevant parameters directly (or as a specific `Params` struct for complex, non-action parameters like initialization) and returns the corresponding result structure (or a future/promise of it, e.g., `std::future<MCP_ResourcesListResult>`).
     *   Internally, these methods use the generic message envelopes and payload definitions (described below) to communicate with the server.
 
 ### II. Core Message Envelopes (Internal SDK Mechanism)
@@ -37,7 +37,7 @@ These are the primary classes developers will interact with for sending and rece
     *   `MCP_Response<ResultType>`: Template class for specific responses.
         *   Inherits from `MCP_ResponseBase`.
         *   Holds an `std::optional<ResultType> Result;`
-        *   A specialization `MCP_Response<void>` (or using `MCP_EmptyResult`) handles empty successful results.
+        *   A specialization `MCP_Response<void>` handles empty successful results (i.e., `result: {}`), replacing the need for a separate `MCP_EmptyResult` type.
     *   `MCP_ErrorObject`: Standard structure for error details within responses.
 
 4.  **Generic Notification Wrapper:**
@@ -48,12 +48,12 @@ These are the primary classes developers will interact with for sending and rece
 
 ### III. Payload Definitions (Structs for `ParamsType` and `ResultType`)
 
-These structs represent the specific `params` or `result` objects for each MCP method, ensuring type safety and spec accuracy.
+These structs represent the specific `params` or `result` objects for MCP methods that have complex payloads (like `initialize`), or define core data entities. For many actions, parameters are passed directly to `ClientStub` methods, and results are returned directly, rather than through dedicated `Params` or `Result` structs listed here.
 
-1.  **Utility Payloads:**
-    *   `MCP_EmptyParams`: Used as `ParamsType` for requests/notifications without parameters.
-    *   `MCP_EmptyResult`: Used as `ResultType` for responses with an empty success object (`{}`).
-    *   `MCP_ListResult<ItemType>` (Conceptual): Template struct for common list results (e.g., `std::vector<ItemType> Items; std::optional<std::string> NextCursor;`). This would translate to specific instantiations or individual structs per list type if a direct template isn't used for the result itself, but the pattern is key.
+1.  **Utility Concepts for Empty Payloads:**
+    *   For requests or notifications that do not require parameters by specification, `void` (or a generic, minimal, empty struct like `MCP_Void`) is used as the `ParamsType` within `MCP_Request<ParamsType>` or `MCP_Notification<ParamsType>`. This avoids the need for specific "EmptyParams" structs for each parameter-less operation.
+    *   For responses indicating success with no data (i.e., an empty JSON object `{}` as result), `MCP_Response<void>` is used (as described in `MCP_Response<ResultType>`). This eliminates the need for a specific `MCP_EmptyResult` struct.
+    *   `MCP_ListResult<ItemType>` (Conceptual): Template struct for common list results (e.g., `std::vector<ItemType> Items; std::optional<std::string> NextCursor;`). This remains useful for methods returning lists.
 
 2.  **Common Data Structures:**
     *   `MCP_ImplementationInfo`: (e.g., for `ClientInfo`, `ServerInfo`)
@@ -82,49 +82,52 @@ These structs represent the specific `params` or `result` objects for each MCP m
     *   **Initialization:**
         *   `MCP_InitializeParams`: (`ProtocolVersion`, `Capabilities`, `ClientInfo`)
         *   `MCP_InitializeResult`: (`ProtocolVersion`, `Capabilities`, `ServerInfo`, `Instructions?`)
-        *   `MCP_InitializedParams`: (could be `MCP_EmptyParams`)
+        *   `MCP_InitializedParams`: (Parameters for the `initialized` notification. If the spec defines no parameters for this notification, `void` would be used directly as `ParamsType` for `MCP_Notification<ParamsType>` and this struct would not be needed.)
     *   **Resources Feature:**
         *   `MCP_Resource`: (Defines a resource item)
         *   `MCP_ResourceTemplate`
         *   `MCP_TextResourceContents`
         *   `MCP_BlobResourceContents`
-        *   `MCP_ResourcesListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_Resource>`
-        *   `MCP_ResourcesReadParams`: (`URI`) -> Result: `MCP_ResourcesReadResult` (contains array of `MCP_TextResourceContents` | `MCP_BlobResourceContents`)
-        *   `MCP_ResourcesTemplatesListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_ResourceTemplate>`
-        *   `MCP_ResourcesSubscribeParams`: (`URI`) -> Result: `MCP_EmptyResult`
-        *   `MCP_ResourcesUnsubscribeParams`: (`URI`) -> Result: `MCP_EmptyResult`
-        *   `MCP_NotificationsResourcesListChangedParams`: (likely `MCP_EmptyParams`)
+        *   `MCP_ResourcesReadResult`: (Contains array of `MCP_TextResourceContents` | `MCP_BlobResourceContents`) - Returned by the `Read` method.
+        *   `ResourcesClientStub` Methods:
+            *   `List(Cursor?: std::optional<std::string>)` -> Result: `MCP_ListResult<MCP_Resource>`
+            *   `Read(URI: std::string)` -> Result: `MCP_ResourcesReadResult`
+            *   `TemplatesList(Cursor?: std::optional<std::string>)` -> Result: `MCP_ListResult<MCP_ResourceTemplate>`
+            *   `Subscribe(URI: std::string)` -> Result: `void`
+            *   `Unsubscribe(URI: std::string)` -> Result: `void`
+        *   `notifications/resources/listChanged` (Notification): (no parameters)
         *   `MCP_NotificationsResourcesUpdatedParams`: (`URI`)
     *   **Prompts Feature:**
         *   `MCP_PromptArgument`
         *   `MCP_Prompt`: (Defines a prompt, contains `MCP_PromptArgument`s)
         *   `MCP_PromptMessage`: (`Role`, `Content` of `MCP_ContentBase` type)
-        *   `MCP_PromptsListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_Prompt>`
-        *   `MCP_PromptsGetParams`: (`Name`, `Arguments?`)
-        *   `MCP_PromptsGetResult`: (`Description?`, `Messages`: array of `MCP_PromptMessage`)
-        *   `MCP_NotificationsPromptsListChangedParams`: (likely `MCP_EmptyParams`)
+        *   `MCP_PromptsGetResult`: (`Description?`, `Messages`: array of `MCP_PromptMessage`) - Returned by the `Get` method.
+        *   `PromptsClientStub` Methods:
+            *   `List(Cursor?: std::optional<std::string>)` -> Result: `MCP_ListResult<MCP_Prompt>`
+            *   `Get(Name: std::string, Arguments?: json_object)` -> Result: `MCP_PromptsGetResult`
+        *   `notifications/prompts/listChanged` (Notification): (no parameters)
     *   **Tools Feature:**
         *   `MCP_JSONSchemaObject`
         *   `MCP_ToolAnnotations`
         *   `MCP_Tool`: (Defines a tool, contains `MCP_JSONSchemaObject`, `MCP_ToolAnnotations`)
-        *   `MCP_ToolsListParams`: (`Cursor?`) -> Result: `MCP_ListResult<MCP_Tool>`
-        *   `MCP_ToolsCallParams`: (`Name`, `Arguments?`)
-        *   `MCP_CallToolResult`: (`Content`: array of `MCP_ContentBase`, `IsError?`)
-        *   `MCP_NotificationsToolsListChangedParams`: (likely `MCP_EmptyParams`)
+        *   `ToolsClientStub` Methods:
+            *   `List(Cursor?: std::optional<std::string>)` -> Result: `MCP_ListResult<MCP_Tool>`
+            *   `Call(Name: std::string, Arguments?: object)` -> Result: `struct { Content: std::vector<MCP_ContentBase>; IsError?: bool; }` (This structure is returned directly)
+        *   `notifications/tools/listChanged` (Notification): (no parameters)
     *   **Client Features (Roots, Sampling - Payloads for Server-to-Client Requests or Client-to-Server Notifications):**
         *   `MCP_Root`
-        *   `MCP_RootsListParams_S2C`: (likely `MCP_EmptyParams` from Server) -> Result from Client: `MCP_RootsListResult_S2C` (`Roots`: array of `MCP_Root`)
-        *   `MCP_NotificationsRootsListChangedParams_C2S`: (likely `MCP_EmptyParams` from Client)
+        *   `MCP_RootsListParams_S2C`: (likely `MCP_EmptyParams` from Server) -> Result from Client: `MCP_RootsListResult_S2C` (`Roots`: array of `MCP_Root`) %% TODO: Clarify if S2C requests can be parameterless using 'void'
+        *   `notifications/roots/listChanged` (Notification from Client to Server): (no parameters)
         *   `MCP_SamplingMessage`: (`Role`, `Content`)
         *   `MCP_ModelHint`
         *   `MCP_ModelPreferences`
         *   `MCP_SamplingCreateMessageParams_S2C`: (from Server, complex: `Messages`, `ModelPreferences?`, etc.) -> Result from Client: `MCP_SamplingCreateMessageResult_S2C` (`Role`, `Content`, `Model`, `StopReason?`)
     *   **Utilities:**
-        *   `MCP_PingParams`: (could be `MCP_EmptyParams`) -> Result: `MCP_EmptyResult`
+        *   `ping` (Request): (no parameters) -> Result: `void`
         *   `MCP_ProgressMeta`: (Part of other request params: `_Meta { ProgressToken }`)
         *   `MCP_NotificationsProgressParams`: (`ProgressToken`, `Progress`, `Total?`, `Message?`)
         *   `MCP_NotificationsCancelledParams`: (`RequestID`, `Reason?`)
-        *   `MCP_LoggingSetLevelParams`: (`Level`) -> Result: `MCP_EmptyResult`
+        *   `MCP_LoggingSetLevelParams`: (`Level`) -> Result: `void`
         *   `MCP_NotificationsMessageParams_S2C`: (`Level`, `Logger?`, `Data`)
         *   `MCP_PromptReference`
         *   `MCP_ResourceReference`
@@ -159,30 +162,30 @@ classDiagram
         +PromptsClientStub Prompts()
         +ToolsClientStub Tools()
         +Initialize(MCP_InitializeParams): std::future~MCP_InitializeResult~
-        +Ping(): std::future~MCP_EmptyResult~
+        +Ping(): std::future~void~
         %% ... other global utility methods ...
     }
 
     class ResourcesClientStub {
-        +List(MCP_ResourcesListParams): std::future~MCP_ListResult~MCP_Resource~~
-        +Read(MCP_ResourcesReadParams): std::future~MCP_ResourcesReadResult~
-        +Subscribe(MCP_ResourcesSubscribeParams): std::future~MCP_EmptyResult~
-        +Unsubscribe(MCP_ResourcesUnsubscribeParams): std::future~MCP_EmptyResult~
+        +List(Cursor?: string): std::future~MCP_ListResult~MCP_Resource~~
+        +Read(URI: string): std::future~MCP_ResourcesReadResult~
+        +Subscribe(URI: string): std::future~void~
+        +Unsubscribe(URI: string): std::future~void~
         %% +HandleListChangedNotification(Handler)
         %% +HandleUpdatedNotification(Handler)
     }
     SDK_Client o--> ResourcesClientStub : provides
 
     class PromptsClientStub {
-        +List(MCP_PromptsListParams): std::future~MCP_ListResult~MCP_Prompt~~
-        +Get(MCP_PromptsGetParams): std::future~MCP_PromptsGetResult~
+        +List(Cursor?: string): std::future~MCP_ListResult~MCP_Prompt~~
+        +Get(Name: string, Arguments?: object): std::future~MCP_PromptsGetResult~
         %% +HandleListChangedNotification(Handler)
     }
     SDK_Client o--> PromptsClientStub : provides
 
     class ToolsClientStub {
-        +List(MCP_ToolsListParams): std::future~MCP_ListResult~MCP_Tool~~
-        +Call(MCP_ToolsCallParams): std::future~MCP_CallToolResult~
+        +List(Cursor?: string): std::future~MCP_ListResult~MCP_Tool~~
+        +Call(Name: string, Arguments?: object): std::future~ToolCallOutput~
         %% +HandleListChangedNotification(Handler)
     }
     SDK_Client o--> ToolsClientStub : provides
@@ -191,13 +194,12 @@ classDiagram
     ResourcesClientStub ..> MCP_Request~ParamsType~ : uses internally
     ResourcesClientStub ..> MCP_Response~ResultType~ : uses internally
     ResourcesClientStub ..> MCP_Notification~ParamsType~ : uses for notifications
-    ResourcesClientStub ..> MCP_ResourcesListParams : uses
     ResourcesClientStub ..> MCP_ListResult~MCP_Resource~ : uses
+    ResourcesClientStub ..> MCP_ResourcesReadResult : uses
 
     PromptsClientStub ..> MCP_Request~ParamsType~ : uses internally
     PromptsClientStub ..> MCP_Response~ResultType~ : uses internally
     PromptsClientStub ..> MCP_Notification~ParamsType~ : uses for notifications
-    PromptsClientStub ..> MCP_PromptsGetParams : uses
     PromptsClientStub ..> MCP_PromptsGetResult : uses
 
     %% ======== Core Message Envelopes (Internal) ========
@@ -240,6 +242,7 @@ classDiagram
         +optional~ResultType~ Result
     }
     MCP_ResponseBase <|-- MCP_Response~ResultType~
+    note on MCP_Response~ResultType~ "A specialization MCP_Response<void> handles empty successful results."
 
     class MCP_Notification~ParamsType~ {
         +ParamsType Params
@@ -270,19 +273,30 @@ classDiagram
         +NextCursor?: string
     }
     MCP_Response~ResultType~ ..> MCP_ListResult~MCP_Resource~ : "Result (e.g., for resources/list)"
-
-
-    class MCP_ToolsCallParams {
-        +Name: string
-        +Arguments?: object
+    class MCP_ResourcesReadResult {
+        +Contents: MCP_ContentBase[] %% Placeholder for actual structure
     }
-    MCP_Request~ParamsType~ ..> MCP_ToolsCallParams : "Params (e.g., if ParamsType is MCP_ToolsCallParams)"
+    MCP_Response~ResultType~ ..> MCP_ResourcesReadResult : "Result (e.g., for resources/read)"
 
-    class MCP_CallToolResult {
+    class MCP_Prompt {
+        +Name: string
+        %% ... other fields
+    }
+    class MCP_PromptsGetResult {
+        +Description?: string
+        +Messages: MCP_PromptMessage[]
+    }
+    MCP_Response~ResultType~ ..> MCP_PromptsGetResult : "Result (e.g., for prompts/get)"
+
+    class MCP_Tool {
+        +Name: string
+        %% ... other fields
+    }
+    class ToolCallOutput {
         +Content: MCP_ContentBase[]
         +IsError?: boolean
     }
-    MCP_Response~ResultType~ ..> MCP_CallToolResult : "Result (e.g., if ResultType is MCP_CallToolResult)"
+    MCP_Response~ResultType~ ..> ToolCallOutput : "Result (e.g., if ResultType is ToolCallOutput for tools/call)"
 
     class MCP_InitializedParams {
       %% Typically empty or specific simple fields
@@ -349,7 +363,7 @@ classDiagram
 
     note "SDK_Client and Feature Stubs provide a method-based API."
     note "These methods internally use MCP_Request~T~, MCP_Response~T~, and payload structs."
-    note "Generic wrappers MCP_Request~T~, MCP_Response~T~, MCP_Notification~T~ use specific Params/Result structs."
+    note "Generic wrappers MCP_Request~T~, MCP_Response~T~, MCP_Notification~T~ use specific Params/Result structs (or void for empty cases)."
     note "Only a few example Params/Result structs are shown for brevity."
     note "The 'MCP_ListResult~ItemType~' class is a conceptual representation of how list results (e.g. vector of items + cursor) would be structured for various ItemTypes."
 ```

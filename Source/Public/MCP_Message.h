@@ -1,0 +1,1 @@
+// *   `MCP_MessageBase`: Common base for all MCP messages (contains `JSON_RPC`).
