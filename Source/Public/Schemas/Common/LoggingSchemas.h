@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -76,44 +78,48 @@ MCP_NAMESPACE_BEGIN
  * A request from the client to the server, to enable or adjust logging.
  */
 
-struct SetLevelRequest extends Request {
-    method : "logging/setLevel";
+struct SetLevelRequest : public Request {
     params : {
-    /**
-     * The level of logging that the client wants to receive from the server. The
-     * server should send all logs at this level and higher (i.e., more severe) to
-     * the client as notifications/message.
-     */
-    level:
-        LoggingLevel;
+        /**
+         * The level of logging that the client wants to receive from the server. The
+         * server should send all logs at this level and higher (i.e., more severe) to
+         * the client as notifications/message.
+         */
+        LoggingLevel level;
     };
-}
+
+    SetLevelRequest() {
+        method = MTHD_LOGGING_SET_LEVEL;
+    }
+};
 
 /**
  * Notification of a log message passed from server to client. If no
  * logging/setLevel request has been sent from the client, the server MAY decide
  * which messages to send automatically.
  */
-struct LoggingMessageNotification extends Notification {
-    method : "notifications/message";
+struct LoggingMessageNotification : public Notification {
     params : {
-    /**
-     * The severity of this log message.
-     */
-    level:
-        LoggingLevel;
+        /**
+         * The severity of this log message.
+         */
+        LoggingLevel level;
         /**
          * An optional name of the logger issuing this message.
          */
-        logger ?: string;
-    /**
-     * The data to be logged, such as a string message or an object. Any JSON
-     * serializable type is allowed here.
-     */
+        optional<string> logger;
+        /**
+         * The data to be logged, such as a string message or an object. Any JSON
+         * serializable type is allowed here.
+         */
     data:
         unknown;
     };
-}
+
+    LoggingMessageNotification() {
+        method = MTHD_NOTIFICATIONS_MESSAGE;
+    }
+};
 
 /**
  * The severity of a log message.

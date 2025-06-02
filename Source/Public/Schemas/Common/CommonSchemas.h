@@ -1,6 +1,7 @@
 // Common/shared schemas for Model Context Protocol
 #pragma once
 
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -260,7 +261,7 @@ MCP_NAMESPACE_BEGIN
 // };
 
 struct Request {
-  method : string;
+  string method;
   params ?: {
     _meta ?: {
       /**
@@ -274,10 +275,10 @@ struct Request {
     };
     [key:string] : unknown;
   };
-}
+};
 
 struct Notification {
-  method : string;
+  string method;
   params ?: {
     /**
      * This parameter name is reserved by MCP to allow clients and servers to
@@ -286,7 +287,7 @@ struct Notification {
     _meta ?: {[key:string] : unknown};
     [key:string] : unknown;
   };
-}
+};
 
 struct Result {
   /**
@@ -295,26 +296,26 @@ struct Result {
    */
   _meta ?: {[key:string] : unknown};
   [key:string] : unknown;
-}
+};
 
 /* Pagination */
-struct PaginatedRequest extends Request {
+struct PaginatedRequest : public Request {
   params ?: {
     /**
      * An opaque token representing the current pagination position.
      * If provided, the server should return results starting after this cursor.
      */
-    cursor ?: Cursor;
+    optional<Cursor> cursor;
   };
-}
+};
 
-struct PaginatedResult extends Result {
+struct PaginatedResult : public Result {
   /**
    * An opaque token representing the pagination position after the last
    * returned result. If present, there may be more results available.
    */
-  nextCursor ?: Cursor;
-}
+  optional<Cursor> nextCursor;
+};
 
 /* Ping */
 /**
@@ -322,9 +323,9 @@ struct PaginatedResult extends Result {
  * party is still alive. The receiver must promptly respond, or else may be
  * disconnected.
  */
-struct PingRequest extends Request {
-  method : "ping";
-}
+struct PingRequest : public Request {
+  PingRequest() { method = MTHD_PING; }
+};
 
 /* Cancellation */
 /**
@@ -340,40 +341,38 @@ struct PingRequest extends Request {
  *
  * A client MUST NOT attempt to cancel its `initialize` request.
  */
-struct CancelledNotification extends Notification {
-  method : "notifications/cancelled";
+struct CancelledNotification : public Notification {
   params : {
-  /**
-   * The ID of the request to cancel.
-   *
-   * This MUST correspond to the ID of a request previously issued in the same
-   * direction.
-   */
-  requestId:
-    RequestId;
+    /**
+     * The ID of the request to cancel.
+     *
+     * This MUST correspond to the ID of a request previously issued in the same
+     * direction.
+     */
+    RequestId requestId;
 
     /**
      * An optional string describing the reason for the cancellation. This MAY
      * be logged or presented to the user.
      */
-    reason ?: string;
+    optional<string> reason;
   };
-}
+
+  CancelledNotification() { method = MTHD_NOTIFICATIONS_CANCELLED; }
+};
 
 /* Progress notifications */
 /**
  * An out-of-band notification used to inform the receiver of a progress update
  * for a long-running request.
  */
-struct ProgressNotification extends Notification {
-  method : "notifications/progress";
+struct ProgressNotification : public Notification {
   params : {
-  /**
-   * The progress token which was given in the initial request, used to
-   * associate this notification with the request that is proceeding.
-   */
-  progressToken:
-    ProgressToken;
+    /**
+     * The progress token which was given in the initial request, used to
+     * associate this notification with the request that is proceeding.
+     */
+    ProgressToken progressToken;
   /**
    * The progress thus far. This should increase every time progress is made,
    * even if the total is unknown.
@@ -391,28 +390,30 @@ struct ProgressNotification extends Notification {
     /**
      * An optional message describing the current progress.
      */
-    message ?: string;
+    optional<string> message;
   };
-}
+
+  ProgressNotification() { method = MTHD_NOTIFICATIONS_PROGRESS; }
+};
 
 /**
  * An opaque token used to represent a cursor for pagination.
  */
-type Cursor = string;
+using Cursor = string;
 
 /**
  * Describes the name and version of an MCP implementation.
  */
 struct Implementation {
-  name : string;
-  version : string;
-}
+  string name;
+  string version;
+};
 
 /* Empty result */
 /**
  * A response that indicates success but carries no data.
  */
-type EmptyResult = Result;
+using EmptyResult = Result;
 
 /**
  * The sender or recipient of messages and data in a conversation.

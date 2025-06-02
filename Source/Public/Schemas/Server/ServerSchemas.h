@@ -1,6 +1,8 @@
 // Server-side schemas for Model Context Protocol
 #pragma once
 
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -136,7 +138,7 @@ struct ServerCapabilities {
      * Whether this server supports notifications for changes to the prompt
      * list.
      */
-    listChanged ?: boolean;
+    optional<bool> listChanged;
   };
   /**
    * Present if the server offers any resources to read.
@@ -145,12 +147,12 @@ struct ServerCapabilities {
     /**
      * Whether this server supports subscribing to resource updates.
      */
-    subscribe ?: boolean;
+    optional<bool> subscribe;
     /**
      * Whether this server supports notifications for changes to the resource
      * list.
      */
-    listChanged ?: boolean;
+    optional<bool> listChanged;
   };
   /**
    * Present if the server offers any tools to call.
@@ -159,9 +161,9 @@ struct ServerCapabilities {
     /**
      * Whether this server supports notifications for changes to the tool list.
      */
-    listChanged ?: boolean;
+    optional<bool> listChanged;
   };
-}
+};
 
 /* Server messages */
 using ServerRequest =

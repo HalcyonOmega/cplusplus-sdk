@@ -184,15 +184,15 @@ type JSONRPCBatchResponse = (JSONRPCResponse | JSONRPCError)[];
 /**
  * A request that expects a response.
  */
-struct JSONRPCRequest extends Request {
+struct JSONRPCRequest : public Request {
     jsonrpc : typeof JSONRPC_VERSION;
-    id : RequestId;
+    RequestId id;
 }
 
 /**
  * A notification which does not expect a response.
  */
-struct JSONRPCNotification extends Notification {
+struct JSONRPCNotification : public Notification {
     jsonrpc : typeof JSONRPC_VERSION;
 }
 
@@ -201,38 +201,33 @@ struct JSONRPCNotification extends Notification {
  */
 struct JSONRPCResponse {
     jsonrpc : typeof JSONRPC_VERSION;
-    id : RequestId;
-    result : Result;
+    RequestId id;
+    Result result;
 }
-
-// Standard JSON-RPC error codes
-const PARSE_ERROR = -32700;
-const INVALID_REQUEST = -32600;
-const METHOD_NOT_FOUND = -32601;
-const INVALID_PARAMS = -32602;
-const INTERNAL_ERROR = -32603;
 
 /**
  * A response to a request that indicates an error occurred.
  */
 struct JSONRPCError {
     jsonrpc : typeof JSONRPC_VERSION;
-    id : RequestId;
+    RequestId id;
     error : {
     /**
      * The error type that occurred.
      */
     code:
         number;
-    /**
-     * A short description of the error. The message SHOULD be limited to a concise single sentence.
-     */
-    message:
-        string;
+        /**
+         * A short description of the error. The message SHOULD be limited to a concise single
+         * sentence.
+         */
+        string message;
         /**
          * Additional information about the error. The value of this member is defined by the sender
          * (e.g. detailed error information, nested errors etc.).
          */
         data ?: unknown;
     };
-} MCP_NAMESPACE_END
+}
+
+MCP_NAMESPACE_END

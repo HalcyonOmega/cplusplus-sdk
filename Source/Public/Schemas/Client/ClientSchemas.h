@@ -1,7 +1,9 @@
 // Client-side schemas for Model Context Protocol
 #pragma once
 
+#include "Constants.h"
 #include "Core.h"
+#include "Schemas/Common/CommonSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -122,13 +124,13 @@ struct ClientCapabilities {
     /**
      * Whether the client supports notifications for changes to the roots list.
      */
-    listChanged ?: boolean;
+    optional<bool> listChanged;
   };
   /**
    * Present if the client supports sampling from an LLM.
    */
   sampling ?: object;
-}
+};
 
 /**
  * Optional annotations for the client. The client can use annotations to inform
@@ -156,7 +158,7 @@ struct Annotations {
    * @maximum 1
    */
   priority ?: number;
-}
+};
 
 /* Client messages */
 using ClientRequest =

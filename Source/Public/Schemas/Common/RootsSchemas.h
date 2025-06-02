@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -121,18 +123,20 @@ MCP_NAMESPACE_BEGIN
  * This request is typically used when the server needs to understand the file system
  * structure or access specific locations that the client has permission to read from.
  */
-struct ListRootsRequest extends Request {
-    method : "roots/list";
-}
+struct ListRootsRequest : public Request {
+    ListRootsRequest() {
+        method = MTHD_ROOTS_LIST;
+    }
+};
 
 /**
  * The client's response to a roots/list request from the server.
  * This result contains an array of Root objects, each representing a root directory
  * or file that the server can operate on.
  */
-struct ListRootsResult extends Result {
+struct ListRootsResult : public Result {
     roots : Root[];
-}
+};
 
 /**
  * Represents a root directory or file that the server can operate on.
@@ -145,22 +149,24 @@ struct Root {
      *
      * @format uri
      */
-    uri : string;
+    string uri;
     /**
      * An optional name for the root. This can be used to provide a human-readable
      * identifier for the root, which may be useful for display purposes or for
      * referencing the root in other parts of the application.
      */
-    name ?: string;
-}
+    optional<string> name;
+};
 
 /**
  * A notification from the client to the server, informing it that the list of roots has changed.
  * This notification should be sent whenever the client adds, removes, or modifies any root.
  * The server should then request an updated list of roots using the ListRootsRequest.
  */
-struct RootsListChangedNotification extends Notification {
-    method : "notifications/roots/list_changed";
-}
+struct RootsListChangedNotification : public Notification {
+    RootsListChangedNotification() {
+        method = MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED;
+    }
+};
 
 MCP_NAMESPACE_END

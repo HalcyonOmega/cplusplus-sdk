@@ -1,5 +1,8 @@
 #pragma once
 
+#include "ClientSchemas.h"
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -69,69 +72,86 @@ MCP_NAMESPACE_BEGIN
 //                                               "type" : "object"
 // };
 
-/**
- * Text provided to or from an LLM.
- */
-struct TextContent {
-    type : "text";
-
+struct Content {
     /**
-     * The text content of the message.
+     * The type of content.
      */
-    text : string;
+    string type;
 
     /**
      * Optional annotations for the client.
      */
-    annotations ?: Annotations;
-}
+    optional<Annotations> annotations;
+};
+
+/**
+ * Text provided to or from an LLM.
+ */
+struct TextContent : public Content {
+    /**
+     * The text content of the message.
+     */
+    string text;
+
+    TextContent() {
+        type = CONST_TEXT;
+    }
+};
 
 /**
  * An image provided to or from an LLM.
  */
-struct ImageContent {
-    type : "image";
-
+struct ImageContent : public Content {
     /**
      * The base64-encoded image data.
      *
      * @format byte
      */
-    data : string;
+    string data;
 
     /**
      * The MIME type of the image. Different providers may support different image types.
      */
-    mimeType : string;
+    string mimeType;
 
-    /**
-     * Optional annotations for the client.
-     */
-    annotations ?: Annotations;
-}
+    ImageContent() {
+        type = CONST_IMAGE;
+    }
+};
 
 /**
  * Audio provided to or from an LLM.
  */
-struct AudioContent {
-    type : "audio";
-
+struct AudioContent : public Content {
     /**
      * The base64-encoded audio data.
      *
      * @format byte
      */
-    data : string;
+    string data;
 
     /**
      * The MIME type of the audio. Different providers may support different audio types.
      */
-    mimeType : string;
+    string mimeType;
 
-    /**
-     * Optional annotations for the client.
-     */
-    annotations ?: Annotations;
-}
+    AudioContent() {
+        type = CONST_AUDIO;
+    }
+};
+
+/**
+ * The contents of a resource, embedded into a prompt or tool call result.
+ *
+ * It is up to the client how best to render embedded resources for the benefit
+ * of the LLM and/or the user.
+ */
+struct EmbeddedResource : public Content {
+    variant<TextResourceContents, BlobResourceContents> resource;
+
+    EmbeddedResource() {
+        type = CONST_RESOURCE;
+    }
+};
 
 MCP_NAMESPACE_END

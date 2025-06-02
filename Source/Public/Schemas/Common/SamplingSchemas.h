@@ -1,5 +1,8 @@
 #pragma once
 
+#include "ClientSchemas.h"
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -217,8 +220,7 @@ MCP_NAMESPACE_BEGIN
  * which model to select. The client should also inform the user before beginning sampling, to allow
  * them to inspect the request (human in the loop) and decide whether to approve it.
  */
-struct CreateMessageRequest extends Request {
-    method : "sampling/createMessage";
+struct CreateMessageRequest : public Request {
     params : {
     messages:
         SamplingMessage[];
@@ -226,12 +228,12 @@ struct CreateMessageRequest extends Request {
          * The server's preferences for which model to select. The client MAY ignore these
          * preferences.
          */
-        modelPreferences ?: ModelPreferences;
+        optional<ModelPreferences> modelPreferences;
         /**
          * An optional system prompt the server wants to use for sampling. The client MAY modify or
          * omit this prompt.
          */
-        systemPrompt ?: string;
+        optional<string> systemPrompt;
         /**
          * A request to include context from one or more MCP servers (including the caller), to be
          * attached to the prompt. The client MAY ignore this request.
@@ -254,33 +256,36 @@ struct CreateMessageRequest extends Request {
          */
         metadata ?: object;
     };
-}
 
+    CreateMessageRequest() {
+        method = MTHD_SAMPLING_CREATE_MESSAGE;
+    }
+};
+
+// TODO: Typescript extended from Result and SamplingMessage - How to convert properly?
 /**
  * The client's response to a sampling/create_message request from the server. The client should
  * inform the user before returning the sampled message, to allow them to inspect the response
  * (human in the loop) and decide whether to allow the server to see it.
  */
-struct CreateMessageResult extends Result,
-    SamplingMessage {
-/**
- * The name of the model that generated the message.
- */
-model:
-    string;
+struct CreateMessageResult : public Result, SamplingMessage {
+    /**
+     * The name of the model that generated the message.
+     */
+    string model;
     /**
      * The reason why sampling stopped, if known.
      */
     stopReason ?: "endTurn" | "stopSequence" | "maxTokens" | string;
-}
+};
 
 /**
  * Describes a message issued to or received from an LLM API.
  */
 struct SamplingMessage {
-    role : Role;
-    content : TextContent | ImageContent | AudioContent;
-}
+    Role role;
+    variant<TextContent, ImageContent, AudioContent> content;
+};
 
 /**
  * The server's preferences for model selection, requested of the client during sampling.
@@ -339,7 +344,7 @@ struct ModelPreferences {
      * @maximum 1
      */
     intelligencePriority ?: number;
-}
+};
 
 /**
  * Hints to use for model selection.
@@ -360,7 +365,7 @@ struct ModelHint {
      * family, as long as it fills a similar niche; for example:
      *  - `gemini-1.5-flash` could match `claude-3-haiku-20240307`
      */
-    name ?: string;
-}
+    optional<string> name;
+};
 
 MCP_NAMESPACE_END

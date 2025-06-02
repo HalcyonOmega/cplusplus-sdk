@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -234,16 +236,16 @@ MCP_NAMESPACE_BEGIN
 /**
  * Sent from the client to request a list of tools the server has.
  */
-struct ListToolsRequest extends PaginatedRequest {
-  method : "tools/list";
-}
+struct ListToolsRequest : public PaginatedRequest {
+  ListToolsRequest() { method = MTHD_TOOLS_LIST; }
+};
 
 /**
  * The server's response to a tools/list request from the client.
  */
-struct ListToolsResult extends PaginatedResult {
+struct ListToolsResult : public PaginatedResult {
   tools : Tool[];
-}
+};
 
 /**
  * The server's response to a tool call.
@@ -257,7 +259,7 @@ struct ListToolsResult extends PaginatedResult {
  * server does not support tool calls, or any other exceptional conditions,
  * should be reported as an MCP error response.
  */
-struct CallToolResult extends Result {
+struct CallToolResult : public Result {
   content : (TextContent | ImageContent | AudioContent | EmbeddedResource)[];
 
   /**
@@ -265,29 +267,32 @@ struct CallToolResult extends Result {
    *
    * If not set, this is assumed to be false (the call was successful).
    */
-  isError ?: boolean;
-}
+  optional<bool> isError;
+};
 
 /**
  * Used by the client to invoke a tool provided by the server.
  */
-struct CallToolRequest extends Request {
-  method : "tools/call";
+struct CallToolRequest : public Request {
   params : {
   name:
     string;
     arguments ?: {[key:string] : unknown};
   };
-}
+
+  CallToolRequest() { method = MTHD_TOOLS_CALL; }
+};
 
 /**
  * An optional notification from the server to the client, informing it that the
  * list of tools it offers has changed. This may be issued by servers without
  * any previous subscription from the client.
  */
-struct ToolListChangedNotification extends Notification {
-  method : "notifications/tools/list_changed";
-}
+struct ToolListChangedNotification : public Notification {
+  ToolListChangedNotification() {
+    method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
+  }
+};
 
 /**
  * Additional properties describing a Tool to clients.
@@ -303,14 +308,14 @@ struct ToolAnnotations {
   /**
    * A human-readable title for the tool.
    */
-  title ?: string;
+  optional<string> title;
 
   /**
    * If true, the tool does not modify its environment.
    *
    * Default: false
    */
-  readOnlyHint ?: boolean;
+  optional<bool> readOnlyHint;
 
   /**
    * If true, the tool may perform destructive updates to its environment.
@@ -320,7 +325,7 @@ struct ToolAnnotations {
    *
    * Default: true
    */
-  destructiveHint ?: boolean;
+  optional<bool> destructiveHint;
 
   /**
    * If true, calling the tool repeatedly with the same arguments
@@ -330,7 +335,7 @@ struct ToolAnnotations {
    *
    * Default: false
    */
-  idempotentHint ?: boolean;
+  optional<bool> idempotentHint;
 
   /**
    * If true, this tool may interact with an "open world" of external
@@ -340,8 +345,8 @@ struct ToolAnnotations {
    *
    * Default: true
    */
-  openWorldHint ?: boolean;
-}
+  optional<bool> openWorldHint;
+};
 
 /**
  * Definition for a tool the client can call.
@@ -350,7 +355,7 @@ struct Tool {
   /**
    * The name of the tool.
    */
-  name : string;
+  string name;
 
   /**
    * A human-readable description of the tool.
@@ -358,7 +363,7 @@ struct Tool {
    * This can be used by clients to improve the LLM's understanding of available
    * tools. It can be thought of like a "hint" to the model.
    */
-  description ?: string;
+  optional<string> description;
 
   /**
    * A JSON Schema object defining the expected parameters for the tool.
@@ -373,7 +378,7 @@ struct Tool {
   /**
    * Optional additional tool information.
    */
-  annotations ?: ToolAnnotations;
-}
+  optional<ToolAnnotations> annotations;
+};
 
 MCP_NAMESPACE_END

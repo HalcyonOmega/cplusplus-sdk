@@ -1,6 +1,9 @@
 #pragma once
 
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
+#include "ServerSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -94,35 +97,41 @@ MCP_NAMESPACE_BEGIN
  * This request is sent from the client to the server when it first connects,
  * asking it to begin initialization.
  */
-struct InitializeRequest extends Request {
-    method : "initialize";
+struct InitializeRequest : public Request {
     params : {
-    /**
-     * The latest version of the Model Context Protocol that the client supports.
-     * The client MAY decide to support older versions as well.
-     */
-    protocolVersion:
-        string;
-    capabilities:
-        ClientCapabilities;
-    clientInfo:
-        Implementation;
+        /**
+         * The latest version of the Model Context Protocol that the client supports.
+         * The client MAY decide to support older versions as well.
+         */
+        string protocolVersion;
+        /**
+         * The capabilities of the client.
+         */
+        ClientCapabilities capabilities;
+        /**
+         * Information about the client.
+         */
+        Implementation clientInfo;
     };
-}
+
+    InitializeRequest() {
+        method = MTHD_INITIALIZE;
+    }
+};
 
 /**
  * After receiving an initialize request from the client, the server sends this
  * response.
  */
-struct InitializeResult extends Result {
+struct InitializeResult : public Result {
     /**
      * The version of the Model Context Protocol that the server wants to use. This
      * may not match the version that the client requested. If the client cannot
      * support this version, it MUST disconnect.
      */
-    protocolVersion : string;
-    capabilities : ServerCapabilities;
-    serverInfo : Implementation;
+    string protocolVersion;
+    ServerCapabilities capabilities;
+    Implementation serverInfo;
 
     /**
      * Instructions describing how to use the server and its features.
@@ -131,15 +140,17 @@ struct InitializeResult extends Result {
      * tools, resources, etc. It can be thought of like a "hint" to the model. For
      * example, this information MAY be added to the system prompt.
      */
-    instructions ?: string;
-}
+    optional<string> instructions;
+};
 
 /**
  * This notification is sent from the client to the server after initialization
  * has finished.
  */
-struct InitializedNotification extends Notification {
-    method : "notifications/initialized";
-}
+struct InitializedNotification : public Notification {
+    InitializedNotification() {
+        method = MTHD_NOTIFICATIONS_INITIALIZED;
+    }
+};
 
 MCP_NAMESPACE_END

@@ -1,7 +1,8 @@
 #pragma once
 
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
-
 MCP_NAMESPACE_BEGIN
 
 // struct CompleteRequest {
@@ -88,33 +89,33 @@ MCP_NAMESPACE_BEGIN
 /**
  * A request from the client to the server, to ask for completion options.
  */
-struct CompleteRequest extends Request {
-    method : "completion/complete";
+struct CompleteRequest : public Request {
     params : {
-    ref:
-        PromptReference | ResourceReference;
+        variant<PromptReference, ResourceReference> ref;
     /**
      * The argument's information
      */
     argument: {
-    /**
-     * The name of the argument
-     */
-    name:
-        string;
-    /**
-     * The value of the argument to use for completion matching.
-     */
-    value:
-        string;
+        /**
+         * The name of the argument
+         */
+        string name;
+        /**
+         * The value of the argument to use for completion matching.
+         */
+        string value;
     };
     };
-}
+
+    CompleteRequest() {
+        method = MTHD_COMPLETION_COMPLETE;
+    }
+};
 
 /**
  * The server's response to a completion/complete request
  */
-struct CompleteResult extends Result {
+struct CompleteResult : public Result {
     completion : {
     /**
      * An array of completion values. Must not exceed 100 items.
@@ -130,8 +131,8 @@ struct CompleteResult extends Result {
          * Indicates whether there are additional completion options beyond those provided in the
          * current response, even if the exact total is unknown.
          */
-        hasMore ?: boolean;
+        optional<bool> hasMore;
     };
-}
+};
 
 MCP_NAMESPACE_END

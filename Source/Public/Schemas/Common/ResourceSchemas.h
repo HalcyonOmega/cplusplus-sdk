@@ -457,28 +457,28 @@ struct ResourceReference {
 /**
  * Sent from the client to request a list of resources the server has.
  */
-struct ListResourcesRequest extends PaginatedRequest {
+struct ListResourcesRequest : public PaginatedRequest {
   method : "resources/list";
 }
 
 /**
  * The server's response to a resources/list request from the client.
  */
-struct ListResourcesResult extends PaginatedResult {
+struct ListResourcesResult : public PaginatedResult {
   resources : Resource[];
 }
 
 /**
  * Sent from the client to request a list of resource templates the server has.
  */
-struct ListResourceTemplatesRequest extends PaginatedRequest {
+struct ListResourceTemplatesRequest : public PaginatedRequest {
   method : "resources/templates/list";
 }
 
 /**
  * The server's response to a resources/templates/list request from the client.
  */
-struct ListResourceTemplatesResult extends PaginatedResult {
+struct ListResourceTemplatesResult : public PaginatedResult {
   resourceTemplates : ResourceTemplate[];
 }
 
@@ -487,7 +487,7 @@ struct ListResourceTemplatesResult extends PaginatedResult {
  * has changed and may need to be read again. This should only be sent if the
  * client previously sent a resources/subscribe request.
  */
-struct ResourceUpdatedNotification extends Notification {
+struct ResourceUpdatedNotification : public Notification {
   method : "notifications/resources/updated";
   params : {
   /**
@@ -602,7 +602,7 @@ struct ResourceContents {
   mimeType ?: string;
 }
 
-struct TextResourceContents extends ResourceContents {
+struct TextResourceContents : public ResourceContents {
   /**
    * The text of the item. This must only be set if the item can actually be
    * represented as text (not binary data).
@@ -610,7 +610,7 @@ struct TextResourceContents extends ResourceContents {
   text : string;
 }
 
-struct BlobResourceContents extends ResourceContents {
+struct BlobResourceContents : public ResourceContents {
   /**
    * A base64-encoded string representing the binary data of the item.
    *
@@ -623,7 +623,7 @@ struct BlobResourceContents extends ResourceContents {
  * Sent from the client to request resources/updated notifications from the
  * server whenever a particular resource changes.
  */
-struct SubscribeRequest extends Request {
+struct SubscribeRequest : public Request {
   method : "resources/subscribe";
   params : {
   /**
@@ -642,7 +642,7 @@ struct SubscribeRequest extends Request {
  * notifications from the server. This should follow a previous
  * resources/subscribe request.
  */
-struct UnsubscribeRequest extends Request {
+struct UnsubscribeRequest : public Request {
   method : "resources/unsubscribe";
   params : {
   /**
@@ -658,7 +658,7 @@ struct UnsubscribeRequest extends Request {
 /**
  * Sent from the client to the server, to read a specific resource URI.
  */
-struct ReadResourceRequest extends Request {
+struct ReadResourceRequest : public Request {
   method : "resources/read";
   params : {
   /**
@@ -675,7 +675,7 @@ struct ReadResourceRequest extends Request {
 /**
  * The server's response to a resources/read request from the client.
  */
-struct ReadResourceResult extends Result {
+struct ReadResourceResult : public Result {
   contents : (TextResourceContents | BlobResourceContents)[];
 }
 
@@ -684,25 +684,11 @@ struct ReadResourceResult extends Result {
  * list of resources it can read from has changed. This may be issued by servers
  * without any previous subscription from the client.
  */
-struct ResourceListChangedNotification extends Notification {
-  method : "notifications/resources/list_changed";
-}
-
-/**
- * The contents of a resource, embedded into a prompt or tool call result.
- *
- * It is up to the client how best to render embedded resources for the benefit
- * of the LLM and/or the user.
- */
-struct EmbeddedResource {
-  type : "resource";
-  resource : TextResourceContents | BlobResourceContents;
-
-  /**
-   * Optional annotations for the client.
-   */
-  annotations ?: Annotations;
-}
+struct ResourceListChangedNotification : public Notification {
+  ResourceListChangedNotification() {
+    method = MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED;
+  }
+};
 
 /**
  * A reference to a resource or resource template definition.
@@ -714,7 +700,7 @@ struct ResourceReference {
    *
    * @format uri-template
    */
-  uri : string;
-}
+  string uri;
+};
 
 MCP_NAMESPACE_END

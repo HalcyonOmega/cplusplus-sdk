@@ -1,5 +1,8 @@
 #pragma once
 
+#include "ClientSchemas.h"
+#include "CommonSchemas.h"
+#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -216,45 +219,45 @@ MCP_NAMESPACE_BEGIN
  * Sent from the client to request a list of prompts and prompt templates the
  * server has.
  */
-struct ListPromptsRequest extends PaginatedRequest {
-  method : "prompts/list";
-}
+struct ListPromptsRequest : public PaginatedRequest {
+  ListPromptsRequest() { method = MTHD_PROMPTS_LIST; }
+};
 
 /**
  * The server's response to a prompts/list request from the client.
  */
-struct ListPromptsResult extends PaginatedResult {
+struct ListPromptsResult : public PaginatedResult {
   prompts : Prompt[];
-}
+};
 
 /**
  * Used by the client to get a prompt provided by the server.
  */
-struct GetPromptRequest extends Request {
-  method : "prompts/get";
+struct GetPromptRequest : public Request {
   params : {
-  /**
-   * The name of the prompt or prompt template.
-   */
-  name:
-    string;
+    /**
+     * The name of the prompt or prompt template.
+     */
+    string name;
     /**
      * Arguments to use for templating the prompt.
      */
     arguments ?: {[key:string] : string};
   };
-}
+
+  GetPromptRequest() { method = MTHD_PROMPTS_GET; }
+};
 
 /**
  * The server's response to a prompts/get request from the client.
  */
-struct GetPromptResult extends Result {
+struct GetPromptResult : public Result {
   /**
    * An optional description for the prompt.
    */
-  description ?: string;
+  optional<string> description;
   messages : PromptMessage[];
-}
+};
 
 /**
  * A prompt or prompt template that the server offers.
@@ -263,16 +266,16 @@ struct Prompt {
   /**
    * The name of the prompt or prompt template.
    */
-  name : string;
+  string name;
   /**
    * An optional description of what this prompt provides
    */
-  description ?: string;
+  optional<string> description;
   /**
    * A list of arguments to use for templating the prompt.
    */
   arguments ?: PromptArgument[];
-}
+};
 
 /**
  * Describes an argument that a prompt can accept.
@@ -281,16 +284,16 @@ struct PromptArgument {
   /**
    * The name of the argument.
    */
-  name : string;
+  string name;
   /**
    * A human-readable description of the argument.
    */
-  description ?: string;
+  optional<string> description;
   /**
    * Whether this argument must be provided.
    */
-  required ?: boolean;
-}
+  optional<bool> required;
+};
 
 /**
  * Describes a message returned as part of a prompt.
@@ -299,7 +302,7 @@ struct PromptArgument {
  * resources from the MCP server.
  */
 struct PromptMessage {
-  role : Role;
+  Role role;
   content : TextContent | ImageContent | AudioContent | EmbeddedResource;
 }
 
@@ -308,9 +311,11 @@ struct PromptMessage {
  * list of prompts it offers has changed. This may be issued by servers without
  * any previous subscription from the client.
  */
-struct PromptListChangedNotification extends Notification {
-  method : "notifications/prompts/list_changed";
-}
+struct PromptListChangedNotification : public Notification {
+  PromptListChangedNotification() {
+    method = MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED;
+  }
+};
 
 /**
  * Identifies a prompt.
@@ -320,7 +325,7 @@ struct PromptReference {
   /**
    * The name of the prompt or prompt template
    */
-  name : string;
-}
+  string name;
+};
 
 MCP_NAMESPACE_END
