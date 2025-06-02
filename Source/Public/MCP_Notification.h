@@ -1,5 +1,18 @@
-// *   `MCP_NotificationBase`: Abstract base for notifications (contains `Method`).
-// *   `MCP_Notification<ParamsType>`: Template class for specific notifications.
-//     *   Inherits from `MCP_NotificationBase`.
-//     *   Holds a `ParamsType Params;
-// ` member.
+#pragma once
+
+#include "Core.h"
+#include "MCP_Message.h"
+
+struct ParamsType;
+
+MCP_NAMESPACE_BEGIN
+
+class MCP_NotificationBase : public MCP_MessageBase {
+    string Method;
+};
+
+template <typename ParamsType> class MCP_Notification : public MCP_NotificationBase {
+    ParamsType Params;
+};
+
+MCP_NAMESPACE_END

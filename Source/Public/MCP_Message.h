@@ -1,1 +1,11 @@
-// *   `MCP_MessageBase`: Common base for all MCP messages (contains `JSON_RPC`).
+#pragma once
+
+#include "Core.h"
+
+MCP_NAMESPACE_BEGIN
+
+class MCP_MessageBase {
+    JSON Message;
+};
+
+MCP_NAMESPACE_END

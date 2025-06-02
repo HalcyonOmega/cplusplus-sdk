@@ -8,3 +8,11 @@
 //     : `MCP_ListResult<MCP_Prompt>` *   `Get(Name : std::string, Arguments ?: json_object)`
 //     ->Result : `MCP_PromptsGetResult` *   `notifications
 //           / prompts / listChanged` (Notification) : (no parameters)
+
+#pragma once
+
+#include "Core.h"
+
+MCP_NAMESPACE_BEGIN
+
+MCP_NAMESPACE_END

@@ -14,3 +14,11 @@
 //           / resources
 //           / listChanged` (Notification)
 //     : (no parameters) *   `MCP_NotificationsResourcesUpdatedParams`: (`URI`)
+
+#pragma once
+
+#include "Core.h"
+
+MCP_NAMESPACE_BEGIN
+
+MCP_NAMESPACE_END

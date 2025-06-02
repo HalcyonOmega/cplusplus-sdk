@@ -1,0 +1,102 @@
+#pragma once
+
+#include "Core.h"
+
+MCP_NAMESPACE_BEGIN
+
+// MCP Constants
+static constexpr const char* LATEST_PROTOCOL_VERSION = "2025-03-26";
+static constexpr const array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
+    LATEST_PROTOCOL_VERSION,
+    "2024-11-05",
+    "2024-10-07",
+};
+
+// URI Template Constants
+static constexpr const size_t MAX_TEMPLATE_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
+static constexpr const size_t MAX_REGEX_LENGTH = 1000000; // 1MB
+
+// The default request timeout, in milliseconds.
+static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
+
+// Message Constants
+static constexpr const char* MSG_KEY_JSON_RPC = "jsonrpc";
+static constexpr const char* MSG_KEY_JSON_RPC_VERSION = "2.0";
+static constexpr const char* MSG_KEY_ID = "id";
+static constexpr const char* MSG_KEY_METHOD = "method";
+static constexpr const char* MSG_KEY_PARAMS = "params";
+static constexpr const char* MSG_KEY_RESULT = "result";
+static constexpr const char* MSG_KEY_ERROR = "error";
+static constexpr const char* MSG_KEY_CODE = "code";
+static constexpr const char* MSG_KEY_MESSAGE = "message";
+static constexpr const char* MSG_KEY_DATA = "data";
+static constexpr const char* MSG_KEY_PROTOCOL_VERSION = "protocolVersion";
+static constexpr const char* MSG_KEY_CLIENT_INFO = "clientInfo";
+static constexpr const char* MSG_KEY_NAME = "name";
+static constexpr const char* MSG_KEY_VERSION = "version";
+static constexpr const char* MSG_KEY_SERVER_INFO = "serverInfo";
+static constexpr const char* MSG_KEY_CAPABILITIES = "capabilities";
+static constexpr const char* MSG_KEY_PROMPTS =
+    "prompts"; // TODO: Need extensibility for keys - ex. 'prompts/list'
+static constexpr const char* MSG_KEY_RESOURCES = "resources"; // TODO: Same as above
+static constexpr const char* MSG_KEY_TOOLS = "tools";         // TODO: Same as above
+static constexpr const char* MSG_KEY_LIST_CHANGED = "listChanged";
+static constexpr const char* MSG_KEY_SUBSCRIBE = "subscribe";
+static constexpr const char* MSG_KEY_CURSOR = "cursor";
+static constexpr const char* MSG_KEY_NEXT_CURSOR = "nextCursor";
+static constexpr const char* MSG_KEY_DESCRIPTION = "description";
+static constexpr const char* MSG_KEY_INPUT_SCHEMA = "inputSchema";
+static constexpr const char* MSG_KEY_ARGUMENTS = "arguments";
+static constexpr const char* MSG_KEY_IS_ERROR = "isError";
+static constexpr const char* MSG_KEY_CONTENT = "content";
+static constexpr const char* MSG_KEY_TEXT = "text";
+static constexpr const char* MSG_KEY_TYPE = "type";
+static constexpr const char* MSG_KEY_MIME_TYPE = "mimeType";
+static constexpr const char* MSG_KEY_URI = "uri";
+static constexpr const char* MSG_KEY_BLOB = "blob";
+static constexpr const char* MSG_KEY_RESOURCE = "resource";
+static constexpr const char* MSG_KEY_PROGRESS_TOKEN = "progressToken";
+static constexpr const char* MSG_KEY_META = "_meta";
+static constexpr const char* MSG_KEY_PROGRESS = "progress";
+static constexpr const char* MSG_KEY_TOTAL = "total";
+static constexpr const char* MSG_KEY_REQUEST_ID = "requestId";
+
+static constexpr const char* MTHD_INITIALIZE = "initialize";
+static constexpr const char* MTHD_PING = "ping";
+static constexpr const char* MTHD_NOTIFICATION_INITIALIZED = "notifications/initialized";
+static constexpr const char* MTHD_NOTIFICATION_CANCELLED = "notifications/cancelled";
+static constexpr const char* MTHD_NOTIFICATION_PROGRESS = "notifications/progress";
+static constexpr const char* MTHD_TOOLS_LIST = "tools/list";
+static constexpr const char* MTHD_TOOLS_CALL = "tools/call";
+
+static constexpr const char* CONST_TEXT = "text";
+static constexpr const char* CONST_IMAGE = "image";
+static constexpr const char* CONST_AUDIO = "audio";
+static constexpr const char* CONST_RESOURCE = "resource";
+
+/* Errors */
+static constexpr const char* ERRMSG_PARSE_ERROR = "parse error";
+static constexpr const char* ERRMSG_INVALID_REQUEST = "invalid request";
+static constexpr const char* ERRMSG_METHOD_NOT_FOUND = "method not found";
+static constexpr const char* ERRMSG_INVALID_PARAMS = "invalid params";
+static constexpr const char* ERRMSG_INTERNAL_ERROR = "internal error";
+
+// JSON-RPC Error Codes
+static constexpr const int ERRCODE_OK = 0;
+static constexpr const int ERRCODE_PARSE_ERROR = -32700;
+static constexpr const int ERRCODE_INVALID_REQUEST = -32600;
+static constexpr const int ERRCODE_METHOD_NOT_FOUND = -32601;
+static constexpr const int ERRCODE_INVALID_PARAMS = -32602;
+static constexpr const int ERRCODE_INTERNAL_ERROR = -32603;
+
+// Server Error Codes
+static constexpr const int ERRCODE_CONNECTION_CLOSED = -32000;
+static constexpr const int ERRCODE_REQUEST_TIMEOUT = -32001;
+static constexpr const int ERRCODE_INVALID_NOTIFICATION = -32002;
+static constexpr const int ERRCODE_INTERNAL_INPUT_TERMINATE = -32003;
+static constexpr const int ERRCODE_INTERNAL_INPUT_ERROR = -32004;
+static constexpr const int ERRCODE_INTERNAL_OUTPUT_ERROR = -32005;
+
+MCP_NAMESPACE_END
