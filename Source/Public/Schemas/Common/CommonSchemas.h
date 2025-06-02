@@ -271,7 +271,7 @@ struct Request {
        * that will be attached to any subsequent notifications. The receiver is
        * not obligated to provide these notifications.
        */
-      progressToken ?: ProgressToken;
+      optional<ProgressToken> progressToken;
     };
     [key:string] : unknown;
   };
@@ -279,14 +279,15 @@ struct Request {
 
 struct Notification {
   string method;
-  params ?: {
+  optional < {
     /**
      * This parameter name is reserved by MCP to allow clients and servers to
      * attach additional metadata to their notifications.
      */
     _meta ?: {[key:string] : unknown};
     [key:string] : unknown;
-  };
+  }
+  > params;
 };
 
 struct Result {
@@ -367,34 +368,36 @@ struct CancelledNotification : public Notification {
  * for a long-running request.
  */
 struct ProgressNotification : public Notification {
-  params : {
+
+  ProgressNotification() {
+    method = MTHD_NOTIFICATIONS_PROGRESS;
+    params = {
+      /**
+       * The progress token which was given in the initial request, used to
+       * associate this notification with the request that is proceeding.
+       */
+      ProgressToken progressToken;
     /**
-     * The progress token which was given in the initial request, used to
-     * associate this notification with the request that is proceeding.
+     * The progress thus far. This should increase every time progress is made,
+     * even if the total is unknown.
+     *
+     * @TJS-type number
      */
-    ProgressToken progressToken;
-  /**
-   * The progress thus far. This should increase every time progress is made,
-   * even if the total is unknown.
-   *
-   * @TJS-type number
-   */
-  progress:
-    number;
+    number progress;
     /**
      * Total number of items to process (or total progress required), if known.
      *
      * @TJS-type number
      */
-    total ?: number;
+    optional<number> total;
     /**
      * An optional message describing the current progress.
      */
     optional<string> message;
   };
-
-  ProgressNotification() { method = MTHD_NOTIFICATIONS_PROGRESS; }
-};
+}
+}
+;
 
 /**
  * An opaque token used to represent a cursor for pagination.
