@@ -9,7 +9,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// struct Root {
+// Root {
 //     "description" : "Represents a root directory or file that the server can operate on.",
 //                     "properties"
 //         : {
@@ -33,7 +33,7 @@ MCP_NAMESPACE_BEGIN
 //                        "type" : "object"
 // };
 
-// struct RootsListChangedNotification {
+// RootsListChangedNotification {
 //     "description" : "A notification from the client to the server, informing it that the "
 //                     "list of roots has changed.\nThis notification should be sent whenever "
 //                     "the client adds, removes, or modifies any root.\nThe server should "
@@ -59,7 +59,7 @@ MCP_NAMESPACE_BEGIN
 //                        "type" : "object"
 // };
 
-// struct ListRootsRequest {
+// ListRootsRequest {
 //     "description"
 //         : "Sent from the server to request a list of root URIs from the client. Roots "
 //           "allow\nservers "
@@ -96,7 +96,7 @@ MCP_NAMESPACE_BEGIN
 //                                       "type" : "object"
 // };
 
-// struct ListRootsResult {
+// ListRootsResult {
 //     "description" : "The client's response to a roots/list request from the server.\nThis result
 //     "
 //                     "contains an array of Root objects, each representing a root directory\nor "

@@ -9,7 +9,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// struct Tool {
+// Tool {
 //   "description" : "Definition for a tool the client can call.",
 //                   "properties"
 //       : {
@@ -50,7 +50,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct ToolAnnotations {
+// ToolAnnotations {
 //   "description"
 //       : "Additional properties describing a Tool to clients.\n\nNOTE: all "
 //         "properties in ToolAnnotations are **hints**.\nThey are not "
@@ -98,7 +98,7 @@ MCP_NAMESPACE_BEGIN
 //         "type" : "object"
 // };
 
-// struct ToolListChangedNotification {
+// ToolListChangedNotification {
 //   "description"
 //       : "An optional notification from the server to the client, informing "
 //         "it that the list of tools it offers has changed. This may be issued
@@ -127,7 +127,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct ListToolsRequest {
+// ListToolsRequest {
 //   "description"
 //       : "Sent from the client to request a list of tools the server has.",
 //         "properties" : {
@@ -149,7 +149,7 @@ MCP_NAMESPACE_BEGIN
 //                                     "type" : "object"
 // };
 
-// struct ListToolsResult {
+// ListToolsResult {
 //   "description"
 //       : "The server's response to a tools/list request from the client.",
 //         "properties"
@@ -175,7 +175,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct CallToolRequest {
+// CallToolRequest {
 //   "description" : "Used by the client to invoke a tool provided by the
 //   server.",
 //                   "properties"
@@ -194,7 +194,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct CallToolResult {
+// CallToolResult {
 //   "description"
 //       : "The server's response to a tool call.\n\nAny errors that originate "
 //         "from the tool SHOULD be reported inside the result\nobject, with "

@@ -28,7 +28,7 @@ struct PaginatedResult : public Result {
  */
 using EmptyResult = Result;
 
-// struct PaginatedResult {
+// PaginatedResult {
 //   "properties" : {
 //     "_meta" : {
 //       "additionalProperties" : {},
@@ -47,7 +47,7 @@ using EmptyResult = Result;
 //                  "type" : "object"
 // };
 
-// struct Result {
+// Result {
 //   "additionalProperties" : {},
 //                            "properties"
 //       : {
@@ -63,7 +63,7 @@ using EmptyResult = Result;
 //         "type" : "object"
 // };
 
-// struct EmptyResult {
+// EmptyResult {
 //   "$ref" : "#/definitions/Result"
 // };
 

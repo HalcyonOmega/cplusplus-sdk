@@ -7,7 +7,14 @@
 
 MCP_NAMESPACE_BEGIN
 
-// struct ClientCapabilities {
+struct ClientCapabilitiesRoots {
+    /**
+     * Whether the client supports notifications for changes to the roots list.
+     */
+    optional<bool> listChanged;
+};
+
+// ClientCapabilities {
 //     "description"
 //         : "Capabilities a client may support. Known capabilities are defined
 //         here, in this schema, "
@@ -42,42 +49,27 @@ MCP_NAMESPACE_BEGIN
 //           "type" : "object"
 // };
 
-// struct ClientNotification {
-//     "anyOf" : [
-//         {"$ref": "#/definitions/CancelledNotification"},
-//         {"$ref": "#/definitions/InitializedNotification"},
-//         {"$ref": "#/definitions/ProgressNotification"},
-//         {"$ref": "#/definitions/RootsListChangedNotification"}
-//     ]
-// };
+/**
+ * Capabilities a client may support. Known capabilities are defined here, in
+ * this schema, but this is not a closed set: any client can define its own,
+ * additional capabilities.
+ */
+struct ClientCapabilities {
+    /**
+     * Experimental, non-standard capabilities that the client supports.
+     */
+    optional<AdditionalObjects> experimental;
+    /**
+     * Present if the client supports listing roots.
+     */
+    optional<ClientCapabilitiesRoots> roots;
+    /**
+     * Present if the client supports sampling from an LLM.
+     */
+    optional<JSON> sampling;
+};
 
-// struct ClientRequest {
-//     "anyOf" : [
-//         {"$ref": "#/definitions/InitializeRequest"}, {"$ref":
-//         "#/definitions/PingRequest"},
-//         {"$ref": "#/definitions/ListResourcesRequest"},
-//         {"$ref": "#/definitions/ListResourceTemplatesRequest"},
-//         {"$ref": "#/definitions/ReadResourceRequest"}, {"$ref":
-//         "#/definitions/SubscribeRequest"},
-//         {"$ref": "#/definitions/UnsubscribeRequest"}, {"$ref":
-//         "#/definitions/ListPromptsRequest"},
-//         {"$ref": "#/definitions/GetPromptRequest"}, {"$ref":
-//         "#/definitions/ListToolsRequest"},
-//         {"$ref": "#/definitions/CallToolRequest"}, {"$ref":
-//         "#/definitions/SetLevelRequest"},
-//         {"$ref": "#/definitions/CompleteRequest"}
-//     ]
-// };
-
-// struct ClientResult {
-//     "anyOf" : [
-//         {"$ref": "#/definitions/Result"}, {"$ref":
-//         "#/definitions/CreateMessageResult"},
-//         {"$ref": "#/definitions/ListRootsResult"}
-//     ]
-// };
-
-// struct Annotations {
+// Annotations {
 //     "description" : "Optional annotations for the client. The client can use
 //     annotations to inform "
 //                     "how objects are used or displayed",
@@ -108,71 +100,31 @@ MCP_NAMESPACE_BEGIN
 // };
 
 /**
- * Capabilities a client may support. Known capabilities are defined here, in
- * this schema, but this is not a closed set: any client can define its own,
- * additional capabilities.
- */
-struct ClientCapabilities {
-  /**
-   * Experimental, non-standard capabilities that the client supports.
-   */
-  experimental ?: {[key:string] : object};
-  /**
-   * Present if the client supports listing roots.
-   */
-  roots ?: {
-    /**
-     * Whether the client supports notifications for changes to the roots list.
-     */
-    optional<bool> listChanged;
-  };
-  /**
-   * Present if the client supports sampling from an LLM.
-   */
-  sampling ?: object;
-};
-
-/**
  * Optional annotations for the client. The client can use annotations to inform
  * how objects are used or displayed
  */
 struct Annotations {
-  /**
-   * Describes who the intended customer of this object or data is.
-   *
-   * It can include multiple entries to indicate content useful for multiple
-   * audiences (e.g.,
-   * `["user", "assistant"]`).
-   */
-  audience ?: Role[];
+    /**
+     * Describes who the intended customer of this object or data is.
+     *
+     * It can include multiple entries to indicate content useful for multiple
+     * audiences (e.g.,
+     * `["user", "assistant"]`).
+     */
+    optional<vector<Role>> audience;
 
-  /**
-   * Describes how important this data is for operating the server.
-   *
-   * A value of 1 means "most important," and indicates that the data is
-   * effectively required, while 0 means "least important," and indicates that
-   * the data is entirely optional.
-   *
-   * @TJS-type number
-   * @minimum 0
-   * @maximum 1
-   */
-  priority ?: number;
+    /**
+     * Describes how important this data is for operating the server.
+     *
+     * A value of 1 means "most important," and indicates that the data is
+     * effectively required, while 0 means "least important," and indicates that
+     * the data is entirely optional.
+     *
+     * @TJS-type number
+     * @minimum 0
+     * @maximum 1
+     */
+    optional<number> priority;
 };
-
-/* Client messages */
-using ClientRequest =
-    std::variant<PingRequest, InitializeRequest, CompleteRequest,
-                 SetLevelRequest, GetPromptRequest, ListPromptsRequest,
-                 ListResourcesRequest, ListResourceTemplatesRequest,
-                 ReadResourceRequest, SubscribeRequest, UnsubscribeRequest,
-                 CallToolRequest, ListToolsRequest>;
-
-using ClientNotification =
-    std::variant<CancelledNotification, ProgressNotification,
-                 InitializedNotification, RootsListChangedNotification>;
-
-using ClientResult =
-    std::variant<EmptyResult, CreateMessageResult, ListRootsResult>;
 
 MCP_NAMESPACE_END

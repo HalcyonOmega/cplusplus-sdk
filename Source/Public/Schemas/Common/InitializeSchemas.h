@@ -3,11 +3,31 @@
 #include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
-#include "ServerSchemas.h"
+#include "NotificationSchemas.h"
+#include "RequestSchemas.h"
+#include "ResultSchemas.h"
+#include "Schemas/Client/ClientSchemas.h"
+#include "Schemas/Server/ServerSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
-// struct InitializeRequest {
+struct InitializeRequestParams {
+    /**
+     * The latest version of the Model Context Protocol that the client supports.
+     * The client MAY decide to support older versions as well.
+     */
+    string protocolVersion;
+    /**
+     * The capabilities of the client.
+     */
+    ClientCapabilities capabilities;
+    /**
+     * Information about the client.
+     */
+    Implementation clientInfo;
+};
+
+// InitializeRequest {
 //   "description" : "This request is sent from the client to the server when it "
 //                   "first connects, asking it to begin initialization.",
 //                   "properties"
@@ -33,7 +53,19 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct InitializeResult {
+/**
+ * This request is sent from the client to the server when it first connects,
+ * asking it to begin initialization.
+ */
+struct InitializeRequest : public Request {
+    InitializeRequestParams params;
+
+    InitializeRequest() {
+        method = MTHD_INITIALIZE;
+    }
+};
+
+// InitializeResult {
 //   "description" : "After receiving an initialize request from the client, "
 //                   "the server sends this response.",
 //                   "properties"
@@ -68,57 +100,6 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct InitializedNotification {
-//   "description" : "This notification is sent from the client to the "
-//                   "server after initialization has finished.",
-//                   "properties"
-//       : {
-//         "method" : {"const" : "notifications/initialized", "type" : "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "additionalProperties" : {},
-//               "description" : "This parameter name is reserved by MCP to "
-//                               "allow clients and servers to attach "
-//                               "additional metadata to their notifications.",
-//               "type" : "object"
-//             }
-//           },
-//           "type" : "object"
-//         }
-//       },
-//         "required" : ["method"],
-//                      "type" : "object"
-// };
-
-/* Initialization */
-/**
- * This request is sent from the client to the server when it first connects,
- * asking it to begin initialization.
- */
-struct InitializeRequest : public Request {
-    params : {
-        /**
-         * The latest version of the Model Context Protocol that the client supports.
-         * The client MAY decide to support older versions as well.
-         */
-        string protocolVersion;
-        /**
-         * The capabilities of the client.
-         */
-        ClientCapabilities capabilities;
-        /**
-         * Information about the client.
-         */
-        Implementation clientInfo;
-    };
-
-    InitializeRequest() {
-        method = MTHD_INITIALIZE;
-    }
-};
-
 /**
  * After receiving an initialize request from the client, the server sends this
  * response.
@@ -142,6 +123,30 @@ struct InitializeResult : public Result {
      */
     optional<string> instructions;
 };
+
+// InitializedNotification {
+//   "description" : "This notification is sent from the client to the "
+//                   "server after initialization has finished.",
+//                   "properties"
+//       : {
+//         "method" : {"const" : "notifications/initialized", "type" : "string"},
+//         "params" : {
+//           "additionalProperties" : {},
+//           "properties" : {
+//             "_meta" : {
+//               "additionalProperties" : {},
+//               "description" : "This parameter name is reserved by MCP to "
+//                               "allow clients and servers to attach "
+//                               "additional metadata to their notifications.",
+//               "type" : "object"
+//             }
+//           },
+//           "type" : "object"
+//         }
+//       },
+//         "required" : ["method"],
+//                      "type" : "object"
+// };
 
 /**
  * This notification is sent from the client to the server after initialization

@@ -8,7 +8,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// struct SamplingMessage {
+// SamplingMessage {
 //   "description" : "Describes a message issued to or received from an LLM API.",
 //                   "properties" : {
 //                     "content" : {
@@ -24,7 +24,7 @@ MCP_NAMESPACE_BEGIN
 //                                               "type" : "object"
 // };
 
-// struct ModelHint {
+// ModelHint {
 //   "description"
 //       : "Hints to use for model selection.\n\nKeys not declared here are "
 //         "currently left "
@@ -50,7 +50,7 @@ MCP_NAMESPACE_BEGIN
 //                        "type" : "object"
 // };
 
-// struct ModelPreferences {
+// ModelPreferences {
 //   "description" : "The server's preferences for model selection, requested of "
 //                   "the client during "
 //                   "sampling.\n\nBecause LLMs can vary along multiple "
@@ -116,7 +116,7 @@ MCP_NAMESPACE_BEGIN
 //         "type" : "object"
 // };
 
-// struct CreateMessageRequest {
+// CreateMessageRequest {
 //   "description"
 //       : "A request from the server to sample an LLM via the client. The client "
 //         "has full discretion over which model to select. The client should "
@@ -179,7 +179,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct CreateMessageResult {
+// CreateMessageResult {
 //   "description"
 //       : "The client's response to a sampling/create_message request from the "
 //         "server. The client should inform the user before returning the "

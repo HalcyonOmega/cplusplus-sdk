@@ -8,7 +8,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// struct CompleteRequest {
+// CompleteRequest {
 //   "description" : "A request from the client to the server, to ask for "
 //                   "completion options.",
 //                   "properties"
@@ -47,7 +47,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct CompleteResult {
+// CompleteResult {
 //   "description" : "The server's response to a completion/complete request",
 //                   "properties"
 //       : {
@@ -88,7 +88,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct ResourceReference {
+// ResourceReference {
 //   "description" : "A reference to a resource or resource template definition.",
 //                   "properties"
 //       : {
@@ -103,7 +103,7 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// struct PromptReference {
+// PromptReference {
 //   "description" : "Identifies a prompt.",
 //                   "properties"
 //       : {
@@ -183,16 +183,15 @@ struct CompleteRequest : public Request {
  */
 struct CompleteResult : public Result {
     completion : {
-    /**
-     * An array of completion values. Must not exceed 100 items.
-     */
-    values:
-        string[];
+        /**
+         * An array of completion values. Must not exceed 100 items.
+         */
+        vector<string> values;
         /**
          * The total number of completion options available. This can exceed the number of values
          * actually sent in the response.
          */
-        total ?: number;
+        optional<number> total;
         /**
          * Indicates whether there are additional completion options beyond those provided in the
          * current response, even if the exact total is unknown.

@@ -57,11 +57,12 @@ using RequestID = variant<string, int>; // A uniquely identifying ID for a
 using SessionID = string;
 using Cursor = string; // An opaque token used to represent a cursor for pagination.
 
-using Passthrough = unordered_map<string,
-                                  JSON>; // A passthrough property is a property that is not
-                                         // part of the schema, but is used to pass
-                                         // additional information to the server or client.
-// using ProgressToken = variant<string, int>; // A progress token, used to associate progress
-// notifications with the original request.
+using AdditionalProperties = unordered_map<string, any>;
+using AdditionalStrings = unordered_map<string, string>;
+using AdditionalObjects = unordered_map<string,
+                                        JSON>; // A passthrough property is a property that is not
+                                               // part of the schema, but is used to pass
+                                               // additional information to the server or client.
+using number = variant<int, double>;
 
 MCP_NAMESPACE_END

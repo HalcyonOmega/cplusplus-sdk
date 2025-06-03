@@ -1,13 +1,40 @@
 // Server-side schemas for Model Context Protocol
 #pragma once
 
-#include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
+#include "Schemas/Common/CommonSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
-// ServerCapabilities_JSON{
+struct ServerCapabilitiesPrompts {
+    /**
+     * Whether this server supports notifications for changes to the prompt
+     * list.
+     */
+    optional<bool> listChanged;
+};
+
+struct ServerCapabilitiesResources {
+    /**
+     * Whether this server supports subscribing to resource updates.
+     */
+    optional<bool> subscribe;
+    /**
+     * Whether this server supports notifications for changes to the resource
+     * list.
+     */
+    optional<bool> listChanged;
+};
+
+struct ServerCapabilitiesTools {
+    /**
+     * Whether this server supports notifications for changes to the tool list.
+     */
+    optional<bool> listChanged;
+};
+
+// ServerCapabilities {
 //     "description": "Capabilities that a server may support. Known
 //     capabilities are defined here,
 //     "
@@ -77,108 +104,36 @@ MCP_NAMESPACE_BEGIN
 //     "type": "object"
 // };
 
-// ServerNotification_JSON {
-//     "anyOf" : [
-//         {"$ref": "#/definitions/CancelledNotification"},
-//         {"$ref": "#/definitions/ProgressNotification"},
-//         {"$ref": "#/definitions/ResourceListChangedNotification"},
-//         {"$ref": "#/definitions/ResourceUpdatedNotification"},
-//         {"$ref": "#/definitions/PromptListChangedNotification"},
-//         {"$ref": "#/definitions/ToolListChangedNotification"},
-//         {"$ref": "#/definitions/LoggingMessageNotification"}
-//     ]
-// };
-
-// ServerRequest_JSON {
-//     "anyOf" : [
-//         {"$ref": "#/definitions/PingRequest"}, {"$ref":
-//         "#/definitions/CreateMessageRequest"},
-//         {"$ref": "#/definitions/ListRootsRequest"}
-//     ]
-// };
-
-// ServerResult_JSON {
-//     "anyOf" : [
-//         {"$ref": "#/definitions/Result"}, {"$ref":
-//         "#/definitions/InitializeResult"},
-//         {"$ref": "#/definitions/ListResourcesResult"},
-//         {"$ref": "#/definitions/ListResourceTemplatesResult"},
-//         {"$ref": "#/definitions/ReadResourceResult"}, {"$ref":
-//         "#/definitions/ListPromptsResult"},
-//         {"$ref": "#/definitions/GetPromptResult"}, {"$ref":
-//         "#/definitions/ListToolsResult"},
-//         {"$ref": "#/definitions/CallToolResult"}, {"$ref":
-//         "#/definitions/CompleteResult"}
-//     ]
-// };
-
 /**
  * Capabilities that a server may support. Known capabilities are defined here,
  * in this schema, but this is not a closed set: any server can define its own,
  * additional capabilities.
  */
 struct ServerCapabilities {
-  /**
-   * Experimental, non-standard capabilities that the server supports.
-   */
-  experimental ?: {[key:string] : object};
-  /**
-   * Present if the server supports sending log messages to the client.
-   */
-  optional<JSON> logging;
-  /**
-   * Present if the server supports argument autocompletion suggestions.
-   */
-  optional<JSON> completions;
-  /**
-   * Present if the server offers any prompt templates.
-   */
-  prompts ?: {
     /**
-     * Whether this server supports notifications for changes to the prompt
-     * list.
+     * Experimental, non-standard capabilities that the server supports.
      */
-    optional<bool> listChanged;
-  };
-  /**
-   * Present if the server offers any resources to read.
-   */
-  resources ?: {
+    optional<AdditionalObjects> experimental;
     /**
-     * Whether this server supports subscribing to resource updates.
+     * Present if the server supports sending log messages to the client.
      */
-    optional<bool> subscribe;
+    optional<JSON> logging;
     /**
-     * Whether this server supports notifications for changes to the resource
-     * list.
+     * Present if the server supports argument autocompletion suggestions.
      */
-    optional<bool> listChanged;
-  };
-  /**
-   * Present if the server offers any tools to call.
-   */
-  tools ?: {
+    optional<JSON> completions;
     /**
-     * Whether this server supports notifications for changes to the tool list.
+     * Present if the server offers any prompt templates.
      */
-    optional<bool> listChanged;
-  };
+    optional<ServerCapabilitiesPrompts> prompts;
+    /**
+     * Present if the server offers any resources to read.
+     */
+    optional<ServerCapabilitiesResources> resources;
+    /**
+     * Present if the server offers any tools to call.
+     */
+    optional<ServerCapabilitiesTools> tools;
 };
-
-/* Server messages */
-using ServerRequest =
-    std::variant<PingRequest, CreateMessageRequest, ListRootsRequest>;
-
-using ServerNotification =
-    std::variant<CancelledNotification, ProgressNotification,
-                 LoggingMessageNotification, ResourceUpdatedNotification,
-                 ResourceListChangedNotification, ToolListChangedNotification,
-                 PromptListChangedNotification>;
-
-using ServerResult =
-    std::variant<EmptyResult, InitializeResult, CompleteResult, GetPromptResult,
-                 ListPromptsResult, ListResourceTemplatesResult,
-                 ListResourcesResult, ReadResourceResult, CallToolResult,
-                 ListToolsResult>;
 
 MCP_NAMESPACE_END
