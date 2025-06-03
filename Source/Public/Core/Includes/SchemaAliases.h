@@ -15,6 +15,7 @@
 #include "Schemas/Common/ToolSchemas.h"
 
 MCP_NAMESPACE_BEGIN
+
 /* General */
 
 // Cursor {

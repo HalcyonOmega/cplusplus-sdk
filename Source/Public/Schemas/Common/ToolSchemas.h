@@ -69,47 +69,53 @@ MCP_NAMESPACE_BEGIN
  * received from untrusted servers.
  */
 struct ToolAnnotations {
-  /**
-   * A human-readable title for the tool.
-   */
-  optional<string> title;
+    /**
+     * A human-readable title for the tool.
+     */
+    optional<string> title;
 
-  /**
-   * If true, the tool does not modify its environment.
-   *
-   * Default: false
-   */
-  optional<bool> readOnlyHint;
+    /**
+     * If true, the tool does not modify its environment.
+     *
+     * Default: false
+     */
+    optional<bool> readOnlyHint;
 
-  /**
-   * If true, the tool may perform destructive updates to its environment.
-   * If false, the tool performs only additive updates.
-   *
-   * (This property is meaningful only when `readOnlyHint == false`)
-   *
-   * Default: true
-   */
-  optional<bool> destructiveHint;
+    /**
+     * If true, the tool may perform destructive updates to its environment.
+     * If false, the tool performs only additive updates.
+     *
+     * (This property is meaningful only when `readOnlyHint == false`)
+     *
+     * Default: true
+     */
+    optional<bool> destructiveHint;
 
-  /**
-   * If true, calling the tool repeatedly with the same arguments
-   * will have no additional effect on the its environment.
-   *
-   * (This property is meaningful only when `readOnlyHint == false`)
-   *
-   * Default: false
-   */
-  optional<bool> idempotentHint;
+    /**
+     * If true, calling the tool repeatedly with the same arguments
+     * will have no additional effect on the its environment.
+     *
+     * (This property is meaningful only when `readOnlyHint == false`)
+     *
+     * Default: false
+     */
+    optional<bool> idempotentHint;
 
-  /**
-   * If true, this tool may interact with an "open world" of external
-   * entities. If false, the tool's domain of interaction is closed.
-   * For example, the world of a web search tool is open, whereas that
-   * of a memory tool is not.
-   *
-   * Default: true
-   */
-  optional<bool> openWorldHint;
+    /**
+     * If true, this tool may interact with an "open world" of external
+     * entities. If false, the tool's domain of interaction is closed.
+     * For example, the world of a web search tool is open, whereas that
+     * of a memory tool is not.
+     *
+     * Default: true
+     */
+    optional<bool> openWorldHint;
+};
+
+struct ToolInputSchema {
+    string type = "object";
+    optional<AdditionalObjects> properties;
+    optional<vector<string>> required;
 };
 
 // Tool {
@@ -157,33 +163,28 @@ struct ToolAnnotations {
  * Definition for a tool the client can call.
  */
 struct Tool {
-  /**
-   * The name of the tool.
-   */
-  string name;
+    /**
+     * The name of the tool.
+     */
+    string name;
 
-  /**
-   * A human-readable description of the tool.
-   *
-   * This can be used by clients to improve the LLM's understanding of available
-   * tools. It can be thought of like a "hint" to the model.
-   */
-  optional<string> description;
+    /**
+     * A human-readable description of the tool.
+     *
+     * This can be used by clients to improve the LLM's understanding of available
+     * tools. It can be thought of like a "hint" to the model.
+     */
+    optional<string> description;
 
-  /**
-   * A JSON Schema object defining the expected parameters for the tool.
-   */
-  inputSchema : {
-  type:
-    "object";
-    properties ?: {[key:string] : object};
-    optional<vector<string>> required;
-  };
+    /**
+     * A JSON Schema object defining the expected parameters for the tool.
+     */
+    ToolInputSchema inputSchema;
 
-  /**
-   * Optional additional tool information.
-   */
-  optional<ToolAnnotations> annotations;
+    /**
+     * Optional additional tool information.
+     */
+    optional<ToolAnnotations> annotations;
 };
 
 // ListToolsRequest {
@@ -212,7 +213,9 @@ struct Tool {
  * Sent from the client to request a list of tools the server has.
  */
 struct ListToolsRequest : public PaginatedRequest {
-  ListToolsRequest() { method = MTHD_TOOLS_LIST; }
+    ListToolsRequest() {
+        method = MTHD_TOOLS_LIST;
+    }
 };
 
 // ListToolsResult {
@@ -245,7 +248,7 @@ struct ListToolsRequest : public PaginatedRequest {
  * The server's response to a tools/list request from the client.
  */
 struct ListToolsResult : public PaginatedResult {
-  vector<Tool> tools;
+    vector<Tool> tools;
 };
 
 // CallToolResult {
@@ -302,20 +305,19 @@ struct ListToolsResult : public PaginatedResult {
  * should be reported as an MCP error response.
  */
 struct CallToolResult : public Result {
-  vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>>
-      content;
+    vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>> content;
 
-  /**
-   * Whether the tool call ended in an error.
-   *
-   * If not set, this is assumed to be false (the call was successful).
-   */
-  optional<bool> isError;
+    /**
+     * Whether the tool call ended in an error.
+     *
+     * If not set, this is assumed to be false (the call was successful).
+     */
+    optional<bool> isError;
 };
 
 struct CallToolRequestParams {
-  string name;
-  optional<AdditionalProperties> arguments;
+    string name;
+    optional<AdditionalProperties> arguments;
 };
 
 // CallToolRequest {
@@ -341,9 +343,11 @@ struct CallToolRequestParams {
  * Used by the client to invoke a tool provided by the server.
  */
 struct CallToolRequest : public Request {
-  CallToolRequestParams params;
+    CallToolRequestParams params;
 
-  CallToolRequest() { method = MTHD_TOOLS_CALL; }
+    CallToolRequest() {
+        method = MTHD_TOOLS_CALL;
+    }
 };
 
 // ToolListChangedNotification {
@@ -381,9 +385,9 @@ struct CallToolRequest : public Request {
  * any previous subscription from the client.
  */
 struct ToolListChangedNotification : public Notification {
-  ToolListChangedNotification() {
-    method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
-  }
+    ToolListChangedNotification() {
+        method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
+    }
 };
 
 MCP_NAMESPACE_END

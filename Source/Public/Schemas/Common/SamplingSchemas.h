@@ -4,7 +4,8 @@
 #include "Constants.h"
 #include "ContentSchemas.h"
 #include "Core.h"
-#include "Schemas/Client/ClientSchemas.h"
+#include "RequestSchemas.h"
+#include "ResultSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -23,6 +24,14 @@ MCP_NAMESPACE_BEGIN
 //                                  "required" : [ "content", "role" ],
 //                                               "type" : "object"
 // };
+
+/**
+ * Describes a message issued to or received from an LLM API.
+ */
+struct SamplingMessage {
+    Role role;
+    variant<TextContent, ImageContent, AudioContent> content;
+};
 
 // ModelHint {
 //   "description"
@@ -49,6 +58,28 @@ MCP_NAMESPACE_BEGIN
 //         },
 //                        "type" : "object"
 // };
+
+/**
+ * Hints to use for model selection.
+ *
+ * Keys not declared here are currently left unspecified by the spec and are up
+ * to the client to interpret.
+ */
+struct ModelHint {
+    /**
+     * A hint for a model name.
+     *
+     * The client SHOULD treat this as a substring of a model name; for example:
+     *  - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`
+     *  - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.
+     *  - `claude` should match any Claude model
+     *
+     * The client MAY also map the string to a different provider's model name or a different model
+     * family, as long as it fills a similar niche; for example:
+     *  - `gemini-1.5-flash` could match `claude-3-haiku-20240307`
+     */
+    optional<string> name;
+};
 
 // ModelPreferences {
 //   "description" : "The server's preferences for model selection, requested of "
@@ -115,135 +146,6 @@ MCP_NAMESPACE_BEGIN
 //       },
 //         "type" : "object"
 // };
-
-// CreateMessageRequest {
-//   "description"
-//       : "A request from the server to sample an LLM via the client. The client "
-//         "has full discretion over which model to select. The client should "
-//         "also "
-//         "inform the user before beginning sampling, to allow them to inspect "
-//         "the "
-//         "request (human in the loop) and decide whether to approve it.",
-//         "properties"
-//       : {
-//         "method" : {"const" : "sampling/createMessage", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "includeContext" : {
-//               "description" :
-//                   "A request to include context from one or more MCP "
-//                   "servers (including the caller), to be attached to "
-//                   "the prompt. The client MAY ignore this request.",
-//               "enum" : [ "allServers", "none", "thisServer" ],
-//               "type" : "string"
-//             },
-//             "maxTokens" : {
-//               "description" :
-//                   "The maximum number of tokens to sample, as "
-//                   "requested by the server. The client MAY choose to "
-//                   "sample fewer tokens than requested.",
-//               "type" : "integer"
-//             },
-//             "messages" : {
-//               "items" : {"$ref" : "#/definitions/SamplingMessage"},
-//               "type" : "array"
-//             },
-//             "metadata" : {
-//               "additionalProperties" : true,
-//               "description" :
-//                   "Optional metadata to pass through to the LLM provider. The "
-//                   "format of this metadata is provider-specific.",
-//               "properties" : {},
-//               "type" : "object"
-//             },
-//             "modelPreferences" : {
-//               "$ref" : "#/definitions/ModelPreferences",
-//               "description" :
-//                   "The server's preferences for which model to select. "
-//                   "The client MAY ignore these preferences."
-//             },
-//             "stopSequences" : {"items" : {"type" : "string"}, "type" : "array"},
-//             "systemPrompt" : {
-//               "description" : "An optional system prompt the server wants to "
-//                               "use for sampling. "
-//                               "The client MAY modify or omit this prompt.",
-//               "type" : "string"
-//             },
-//             "temperature" : {"type" : "number"}
-//           },
-//           "required" : [ "maxTokens", "messages" ],
-//           "type" : "object"
-//         }
-//       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
-// };
-
-// CreateMessageResult {
-//   "description"
-//       : "The client's response to a sampling/create_message request from the "
-//         "server. The client should inform the user before returning the "
-//         "sampled message, to allow them to inspect the response (human in "
-//         "the loop) and decide whether to allow the server to see it.",
-//         "properties"
-//       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol to "
-//                           "allow clients and servers to attach additional "
-//                           "metadata to their responses.",
-//           "type" : "object"
-//         },
-//         "content" : {
-//           "anyOf" : [
-//             {"$ref" : "#/definitions/TextContent"},
-//             {"$ref" : "#/definitions/ImageContent"},
-//             {"$ref" : "#/definitions/AudioContent"}
-//           ]
-//         },
-//         "model" : {
-//           "description" : "The name of the model that generated the message.",
-//           "type" : "string"
-//         },
-//         "role" : {"$ref" : "#/definitions/Role"},
-//         "stopReason" : {
-//           "description" : "The reason why sampling stopped, if known.",
-//           "type" : "string"
-//         }
-//       },
-//         "required" : [ "content", "model", "role" ],
-//                      "type" : "object"
-// };
-
-/**
- * Describes a message issued to or received from an LLM API.
- */
-struct SamplingMessage {
-    Role role;
-    variant<TextContent, ImageContent, AudioContent> content;
-};
-
-/**
- * Hints to use for model selection.
- *
- * Keys not declared here are currently left unspecified by the spec and are up
- * to the client to interpret.
- */
-struct ModelHint {
-    /**
-     * A hint for a model name.
-     *
-     * The client SHOULD treat this as a substring of a model name; for example:
-     *  - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`
-     *  - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.
-     *  - `claude` should match any Claude model
-     *
-     * The client MAY also map the string to a different provider's model name or a different model
-     * family, as long as it fills a similar niche; for example:
-     *  - `gemini-1.5-flash` could match `claude-3-haiku-20240307`
-     */
-    optional<string> name;
-};
 
 /**
  * The server's preferences for model selection, requested of the client during sampling.
@@ -340,6 +242,69 @@ struct CreateMessageRequestParams {
     optional<JSON> metadata;
 };
 
+// CreateMessageRequest {
+//   "description"
+//       : "A request from the server to sample an LLM via the client. The client "
+//         "has full discretion over which model to select. The client should "
+//         "also "
+//         "inform the user before beginning sampling, to allow them to inspect "
+//         "the "
+//         "request (human in the loop) and decide whether to approve it.",
+//         "properties"
+//       : {
+//         "method" : {"const" : "sampling/createMessage", "type" : "string"},
+//         "params" : {
+//           "properties" : {
+//             "includeContext" : {
+//               "description" :
+//                   "A request to include context from one or more MCP "
+//                   "servers (including the caller), to be attached to "
+//                   "the prompt. The client MAY ignore this request.",
+//               "enum" : [ "allServers", "none", "thisServer" ],
+//               "type" : "string"
+//             },
+//             "maxTokens" : {
+//               "description" :
+//                   "The maximum number of tokens to sample, as "
+//                   "requested by the server. The client MAY choose to "
+//                   "sample fewer tokens than requested.",
+//               "type" : "integer"
+//             },
+//             "messages" : {
+//               "items" : {"$ref" : "#/definitions/SamplingMessage"},
+//               "type" : "array"
+//             },
+//             "metadata" : {
+//               "additionalProperties" : true,
+//               "description" :
+//                   "Optional metadata to pass through to the LLM provider. The "
+//                   "format of this metadata is provider-specific.",
+//               "properties" : {},
+//               "type" : "object"
+//             },
+//             "modelPreferences" : {
+//               "$ref" : "#/definitions/ModelPreferences",
+//               "description" :
+//                   "The server's preferences for which model to select. "
+//                   "The client MAY ignore these preferences."
+//             },
+//             "stopSequences" : {"items" : {"type" : "string"}, "type" : "array"},
+//             "systemPrompt" : {
+//               "description" : "An optional system prompt the server wants to "
+//                               "use for sampling. "
+//                               "The client MAY modify or omit this prompt.",
+//               "type" : "string"
+//             },
+//             "temperature" : {"type" : "number"}
+//           },
+//           "required" : [ "maxTokens", "messages" ],
+//           "type" : "object"
+//         }
+//       },
+//         "required" : [ "method", "params" ],
+//                      "type" : "object"
+// };
+
 /**
  * A request from the server to sample an LLM via the client. The client has full discretion over
  * which model to select. The client should also inform the user before beginning sampling, to allow
@@ -352,6 +317,44 @@ struct CreateMessageRequest : public Request {
         method = MTHD_SAMPLING_CREATE_MESSAGE;
     }
 };
+
+enum class StopReason { endTurn, stopSequence, maxTokens };
+
+// CreateMessageResult {
+//   "description"
+//       : "The client's response to a sampling/create_message request from the "
+//         "server. The client should inform the user before returning the "
+//         "sampled message, to allow them to inspect the response (human in "
+//         "the loop) and decide whether to allow the server to see it.",
+//         "properties"
+//       : {
+//         "_meta" : {
+//           "additionalProperties" : {},
+//           "description" : "This result property is reserved by the protocol to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           "type" : "object"
+//         },
+//         "content" : {
+//           "anyOf" : [
+//             {"$ref" : "#/definitions/TextContent"},
+//             {"$ref" : "#/definitions/ImageContent"},
+//             {"$ref" : "#/definitions/AudioContent"}
+//           ]
+//         },
+//         "model" : {
+//           "description" : "The name of the model that generated the message.",
+//           "type" : "string"
+//         },
+//         "role" : {"$ref" : "#/definitions/Role"},
+//         "stopReason" : {
+//           "description" : "The reason why sampling stopped, if known.",
+//           "type" : "string"
+//         }
+//       },
+//         "required" : [ "content", "model", "role" ],
+//                      "type" : "object"
+// };
 
 // TODO: Typescript extended from Result and SamplingMessage - How to convert properly?
 /**
@@ -367,7 +370,7 @@ struct CreateMessageResult : public Result, SamplingMessage {
     /**
      * The reason why sampling stopped, if known.
      */
-    stopReason ?: "endTurn" | "stopSequence" | "maxTokens" | string;
+    optional<variant<StopReason, string>> stopReason;
 };
 
 MCP_NAMESPACE_END
