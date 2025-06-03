@@ -304,45 +304,49 @@ struct ModelPreferences {
     optional<number> intelligencePriority;
 };
 
+enum class IncludeContext { none, thisServer, allServers };
+
+struct CreateMessageRequestParams {
+    vector<SamplingMessage> messages;
+    /**
+     * The server's preferences for which model to select. The client MAY ignore these
+     * preferences.
+     */
+    optional<ModelPreferences> modelPreferences;
+    /**
+     * An optional system prompt the server wants to use for sampling. The client MAY modify or
+     * omit this prompt.
+     */
+    optional<string> systemPrompt;
+    /**
+     * A request to include context from one or more MCP servers (including the caller), to be
+     * attached to the prompt. The client MAY ignore this request.
+     */
+    optional<IncludeContext> includeContext;
+    /**
+     * @TJS-type number
+     */
+    optional<number> temperature;
+    /**
+     * The maximum number of tokens to sample, as requested by the server. The client MAY choose
+     * to sample fewer tokens than requested.
+     */
+    number maxTokens;
+    optional<vector<string>> stopSequences;
+    /**
+     * Optional metadata to pass through to the LLM provider. The format of this metadata is
+     * provider-specific.
+     */
+    optional<JSON> metadata;
+};
+
 /**
  * A request from the server to sample an LLM via the client. The client has full discretion over
  * which model to select. The client should also inform the user before beginning sampling, to allow
  * them to inspect the request (human in the loop) and decide whether to approve it.
  */
 struct CreateMessageRequest : public Request {
-    params : {
-        vector<SamplingMessage> messages;
-        /**
-         * The server's preferences for which model to select. The client MAY ignore these
-         * preferences.
-         */
-        optional<ModelPreferences> modelPreferences;
-        /**
-         * An optional system prompt the server wants to use for sampling. The client MAY modify or
-         * omit this prompt.
-         */
-        optional<string> systemPrompt;
-        /**
-         * A request to include context from one or more MCP servers (including the caller), to be
-         * attached to the prompt. The client MAY ignore this request.
-         */
-        includeContext ?: "none" | "thisServer" | "allServers";
-        /**
-         * @TJS-type number
-         */
-        optional<number> temperature;
-        /**
-         * The maximum number of tokens to sample, as requested by the server. The client MAY choose
-         * to sample fewer tokens than requested.
-         */
-        number maxTokens;
-        optional<vector<string>> stopSequences;
-        /**
-         * Optional metadata to pass through to the LLM provider. The format of this metadata is
-         * provider-specific.
-         */
-        optional<JSON> metadata;
-    };
+    CreateMessageRequestParams params;
 
     CreateMessageRequest() {
         method = MTHD_SAMPLING_CREATE_MESSAGE;

@@ -8,6 +8,88 @@
 
 MCP_NAMESPACE_BEGIN
 
+struct AutocompleteReference {
+    string type;
+};
+
+// ResourceReference {
+//   "description" : "A reference to a resource or resource template definition.",
+//                   "properties"
+//       : {
+//         "type" : {"const" : "ref/resource", "type" : "string"},
+//         "uri" : {
+//           "description" : "The URI or URI template of the resource.",
+//           "format" : "uri-template",
+//           "type" : "string"
+//         }
+//       },
+//         "required" : [ "type", "uri" ],
+//                      "type" : "object"
+// };
+
+/**
+ * A reference to a resource or resource template definition.
+ */
+struct ResourceReference : public AutocompleteReference {
+    /**
+     * The URI or URI template of the resource.
+     *
+     * @format uri-template
+     */
+    string uri;
+
+    ResourceReference() {
+        type = MSG_KEY_REF_RESOURCE;
+    }
+};
+
+// PromptReference {
+//   "description" : "Identifies a prompt.",
+//                   "properties"
+//       : {
+//         "name" : {
+//           "description" : "The name of the prompt or prompt template",
+//           "type" : "string"
+//         },
+//         "type" : {"const" : "ref/prompt", "type" : "string"}
+//       },
+//         "required" : [ "name", "type" ],
+//                      "type" : "object"
+// };
+
+/**
+ * Identifies a prompt.
+ */
+struct PromptReference : public AutocompleteReference {
+    /**
+     * The name of the prompt or prompt template
+     */
+    string name;
+
+    PromptReference() {
+        type = MSG_KEY_REF_PROMPT;
+    }
+};
+
+struct CompleteRequestParamsArgument {
+    /**
+     * The name of the argument
+     */
+    string name;
+    /**
+     * The value of the argument to use for completion matching.
+     */
+    string value;
+};
+
+struct CompleteRequestParams {
+    variant<PromptReference, ResourceReference> ref;
+    /**
+     * The argument's information
+     */
+    CompleteRequestParamsArgument argument;
+};
+
 // CompleteRequest {
 //   "description" : "A request from the client to the server, to ask for "
 //                   "completion options.",
@@ -46,6 +128,34 @@ MCP_NAMESPACE_BEGIN
 //         "required" : [ "method", "params" ],
 //                      "type" : "object"
 // };
+
+/**
+ * A request from the client to the server, to ask for completion options.
+ */
+struct CompleteRequest : public Request {
+    CompleteRequestParams params;
+
+    CompleteRequest() {
+        method = MTHD_COMPLETION_COMPLETE;
+    }
+};
+
+struct CompleteResultParams {
+    /**
+     * An array of completion values. Must not exceed 100 items.
+     */
+    vector<string> values;
+    /**
+     * The total number of completion options available. This can exceed the number of values
+     * actually sent in the response.
+     */
+    optional<number> total;
+    /**
+     * Indicates whether there are additional completion options beyond those provided in the
+     * current response, even if the exact total is unknown.
+     */
+    optional<bool> hasMore;
+};
 
 // CompleteResult {
 //   "description" : "The server's response to a completion/complete request",
@@ -88,116 +198,11 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-// ResourceReference {
-//   "description" : "A reference to a resource or resource template definition.",
-//                   "properties"
-//       : {
-//         "type" : {"const" : "ref/resource", "type" : "string"},
-//         "uri" : {
-//           "description" : "The URI or URI template of the resource.",
-//           "format" : "uri-template",
-//           "type" : "string"
-//         }
-//       },
-//         "required" : [ "type", "uri" ],
-//                      "type" : "object"
-// };
-
-// PromptReference {
-//   "description" : "Identifies a prompt.",
-//                   "properties"
-//       : {
-//         "name" : {
-//           "description" : "The name of the prompt or prompt template",
-//           "type" : "string"
-//         },
-//         "type" : {"const" : "ref/prompt", "type" : "string"}
-//       },
-//         "required" : [ "name", "type" ],
-//                      "type" : "object"
-// };
-
-struct AutocompleteReference {
-    string type;
-};
-
-/**
- * A reference to a resource or resource template definition.
- */
-struct ResourceReference : public AutocompleteReference {
-    /**
-     * The URI or URI template of the resource.
-     *
-     * @format uri-template
-     */
-    string uri;
-
-    ResourceReference() {
-        type = MSG_KEY_REF_RESOURCE;
-    }
-};
-
-/**
- * Identifies a prompt.
- */
-struct PromptReference : public AutocompleteReference {
-    /**
-     * The name of the prompt or prompt template
-     */
-    string name;
-
-    PromptReference() {
-        type = MSG_KEY_REF_PROMPT;
-    }
-};
-
-/* Autocomplete */
-/**
- * A request from the client to the server, to ask for completion options.
- */
-struct CompleteRequest : public Request {
-    params : {
-        variant<PromptReference, ResourceReference> ref;
-    /**
-     * The argument's information
-     */
-    argument: {
-        /**
-         * The name of the argument
-         */
-        string name;
-        /**
-         * The value of the argument to use for completion matching.
-         */
-        string value;
-    };
-    };
-
-    CompleteRequest() {
-        method = MTHD_COMPLETION_COMPLETE;
-    }
-};
-
 /**
  * The server's response to a completion/complete request
  */
 struct CompleteResult : public Result {
-    completion : {
-        /**
-         * An array of completion values. Must not exceed 100 items.
-         */
-        vector<string> values;
-        /**
-         * The total number of completion options available. This can exceed the number of values
-         * actually sent in the response.
-         */
-        optional<number> total;
-        /**
-         * Indicates whether there are additional completion options beyond those provided in the
-         * current response, even if the exact total is unknown.
-         */
-        optional<bool> hasMore;
-    };
+    CompleteResultParams completion;
 };
 
 MCP_NAMESPACE_END

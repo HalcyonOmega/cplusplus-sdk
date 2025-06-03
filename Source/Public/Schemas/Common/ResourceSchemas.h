@@ -5,6 +5,8 @@
 #include "NotificationSchemas.h"
 #include "RequestSchemas.h"
 #include "ResultSchemas.h"
+#include "ToolSchemas.h"
+
 MCP_NAMESPACE_BEGIN
 
 // Resource {
@@ -312,6 +314,16 @@ struct ListResourceTemplatesResult : public PaginatedResult {
     vector<ResourceTemplate> resourceTemplates;
 };
 
+struct ResourceUpdatedNotificationParams {
+    /**
+     * The URI of the resource that has been updated. This might be a sub-resource
+     * of the one that the client actually subscribed to.
+     *
+     * @format uri
+     */
+    string uri;
+};
+
 // ResourceUpdatedNotification {
 //   "description" : "A notification from the server to the client, "
 //                   "informing it that a resource has changed and may need "
@@ -348,15 +360,17 @@ struct ResourceUpdatedNotification : public Notification {
     ResourceUpdatedNotification() {
         method = MTHD_NOTIFICATIONS_RESOURCES_UPDATED;
     }
-    params : {
-        /**
-         * The URI of the resource that has been updated. This might be a sub-resource
-         * of the one that the client actually subscribed to.
-         *
-         * @format uri
-         */
-        string uri;
-    };
+    ResourceUpdatedNotificationParams params;
+};
+
+struct SubscribeRequestParams {
+    /**
+     * The URI of the resource to subscribe to. The URI can use any protocol; it
+     * is up to the server how to interpret it.
+     *
+     * @format uri
+     */
+    string uri;
 };
 
 // SubscribeRequest {
@@ -393,15 +407,16 @@ struct SubscribeRequest : public Request {
     SubscribeRequest() {
         method = MTHD_RESOURCES_SUBSCRIBE;
     }
-    params : {
-        /**
-         * The URI of the resource to subscribe to. The URI can use any protocol; it
-         * is up to the server how to interpret it.
-         *
-         * @format uri
-         */
-        string uri;
-    };
+    SubscribeRequestParams params;
+};
+
+struct UnsubscribeRequestParams {
+    /**
+     * The URI of the resource to unsubscribe from.
+     *
+     * @format uri
+     */
+    string uri;
 };
 
 // UnsubscribeRequest {
@@ -436,14 +451,17 @@ struct UnsubscribeRequest : public Request {
     UnsubscribeRequest() {
         method = MTHD_RESOURCES_UNSUBSCRIBE;
     }
-    params : {
-        /**
-         * The URI of the resource to unsubscribe from.
-         *
-         * @format uri
-         */
-        string uri;
-    };
+    UnsubscribeRequestParams params;
+};
+
+struct ReadResourceRequestParams {
+    /**
+     * The URI of the resource to read. The URI can use any protocol; it is up to
+     * the server how to interpret it.
+     *
+     * @format uri
+     */
+    string uri;
 };
 
 // ReadResourceRequest {
@@ -479,15 +497,7 @@ struct ReadResourceRequest : public Request {
     ReadResourceRequest() {
         method = MTHD_RESOURCES_READ;
     }
-    params : {
-        /**
-         * The URI of the resource to read. The URI can use any protocol; it is up to
-         * the server how to interpret it.
-         *
-         * @format uri
-         */
-        string uri;
-    };
+    ReadResourceRequestParams params;
 };
 
 // ReadResourceResult {
@@ -521,7 +531,7 @@ struct ReadResourceRequest : public Request {
  * The server's response to a resources/read request from the client.
  */
 struct ReadResourceResult : public Result {
-    contents : (TextResourceContents | BlobResourceContents)[];
+    vector<variant<TextResourceContents, BlobResourceContents>> contents;
 };
 
 // ResourceListChangedNotification {
