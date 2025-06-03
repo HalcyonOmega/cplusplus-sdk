@@ -3,6 +3,9 @@
 #include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
+#include "NotificationSchemas.h"
+#include "RequestSchemas.h"
+#include "ResultSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -232,68 +235,6 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-/* Tools */
-/**
- * Sent from the client to request a list of tools the server has.
- */
-struct ListToolsRequest : public PaginatedRequest {
-  ListToolsRequest() { method = MTHD_TOOLS_LIST; }
-};
-
-/**
- * The server's response to a tools/list request from the client.
- */
-struct ListToolsResult : public PaginatedResult {
-  tools : Tool[];
-};
-
-/**
- * The server's response to a tool call.
- *
- * Any errors that originate from the tool SHOULD be reported inside the result
- * object, with `isError` set to true, _not_ as an MCP protocol-level error
- * response. Otherwise, the LLM would not be able to see that an error occurred
- * and self-correct.
- *
- * However, any errors in _finding_ the tool, an error indicating that the
- * server does not support tool calls, or any other exceptional conditions,
- * should be reported as an MCP error response.
- */
-struct CallToolResult : public Result {
-  content : (TextContent | ImageContent | AudioContent | EmbeddedResource)[];
-
-  /**
-   * Whether the tool call ended in an error.
-   *
-   * If not set, this is assumed to be false (the call was successful).
-   */
-  optional<bool> isError;
-};
-
-/**
- * Used by the client to invoke a tool provided by the server.
- */
-struct CallToolRequest : public Request {
-  params : {
-  name:
-    string;
-    arguments ?: {[key:string] : unknown};
-  };
-
-  CallToolRequest() { method = MTHD_TOOLS_CALL; }
-};
-
-/**
- * An optional notification from the server to the client, informing it that the
- * list of tools it offers has changed. This may be issued by servers without
- * any previous subscription from the client.
- */
-struct ToolListChangedNotification : public Notification {
-  ToolListChangedNotification() {
-    method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
-  }
-};
-
 /**
  * Additional properties describing a Tool to clients.
  *
@@ -372,13 +313,74 @@ struct Tool {
   type:
     "object";
     properties ?: {[key:string] : object};
-    required ?: string[];
+    optional<vector<string>> required;
   };
 
   /**
    * Optional additional tool information.
    */
   optional<ToolAnnotations> annotations;
+};
+
+/**
+ * Sent from the client to request a list of tools the server has.
+ */
+struct ListToolsRequest : public PaginatedRequest {
+  ListToolsRequest() { method = MTHD_TOOLS_LIST; }
+};
+
+/**
+ * The server's response to a tools/list request from the client.
+ */
+struct ListToolsResult : public PaginatedResult {
+  vector<Tool> tools;
+};
+
+/**
+ * The server's response to a tool call.
+ *
+ * Any errors that originate from the tool SHOULD be reported inside the result
+ * object, with `isError` set to true, _not_ as an MCP protocol-level error
+ * response. Otherwise, the LLM would not be able to see that an error occurred
+ * and self-correct.
+ *
+ * However, any errors in _finding_ the tool, an error indicating that the
+ * server does not support tool calls, or any other exceptional conditions,
+ * should be reported as an MCP error response.
+ */
+struct CallToolResult : public Result {
+  content : (TextContent | ImageContent | AudioContent | EmbeddedResource)[];
+
+  /**
+   * Whether the tool call ended in an error.
+   *
+   * If not set, this is assumed to be false (the call was successful).
+   */
+  optional<bool> isError;
+};
+
+/**
+ * Used by the client to invoke a tool provided by the server.
+ */
+struct CallToolRequest : public Request {
+  params : {
+  name:
+    string;
+    arguments ?: {[key:string] : unknown};
+  };
+
+  CallToolRequest() { method = MTHD_TOOLS_CALL; }
+};
+
+/**
+ * An optional notification from the server to the client, informing it that the
+ * list of tools it offers has changed. This may be issued by servers without
+ * any previous subscription from the client.
+ */
+struct ToolListChangedNotification : public Notification {
+  ToolListChangedNotification() {
+    method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
+  }
 };
 
 MCP_NAMESPACE_END

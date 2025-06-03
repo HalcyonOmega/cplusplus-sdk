@@ -125,11 +125,11 @@ struct ServerCapabilities {
   /**
    * Present if the server supports sending log messages to the client.
    */
-  logging ?: object;
+  optional<JSON> logging;
   /**
    * Present if the server supports argument autocompletion suggestions.
    */
-  completions ?: object;
+  optional<JSON> completions;
   /**
    * Present if the server offers any prompt templates.
    */

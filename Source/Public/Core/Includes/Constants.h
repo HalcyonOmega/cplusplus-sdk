@@ -62,6 +62,8 @@ static constexpr const char* MSG_KEY_META = "_meta";
 static constexpr const char* MSG_KEY_PROGRESS = "progress";
 static constexpr const char* MSG_KEY_TOTAL = "total";
 static constexpr const char* MSG_KEY_REQUEST_ID = "requestId";
+static constexpr const char* MSG_KEY_REF_RESOURCE = "ref/resource";
+static constexpr const char* MSG_KEY_REF_PROMPT = "ref/prompt";
 
 static constexpr const char* MTHD_INITIALIZE = "initialize";
 static constexpr const char* MTHD_PING = "ping";
@@ -85,6 +87,13 @@ static constexpr const char* MTHD_COMPLETION_COMPLETE = "completion/complete";
 static constexpr const char* MTHD_LOGGING_SET_LEVEL = "logging/setLevel";
 static constexpr const char* MTHD_ROOTS_LIST = "roots/list";
 static constexpr const char* MTHD_SAMPLING_CREATE_MESSAGE = "sampling/createMessage";
+static constexpr const char* MTHD_RESOURCES_LIST = "resources/list";
+static constexpr const char* MTHD_RESOURCES_TEMPLATES_LIST = "resources/templates/list";
+static constexpr const char* MTHD_NOTIFICATIONS_RESOURCES_UPDATED =
+    "notifications/resources/updated";
+static constexpr const char* MTHD_RESOURCES_SUBSCRIBE = "resources/subscribe";
+static constexpr const char* MTHD_RESOURCES_UNSUBSCRIBE = "resources/unsubscribe";
+static constexpr const char* MTHD_RESOURCES_READ = "resources/read";
 
 static constexpr const char* CONST_TEXT = "text";
 static constexpr const char* CONST_IMAGE = "image";

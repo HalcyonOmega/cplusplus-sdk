@@ -3,6 +3,9 @@
 #include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
+#include "RequestSchemas.h"
+#include "ResultSchemas.h"
+
 MCP_NAMESPACE_BEGIN
 
 // struct CompleteRequest {
@@ -84,6 +87,69 @@ MCP_NAMESPACE_BEGIN
 //         "required" : ["completion"],
 //                      "type" : "object"
 // };
+
+// struct ResourceReference {
+//   "description" : "A reference to a resource or resource template definition.",
+//                   "properties"
+//       : {
+//         "type" : {"const" : "ref/resource", "type" : "string"},
+//         "uri" : {
+//           "description" : "The URI or URI template of the resource.",
+//           "format" : "uri-template",
+//           "type" : "string"
+//         }
+//       },
+//         "required" : [ "type", "uri" ],
+//                      "type" : "object"
+// };
+
+// struct PromptReference {
+//   "description" : "Identifies a prompt.",
+//                   "properties"
+//       : {
+//         "name" : {
+//           "description" : "The name of the prompt or prompt template",
+//           "type" : "string"
+//         },
+//         "type" : {"const" : "ref/prompt", "type" : "string"}
+//       },
+//         "required" : [ "name", "type" ],
+//                      "type" : "object"
+// };
+
+struct AutocompleteReference {
+    string type;
+};
+
+/**
+ * A reference to a resource or resource template definition.
+ */
+struct ResourceReference : public AutocompleteReference {
+    /**
+     * The URI or URI template of the resource.
+     *
+     * @format uri-template
+     */
+    string uri;
+
+    ResourceReference() {
+        type = MSG_KEY_REF_RESOURCE;
+    }
+};
+
+/**
+ * Identifies a prompt.
+ */
+struct PromptReference : public AutocompleteReference {
+    /**
+     * The name of the prompt or prompt template
+     */
+    string name;
+
+    PromptReference() {
+        type = MSG_KEY_REF_PROMPT;
+    }
+};
 
 /* Autocomplete */
 /**

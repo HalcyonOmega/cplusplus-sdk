@@ -49,13 +49,6 @@ struct Implementation {
 /**
  * The sender or recipient of messages and data in a conversation.
  */
-type Role = "user" | "assistant";
-
-/**
- * A progress token, used to associate progress notifications with the original
- * request.
- */
-using ProgressToken =
-    std::variant<std::string, int>; // TODO: Verify `int` is the right integer type
+enum class Role { user, assistant };
 
 MCP_NAMESPACE_END

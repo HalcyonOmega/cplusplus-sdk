@@ -31,54 +31,32 @@
 //   "description" : "A uniquely identifying ID for a request in JSON-RPC.",
 //                   "type" : [ "string", "integer" ]
 // };
+#pragma once
 
-struct Request {
-    struct Params {
-        struct Meta {
-            using ProgressToken = std::variant<std::string, int>;
-            /**
-             * If specified, the caller is requesting out-of-band progress
-             * notifications for this request (as represented by
-             * notifications/progress). The value of this parameter is an opaque
-             * token that will be attached to any subsequent notifications. The
-             * receiver is not obligated to provide these notifications.
-             */
-            optional<ProgressToken> progressToken;
-        };
-        optional<Meta> _meta;
-    };
+#include "Constants.h"
+#include "Core.h"
 
-    string method;
-    optional<Params> params;
+MCP_NAMESPACE_BEGIN
+
+struct RequestParamsMeta {
+    using ProgressToken = std::variant<std::string, int>;
+    /**
+     * If specified, the caller is requesting out-of-band progress
+     * notifications for this request (as represented by
+     * notifications/progress). The value of this parameter is an opaque
+     * token that will be attached to any subsequent notifications. The
+     * receiver is not obligated to provide these notifications.
+     */
+    optional<ProgressToken> progressToken;
 };
 
-struct Request_JSON {
-    "properties" : {
-        "method": {"type": "string"},
-        "params": {
-            "additionalProperties": {},
-            "properties": {
-                "_meta": {
-                    "properties": {
-                        "progressToken": {
-                            "$ref": "#/definitions/ProgressToken",
-                            "description":
-                                "If specified, the caller is requesting out-of-band "
-                                "progress notifications for this request (as represented "
-                                "by notifications/progress). The value of this parameter "
-                                "is an opaque token that will be attached to any "
-                                "subsequent notifications. The receiver is not obligated "
-                                "to provide these notifications."
-                        }
-                    },
-                    "type": "object"
-                }
-            },
-            "type": "object"
-        }
-    },
-                   "required" : ["method"],
-                                "type" : "object"
+struct RequestParams {
+    optional<RequestParamsMeta> _meta;
+};
+
+struct Request {
+    string method;
+    optional<RequestParams> params;
 };
 
 /* Ping */
@@ -93,21 +71,23 @@ struct PingRequest : public Request {
     }
 };
 
+struct PaginatedRequestParams : public RequestParams {
+    /**
+     * An opaque token representing the current pagination position.
+     * If provided, the server should return results starting after this cursor.
+     */
+    optional<Cursor> cursor;
+};
+
 /* Pagination */
 struct PaginatedRequest : public Request {
-    params ?: {
-        /**
-         * An opaque token representing the current pagination position.
-         * If provided, the server should return results starting after this cursor.
-         */
-        optional<Cursor> cursor;
-    };
+    optional<PaginatedRequestParams> params;
 };
 
 /**
  * A uniquely identifying ID for a request in JSON-RPC.
  */
-type RequestId = string | number;
+using RequestId = variant<string, number>;
 
 // struct PaginatedRequest {
 //   "properties" : {
@@ -162,3 +142,5 @@ type RequestId = string | number;
 //         "required" : ["method"],
 //                      "type" : "object"
 // };
+
+MCP_NAMESPACE_END

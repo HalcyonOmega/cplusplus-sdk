@@ -60,6 +60,13 @@
 //                      "type" : "object"
 // };
 
+#pragma once
+
+#include "Constants.h"
+#include "Core.h"
+
+MCP_NAMESPACE_BEGIN
+
 struct Notification {
   string method;
   optional < {
@@ -108,6 +115,13 @@ struct CancelledNotification : public Notification {
 };
 
 /* Progress notifications */
+/**
+ * A progress token, used to associate progress notifications with the original
+ * request.
+ */
+using ProgressToken = std::variant<std::string, int>; // TODO: Verify `int` is
+                                                      // the right integer type
+
 /**
  * An out-of-band notification used to inform the receiver of a progress update
  * for a long-running request.
@@ -181,3 +195,5 @@ struct ProgressNotification : public Notification {
 //         "required" : [ "method", "params" ],
 //                      "type" : "object"
 // };
+
+MCP_NAMESPACE_END

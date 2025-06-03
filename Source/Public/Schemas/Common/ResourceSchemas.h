@@ -1,7 +1,10 @@
 #pragma once
 
+#include "Constants.h"
 #include "Core.h"
-
+#include "NotificationSchemas.h"
+#include "RequestSchemas.h"
+#include "ResultSchemas.h"
 MCP_NAMESPACE_BEGIN
 
 // struct Resource {
@@ -96,21 +99,6 @@ MCP_NAMESPACE_BEGIN
 //         "required" : ["method"],
 //                      "type" : "object"
 // };
-
-struct ResourceReference {
-  "description" : "A reference to a resource or resource template definition.",
-                  "properties"
-      : {
-        "type" : {"const" : "ref/resource", "type" : "string"},
-        "uri" : {
-          "description" : "The URI or URI template of the resource.",
-          "format" : "uri-template",
-          "type" : "string"
-        }
-      },
-        "required" : [ "type", "uri" ],
-                     "type" : "object"
-};
 
 // struct ResourceTemplate {
 //   "description"
@@ -453,34 +441,156 @@ struct ResourceReference {
 //                      "type" : "object"
 // };
 
-/* Resources */
+/**
+ * A known resource that the server is capable of reading.
+ */
+struct Resource {
+    /**
+     * The URI of this resource.
+     *
+     * @format uri
+     */
+    string uri;
+
+    /**
+     * A human-readable name for this resource.
+     *
+     * This can be used by clients to populate UI elements.
+     */
+    string name;
+
+    /**
+     * A description of what this resource represents.
+     *
+     * This can be used by clients to improve the LLM's understanding of available
+     * resources. It can be thought of like a "hint" to the model.
+     */
+    optional<string> description;
+
+    /**
+     * The MIME type of this resource, if known.
+     */
+    optional<string> mimeType;
+
+    /**
+     * Optional annotations for the client.
+     */
+    optional<Annotations> annotations;
+
+    /**
+     * The size of the raw resource content, in bytes (i.e., before base64
+     * encoding or any tokenization), if known.
+     *
+     * This can be used by Hosts to display file sizes and estimate context window
+     * usage.
+     */
+    optional<number> size;
+};
+
+/**
+ * A template description for resources available on the server.
+ */
+struct ResourceTemplate {
+    /**
+     * A URI template (according to RFC 6570) that can be used to construct
+     * resource URIs.
+     *
+     * @format uri-template
+     */
+    string uriTemplate;
+
+    /**
+     * A human-readable name for the type of resource this template refers to.
+     *
+     * This can be used by clients to populate UI elements.
+     */
+    string name;
+
+    /**
+     * A description of what this template is for.
+     *
+     * This can be used by clients to improve the LLM's understanding of available
+     * resources. It can be thought of like a "hint" to the model.
+     */
+    optional<string> description;
+
+    /**
+     * The MIME type for all resources that match this template. This should only
+     * be included if all resources matching this template have the same type.
+     */
+    optional<string> mimeType;
+
+    /**
+     * Optional annotations for the client.
+     */
+    optional<Annotations> annotations;
+};
+
+/**
+ * The contents of a specific resource or sub-resource.
+ */
+struct ResourceContents {
+    /**
+     * The URI of this resource.
+     *
+     * @format uri
+     */
+    string uri;
+
+    /**
+     * The MIME type of this resource, if known.
+     */
+    optional<string> mimeType;
+};
+
+struct TextResourceContents : public ResourceContents {
+    /**
+     * The text of the item. This must only be set if the item can actually be
+     * represented as text (not binary data).
+     */
+    string text;
+};
+
+struct BlobResourceContents : public ResourceContents {
+    /**
+     * A base64-encoded string representing the binary data of the item.
+     *
+     * @format byte
+     */
+    string blob;
+};
+
 /**
  * Sent from the client to request a list of resources the server has.
  */
 struct ListResourcesRequest : public PaginatedRequest {
-  method : "resources/list";
-}
+    ListResourcesRequest() {
+        method = MTHD_RESOURCES_LIST;
+    }
+};
 
 /**
  * The server's response to a resources/list request from the client.
  */
 struct ListResourcesResult : public PaginatedResult {
-  resources : Resource[];
-}
+    vector<Resource> resources;
+};
 
 /**
  * Sent from the client to request a list of resource templates the server has.
  */
 struct ListResourceTemplatesRequest : public PaginatedRequest {
-  method : "resources/templates/list";
-}
+    ListResourceTemplatesRequest() {
+        method = MTHD_RESOURCES_TEMPLATES_LIST;
+    }
+};
 
 /**
  * The server's response to a resources/templates/list request from the client.
  */
 struct ListResourceTemplatesResult : public PaginatedResult {
-  resourceTemplates : ResourceTemplate[];
-}
+    vector<ResourceTemplate> resourceTemplates;
+};
 
 /**
  * A notification from the server to the client, informing it that a resource
@@ -488,154 +598,38 @@ struct ListResourceTemplatesResult : public PaginatedResult {
  * client previously sent a resources/subscribe request.
  */
 struct ResourceUpdatedNotification : public Notification {
-  method : "notifications/resources/updated";
-  params : {
-  /**
-   * The URI of the resource that has been updated. This might be a sub-resource
-   * of the one that the client actually subscribed to.
-   *
-   * @format uri
-   */
-  uri:
-    string;
-  };
-}
-
-/**
- * A known resource that the server is capable of reading.
- */
-struct Resource {
-  /**
-   * The URI of this resource.
-   *
-   * @format uri
-   */
-  uri : string;
-
-  /**
-   * A human-readable name for this resource.
-   *
-   * This can be used by clients to populate UI elements.
-   */
-  name : string;
-
-  /**
-   * A description of what this resource represents.
-   *
-   * This can be used by clients to improve the LLM's understanding of available
-   * resources. It can be thought of like a "hint" to the model.
-   */
-  description ?: string;
-
-  /**
-   * The MIME type of this resource, if known.
-   */
-  mimeType ?: string;
-
-  /**
-   * Optional annotations for the client.
-   */
-  annotations ?: Annotations;
-
-  /**
-   * The size of the raw resource content, in bytes (i.e., before base64
-   * encoding or any tokenization), if known.
-   *
-   * This can be used by Hosts to display file sizes and estimate context window
-   * usage.
-   */
-  size ?: number;
-}
-
-/**
- * A template description for resources available on the server.
- */
-struct ResourceTemplate {
-  /**
-   * A URI template (according to RFC 6570) that can be used to construct
-   * resource URIs.
-   *
-   * @format uri-template
-   */
-  uriTemplate : string;
-
-  /**
-   * A human-readable name for the type of resource this template refers to.
-   *
-   * This can be used by clients to populate UI elements.
-   */
-  name : string;
-
-  /**
-   * A description of what this template is for.
-   *
-   * This can be used by clients to improve the LLM's understanding of available
-   * resources. It can be thought of like a "hint" to the model.
-   */
-  description ?: string;
-
-  /**
-   * The MIME type for all resources that match this template. This should only
-   * be included if all resources matching this template have the same type.
-   */
-  mimeType ?: string;
-
-  /**
-   * Optional annotations for the client.
-   */
-  annotations ?: Annotations;
-}
-
-/**
- * The contents of a specific resource or sub-resource.
- */
-struct ResourceContents {
-  /**
-   * The URI of this resource.
-   *
-   * @format uri
-   */
-  uri : string;
-  /**
-   * The MIME type of this resource, if known.
-   */
-  mimeType ?: string;
-}
-
-struct TextResourceContents : public ResourceContents {
-  /**
-   * The text of the item. This must only be set if the item can actually be
-   * represented as text (not binary data).
-   */
-  text : string;
-}
-
-struct BlobResourceContents : public ResourceContents {
-  /**
-   * A base64-encoded string representing the binary data of the item.
-   *
-   * @format byte
-   */
-  blob : string;
-}
+    ResourceUpdatedNotification() {
+        method = MTHD_NOTIFICATIONS_RESOURCES_UPDATED;
+    }
+    params : {
+        /**
+         * The URI of the resource that has been updated. This might be a sub-resource
+         * of the one that the client actually subscribed to.
+         *
+         * @format uri
+         */
+        string uri;
+    };
+};
 
 /**
  * Sent from the client to request resources/updated notifications from the
  * server whenever a particular resource changes.
  */
 struct SubscribeRequest : public Request {
-  method : "resources/subscribe";
-  params : {
-  /**
-   * The URI of the resource to subscribe to. The URI can use any protocol; it
-   * is up to the server how to interpret it.
-   *
-   * @format uri
-   */
-  uri:
-    string;
-  };
-}
+    SubscribeRequest() {
+        method = MTHD_RESOURCES_SUBSCRIBE;
+    }
+    params : {
+        /**
+         * The URI of the resource to subscribe to. The URI can use any protocol; it
+         * is up to the server how to interpret it.
+         *
+         * @format uri
+         */
+        string uri;
+    };
+};
 
 /**
  * Sent from the client to request cancellation of resources/updated
@@ -643,41 +637,43 @@ struct SubscribeRequest : public Request {
  * resources/subscribe request.
  */
 struct UnsubscribeRequest : public Request {
-  method : "resources/unsubscribe";
-  params : {
-  /**
-   * The URI of the resource to unsubscribe from.
-   *
-   * @format uri
-   */
-  uri:
-    string;
-  };
-}
+    UnsubscribeRequest() {
+        method = MTHD_RESOURCES_UNSUBSCRIBE;
+    }
+    params : {
+        /**
+         * The URI of the resource to unsubscribe from.
+         *
+         * @format uri
+         */
+        string uri;
+    };
+};
 
 /**
  * Sent from the client to the server, to read a specific resource URI.
  */
 struct ReadResourceRequest : public Request {
-  method : "resources/read";
-  params : {
-  /**
-   * The URI of the resource to read. The URI can use any protocol; it is up to
-   * the server how to interpret it.
-   *
-   * @format uri
-   */
-  uri:
-    string;
-  };
-}
+    ReadResourceRequest() {
+        method = MTHD_RESOURCES_READ;
+    }
+    params : {
+        /**
+         * The URI of the resource to read. The URI can use any protocol; it is up to
+         * the server how to interpret it.
+         *
+         * @format uri
+         */
+        string uri;
+    };
+};
 
 /**
  * The server's response to a resources/read request from the client.
  */
 struct ReadResourceResult : public Result {
-  contents : (TextResourceContents | BlobResourceContents)[];
-}
+    contents : (TextResourceContents | BlobResourceContents)[];
+};
 
 /**
  * An optional notification from the server to the client, informing it that the
@@ -685,22 +681,9 @@ struct ReadResourceResult : public Result {
  * without any previous subscription from the client.
  */
 struct ResourceListChangedNotification : public Notification {
-  ResourceListChangedNotification() {
-    method = MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED;
-  }
-};
-
-/**
- * A reference to a resource or resource template definition.
- */
-struct ResourceReference {
-  type : "ref/resource";
-  /**
-   * The URI or URI template of the resource.
-   *
-   * @format uri-template
-   */
-  string uri;
+    ResourceListChangedNotification() {
+        method = MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED;
+    }
 };
 
 MCP_NAMESPACE_END

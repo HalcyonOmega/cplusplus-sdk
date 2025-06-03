@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ClientSchemas.h"
 #include "CommonSchemas.h"
 #include "Constants.h"
+#include "ContentSchemas.h"
 #include "Core.h"
+#include "Schemas/Client/ClientSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -214,77 +215,34 @@ MCP_NAMESPACE_BEGIN
 //                      "type" : "object"
 // };
 
-/* Sampling */
-/**
- * A request from the server to sample an LLM via the client. The client has full discretion over
- * which model to select. The client should also inform the user before beginning sampling, to allow
- * them to inspect the request (human in the loop) and decide whether to approve it.
- */
-struct CreateMessageRequest : public Request {
-    params : {
-    messages:
-        SamplingMessage[];
-        /**
-         * The server's preferences for which model to select. The client MAY ignore these
-         * preferences.
-         */
-        optional<ModelPreferences> modelPreferences;
-        /**
-         * An optional system prompt the server wants to use for sampling. The client MAY modify or
-         * omit this prompt.
-         */
-        optional<string> systemPrompt;
-        /**
-         * A request to include context from one or more MCP servers (including the caller), to be
-         * attached to the prompt. The client MAY ignore this request.
-         */
-        includeContext ?: "none" | "thisServer" | "allServers";
-        /**
-         * @TJS-type number
-         */
-        temperature ?: number;
-    /**
-     * The maximum number of tokens to sample, as requested by the server. The client MAY choose to
-     * sample fewer tokens than requested.
-     */
-    maxTokens:
-        number;
-        stopSequences ?: string[];
-        /**
-         * Optional metadata to pass through to the LLM provider. The format of this metadata is
-         * provider-specific.
-         */
-        metadata ?: object;
-    };
-
-    CreateMessageRequest() {
-        method = MTHD_SAMPLING_CREATE_MESSAGE;
-    }
-};
-
-// TODO: Typescript extended from Result and SamplingMessage - How to convert properly?
-/**
- * The client's response to a sampling/create_message request from the server. The client should
- * inform the user before returning the sampled message, to allow them to inspect the response
- * (human in the loop) and decide whether to allow the server to see it.
- */
-struct CreateMessageResult : public Result, SamplingMessage {
-    /**
-     * The name of the model that generated the message.
-     */
-    string model;
-    /**
-     * The reason why sampling stopped, if known.
-     */
-    stopReason ?: "endTurn" | "stopSequence" | "maxTokens" | string;
-};
-
 /**
  * Describes a message issued to or received from an LLM API.
  */
 struct SamplingMessage {
     Role role;
     variant<TextContent, ImageContent, AudioContent> content;
+};
+
+/**
+ * Hints to use for model selection.
+ *
+ * Keys not declared here are currently left unspecified by the spec and are up
+ * to the client to interpret.
+ */
+struct ModelHint {
+    /**
+     * A hint for a model name.
+     *
+     * The client SHOULD treat this as a substring of a model name; for example:
+     *  - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`
+     *  - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.
+     *  - `claude` should match any Claude model
+     *
+     * The client MAY also map the string to a different provider's model name or a different model
+     * family, as long as it fills a similar niche; for example:
+     *  - `gemini-1.5-flash` could match `claude-3-haiku-20240307`
+     */
+    optional<string> name;
 };
 
 /**
@@ -310,7 +268,7 @@ struct ModelPreferences {
      * The client SHOULD prioritize these hints over the numeric priorities, but
      * MAY still use the priorities to select from ambiguous matches.
      */
-    hints ?: ModelHint[];
+    optional<vector<ModelHint>> hints;
 
     /**
      * How much to prioritize cost when selecting a model. A value of 0 means cost
@@ -321,7 +279,7 @@ struct ModelPreferences {
      * @minimum 0
      * @maximum 1
      */
-    costPriority ?: number;
+    optional<number> costPriority;
 
     /**
      * How much to prioritize sampling speed (latency) when selecting a model. A
@@ -332,7 +290,7 @@ struct ModelPreferences {
      * @minimum 0
      * @maximum 1
      */
-    speedPriority ?: number;
+    optional<number> speedPriority;
 
     /**
      * How much to prioritize intelligence and capabilities when selecting a
@@ -343,29 +301,69 @@ struct ModelPreferences {
      * @minimum 0
      * @maximum 1
      */
-    intelligencePriority ?: number;
+    optional<number> intelligencePriority;
 };
 
 /**
- * Hints to use for model selection.
- *
- * Keys not declared here are currently left unspecified by the spec and are up
- * to the client to interpret.
+ * A request from the server to sample an LLM via the client. The client has full discretion over
+ * which model to select. The client should also inform the user before beginning sampling, to allow
+ * them to inspect the request (human in the loop) and decide whether to approve it.
  */
-struct ModelHint {
+struct CreateMessageRequest : public Request {
+    params : {
+        vector<SamplingMessage> messages;
+        /**
+         * The server's preferences for which model to select. The client MAY ignore these
+         * preferences.
+         */
+        optional<ModelPreferences> modelPreferences;
+        /**
+         * An optional system prompt the server wants to use for sampling. The client MAY modify or
+         * omit this prompt.
+         */
+        optional<string> systemPrompt;
+        /**
+         * A request to include context from one or more MCP servers (including the caller), to be
+         * attached to the prompt. The client MAY ignore this request.
+         */
+        includeContext ?: "none" | "thisServer" | "allServers";
+        /**
+         * @TJS-type number
+         */
+        optional<number> temperature;
+        /**
+         * The maximum number of tokens to sample, as requested by the server. The client MAY choose
+         * to sample fewer tokens than requested.
+         */
+        number maxTokens;
+        optional<vector<string>> stopSequences;
+        /**
+         * Optional metadata to pass through to the LLM provider. The format of this metadata is
+         * provider-specific.
+         */
+        optional<JSON> metadata;
+    };
+
+    CreateMessageRequest() {
+        method = MTHD_SAMPLING_CREATE_MESSAGE;
+    }
+};
+
+// TODO: Typescript extended from Result and SamplingMessage - How to convert properly?
+/**
+ * The client's response to a sampling/create_message request from the server. The client should
+ * inform the user before returning the sampled message, to allow them to inspect the response
+ * (human in the loop) and decide whether to allow the server to see it.
+ */
+struct CreateMessageResult : public Result, SamplingMessage {
     /**
-     * A hint for a model name.
-     *
-     * The client SHOULD treat this as a substring of a model name; for example:
-     *  - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`
-     *  - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.
-     *  - `claude` should match any Claude model
-     *
-     * The client MAY also map the string to a different provider's model name or a different model
-     * family, as long as it fills a similar niche; for example:
-     *  - `gemini-1.5-flash` could match `claude-3-haiku-20240307`
+     * The name of the model that generated the message.
      */
-    optional<string> name;
+    string model;
+    /**
+     * The reason why sampling stopped, if known.
+     */
+    stopReason ?: "endTurn" | "stopSequence" | "maxTokens" | string;
 };
 
 MCP_NAMESPACE_END

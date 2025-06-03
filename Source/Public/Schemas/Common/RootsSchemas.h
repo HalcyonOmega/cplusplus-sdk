@@ -3,6 +3,9 @@
 #include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
+#include "NotificationSchemas.h"
+#include "RequestSchemas.h"
+#include "ResultSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -113,7 +116,26 @@ MCP_NAMESPACE_BEGIN
 //                        "type" : "object"
 // };
 
-/* Roots */
+/**
+ * Represents a root directory or file that the server can operate on.
+ */
+struct Root {
+    /**
+     * The URI identifying the root. This *must* start with file:// for now.
+     * This restriction may be relaxed in future versions of the protocol to allow
+     * other URI schemes.
+     *
+     * @format uri
+     */
+    string uri;
+    /**
+     * An optional name for the root. This can be used to provide a human-readable
+     * identifier for the root, which may be useful for display purposes or for
+     * referencing the root in other parts of the application.
+     */
+    optional<string> name;
+};
+
 /**
  * Sent from the server to request a list of root URIs from the client. Roots allow
  * servers to ask for specific directories or files to operate on. A common example
@@ -135,27 +157,7 @@ struct ListRootsRequest : public Request {
  * or file that the server can operate on.
  */
 struct ListRootsResult : public Result {
-    roots : Root[];
-};
-
-/**
- * Represents a root directory or file that the server can operate on.
- */
-struct Root {
-    /**
-     * The URI identifying the root. This *must* start with file:// for now.
-     * This restriction may be relaxed in future versions of the protocol to allow
-     * other URI schemes.
-     *
-     * @format uri
-     */
-    string uri;
-    /**
-     * An optional name for the root. This can be used to provide a human-readable
-     * identifier for the root, which may be useful for display purposes or for
-     * referencing the root in other parts of the application.
-     */
-    optional<string> name;
+    vector<Root> roots;
 };
 
 /**
