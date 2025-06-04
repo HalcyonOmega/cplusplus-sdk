@@ -18,7 +18,7 @@
 #include <vector>
 
 // Third-party includes
-#include "Communication/Serialization/JSON.hpp"
+#include "../../Communication/Serialization/JSON.hpp"
 
 MCP_NAMESPACE_BEGIN
 

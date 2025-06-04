@@ -18,6 +18,7 @@ file(GLOB_RECURSE ALL_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Private/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Public/Core/Includes/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Public/*.hpp"
 )
 
