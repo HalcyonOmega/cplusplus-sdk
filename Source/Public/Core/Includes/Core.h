@@ -18,7 +18,8 @@
 #include <vector>
 
 // Third-party includes
-#include "../../Communication/Serialization/JSON.hpp"
+#include "httplib.h"
+#include "json.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -47,7 +48,7 @@ using std::variant;
 // using std::vector;
 
 // JSON type alias
-using JSON = nlohmann::JSON;
+using JSON = nlohmann::json;
 
 // Common type aliases used across MCP
 using StreamID = string;

@@ -49,6 +49,7 @@ find_package(Threads REQUIRED)
 # Include directories
 include_directories(Source/Public)
 include_directories(Source/Public/Core/Includes)
+include_directories(Source/ThirdParty)
 
 # Add testing if enabled
 if(BUILD_TESTING AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CMakeLists.txt)

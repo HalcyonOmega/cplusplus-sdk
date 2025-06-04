@@ -1,13 +1,8 @@
 #pragma once
 
-#include <optional>
-#include <string>
+#include "Core.h"
 
-#include "../../../ThirdParty/json.hpp"
-
-namespace MCP {
-
-using JSON = nlohmann::json;
+MCP_NAMESPACE_BEGIN
 
 class MessageBase {
   public:
@@ -170,4 +165,4 @@ class NotificationMessage : public MessageBase {
     JSON params_;
 };
 
-} // namespace MCP
+MCP_NAMESPACE_END
