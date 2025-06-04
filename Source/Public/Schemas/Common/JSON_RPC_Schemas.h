@@ -1,8 +1,7 @@
-// JSON-RPC Schemas
 #pragma once
 
-#include "Constants.h"
 #include "Core.h"
+#include "MCP_Error.h"
 #include "NotificationSchemas.h"
 #include "RequestSchemas.h"
 #include "ResultSchemas.h"
@@ -100,55 +99,6 @@ struct JSONRPCResponse {
     RequestId id;
     Result result;
 };
-
-struct MCP_Error {
-    /**
-     * The error type that occurred.
-     */
-    number code;
-    /**
-     * A short description of the error. The message SHOULD be limited to a concise single
-     * sentence.
-     */
-    string message;
-    /**
-     * Additional information about the error. The value of this member is defined by the sender
-     * (e.g. detailed error information, nested errors etc.).
-     */
-    optional<any> data;
-};
-
-// JSONRPCError {
-//   "description" : "A response to a request that indicates an error occurred.",
-//                   "properties"
-//       : {
-//         "error" : {
-//           "properties" : {
-//             "code" : {
-//               "description" : "The error type that occurred.",
-//               "type" : "integer"
-//             },
-//             "data" : {
-//               "description" :
-//                   "Additional information about the error. The value of this "
-//                   "member is defined by the sender (e.g. detailed error "
-//                   "information, nested errors etc.)."
-//             },
-//             "message" : {
-//               "description" : "A short description of the error. The message "
-//                               "SHOULD be limited to a concise single sentence.",
-//               "type" : "string"
-//             }
-//           },
-//           "required" : [ "code", "message" ],
-//           "type" : "object"
-//         },
-//         "id" : {"$ref" : "#/definitions/RequestId"},
-//         "jsonrpc" : {"const" : "2.0", "type" : "string"}
-//       },
-//         "required" : [ "error", "id", "jsonrpc" ],
-//                      "type" : "object"
-// };
 
 /**
  * A response to a request that indicates an error occurred.
