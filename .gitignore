@@ -46,4 +46,6 @@ build/
 *.idx.lz4
 *.idx.snappy
 
-Docs/typescript-sdk/
+# References
+References/typescript-sdk/
+References/DraftConversion/
