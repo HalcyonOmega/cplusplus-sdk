@@ -46,4 +46,4 @@ build/
 *.idx.lz4
 *.idx.snappy
 
-Docs/
+Docs/typescript-sdk/
