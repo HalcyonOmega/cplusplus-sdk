@@ -127,6 +127,13 @@ void StreamableHTTPTransport::WriteSSEEvent(const std::string& event, const std:
     Send(sseMessage);
 }
 
+// New method for resumability support
+bool StreamableHTTPTransport::Resume(const std::string& resumptionToken) {
+    // HTTP transport does not support resumption
+    if (_onError) { _onError("Resumption not supported by StreamableHTTPTransport"); }
+    return false;
+}
+
 std::optional<std::string> StreamableHTTPTransport::GetSessionId() const {
     return _sessionId;
 }

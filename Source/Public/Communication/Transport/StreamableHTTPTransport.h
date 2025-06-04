@@ -21,6 +21,10 @@ class StreamableHTTPTransport : public Transport {
     void SetOnStart(StartCallback callback) override;
     void SetOnStop(StopCallback callback) override;
     void WriteSSEEvent(const std::string& event, const std::string& data) override;
+
+    // New method for resumability support
+    bool Resume(const std::string& resumptionToken) override;
+
     std::optional<std::string> GetSessionId() const;
 
   private:

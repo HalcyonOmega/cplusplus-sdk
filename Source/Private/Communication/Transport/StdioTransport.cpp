@@ -90,6 +90,13 @@ void StdioTransport::WriteSSEEvent(const std::string& event, const std::string& 
     Send(sseMessage);
 }
 
+// New method for resumability support
+bool StdioTransport::Resume(const std::string& resumptionToken) {
+    // Stdio transport does not support resumption
+    if (_onError) { _onError("Resumption not supported by StdioTransport"); }
+    return false;
+}
+
 std::optional<std::string> StdioTransport::GetSessionId() const {
     return _sessionId;
 }

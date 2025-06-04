@@ -1,19 +1,28 @@
 #pragma once
 
-#include <memory>
-#include <mutex>
-#include <queue>
-
+#include "Communication/Transport/EventStore.h"
 #include "Constants.h"
 #include "Core.h"
 #include "Transport.h"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
-// Forward declarations
-struct AuthInfo {
-    std::string token;
-    std::string type;
+/**
+ * In-memory implementation of the EventStore interface.
+ * Stores events in memory with their IDs for later retrieval.
+ */
+class InMemoryEventStore : public EventStore {
+  public:
+    InMemoryEventStore() = default;
+    ~InMemoryEventStore() override = default;
+
+    void StoreEvent(const std::string& event) override;
+    std::vector<std::string> ReplayEventsAfter(const std::string& lastEventId) override;
+
+  private:
+    std::string GenerateEventId();
+    std::map<std::string, std::string> _events;
+    std::mutex _mutex;
 };
 
 /**
@@ -35,6 +44,9 @@ class InMemoryTransport : public Transport {
     void SetOnStart(StartCallback callback) override;
     void SetOnStop(StopCallback callback) override;
     void WriteSSEEvent(const std::string& event, const std::string& data) override;
+
+    // New method for resumability support
+    bool Resume(const std::string& resumptionToken) override;
 
     /**
      * Creates a pair of linked in-memory transports that can communicate with each other.
@@ -62,4 +74,4 @@ class InMemoryTransport : public Transport {
     StopCallback _onStop;
 };
 
-} // namespace MCP
+MCP_NAMESPACE_END

@@ -6,14 +6,12 @@
 MCP_NAMESPACE_BEGIN
 
 // Forward declarations
-struct AuthInfo;
+class EventStore;
 
-// Event store interface for resumability support
-class EventStore {
-  public:
-    virtual ~EventStore() = default;
-    virtual void StoreEvent(const std::string& event) = 0;
-    virtual std::vector<std::string> ReplayEventsAfter(const std::string& lastEventId) = 0;
+// AuthInfo definition
+struct AuthInfo {
+    std::string token; // Example member, adjust if different fields are needed
+    // Add other relevant authentication information here if necessary
 };
 
 // Transport options
@@ -56,6 +54,10 @@ class Transport {
 
     // SSE event writing
     virtual void WriteSSEEvent(const std::string& event, const std::string& data) = 0;
+
+    // Note: Resumability is not yet supported by any transport implementation.
+    [[deprecated("Not yet implemented - will be supported in a future version")]]
+    virtual bool Resume(const std::string& resumptionToken) = 0;
 };
 
 MCP_NAMESPACE_END

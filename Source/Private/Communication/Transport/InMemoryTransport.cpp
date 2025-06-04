@@ -8,6 +8,33 @@
 
 namespace MCP {
 
+// InMemoryEventStore implementation
+void InMemoryEventStore::StoreEvent(const std::string& event) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    std::string eventId = GenerateEventId();
+    _events[eventId] = event;
+}
+
+std::vector<std::string> InMemoryEventStore::ReplayEventsAfter(const std::string& lastEventId) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    std::vector<std::string> events;
+    bool foundLastEvent = lastEventId.empty();
+
+    for (const auto& [id, event] : _events) {
+        if (foundLastEvent) {
+            events.push_back(event);
+        } else if (id == lastEventId) {
+            foundLastEvent = true;
+        }
+    }
+
+    return events;
+}
+
+std::string InMemoryEventStore::GenerateEventId() {
+    return std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+}
+
 InMemoryTransport::InMemoryTransport() {
     // Generate a unique session ID
     std::random_device rd;
@@ -82,6 +109,14 @@ void InMemoryTransport::SetOnStop(StopCallback callback) {
 void InMemoryTransport::WriteSSEEvent(const std::string& event, const std::string& data) {
     std::string sseMessage = "event: " + event + "\ndata: " + data + "\n\n";
     Send(sseMessage);
+}
+
+// Note: Resumability is not yet supported by any transport implementation.
+[[deprecated("Not yet implemented - will be supported in a future version")]]
+bool InMemoryTransport::Resume(const std::string& resumptionToken) {
+    // In-memory transport does not support resumption
+    if (_onError) { _onError("Resumption not supported by InMemoryTransport"); }
+    return false;
 }
 
 std::pair<std::shared_ptr<InMemoryTransport>, std::shared_ptr<InMemoryTransport>>
