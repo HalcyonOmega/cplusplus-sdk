@@ -29,7 +29,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) pr
 ### Fixed
 - Handle edge case in JSON-RPC batching
 
-## [1.0.0.0] - 2024-05-01
+## [1.0.0.0]
 ### Added
 - Initial release of the C++ SDK for MCP
 - Asynchronous operations with std::future
