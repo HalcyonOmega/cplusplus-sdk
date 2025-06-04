@@ -4,7 +4,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-class MCP_MessageBase {
+class MessageBase {
   public:
     JSON Message;
     // Optionally, add getter/setter for encapsulation

@@ -1,17 +1,17 @@
 #pragma once
 
 #include "Core.h"
-#include "MCP_Message.h"
+#include "Message.h"
 
 MCP_NAMESPACE_BEGIN
 
 // Abstract base for requests (contains `ID`, `Method`).
-class MCP_RequestBase : public MCP_MessageBase {
+class RequestBase : public MessageBase {
     RequestID ID;
     string Method;
 };
 
-template <typename ParamsType> class MCP_Request : public MCP_RequestBase {
+template <typename ParamsType> class Request : public RequestBase {
     ParamsType Params; // The `Method` string is associated with the `ParamsType`.
 };
 

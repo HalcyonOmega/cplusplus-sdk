@@ -5,8 +5,8 @@
 #include <iostream>
 #include <mutex>
 
-#include "MCP_ReadBuffer.h"
-#include "MCP_Transport.h"
+#include "ReadBuffer.h"
+#include "Transport.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -14,12 +14,12 @@ MCP_NAMESPACE_BEGIN
  * Server transport for stdio: this communicates with a MCP client by reading from stdin
  * and writing to stdout.
  */
-class MCP_StdioServerTransport : public MCP_Transport {
+class StdioServerTransport : public Transport {
   public:
-    MCP_StdioServerTransport(std::istream& stdin = std::cin, std::ostream& stdout = std::cout)
+    StdioServerTransport(std::istream& stdin = std::cin, std::ostream& stdout = std::cout)
         : _stdin(stdin), _stdout(stdout) {}
 
-    ~MCP_StdioServerTransport() override {
+    ~StdioServerTransport() override {
         if (_started) { Close(); }
     }
 
@@ -40,8 +40,8 @@ class MCP_StdioServerTransport : public MCP_Transport {
         return future;
     }
 
-    std::future<void> Send(const MCP_MessageBase& message,
-                           const MCP_TransportSendOptions& options = {}) override {
+    std::future<void> Send(const MessageBase& message,
+                           const TransportSendOptions& options = {}) override {
         std::promise<void> promise;
         auto future = promise.get_future();
 
@@ -113,7 +113,7 @@ class MCP_StdioServerTransport : public MCP_Transport {
   private:
     std::istream& _stdin;
     std::ostream& _stdout;
-    MCP_ReadBuffer _readBuffer;
+    ReadBuffer _readBuffer;
     bool _started = false;
 
     // Callbacks

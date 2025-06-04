@@ -5,15 +5,15 @@
 #include <string>
 #include <vector>
 
-#include "MCP_Message.h"
+#include "Message.h"
 
 MCP_NAMESPACE_BEGIN
 
 /**
  * Deserialize a JSON-RPC message from a string.
  */
-inline MCP_MessageBase DeserializeMessage(const std::string& line) {
-    MCP_MessageBase msg;
+inline MessageBase DeserializeMessage(const std::string& line) {
+    MessageBase msg;
     msg.Message = JSON::parse(line);
     // TODO: Add schema validation if needed
     return msg;
@@ -22,17 +22,17 @@ inline MCP_MessageBase DeserializeMessage(const std::string& line) {
 /**
  * Serialize a message to JSON string with newline.
  */
-inline std::string SerializeMessage(const MCP_MessageBase& message) {
+inline std::string SerializeMessage(const MessageBase& message) {
     return message.Message.dump() + "\n";
 }
 
 /**
  * Buffers a continuous stdio stream into discrete JSON-RPC messages.
  */
-class MCP_ReadBuffer {
+class ReadBuffer {
   public:
-    MCP_ReadBuffer() = default;
-    ~MCP_ReadBuffer() = default;
+    ReadBuffer() = default;
+    ~ReadBuffer() = default;
 
     /**
      * Append new data to the buffer.
@@ -49,7 +49,7 @@ class MCP_ReadBuffer {
      * Attempt to read a complete message from the buffer.
      * Returns nullopt if no complete message is available.
      */
-    std::optional<MCP_MessageBase> ReadMessage() {
+    std::optional<MessageBase> ReadMessage() {
         if (_buffer.empty()) { return std::nullopt; }
 
         // Find message boundary (newline)

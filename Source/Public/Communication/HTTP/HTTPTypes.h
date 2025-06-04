@@ -4,11 +4,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Communication/Transport/MCP_Transport.h"
+#include "Communication/Transport/Transport.h"
+#include "Core.h"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
-class AuthInfo;
+struct AuthInfo;
 
 class HTTPRequest {
   public:
@@ -31,4 +32,4 @@ class HTTPResponse {
     virtual void Write(const std::string& data) = 0;
 };
 
-} // namespace MCP
+MCP_NAMESPACE_END

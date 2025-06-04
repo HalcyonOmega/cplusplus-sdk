@@ -4,7 +4,7 @@
 #include <mutex>
 #include <queue>
 
-#include "MCP_Transport.h"
+#include "Transport.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -12,8 +12,8 @@ MCP_NAMESPACE_BEGIN
 struct AuthInfo;
 
 // Structure for queued messages with optional auth info
-struct MCP_QueuedMessage {
-    std::shared_ptr<MCP_MessageBase> message;
+struct QueuedMessage {
+    std::shared_ptr<MessageBase> message;
     std::shared_ptr<AuthInfo> authInfo;
 };
 
@@ -21,19 +21,19 @@ struct MCP_QueuedMessage {
  * In-memory transport for creating clients and servers that talk to each other within the same
  * process. Useful for testing and local communication.
  */
-class MCP_InMemoryTransport : public MCP_Transport {
+class InMemoryTransport : public Transport {
   public:
-    MCP_InMemoryTransport() = default;
-    ~MCP_InMemoryTransport() override = default;
+    InMemoryTransport() = default;
+    ~InMemoryTransport() override = default;
 
     /**
      * Creates a pair of linked in-memory transports that can communicate with each other.
      * One should be passed to a Client and one to a Server.
      */
-    static std::pair<std::shared_ptr<MCP_InMemoryTransport>, std::shared_ptr<MCP_InMemoryTransport>>
+    static std::pair<std::shared_ptr<InMemoryTransport>, std::shared_ptr<InMemoryTransport>>
     CreateLinkedPair() {
-        auto clientTransport = std::make_shared<MCP_InMemoryTransport>();
-        auto serverTransport = std::make_shared<MCP_InMemoryTransport>();
+        auto clientTransport = std::make_shared<InMemoryTransport>();
+        auto serverTransport = std::make_shared<InMemoryTransport>();
         clientTransport->_otherTransport = serverTransport;
         serverTransport->_otherTransport = clientTransport;
         return {clientTransport, serverTransport};
@@ -58,8 +58,8 @@ class MCP_InMemoryTransport : public MCP_Transport {
         return future;
     }
 
-    std::future<void> Send(const MCP_MessageBase& message,
-                           const MCP_TransportSendOptions& options = {}) override {
+    std::future<void> Send(const MessageBase& message,
+                           const TransportSendOptions& options = {}) override {
         std::promise<void> promise;
         auto future = promise.get_future();
 
@@ -79,7 +79,7 @@ class MCP_InMemoryTransport : public MCP_Transport {
         } else {
             std::lock_guard<std::mutex> lock(other->_queueMutex);
             other->_messageQueue.push({
-                std::make_shared<MCP_MessageBase>(message),
+                std::make_shared<MessageBase>(message),
                 nullptr // authInfo
             });
         }
@@ -121,8 +121,8 @@ class MCP_InMemoryTransport : public MCP_Transport {
     }
 
   private:
-    std::weak_ptr<MCP_InMemoryTransport> _otherTransport;
-    std::queue<MCP_QueuedMessage> _messageQueue;
+    std::weak_ptr<InMemoryTransport> _otherTransport;
+    std::queue<QueuedMessage> _messageQueue;
     std::mutex _queueMutex;
 
     // Callbacks

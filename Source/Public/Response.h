@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "MCP_Message.h"
+#include "Message.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -28,16 +28,16 @@ class MCP_Error {
 };
 
 // Abstract base for responses (contains `ID`, `Error?`).
-class MCP_ResponseBase : public MCP_MessageBase {
+class ResponseBase : public MessageBase {
     RequestID ID;
     optional<MCP_Error> Error;
 };
 
-template <typename ResultType> class MCP_Response : public MCP_ResponseBase {
+template <typename ResultType> class Response : public ResponseBase {
     ResultType Result; // Required result, ensure communication is operational
 };
 
-template <> class MCP_Response<void> : public MCP_ResponseBase {
+template <> class Response<void> : public ResponseBase {
     JSON Result = JSON::object(); // Empty JSON object for void specialization
     // TODO: Format JSON appropriately for the void specialization to share success with no
     // additional data

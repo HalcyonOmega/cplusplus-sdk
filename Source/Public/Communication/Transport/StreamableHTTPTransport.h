@@ -5,21 +5,21 @@
 #include <memory>
 #include <string>
 
-#include "Communication/Transport/MCP_HTTPTypes.h"
-#include "Communication/Transport/MCP_Transport.h"
+#include "Communication/HTTP/HTTPTypes.h"
+#include "Communication/Transport/Transport.h"
 
 namespace MCP {
 
-class MCP_StreamableHTTPTransport : public MCP_Transport {
+class StreamableHTTPTransport : public Transport {
   public:
-    MCP_StreamableHTTPTransport(const std::string& endpoint,
-                                std::function<std::string()> sessionIdGenerator = nullptr);
-    ~MCP_StreamableHTTPTransport() override;
+    StreamableHTTPTransport(const std::string& endpoint,
+                            std::function<std::string()> sessionIdGenerator = nullptr);
+    ~StreamableHTTPTransport() override;
 
     // Transport interface implementation
     std::future<void> Start() override;
-    std::future<void> Send(const MCP_MessageBase& message,
-                           const MCP_TransportSendOptions& options) override;
+    std::future<void> Send(const MessageBase& message,
+                           const TransportSendOptions& options) override;
     std::future<void> Close() override;
     void SetCloseCallback(CloseCallback callback) override;
     void SetErrorCallback(ErrorCallback callback) override;
@@ -30,8 +30,8 @@ class MCP_StreamableHTTPTransport : public MCP_Transport {
     std::future<void> HandleRequest(const HTTPRequest& request, HTTPResponse& response);
 
   private:
-    void HandleMessage(const MCP_MessageBase& message, const AuthInfo* authInfo);
-    void WriteStreamResponse(const MCP_MessageBase& message, const std::string& eventId);
+    void HandleMessage(const MessageBase& message, const AuthInfo* authInfo);
+    void WriteStreamResponse(const MessageBase& message, const std::string& eventId);
 
     std::string _endpoint;
     std::string _sessionId;
