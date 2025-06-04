@@ -1,24 +1,17 @@
 #pragma once
 
-#include <atomic>
-#include <optional>
-#include <string>
-#include <thread>
-
-#include "Constants.h"
 #include "Core.h"
 #include "Transport.h"
 
 MCP_NAMESPACE_BEGIN
 
 /**
- * Server transport for stdio: this communicates with a MCP client by reading from stdin
- * and writing to stdout.
+ * Transport for stdio: this communicates by reading from stdin and writing to stdout.
  */
-class StdioServerTransport : public Transport {
+class StdioTransport : public Transport {
   public:
-    StdioServerTransport();
-    ~StdioServerTransport() override;
+    StdioTransport();
+    ~StdioTransport() override;
 
     // Transport interface implementation
     void Start() override;

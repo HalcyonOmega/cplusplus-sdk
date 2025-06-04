@@ -1,8 +1,5 @@
 #pragma once
 
-// TODO: Cleanup Includes
-
-#include "Constants.h"
 #include "Core.h"
 #include "Transport.h"
 #include "httplib.h"
@@ -24,6 +21,7 @@ class StreamableHTTPTransport : public Transport {
     void SetOnStart(StartCallback callback) override;
     void SetOnStop(StopCallback callback) override;
     void WriteSSEEvent(const std::string& event, const std::string& data) override;
+    std::optional<std::string> GetSessionId() const;
 
   private:
     void ReadLoop();
@@ -35,6 +33,7 @@ class StreamableHTTPTransport : public Transport {
     std::unique_ptr<httplib::Client> _client;
     std::atomic<bool> _isRunning;
     std::thread _readThread;
+    std::optional<std::string> _sessionId;
 
     MessageCallback _onMessage;
     ErrorCallback _onError;

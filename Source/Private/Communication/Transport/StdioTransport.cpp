@@ -1,4 +1,4 @@
-#include "Communication/Transport/StdioServerTransport.h"
+#include "Communication/Transport/StdioTransport.h"
 
 #include "Communication/Utilities/TransportUtilities.h"
 #include "Core.h"
@@ -6,13 +6,13 @@
 
 MCP_NAMESPACE_BEGIN
 
-StdioServerTransport::StdioServerTransport() : _isRunning(false) {}
+StdioTransport::StdioTransport() : _isRunning(false) {}
 
-StdioServerTransport::~StdioServerTransport() {
+StdioTransport::~StdioTransport() {
     Stop();
 }
 
-void StdioServerTransport::Start() {
+void StdioTransport::Start() {
     if (_isRunning) { return; }
 
     _isRunning = true;
@@ -22,7 +22,7 @@ void StdioServerTransport::Start() {
     _readThread = std::thread([this] { ReadLoop(); });
 }
 
-void StdioServerTransport::Stop() {
+void StdioTransport::Stop() {
     if (!_isRunning) { return; }
 
     _isRunning = false;
@@ -31,7 +31,7 @@ void StdioServerTransport::Stop() {
     if (_onStop) { _onStop(); }
 }
 
-void StdioServerTransport::Send(const std::string& message, const TransportSendOptions& options) {
+void StdioTransport::Send(const std::string& message, const TransportSendOptions& options) {
     if (!_isRunning) {
         if (_onError) { _onError(TRANSPORT_ERR_NOT_RUNNING); }
         return;
@@ -64,37 +64,37 @@ void StdioServerTransport::Send(const std::string& message, const TransportSendO
     }
 }
 
-void StdioServerTransport::SetOnMessage(MessageCallback callback) {
+void StdioTransport::SetOnMessage(MessageCallback callback) {
     _onMessage = std::move(callback);
 }
 
-void StdioServerTransport::SetOnError(ErrorCallback callback) {
+void StdioTransport::SetOnError(ErrorCallback callback) {
     _onError = std::move(callback);
 }
 
-void StdioServerTransport::SetOnClose(CloseCallback callback) {
+void StdioTransport::SetOnClose(CloseCallback callback) {
     _onClose = std::move(callback);
 }
 
-void StdioServerTransport::SetOnStart(StartCallback callback) {
+void StdioTransport::SetOnStart(StartCallback callback) {
     _onStart = std::move(callback);
 }
 
-void StdioServerTransport::SetOnStop(StopCallback callback) {
+void StdioTransport::SetOnStop(StopCallback callback) {
     _onStop = std::move(callback);
 }
 
-void StdioServerTransport::WriteSSEEvent(const std::string& event, const std::string& data) {
+void StdioTransport::WriteSSEEvent(const std::string& event, const std::string& data) {
     std::string sseMessage = "event: " + event + TRANSPORT_EVENT_DELIMITER
                              + TRANSPORT_EVENT_DATA_PREFIX + data + TRANSPORT_EVENT_DELIMITER;
     Send(sseMessage);
 }
 
-std::optional<std::string> StdioServerTransport::GetSessionId() const {
+std::optional<std::string> StdioTransport::GetSessionId() const {
     return _sessionId;
 }
 
-void StdioServerTransport::ReadLoop() {
+void StdioTransport::ReadLoop() {
     std::string line;
     while (_isRunning && std::getline(std::cin, line)) {
         try {
@@ -120,7 +120,7 @@ void StdioServerTransport::ReadLoop() {
     if (_onClose) { _onClose(); }
 }
 
-void StdioServerTransport::ParseSSEData(const std::string& data) {
+void StdioTransport::ParseSSEData(const std::string& data) {
     size_t pos = 0;
     std::string currentEvent;
     std::string currentData;
