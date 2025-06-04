@@ -1,5 +1,6 @@
 #pragma once
 
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -40,80 +41,61 @@ class InMemoryTransport : public Transport {
     }
 
     // Transport interface implementation
-    std::future<void> Start() override {
-        std::promise<void> promise;
-        auto future = promise.get_future();
-
-        // Process any messages that were queued before start was called
-        std::lock_guard<std::mutex> lock(_queueMutex);
-        while (!_messageQueue.empty()) {
-            auto queuedMessage = std::move(_messageQueue.front());
-            _messageQueue.pop();
-            if (_messageCallback) {
-                _messageCallback(*queuedMessage.message, queuedMessage.authInfo.get());
-            }
-        }
-
-        promise.set_value();
-        return future;
+    void Start() override {
+        _isRunning = true;
+        if (_onStart) { _onStart(); }
     }
 
-    std::future<void> Send(const MessageBase& message,
-                           const TransportSendOptions& options = {}) override {
-        std::promise<void> promise;
-        auto future = promise.get_future();
-
-        auto other = _otherTransport.lock();
-        if (!other) {
-            promise.set_exception(std::make_exception_ptr(std::runtime_error("Not connected")));
-            return future;
-        }
-
-        // Handle resumption token if provided
-        if (options.resumptionToken && options.onResumptionToken) {
-            options.onResumptionToken(*options.resumptionToken);
-        }
-
-        if (other->_messageCallback) {
-            other->_messageCallback(message, nullptr);
-        } else {
-            std::lock_guard<std::mutex> lock(other->_queueMutex);
-            other->_messageQueue.push({
-                std::make_shared<MessageBase>(message),
-                nullptr // authInfo
-            });
-        }
-
-        promise.set_value();
-        return future;
+    void Stop() override {
+        _isRunning = false;
+        if (_onStop) { _onStop(); }
     }
 
-    std::future<void> Close() override {
-        std::promise<void> promise;
-        auto future = promise.get_future();
-
-        auto other = _otherTransport.lock();
-        _otherTransport.reset();
-
-        if (other) { other->Close(); }
-
-        if (_closeCallback) { _closeCallback(); }
-
-        promise.set_value();
-        return future;
+    void Send(const std::string& message, const TransportSendOptions& options = {}) override {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _messageQueue.push(message);
+        _condition.notify_one();
     }
 
-    // Callback setters
-    void SetCloseCallback(CloseCallback callback) override {
-        _closeCallback = std::move(callback);
+    void SetOnMessage(MessageCallback callback) override {
+        _onMessage = std::move(callback);
     }
 
-    void SetErrorCallback(ErrorCallback callback) override {
-        _errorCallback = std::move(callback);
+    void SetOnError(ErrorCallback callback) override {
+        _onError = std::move(callback);
     }
 
-    void SetMessageCallback(MessageCallback callback) override {
-        _messageCallback = std::move(callback);
+    void SetOnClose(CloseCallback callback) override {
+        _onClose = std::move(callback);
+    }
+
+    void SetOnStart(StartCallback callback) override {
+        _onStart = std::move(callback);
+    }
+
+    void SetOnStop(StopCallback callback) override {
+        _onStop = std::move(callback);
+    }
+
+    void WriteSSEEvent(const std::string& event, const std::string& data) override {
+        std::string sseMessage = "event: " + event + "\ndata: " + data + "\n\n";
+        Send(sseMessage);
+    }
+
+    // InMemoryTransport specific methods
+    std::string Receive() {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _condition.wait(lock, [this] { return !_messageQueue.empty() || !_isRunning; });
+
+        if (!_isRunning) { return ""; }
+
+        std::string message = _messageQueue.front();
+        _messageQueue.pop();
+        return message;
+    }
+
+    bool IsRunning() const {
+        return _isRunning;
     }
 
     std::optional<std::string> GetSessionId() const override {
@@ -122,13 +104,16 @@ class InMemoryTransport : public Transport {
 
   private:
     std::weak_ptr<InMemoryTransport> _otherTransport;
-    std::queue<QueuedMessage> _messageQueue;
-    std::mutex _queueMutex;
+    std::queue<std::string> _messageQueue;
+    std::mutex _mutex;
+    std::condition_variable _condition;
+    bool _isRunning = false;
 
-    // Callbacks
-    CloseCallback _closeCallback;
-    ErrorCallback _errorCallback;
-    MessageCallback _messageCallback;
+    MessageCallback _onMessage;
+    ErrorCallback _onError;
+    CloseCallback _onClose;
+    StartCallback _onStart;
+    StopCallback _onStop;
 
     // Session
     std::optional<std::string> _sessionId;

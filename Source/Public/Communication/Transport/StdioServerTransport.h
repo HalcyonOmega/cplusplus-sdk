@@ -1,11 +1,9 @@
 #pragma once
 
-#include <functional>
-#include <future>
+#include <atomic>
 #include <iostream>
-#include <mutex>
+#include <thread>
 
-#include "ReadBuffer.h"
 #include "Transport.h"
 
 MCP_NAMESPACE_BEGIN
@@ -16,110 +14,82 @@ MCP_NAMESPACE_BEGIN
  */
 class StdioServerTransport : public Transport {
   public:
-    StdioServerTransport(std::istream& stdin = std::cin, std::ostream& stdout = std::cout)
-        : _stdin(stdin), _stdout(stdout) {}
-
+    StdioServerTransport() : _isRunning(false) {}
     ~StdioServerTransport() override {
-        if (_started) { Close(); }
+        Stop();
     }
 
     // Transport interface implementation
-    std::future<void> Start() override {
-        std::promise<void> promise;
-        auto future = promise.get_future();
+    void Start() override {
+        if (_isRunning) { return; }
 
-        if (_started) {
-            promise.set_exception(std::make_exception_ptr(
-                std::runtime_error("StdioServerTransport already started! If using Server class, "
-                                   "note that connect() calls start() automatically.")));
-            return future;
-        }
+        _isRunning = true;
+        if (_onStart) { _onStart(); }
 
-        _started = true;
-        promise.set_value();
-        return future;
-    }
-
-    std::future<void> Send(const MessageBase& message,
-                           const TransportSendOptions& options = {}) override {
-        std::promise<void> promise;
-        auto future = promise.get_future();
-
-        try {
-            // Handle resumption token if provided
-            if (options.resumptionToken && options.onResumptionToken) {
-                options.onResumptionToken(*options.resumptionToken);
+        // Start reading thread
+        _readThread = std::thread([this] {
+            std::string line;
+            while (_isRunning && std::getline(std::cin, line)) {
+                if (_onMessage) { _onMessage(line, nullptr); }
             }
-
-            std::string json = SerializeMessage(message);
-            _stdout << json << std::flush;
-            promise.set_value();
-        } catch (const std::exception& e) { promise.set_exception(std::current_exception()); }
-
-        return future;
+        });
     }
 
-    std::future<void> Close() override {
-        std::promise<void> promise;
-        auto future = promise.get_future();
+    void Stop() override {
+        if (!_isRunning) { return; }
 
-        if (_started) {
-            _started = false;
-            _readBuffer.Clear();
-            if (_closeCallback) { _closeCallback(); }
+        _isRunning = false;
+        if (_readThread.joinable()) { _readThread.join(); }
+
+        if (_onStop) { _onStop(); }
+    }
+
+    void Send(const std::string& message, const TransportSendOptions& options = {}) override {
+        if (!_isRunning) {
+            if (_onError) { _onError("Transport is not running"); }
+            return;
         }
 
-        promise.set_value();
-        return future;
-    }
-
-    // Callback setters
-    void SetCloseCallback(CloseCallback callback) override {
-        _closeCallback = std::move(callback);
-    }
-
-    void SetErrorCallback(ErrorCallback callback) override {
-        _errorCallback = std::move(callback);
-    }
-
-    void SetMessageCallback(MessageCallback callback) override {
-        _messageCallback = std::move(callback);
-    }
-
-    // Process any pending input
-    void ProcessInput() {
-        if (!_started || !_messageCallback) return;
-
-        std::vector<uint8_t> buffer(1024);
-        while (_stdin.good()) {
-            _stdin.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
-            std::streamsize count = _stdin.gcount();
-            if (count > 0) {
-                buffer.resize(count);
-                _readBuffer.Append(buffer);
-                buffer.resize(1024);
-
-                while (auto message = _readBuffer.ReadMessage()) {
-                    try {
-                        _messageCallback(*message, nullptr);
-                    } catch (const std::exception& e) {
-                        if (_errorCallback) { _errorCallback(e.what()); }
-                    }
-                }
-            }
+        std::cout << message << std::endl;
+        if (std::cout.fail()) {
+            if (_onError) { _onError("Failed to write to stdout"); }
         }
+    }
+
+    void SetOnMessage(MessageCallback callback) override {
+        _onMessage = std::move(callback);
+    }
+
+    void SetOnError(ErrorCallback callback) override {
+        _onError = std::move(callback);
+    }
+
+    void SetOnClose(CloseCallback callback) override {
+        _onClose = std::move(callback);
+    }
+
+    void SetOnStart(StartCallback callback) override {
+        _onStart = std::move(callback);
+    }
+
+    void SetOnStop(StopCallback callback) override {
+        _onStop = std::move(callback);
+    }
+
+    void WriteSSEEvent(const std::string& event, const std::string& data) override {
+        std::string sseMessage = "event: " + event + "\ndata: " + data + "\n\n";
+        Send(sseMessage);
     }
 
   private:
-    std::istream& _stdin;
-    std::ostream& _stdout;
-    ReadBuffer _readBuffer;
-    bool _started = false;
+    std::atomic<bool> _isRunning;
+    std::thread _readThread;
 
-    // Callbacks
-    CloseCallback _closeCallback;
-    ErrorCallback _errorCallback;
-    MessageCallback _messageCallback;
+    MessageCallback _onMessage;
+    ErrorCallback _onError;
+    CloseCallback _onClose;
+    StartCallback _onStart;
+    StopCallback _onStop;
 };
 
 MCP_NAMESPACE_END
