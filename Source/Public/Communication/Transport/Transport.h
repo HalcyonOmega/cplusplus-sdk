@@ -1,19 +1,12 @@
 #pragma once
 
-#include <functional>
-#include <future>
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-
-#include "../../Core/Includes/Core.h"
 #include "../Message.h"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
 // Forward declarations
-class AuthInfo;
+struct AuthInfo;
 
 // Event store interface for resumability support
 class EventStore {

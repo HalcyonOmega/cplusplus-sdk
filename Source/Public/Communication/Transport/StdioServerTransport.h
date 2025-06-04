@@ -1,9 +1,12 @@
 #pragma once
 
 #include <atomic>
-#include <iostream>
+#include <optional>
+#include <string>
 #include <thread>
 
+#include "Constants.h"
+#include "Core.h"
 #include "Transport.h"
 
 MCP_NAMESPACE_BEGIN
@@ -14,76 +17,29 @@ MCP_NAMESPACE_BEGIN
  */
 class StdioServerTransport : public Transport {
   public:
-    StdioServerTransport() : _isRunning(false) {}
-    ~StdioServerTransport() override {
-        Stop();
-    }
+    StdioServerTransport();
+    ~StdioServerTransport() override;
 
     // Transport interface implementation
-    void Start() override {
-        if (_isRunning) { return; }
+    void Start() override;
+    void Stop() override;
+    void Send(const std::string& message, const TransportSendOptions& options = {}) override;
+    void SetOnMessage(MessageCallback callback) override;
+    void SetOnError(ErrorCallback callback) override;
+    void SetOnClose(CloseCallback callback) override;
+    void SetOnStart(StartCallback callback) override;
+    void SetOnStop(StopCallback callback) override;
+    void WriteSSEEvent(const std::string& event, const std::string& data) override;
 
-        _isRunning = true;
-        if (_onStart) { _onStart(); }
-
-        // Start reading thread
-        _readThread = std::thread([this] {
-            std::string line;
-            while (_isRunning && std::getline(std::cin, line)) {
-                if (_onMessage) { _onMessage(line, nullptr); }
-            }
-        });
-    }
-
-    void Stop() override {
-        if (!_isRunning) { return; }
-
-        _isRunning = false;
-        if (_readThread.joinable()) { _readThread.join(); }
-
-        if (_onStop) { _onStop(); }
-    }
-
-    void Send(const std::string& message, const TransportSendOptions& options = {}) override {
-        if (!_isRunning) {
-            if (_onError) { _onError("Transport is not running"); }
-            return;
-        }
-
-        std::cout << message << std::endl;
-        if (std::cout.fail()) {
-            if (_onError) { _onError("Failed to write to stdout"); }
-        }
-    }
-
-    void SetOnMessage(MessageCallback callback) override {
-        _onMessage = std::move(callback);
-    }
-
-    void SetOnError(ErrorCallback callback) override {
-        _onError = std::move(callback);
-    }
-
-    void SetOnClose(CloseCallback callback) override {
-        _onClose = std::move(callback);
-    }
-
-    void SetOnStart(StartCallback callback) override {
-        _onStart = std::move(callback);
-    }
-
-    void SetOnStop(StopCallback callback) override {
-        _onStop = std::move(callback);
-    }
-
-    void WriteSSEEvent(const std::string& event, const std::string& data) override {
-        std::string sseMessage = "event: " + event + "\ndata: " + data + "\n\n";
-        Send(sseMessage);
-    }
+    std::optional<std::string> GetSessionId() const;
 
   private:
+    void ReadLoop();
+    void ParseSSEData(const std::string& data);
+
     std::atomic<bool> _isRunning;
     std::thread _readThread;
+    std::optional<std::string> _sessionId;
 
     MessageCallback _onMessage;
     ErrorCallback _onError;

@@ -115,7 +115,10 @@ file(GLOB_RECURSE ALL_HEADERS
     "${CMAKE_SOURCE_DIR}/Source/Private/*.hpp"
     "${CMAKE_SOURCE_DIR}/Source/Public/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/Core/Includes/*.h"
+    "${CMAKE_SOURCE_DIR}/Source/Public/Core/Constants/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/*.hpp"
+    "${CMAKE_SOURCE_DIR}/Source/Public/ThirdParty/*.h"
+    "${CMAKE_SOURCE_DIR}/Source/Public/ThirdParty/*.hpp"
 )
 
 # Create library
