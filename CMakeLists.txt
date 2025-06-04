@@ -49,7 +49,7 @@ find_package(Threads REQUIRED)
 # Include directories
 include_directories(Source/Public)
 include_directories(Source/Public/Core/Includes)
-include_directories(Source/ThirdParty)
+include_directories(Source/Public/ThirdParty)
 
 # Add testing if enabled
 if(BUILD_TESTING AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CMakeLists.txt)
@@ -72,7 +72,7 @@ install(DIRECTORY Source/Public/
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 
 # Install third-party licenses
-install(FILES THIRD_PARTY_LICENSES.txt 
+install(FILES THIRD_PARTY_LICENSES.md 
     DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 # Install documentation
@@ -135,7 +135,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/ThirdParty>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/ThirdParty>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
         ${CMAKE_SOURCE_DIR}/Source/Private
