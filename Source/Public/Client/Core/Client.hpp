@@ -163,17 +163,14 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
 
     // When transport sessionId is already set this means we are trying to reconnect.
     // In this case we don't need to initialize again.
-    if (TransportPtr->GetSessionId()) {
-        co_return;
-    }
+    if (TransportPtr->GetSessionId()) { co_return; }
 
     try {
         JSON InitializeRequest = JSON{
             {MSG_KEY_METHOD, MTHD_INITIALIZE},
             {MSG_KEY_PARAMS,
              JSON{
-                 {MSG_KEY_PROTOCOL_VERSION,
-                  "LATEST_PROTOCOL_VERSION"}, // TODO: Use actual LATEST_PROTOCOL_VERSION constant
+                 {MSG_KEY_PROTOCOL_VERSION, LATEST_PROTOCOL_VERSION},
                  {MSG_KEY_CAPABILITIES, JSON::object()}, // TODO: Serialize Capabilities_ properly
                  {MSG_KEY_CLIENT_INFO, JSON::object()}   // TODO: Serialize ClientInfo_ properly
              }}};
@@ -333,9 +330,7 @@ async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListPrompts(const optional<JSON>& Params,
                                                       const optional<RequestOptions>& Options) {
     JSON ListPromptsRequest = JSON{{MSG_KEY_METHOD, "prompts/list"}};
-    if (Params) {
-        ListPromptsRequest[MSG_KEY_PARAMS] = *Params;
-    }
+    if (Params) { ListPromptsRequest[MSG_KEY_PARAMS] = *Params; }
     return co_await Request(ListPromptsRequest, "ListPromptsResultSchema", Options);
 }
 
@@ -344,9 +339,7 @@ async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListResources(const optional<JSON>& Params,
                                                         const optional<RequestOptions>& Options) {
     JSON ListResourcesRequest = JSON{{MSG_KEY_METHOD, "resources/list"}};
-    if (Params) {
-        ListResourcesRequest[MSG_KEY_PARAMS] = *Params;
-    }
+    if (Params) { ListResourcesRequest[MSG_KEY_PARAMS] = *Params; }
     return co_await Request(ListResourcesRequest, "ListResourcesResultSchema", Options);
 }
 
@@ -354,9 +347,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::ListResourceTemplates(
     const optional<JSON>& Params, const optional<RequestOptions>& Options) {
     JSON ListResourceTemplatesRequest = JSON{{MSG_KEY_METHOD, "resources/templates/list"}};
-    if (Params) {
-        ListResourceTemplatesRequest[MSG_KEY_PARAMS] = *Params;
-    }
+    if (Params) { ListResourceTemplatesRequest[MSG_KEY_PARAMS] = *Params; }
     return co_await Request(ListResourceTemplatesRequest, "ListResourceTemplatesResultSchema",
                             Options);
 }
@@ -412,9 +403,7 @@ Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const str
                                     "Structured content does not match the tool's output schema: "
                                         + Ajv_.ErrorsText(Ajv_.Errors));
                 }
-            } catch (const MCP_Error& Error) {
-                throw;
-            } catch (const exception& Error) {
+            } catch (const MCP_Error& Error) { throw; } catch (const exception& Error) {
                 throw MCP_Error(ErrorCode::InvalidParams,
                                 "Failed to validate structured content: " + string(Error.what()));
             }
@@ -447,9 +436,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 optional<ValidateFunction>
 Client<RequestT, NotificationT, ResultT>::GetToolOutputValidator(const string& ToolName) {
     auto It = CachedToolOutputValidators_.find(ToolName);
-    if (It != CachedToolOutputValidators_.end()) {
-        return It->second;
-    }
+    if (It != CachedToolOutputValidators_.end()) { return It->second; }
     return nullopt;
 }
 
@@ -458,9 +445,7 @@ async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListTools(const optional<JSON>& Params,
                                                     const optional<RequestOptions>& Options) {
     JSON ListToolsRequest = JSON{{MSG_KEY_METHOD, MTHD_TOOLS_LIST}};
-    if (Params) {
-        ListToolsRequest[MSG_KEY_PARAMS] = *Params;
-    }
+    if (Params) { ListToolsRequest[MSG_KEY_PARAMS] = *Params; }
 
     JSON Result = co_await Request(ListToolsRequest, "ListToolsResultSchema", Options);
 

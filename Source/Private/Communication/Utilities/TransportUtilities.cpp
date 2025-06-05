@@ -8,7 +8,7 @@ MCP_NAMESPACE_BEGIN
 
 bool IsValidJSONRPC(const std::string& message) {
     try {
-        auto json = JSON::Parse(message);
+        auto json = JSON::parse(message);
 
         // Check for required JSON-RPC fields
         if (!json.contains("jsonrpc") || !json.contains("method")) { return false; }
@@ -17,7 +17,7 @@ bool IsValidJSONRPC(const std::string& message) {
         if (json["jsonrpc"] != "2.0") { return false; }
 
         return true;
-    } catch (const JSON::ParseError&) { return false; }
+    } catch (const JSON::parse_error&) { return false; }
 }
 
 bool IsValidUTF8(const std::string& message) {
