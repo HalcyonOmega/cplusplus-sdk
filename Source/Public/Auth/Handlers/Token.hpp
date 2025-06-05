@@ -72,7 +72,7 @@ template <typename T = void> struct Task {
 
     coroutine_handle<promise_type> Handle;
 
-    Task(coroutine_handle<promise_type> h) : Handle(h) {}
+    Task(coroutine_handle<promise_type> handle) : Handle(handle) {}
 
     ~Task() {
         if (Handle) Handle.destroy();
@@ -109,7 +109,7 @@ template <typename T = void> struct Task {
     }
 
     void await_resume() const
-        requires std::same_as<T, void>
+        requires(std::same_as<T, void>)
     {
         if (Handle.promise().Exception) { rethrow_exception(Handle.promise().Exception); }
     }
@@ -123,11 +123,11 @@ template <typename T = void> struct Task {
     }
 
     void Get()
-        requires std::same_as<T, void>
+        requires(std::same_as<T, void>)
     {
         while (!Handle.promise().Ready) { this_thread::sleep_for(chrono::milliseconds(1)); }
         await_resume();
-    }
+    };
 };
 
 // OAuth Error hierarchy - exactly matching TypeScript functionality

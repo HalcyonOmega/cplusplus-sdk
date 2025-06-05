@@ -34,9 +34,7 @@ class OAuthClientProvider {
     /**
      * Returns a OAuth2 state parameter.
      */
-    virtual variant<string, future<string>> GetState() {
-        return string(""); // Default empty state
-    }
+    virtual variant<string, future<string>> GetState();
 
     /**
      * Loads information about this OAuth client, as registered already with the
@@ -55,9 +53,7 @@ class OAuthClientProvider {
      * statically known (e.g., pre-registered).
      */
     virtual variant<void, future<void>>
-    SaveClientInformation(const OAuthClientInformationFull& ClientInformation) {
-        // Default implementation does nothing
-    }
+    SaveClientInformation(const OAuthClientInformationFull& ClientInformation);
 
     /**
      * Loads any existing OAuth tokens for the current session, or returns
@@ -206,13 +202,13 @@ future<OAuthClientInformationFull> RegisterClientAsync(const string& Authorizati
 // Helper functions and TODO implementations
 PKCE_Challenge GeneratePKCE_Challenge();
 
+// TODO: Consider making this a class because it has functionality
+// TODO: Cleanup this duplicate definition
 struct HTTP_Response {
     int StatusCode;
     unordered_map<string, string> Headers;
     string Body;
-    bool IsOK() const {
-        return StatusCode >= 200 && StatusCode < 300;
-    }
+    bool IsOK() const;
 };
 
 future<HTTP_Response> FetchAsync(const string& URL,

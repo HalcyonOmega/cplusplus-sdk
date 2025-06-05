@@ -6,6 +6,7 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express Response type - using basic HTTP response interface
+// TODO: Consider making this a class because it has functionality
 struct HTTP_Response {
     virtual ~HTTP_Response() = default;
     virtual void Redirect(const string& URL) = 0;
@@ -15,6 +16,7 @@ struct HTTP_Response {
 };
 
 // TODO: Fix External Ref: OAuthRegisteredClientsStore from clients - using interface pattern
+// TODO: Consider making this a class because it has functionality
 struct OAuthRegisteredClientsStore {
     virtual ~OAuthRegisteredClientsStore() = default;
 
@@ -51,6 +53,7 @@ struct AuthorizationParams {
 /**
  * Implements an end-to-end OAuth server.
  */
+// TODO: Consider making this a class because it has functionality
 struct OAuthServerProvider {
     virtual ~OAuthServerProvider() = default;
 
@@ -126,6 +129,7 @@ struct OAuthServerProvider {
 /**
  * Slim implementation useful for token verification
  */
+// TODO: Consider making this a class because it has functionality
 struct OAuthTokenVerifier {
     virtual ~OAuthTokenVerifier() = default;
 
