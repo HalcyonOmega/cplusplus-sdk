@@ -49,7 +49,7 @@ find_package(Threads REQUIRED)
 # Include directories
 include_directories(Source/Public)
 include_directories(Source/Public/Core/Includes)
-include_directories(Source/Public/ThirdParty)
+include_directories(Source/Public/Utilities/ThirdParty)
 
 # Add testing if enabled
 if(BUILD_TESTING AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CMakeLists.txt)
@@ -117,8 +117,8 @@ file(GLOB_RECURSE ALL_HEADERS
     "${CMAKE_SOURCE_DIR}/Source/Public/Core/Includes/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/Core/Constants/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/*.hpp"
-    "${CMAKE_SOURCE_DIR}/Source/Public/ThirdParty/*.h"
-    "${CMAKE_SOURCE_DIR}/Source/Public/ThirdParty/*.hpp"
+    "${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty/*.h"
+    "${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty/*.hpp"
 )
 
 # Create library
@@ -135,7 +135,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/ThirdParty>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
         ${CMAKE_SOURCE_DIR}/Source/Private

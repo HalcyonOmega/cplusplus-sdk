@@ -11,14 +11,14 @@ A C++ implementation of the MCP (Message Control Protocol) SDK.
 - **License**: MIT
 - **Source**: https://github.com/yhirose/cpp-httplib
 - **Purpose**: HTTP client/server functionality for the StreamableHTTPTransport
-- **Location**: `Source/ThirdParty/httplib.h`
+- **Location**: `Source/Public/Utilities/ThirdParty/httplib.h`
 
 #### nlohmann/json
 - **Version**: Latest (from develop branch)
 - **License**: MIT
 - **Source**: https://github.com/nlohmann/json
 - **Purpose**: JSON parsing and serialization
-- **Location**: `Source/ThirdParty/json.hpp`
+- **Location**: `Source/Public/Utilities/ThirdParty/json.hpp`
 
 ## Building
 
