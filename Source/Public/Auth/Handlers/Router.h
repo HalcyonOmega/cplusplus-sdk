@@ -5,7 +5,6 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express Router functionality
-// TODO: Fix External Ref: HTTP Request/Response handling
 // TODO: Fix External Ref: Client registration handler
 // TODO: Fix External Ref: Token handler
 // TODO: Fix External Ref: Authorization handler
@@ -13,14 +12,10 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: Metadata handler
 
 // Forward declarations for handlers
-struct ClientRegistrationHandlerOptions;
 struct TokenHandlerOptions;
 struct AuthorizationHandlerOptions;
 struct RevocationHandlerOptions;
 struct OAuthServerProvider;
-
-// Basic HTTP request handler type
-using RequestHandler = function<void(const JSON&, JSON&)>;
 
 // Robust URL helper class for C++ equivalent of JavaScript URL class
 class URLHelper {

@@ -1,83 +1,33 @@
-#pragma once
-
-#include "Auth/Types/Auth.h"
-#include "Auth/Types/AuthErrors.h"
-#include "Core.h"
-
+#include "Auth/Middleware/ClientAuth_MW.h"
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: Fix External Ref: OAuthRegisteredClientsStore
-// TODO: Fix External Ref: OAuthClientInformationFull
-// TODO: Fix External Ref: InvalidRequestError
-// TODO: Fix External Ref: InvalidClientError
-// TODO: Fix External Ref: ServerError
-// TODO: Fix External Ref: OAuthError
+void HTTPResponse::SetStatus(int Status) {
+    StatusCode = Status;
+}
 
-// Forward declarations for external types
-class OAuthRegisteredClientsStore;
-struct OAuthClientInformationFull;
-class InvalidRequestError;
-class InvalidClientError;
-class ServerError;
-class OAuthError;
+void HTTPResponse::SetJSON(const JSON& Data) {
+    Body = Data;
+}
 
-// Modern C++20 callback types
-using OnClientRetrievedCallback = function<void(shared_ptr<OAuthClientInformationFull>)>;
-using OnMiddlewareCompleteCallback = function<void(bool)>;
-using NextFunction = function<void()>;
+optional<ClientAuthenticatedRequestValidation>
+ClientAuthenticatedRequestValidation::Validate(const JSON& Body) {
+    try {
+        ClientAuthenticatedRequestValidation Result;
 
-// HTTP Request/Response abstraction for middleware pattern
-struct HTTPRequest {
-    JSON Body;
-    shared_ptr<OAuthClientInformationFull> Client = nullptr;
-};
+        // Validate client_id (required string)
+        if (!Body.contains("client_id") || !Body["client_id"].is_string()) { return nullopt; }
+        Result.ClientID = Body["client_id"].get<string>();
 
-struct HTTPResponse {
-    int StatusCode = 200;
-    JSON Body;
+        // Validate client_secret (optional string)
+        if (Body.contains("client_secret")) {
+            if (!Body["client_secret"].is_string()) { return nullopt; }
+            Result.ClientSecret = Body["client_secret"].get<string>();
+        }
 
-    void SetStatus(int Status) {
-        StatusCode = Status;
-    }
-    void SetJSON(const JSON& Data) {
-        Body = Data;
-    }
-};
-
-// Modern C++20 middleware function type
-using RequestHandler = function<future<void>(HTTPRequest&, HTTPResponse&, NextFunction)>;
-
-struct ClientAuthenticationMiddlewareOptions {
-    /**
-     * A store used to read information about registered OAuth clients.
-     */
-    shared_ptr<OAuthRegisteredClientsStore> ClientsStore;
-};
-
-// Zod-like validation for ClientAuthenticatedRequest
-struct ClientAuthenticatedRequestValidation {
-    string ClientID;
-    optional<string> ClientSecret;
-
-    static optional<ClientAuthenticatedRequestValidation> Validate(const JSON& Body) {
-        try {
-            ClientAuthenticatedRequestValidation Result;
-
-            // Validate client_id (required string)
-            if (!Body.contains("client_id") || !Body["client_id"].is_string()) { return nullopt; }
-            Result.ClientID = Body["client_id"].get<string>();
-
-            // Validate client_secret (optional string)
-            if (Body.contains("client_secret")) {
-                if (!Body["client_secret"].is_string()) { return nullopt; }
-                Result.ClientSecret = Body["client_secret"].get<string>();
-            }
-
-            return Result;
-        } catch (...) { return nullopt; }
-    }
-};
+        return Result;
+    } catch (...) { return nullopt; }
+}
 
 // Main middleware function (matches original TypeScript authenticateClient)
 RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& Options) {
@@ -191,48 +141,6 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
     };
 }
 
-// C++20 Coroutine version (if you want to use co_await)
-#if __has_include(<coroutine>)
-    #include <coroutine>
-
-struct AuthenticationTask {
-    struct promise_type {
-        bool Result = false;
-
-        AuthenticationTask get_return_object() {
-            return AuthenticationTask{coroutine_handle<promise_type>::from_promise(*this)};
-        }
-
-        suspend_never initial_suspend() {
-            return {};
-        }
-        suspend_never final_suspend() noexcept {
-            return {};
-        }
-
-        void return_value(bool Value) {
-            Result = Value;
-        }
-        void unhandled_exception() {
-            Result = false;
-        }
-    };
-
-    coroutine_handle<promise_type> Handle;
-
-    explicit AuthenticationTask(coroutine_handle<promise_type> H) : Handle(H) {}
-    ~AuthenticationTask() {
-        if (Handle) Handle.destroy();
-    }
-
-    bool GetResult() const {
-        return Handle.promise().Result;
-    }
-    bool IsReady() const {
-        return Handle.done();
-    }
-};
-
 // Alternative coroutine implementation (optional)
 AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlewareOptions& Options,
                                                HTTPRequest& Request, HTTPResponse& Response) {
@@ -240,6 +148,5 @@ AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlew
     // For now, keeping it simple
     co_return false;
 }
-#endif
 
 MCP_NAMESPACE_END

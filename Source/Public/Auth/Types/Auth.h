@@ -55,13 +55,6 @@ struct OAuthTokens {
     optional<string> RefreshToken;
 };
 
-// OAuth 2.1 error response
-struct OAuthErrorResponse {
-    string Error;
-    optional<string> ErrorDescription;
-    optional<string> ErrorURI;
-};
-
 // RFC 7591 OAuth 2.0 Dynamic Client Registration metadata
 struct OAuthClientMetadata {
     vector<string>
@@ -81,6 +74,17 @@ struct OAuthClientMetadata {
     optional<any> JWKS;
     optional<string> SoftwareID;
     optional<string> SoftwareVersion;
+
+    // TODO: Verify if this needs the following
+    // static expected<OAuthClientMetadata, string> SafeParse(const JSON& json) {
+    //     try {
+    //         OAuthClientMetadata metadata;
+    //         if (json.contains("token_endpoint_auth_method")) {
+    //             metadata.TokenEndpointAuthMethod = json["token_endpoint_auth_method"];
+    //         }
+    //         return metadata;
+    //     } catch (const exception& e) { return unexpected(e.what()); }
+    // }
 };
 
 // RFC 7591 OAuth 2.0 Dynamic Client Registration client information
@@ -89,6 +93,20 @@ struct OAuthClientInformation {
     optional<string> ClientSecret;
     optional<int> ClientID_IssuedAt;
     optional<int> ClientSecretExpiresAt;
+    // TODO: Verify if this needs the following
+    // string TokenEndpointAuthMethod;
+
+    // JSON ToJSON() const {
+    //     JSON result;
+    //     result["client_id"] = ClientId;
+    //     if (ClientSecret.has_value()) { result["client_secret"] = *ClientSecret; }
+    //     result["client_id_issued_at"] = ClientIdIssuedAt;
+    //     if (ClientSecretExpiresAt.has_value()) {
+    //         result["client_secret_expires_at"] = *ClientSecretExpiresAt;
+    //     }
+    //     result["token_endpoint_auth_method"] = TokenEndpointAuthMethod;
+    //     return result;
+    // }
 };
 
 // RFC 7591 OAuth 2.0 Dynamic Client Registration full response (client information plus metadata)

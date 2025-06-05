@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Core/Common.hpp"
 #include "../Core/Types/JSON_RPC.hpp"
 #include "../Transport/Transport.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -274,9 +274,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         {
             lock_guard<mutex> lock(HandlersMutex_);
             auto it = ProgressHandlers_.find(progressToken);
-            if (it != ProgressHandlers_.end()) {
-                handler = it->second;
-            }
+            if (it != ProgressHandlers_.end()) { handler = it->second; }
         }
 
         if (!handler) {
@@ -329,8 +327,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     bool ResetTimeout(int64_t messageId) {
         lock_guard<mutex> lock(HandlersMutex_);
         auto it = TimeoutInfo_.find(messageId);
-        if (it == TimeoutInfo_.end())
-            return false;
+        if (it == TimeoutInfo_.end()) return false;
 
         auto& info = it->second;
         auto totalElapsed = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()
@@ -370,20 +367,14 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         Transport_.reset();
 
-        if (OnClose) {
-            OnClose();
-        }
+        if (OnClose) { OnClose(); }
 
         McpError error(ErrorCode::ConnectionClosed, "Connection closed");
-        for (const auto& [id, handler] : responseHandlers) {
-            handler(error);
-        }
+        for (const auto& [id, handler] : responseHandlers) { handler(error); }
     }
 
     void OnErrorInternal(const exception& error) {
-        if (OnError) {
-            OnError(error);
-        }
+        if (OnError) { OnError(error); }
     }
 
     void OnNotification(const JSON_RPC_Notification& notification) {
@@ -392,9 +383,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         {
             lock_guard<mutex> lock(HandlersMutex_);
             auto it = NotificationHandlers_.find(notification.method);
-            if (it != NotificationHandlers_.end()) {
-                handler = it->second;
-            }
+            if (it != NotificationHandlers_.end()) { handler = it->second; }
         }
 
         if (!handler && FallbackNotificationHandler) {
@@ -409,9 +398,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         }
 
         // Ignore notifications not being subscribed to.
-        if (!handler) {
-            return;
-        }
+        if (!handler) { return; }
 
         // Execute handler asynchronously and catch errors
         async(launch::async, [this, handler, notification]() {
@@ -433,9 +420,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         {
             lock_guard<mutex> lock(HandlersMutex_);
             auto it = RequestHandlers_.find(request.method);
-            if (it != RequestHandlers_.end()) {
-                handler = it->second;
-            }
+            if (it != RequestHandlers_.end()) { handler = it->second; }
         }
 
         if (!handler && FallbackRequestHandler) {
@@ -629,9 +614,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 request.jsonrpc = message[MSG_KEY_JSON_RPC];
                 request.id = message[MSG_KEY_ID];
                 request.method = message[MSG_KEY_METHOD];
-                if (message.contains(MSG_KEY_PARAMS)) {
-                    request.params = message[MSG_KEY_PARAMS];
-                }
+                if (message.contains(MSG_KEY_PARAMS)) { request.params = message[MSG_KEY_PARAMS]; }
                 OnRequest(request, extra);
             } else if (IsJSONRPCNotification(message)) {
                 JSON_RPC_Notification notification;
@@ -658,9 +641,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      * Closes the connection.
      */
     future<void> Close() {
-        if (Transport_) {
-            return Transport_->Close();
-        }
+        if (Transport_) { return Transport_->Close(); }
         promise<void> p;
         p.set_value();
         return p.get_future();
@@ -700,9 +681,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     template <typename ResultT>
     future<ResultT> Request(const SendRequestT& request,
                             const optional<RequestOptions>& options = nullopt) {
-        if (!Transport_) {
-            throw runtime_error("Not connected");
-        }
+        if (!Transport_) { throw runtime_error("Not connected"); }
 
         if (Options_ && Options_->EnforceStrictCapabilities.value_or(false)) {
             AssertCapabilityForMethod(request.method);
@@ -727,9 +706,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             lock_guard<mutex> lock(HandlersMutex_);
             ProgressHandlers_[messageId] = *options->OnProgress;
 
-            if (!jsonRpcRequest.params) {
-                jsonRpcRequest.params = JSON::object();
-            }
+            if (!jsonRpcRequest.params) { jsonRpcRequest.params = JSON::object(); }
             if (!jsonRpcRequest.params->contains(MSG_KEY_META)) {
                 (*jsonRpcRequest.params)[MSG_KEY_META] = JSON::object();
             }
@@ -783,9 +760,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                             ResultT result = jsonResponse.result.get<ResultT>();
                             promise.set_value(result);
                         }
-                    } catch (const exception& e) {
-                        promise.set_exception(current_exception());
-                    }
+                    } catch (const exception& e) { promise.set_exception(current_exception()); }
                 };
         }
 
@@ -807,9 +782,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             JSON requestJson = {{MSG_KEY_JSON_RPC, jsonRpcRequest.jsonrpc},
                                 {MSG_KEY_ID, jsonRpcRequest.id},
                                 {MSG_KEY_METHOD, jsonRpcRequest.method}};
-            if (jsonRpcRequest.params) {
-                requestJson[MSG_KEY_PARAMS] = *jsonRpcRequest.params;
-            }
+            if (jsonRpcRequest.params) { requestJson[MSG_KEY_PARAMS] = *jsonRpcRequest.params; }
 
             Transport::TransportSendOptions transportOptions;
             if (options) {
@@ -833,9 +806,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      */
     future<void> Notification(const SendNotificationT& notification,
                               const optional<NotificationOptions>& options = nullopt) {
-        if (!Transport_) {
-            throw runtime_error("Not connected");
-        }
+        if (!Transport_) { throw runtime_error("Not connected"); }
 
         AssertNotificationCapability(notification.method);
 
@@ -851,9 +822,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         }
 
         Transport::TransportSendOptions transportOptions;
-        if (options) {
-            transportOptions.RelatedRequestID = options->RelatedRequestID;
-        }
+        if (options) { transportOptions.RelatedRequestID = options->RelatedRequestID; }
 
         // TODO: Fix External Ref: Transport - Send notification via transport
         // return Transport_->Send(notificationJson, transportOptions);

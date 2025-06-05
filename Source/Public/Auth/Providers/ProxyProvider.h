@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Auth/Client/AuthClient.hpp"
+#include "Auth/Client/AuthClient.h"
 #include "Auth/Providers/Provider.hpp"
 #include "Auth/Types/Auth.h"
 #include "Auth/Types/AuthErrors.h"
@@ -110,13 +110,6 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
     future<AuthInfo> VerifyAccessToken(const string& Token) const;
 
   private:
-    // TODO: Fix External Ref: HTTP client functionality
-    struct HttpResponse {
-        bool Ok;
-        int Status;
-        string Body;
-    };
-
     static future<HttpResponse> HttpPost(const string& Url, const map<string, string>& Headers,
                                          const string& Body);
 

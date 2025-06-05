@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Core.h"
 
 // TODO: Fix External Ref: express (HTTP server framework)
 // TODO: Fix External Ref: cors (CORS middleware)
@@ -9,64 +9,8 @@
 // TODO: Fix External Ref: OAuthClientMetadataSchema
 // TODO: Fix External Ref: OAuthRegisteredClientsStore
 // TODO: Fix External Ref: allowedMethods middleware
-// TODO: Fix External Ref: Error classes (InvalidClientMetadataError, ServerError,
-// TooManyRequestsError, OAuthError)
 
 MCP_NAMESPACE_BEGIN
-
-// Forward declarations for external types
-struct OAuthClientInformationFull;
-struct OAuthClientMetadataSchema;
-class OAuthRegisteredClientsStore;
-
-// Error classes that need to be defined elsewhere
-class OAuthError {
-  public:
-    virtual ~OAuthError() = default;
-    virtual JSON ToResponseObject() const = 0;
-};
-
-class InvalidClientMetadataError : public OAuthError {
-  private:
-    string Message;
-
-  public:
-    InvalidClientMetadataError(const string& message) : Message(message) {}
-    JSON ToResponseObject() const override {
-        return JSON{{MSG_KEY_ERROR, "invalid_client_metadata"}, {"error_description", Message}};
-    }
-};
-
-class ServerError : public OAuthError {
-  private:
-    string Message;
-
-  public:
-    ServerError(const string& message) : Message(message) {}
-    JSON ToResponseObject() const override {
-        return JSON{{MSG_KEY_ERROR, "server_error"}, {"error_description", Message}};
-    }
-};
-
-class TooManyRequestsError : public OAuthError {
-  private:
-    string Message;
-
-  public:
-    TooManyRequestsError(const string& message) : Message(message) {}
-    JSON ToResponseObject() const override {
-        return JSON{{MSG_KEY_ERROR, "too_many_requests"}, {"error_description", Message}};
-    }
-};
-
-// Rate limit options structure
-struct RateLimitOptions {
-    int WindowMs = 60 * 60 * 1000; // 1 hour in milliseconds
-    int Max = 20;                  // Maximum requests
-    bool StandardHeaders = true;
-    bool LegacyHeaders = false;
-    JSON Message;
-};
 
 // Client registration handler options
 struct ClientRegistrationHandlerOptions {
@@ -95,35 +39,6 @@ struct ClientRegistrationHandlerOptions {
 // Constants
 constexpr int DEFAULT_CLIENT_SECRET_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
-// HTTP Request/Response structures
-struct HTTP_Request {
-    JSON Body;
-    map<string, string> Headers;
-    string Method;
-    string Path;
-};
-
-struct HTTP_Response {
-    int StatusCode = 200;
-    JSON Body;
-    map<string, string> Headers;
-
-    void SetHeader(const string& name, const string& value) {
-        Headers[name] = value;
-    }
-
-    void Status(int code) {
-        StatusCode = code;
-    }
-
-    void SendJSON(const JSON& json) {
-        Body = json;
-    }
-};
-
-// Request handler function type
-using RequestHandler = function<task<void>(const HTTP_Request&, HTTP_Response&)>;
-
 // OAuth client metadata validation
 class OAuthClientMetadata {
   public:
@@ -137,9 +52,7 @@ class OAuthClientMetadata {
                 metadata.TokenEndpointAuthMethod = json["token_endpoint_auth_method"];
             }
             return metadata;
-        } catch (const exception& e) {
-            return unexpected(e.what());
-        }
+        } catch (const exception& e) { return unexpected(e.what()); }
     }
 };
 
@@ -154,9 +67,7 @@ struct OAuthClientInformation {
     JSON ToJSON() const {
         JSON result;
         result["client_id"] = ClientId;
-        if (ClientSecret.has_value()) {
-            result["client_secret"] = *ClientSecret;
-        }
+        if (ClientSecret.has_value()) { result["client_secret"] = *ClientSecret; }
         result["client_id_issued_at"] = ClientIdIssuedAt;
         if (ClientSecretExpiresAt.has_value()) {
             result["client_secret_expires_at"] = *ClientSecretExpiresAt;
@@ -185,26 +96,16 @@ string GenerateUUID() {
 
     stringstream ss;
     ss << hex;
-    for (int i = 0; i < 8; i++) {
-        ss << dis(gen);
-    }
+    for (int i = 0; i < 8; i++) { ss << dis(gen); }
     ss << "-";
-    for (int i = 0; i < 4; i++) {
-        ss << dis(gen);
-    }
+    for (int i = 0; i < 4; i++) { ss << dis(gen); }
     ss << "-4";
-    for (int i = 0; i < 3; i++) {
-        ss << dis(gen);
-    }
+    for (int i = 0; i < 3; i++) { ss << dis(gen); }
     ss << "-";
     ss << dis2(gen);
-    for (int i = 0; i < 3; i++) {
-        ss << dis(gen);
-    }
+    for (int i = 0; i < 3; i++) { ss << dis(gen); }
     ss << "-";
-    for (int i = 0; i < 12; i++) {
-        ss << dis(gen);
-    }
+    for (int i = 0; i < 12; i++) { ss << dis(gen); }
     return ss.str();
 }
 
@@ -215,9 +116,7 @@ string GenerateRandomBytes(int length) {
 
     stringstream ss;
     ss << hex;
-    for (int i = 0; i < length; i++) {
-        ss << setw(2) << setfill('0') << dis(gen);
-    }
+    for (int i = 0; i < length; i++) { ss << setw(2) << setfill('0') << dis(gen); }
     return ss.str();
 }
 
@@ -245,9 +144,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
         try {
             // Validate HTTP method
-            if (req.Method != "POST") {
-                throw runtime_error("Method not allowed");
-            }
+            if (req.Method != "POST") { throw runtime_error("Method not allowed"); }
 
             // Apply rate limiting logic (simplified - actual implementation would need middleware)
             if (!rateLimitDisabled && rateLimitConfig.has_value()) {
@@ -257,9 +154,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
             // Parse and validate client metadata
             auto parseResult = OAuthClientMetadata::SafeParse(req.Body);
-            if (!parseResult.has_value()) {
-                throw InvalidClientMetadataError(parseResult.error());
-            }
+            if (!parseResult.has_value()) { throw InvalidClientMetadataError(parseResult.error()); }
 
             auto clientMetadata = parseResult.value();
             bool isPublicClient = clientMetadata.TokenEndpointAuthMethod == "none";

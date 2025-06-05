@@ -2,7 +2,12 @@
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: Fix External Ref: OAuthErrorResponse from shared auth
+// OAuth 2.1 error response
+struct OAuthErrorResponse {
+    string Error;
+    optional<string> ErrorDescription;
+    optional<string> ErrorURI;
+};
 
 /**
  * Base class for all OAuth errors

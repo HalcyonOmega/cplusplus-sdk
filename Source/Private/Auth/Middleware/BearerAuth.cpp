@@ -1,83 +1,26 @@
-#pragma once
-
-#include "Auth/Types/Auth.h"
-#include "Core.h"
+#include "Auth/Middleware/BearerAuth.h"
 
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: RequestHandler (Express equivalent)
 // TODO: Fix External Ref: InsufficientScopeError
 // TODO: Fix External Ref: InvalidTokenError
-// TODO: Fix External Ref: OAuthError
 // TODO: Fix External Ref: ServerError
 // TODO: Fix External Ref: OAuthTokenVerifier
 // TODO: Fix External Ref: AuthInfo
 
-/**
- * Configuration options for Bearer authentication middleware
- */
-struct BearerAuthMiddlewareOptions {
-    /**
-     * A provider used to verify tokens.
-     */
-    shared_ptr<OAuthTokenVerifier> Verifier;
+void MiddlewareResponse::SetStatus(int Status) {
+    StatusCode = Status;
+}
 
-    /**
-     * Optional scopes that the token must have.
-     */
-    optional<vector<string>> RequiredScopes;
+void MiddlewareResponse::SetHeader(const string& Key, const string& Value) {
+    Headers[Key] = Value;
+}
 
-    /**
-     * Optional resource metadata URL to include in WWW-Authenticate header.
-     */
-    optional<string> ResourceMetadataUrl;
-};
+void MiddlewareResponse::SendJSON(const JSON& JsonData) {
+    Body = JsonData;
+}
 
-/**
- * Request context that includes authentication information
- */
-struct AuthenticatedRequest {
-    /**
-     * Information about the validated access token, if the RequireBearerAuth middleware was used.
-     */
-    optional<AuthInfo> Auth;
-
-    // TODO: Add other request properties as needed (headers, body, etc.)
-    map<string, string> Headers;
-    string Method;
-    string Path;
-};
-
-/**
- * Response context for middleware
- */
-struct MiddlewareResponse {
-    int StatusCode = 200;
-    map<string, string> Headers;
-    JSON Body;
-
-    void SetStatus(int Status) {
-        StatusCode = Status;
-    }
-
-    void SetHeader(const string& Key, const string& Value) {
-        Headers[Key] = Value;
-    }
-
-    void SendJSON(const JSON& JsonData) {
-        Body = JsonData;
-    }
-};
-
-/**
- * Middleware function type
- */
-using MiddlewareFunction =
-    function<void(AuthenticatedRequest&, MiddlewareResponse&, function<void()>)>;
-
-/**
- * Helper function for case-insensitive header lookup
- */
 string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string& HeaderName) {
     string LowerHeaderName = HeaderName;
     transform(LowerHeaderName.begin(), LowerHeaderName.end(), LowerHeaderName.begin(), ::tolower);
@@ -90,15 +33,6 @@ string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string
     return "";
 }
 
-/**
- * Middleware that requires a valid Bearer token in the Authorization header.
- *
- * This will validate the token with the auth provider and add the resulting auth info to the
- * request object.
- *
- * If ResourceMetadataUrl is provided, it will be included in the WWW-Authenticate header
- * for 401 responses as per the OAuth 2.0 Protected Resource Metadata spec.
- */
 MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options) {
     return [Options](AuthenticatedRequest& Request, MiddlewareResponse& Response,
                      function<void()> Next) {
