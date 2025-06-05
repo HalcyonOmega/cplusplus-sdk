@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../../Auth.hpp"
-#include "../AuthErrors.hpp"
-#include "../Clients.hpp"
-#include "../Provider.hpp"
+#include "Auth/Client/Auth_Client.hpp"
+#include "Auth/Providers/Provider.hpp"
+#include "Auth/Types/Auth.h"
+#include "Auth/Types/AuthErrors.h"
 #include "Core.h"
-
 
 MCP_NAMESPACE_BEGIN
 
@@ -28,36 +27,36 @@ struct ProxyOptions {
     /**
      * Function to verify access tokens and return auth info
      */
-    function<future<Auth::AuthInfo>(const string&)> VerifyAccessToken;
+    function<future<AuthInfo>(const string&)> VerifyAccessToken;
 
     /**
      * Function to fetch client information from the upstream server
      */
-    function<future<optional<Auth::OAuthClientInformationFull>>(const string&)> GetClient;
+    function<future<optional<OAuthClientInformationFull>>(const string&)> GetClient;
 };
 
 /**
  * Implements an OAuth server that proxies requests to another OAuth server.
  */
-class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
+class ProxyOAuthServerProvider : public OAuthServerProvider {
   protected:
     const ProxyEndpoints _Endpoints;
-    const function<future<Auth::AuthInfo>(const string&)> _VerifyAccessToken;
-    const function<future<optional<Auth::OAuthClientInformationFull>>(const string&)> _GetClient;
+    const function<future<AuthInfo>(const string&)> _VerifyAccessToken;
+    const function<future<optional<OAuthClientInformationFull>>(const string&)> _GetClient;
 
   public:
     bool SkipLocalPkceValidation = true;
 
-    optional<function<future<void>(const Auth::OAuthClientInformationFull&,
-                                   const Auth::OAuthTokenRevocationRequest&)>>
+    optional<function<future<void>(const OAuthClientInformationFull&,
+                                   const OAuthTokenRevocationRequest&)>>
         RevokeToken;
 
     explicit ProxyOAuthServerProvider(const ProxyOptions& Options)
         : _Endpoints(Options.Endpoints), _VerifyAccessToken(Options.VerifyAccessToken),
           _GetClient(Options.GetClient) {
         if (Options.Endpoints.RevocationUrl.has_value()) {
-            RevokeToken = [this](const Auth::OAuthClientInformationFull& Client,
-                                 const Auth::OAuthTokenRevocationRequest& Request) -> future<void> {
+            RevokeToken = [this](const OAuthClientInformationFull& Client,
+                                 const OAuthTokenRevocationRequest& Request) -> future<void> {
                 const auto& RevocationUrl = this->_Endpoints.RevocationUrl;
 
                 if (!RevocationUrl.has_value()) {
@@ -82,8 +81,7 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
                     Body);
 
                 if (!Response.Ok) {
-                    throw Auth::ServerError("Token revocation failed: "
-                                            + to_string(Response.Status));
+                    throw ServerError("Token revocation failed: " + to_string(Response.Status));
                 }
 
                 co_return;
@@ -91,15 +89,15 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         }
     }
 
-    Auth::OAuthRegisteredClientsStore GetClientsStore() const {
+    OAuthRegisteredClientsStore GetClientsStore() const {
         const auto& RegistrationUrl = _Endpoints.RegistrationUrl;
 
-        Auth::OAuthRegisteredClientsStore Store;
+        OAuthRegisteredClientsStore Store;
         Store.GetClient = _GetClient;
 
         if (RegistrationUrl.has_value()) {
-            Store.RegisterClient = [RegistrationUrl](const Auth::OAuthClientInformationFull& Client)
-                -> future<Auth::OAuthClientInformationFull> {
+            Store.RegisterClient = [RegistrationUrl](const OAuthClientInformationFull& Client)
+                -> future<OAuthClientInformationFull> {
                 // Convert client to JSON
                 JSON ClientJson;
                 ClientJson["client_id"] = Client.Information.ClientID;
@@ -118,8 +116,7 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
                                       {{"Content-Type", "application/json"}}, ClientJson.dump());
 
                 if (!Response.Ok) {
-                    throw Auth::ServerError("Client registration failed: "
-                                            + to_string(Response.Status));
+                    throw ServerError("Client registration failed: " + to_string(Response.Status));
                 }
 
                 JSON Data = JSON::parse(Response.Body);
@@ -130,8 +127,8 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         return Store;
     }
 
-    future<void> Authorize(const Auth::OAuthClientInformationFull& Client,
-                           const Auth::AuthorizationParams& Params, Response& Res) const {
+    future<void> Authorize(const OAuthClientInformationFull& Client,
+                           const AuthorizationParams& Params, Response& Res) const {
         string TargetUrl = _Endpoints.AuthorizationUrl;
 
         map<string, string> SearchParams = {{"client_id", Client.Information.ClientID},
@@ -158,15 +155,15 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         co_return;
     }
 
-    future<string> ChallengeForAuthorizationCode(const Auth::OAuthClientInformationFull& Client,
+    future<string> ChallengeForAuthorizationCode(const OAuthClientInformationFull& Client,
                                                  const string& AuthorizationCode) const {
         // In a proxy setup, we don't store the code challenge ourselves
         // Instead, we proxy the token request and let the upstream server validate it
         co_return "";
     }
 
-    future<Auth::OAuthTokens>
-    ExchangeAuthorizationCode(const Auth::OAuthClientInformationFull& Client,
+    future<OAuthTokens>
+    ExchangeAuthorizationCode(const OAuthClientInformationFull& Client,
                               const string& AuthorizationCode,
                               const optional<string>& CodeVerifier = nullopt,
                               const optional<string>& RedirectUri = nullopt) const {
@@ -188,15 +185,15 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
             _Endpoints.TokenUrl, {{"Content-Type", "application/x-www-form-urlencoded"}}, Body);
 
         if (!Response.Ok) {
-            throw Auth::ServerError("Token exchange failed: " + to_string(Response.Status));
+            throw ServerError("Token exchange failed: " + to_string(Response.Status));
         }
 
         JSON Data = JSON::parse(Response.Body);
         co_return ParseOAuthTokens(Data);
     }
 
-    future<Auth::OAuthTokens>
-    ExchangeRefreshToken(const Auth::OAuthClientInformationFull& Client, const string& RefreshToken,
+    future<OAuthTokens>
+    ExchangeRefreshToken(const OAuthClientInformationFull& Client, const string& RefreshToken,
                          const optional<vector<string>>& Scopes = nullopt) const {
         map<string, string> Params = {{"grant_type", "refresh_token"},
                                       {"client_id", Client.Information.ClientID},
@@ -221,14 +218,14 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
             _Endpoints.TokenUrl, {{"Content-Type", "application/x-www-form-urlencoded"}}, Body);
 
         if (!Response.Ok) {
-            throw Auth::ServerError("Token refresh failed: " + to_string(Response.Status));
+            throw ServerError("Token refresh failed: " + to_string(Response.Status));
         }
 
         JSON Data = JSON::parse(Response.Body);
         co_return ParseOAuthTokens(Data);
     }
 
-    future<Auth::AuthInfo> VerifyAccessToken(const string& Token) const {
+    future<AuthInfo> VerifyAccessToken(const string& Token) const {
         co_return co_await _VerifyAccessToken(Token);
     }
 
@@ -266,8 +263,8 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         return Value;
     }
 
-    static Auth::OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& Data) {
-        Auth::OAuthClientInformationFull Result;
+    static OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& Data) {
+        OAuthClientInformationFull Result;
 
         // Parse client information
         Result.Information.ClientID = Data.at("client_id").get<string>();
@@ -287,8 +284,8 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         return Result;
     }
 
-    static Auth::OAuthTokens ParseOAuthTokens(const JSON& Data) {
-        Auth::OAuthTokens Result;
+    static OAuthTokens ParseOAuthTokens(const JSON& Data) {
+        OAuthTokens Result;
         Result.AccessToken = Data.at("access_token").get<string>();
         Result.TokenType = Data.at("token_type").get<string>();
 

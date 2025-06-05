@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Auth/Types/Auth.h"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -84,9 +85,7 @@ string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string
     for (const auto& [Key, Value] : Headers) {
         string LowerKey = Key;
         transform(LowerKey.begin(), LowerKey.end(), LowerKey.begin(), ::tolower);
-        if (LowerKey == LowerHeaderName) {
-            return Value;
-        }
+        if (LowerKey == LowerHeaderName) { return Value; }
     }
     return "";
 }
@@ -106,9 +105,7 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
         try {
             // Check for Authorization header (case-insensitive)
             string AuthHeader = GetHeaderCaseInsensitive(Request.Headers, "authorization");
-            if (AuthHeader.empty()) {
-                throw InvalidTokenError("Missing Authorization header");
-            }
+            if (AuthHeader.empty()) { throw InvalidTokenError("Missing Authorization header"); }
 
             // Parse Bearer token - handle multiple spaces properly
             size_t SpacePos = AuthHeader.find(' ');
@@ -153,9 +150,7 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
                     }
                 }
 
-                if (!HasAllScopes) {
-                    throw InsufficientScopeError("Insufficient scope");
-                }
+                if (!HasAllScopes) { throw InsufficientScopeError("Insufficient scope"); }
             }
 
             // Check if the token is expired

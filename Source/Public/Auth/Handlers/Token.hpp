@@ -9,7 +9,8 @@
 #include <regex>
 #include <thread>
 
-#include "../Core/Common.hpp"
+#include "Auth/Types/Auth.h"
+#include "Core.h"
 
 // TODO: Fix External Ref: express framework integration
 // TODO: Fix External Ref: cors library integration
@@ -52,23 +53,20 @@ template <typename T = void> struct Task {
         {
             Value = move(value);
             Ready = true;
-            if (Continuation)
-                Continuation();
+            if (Continuation) Continuation();
         }
 
         void return_void()
             requires std::same_as<T, void>
         {
             Ready = true;
-            if (Continuation)
-                Continuation();
+            if (Continuation) Continuation();
         }
 
         void unhandled_exception() {
             Exception = current_exception();
             Ready = true;
-            if (Continuation)
-                Continuation();
+            if (Continuation) Continuation();
         }
     };
 
@@ -77,15 +75,13 @@ template <typename T = void> struct Task {
     Task(coroutine_handle<promise_type> h) : Handle(h) {}
 
     ~Task() {
-        if (Handle)
-            Handle.destroy();
+        if (Handle) Handle.destroy();
     }
 
     Task(Task&& other) noexcept : Handle(exchange(other.Handle, {})) {}
     Task& operator=(Task&& other) noexcept {
         if (this != &other) {
-            if (Handle)
-                Handle.destroy();
+            if (Handle) Handle.destroy();
             Handle = exchange(other.Handle, {});
         }
         return *this;
@@ -108,36 +104,28 @@ template <typename T = void> struct Task {
     T await_resume() const
         requires(!std::same_as<T, void>)
     {
-        if (Handle.promise().Exception) {
-            rethrow_exception(Handle.promise().Exception);
-        }
+        if (Handle.promise().Exception) { rethrow_exception(Handle.promise().Exception); }
         return Handle.promise().Value;
     }
 
     void await_resume() const
         requires std::same_as<T, void>
     {
-        if (Handle.promise().Exception) {
-            rethrow_exception(Handle.promise().Exception);
-        }
+        if (Handle.promise().Exception) { rethrow_exception(Handle.promise().Exception); }
     }
 
     // For blocking wait (when needed)
     T Get()
         requires(!std::same_as<T, void>)
     {
-        while (!Handle.promise().Ready) {
-            this_thread::sleep_for(chrono::milliseconds(1));
-        }
+        while (!Handle.promise().Ready) { this_thread::sleep_for(chrono::milliseconds(1)); }
         return await_resume();
     }
 
     void Get()
         requires std::same_as<T, void>
     {
-        while (!Handle.promise().Ready) {
-            this_thread::sleep_for(chrono::milliseconds(1));
-        }
+        while (!Handle.promise().Ready) { this_thread::sleep_for(chrono::milliseconds(1)); }
         await_resume();
     }
 };
@@ -219,9 +207,7 @@ struct RateLimitState {
                               [windowStart](const auto& time) { return time < windowStart; }),
                     times.end());
 
-        if (times.size() >= maxRequests) {
-            return false;
-        }
+        if (times.size() >= maxRequests) { return false; }
 
         times.push_back(now);
         return true;
@@ -280,9 +266,7 @@ struct RefreshTokenGrantSchema {
 
         Out.RefreshToken = Body["refresh_token"];
 
-        if (Body.contains("scope") && Body["scope"].is_string()) {
-            Out.Scope = Body["scope"];
-        }
+        if (Body.contains("scope") && Body["scope"].is_string()) { Out.Scope = Body["scope"]; }
 
         return true;
     }
@@ -425,9 +409,7 @@ class TokenHandler {
 
             // Authenticate client
             auto client = AuthenticateClient(Headers, RequestBody);
-            if (!client) {
-                throw ServerError("Internal Server Error");
-            }
+            if (!client) { throw ServerError("Internal Server Error"); }
 
             // Validate basic token request
             string ErrorMessage;
@@ -480,16 +462,12 @@ class TokenHandler {
                 co_await Options.Provider->ChallengeForAuthorizationCodeAsync(client, Code);
 
             bool IsValid = co_await PKCEVerifier::VerifyChallenge(CodeVerifier, CodeChallenge);
-            if (!IsValid) {
-                throw InvalidGrantError("code_verifier does not match the challenge");
-            }
+            if (!IsValid) { throw InvalidGrantError("code_verifier does not match the challenge"); }
         }
 
         // Pass code_verifier to provider if PKCE validation didn't occur locally
         optional<string> CodeVerifierParam;
-        if (SkipLocalPKCEValidation) {
-            CodeVerifierParam = CodeVerifier;
-        }
+        if (SkipLocalPKCEValidation) { CodeVerifierParam = CodeVerifier; }
 
         JSON Tokens = co_await Options.Provider->ExchangeAuthorizationCodeAsync(
             client, Code, CodeVerifierParam, RedirectURI);
@@ -508,9 +486,7 @@ class TokenHandler {
         const optional<string>& Scope = Grant.Scope;
 
         optional<vector<string>> Scopes;
-        if (Scope.has_value()) {
-            Scopes = SplitStringWithRanges(Scope.value(), " ");
-        }
+        if (Scope.has_value()) { Scopes = SplitStringWithRanges(Scope.value(), " "); }
 
         JSON Tokens =
             co_await Options.Provider->ExchangeRefreshTokenAsync(client, RefreshToken, Scopes);
@@ -519,24 +495,19 @@ class TokenHandler {
 
     // Fixed C++20 ranges-based string splitting
     vector<string> SplitStringWithRanges(const string& Str, const string& Delimiter) {
-        if (Str.empty())
-            return {};
+        if (Str.empty()) return {};
 
         vector<string> Result;
         size_t Start = 0;
         size_t End = Str.find(Delimiter);
 
         while (End != string::npos) {
-            if (End > Start) {
-                Result.emplace_back(Str.substr(Start, End - Start));
-            }
+            if (End > Start) { Result.emplace_back(Str.substr(Start, End - Start)); }
             Start = End + Delimiter.length();
             End = Str.find(Delimiter, Start);
         }
 
-        if (Start < Str.length()) {
-            Result.emplace_back(Str.substr(Start));
-        }
+        if (Start < Str.length()) { Result.emplace_back(Str.substr(Start)); }
 
         return Result;
     }

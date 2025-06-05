@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Auth/Types/Auth.h"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -20,8 +21,7 @@ struct OAuthRegisteredClientsStore {
     /**
      * Returns information about a registered client, based on its ID.
      */
-    virtual future<optional<Auth::OAuthClientInformationFull>>
-    GetClient(const string& ClientID) = 0;
+    virtual future<optional<OAuthClientInformationFull>> GetClient(const string& ClientID) = 0;
 
     /**
      * Registers a new client with the server. The client ID and secret will be automatically
@@ -35,8 +35,8 @@ struct OAuthRegisteredClientsStore {
      *
      * If unimplemented, dynamic client registration is unsupported.
      */
-    virtual future<optional<Auth::OAuthClientInformationFull>>
-    RegisterClient(const Auth::OAuthClientInformationFull& Client) {
+    virtual future<optional<OAuthClientInformationFull>>
+    RegisterClient(const OAuthClientInformationFull& Client) {
         return async(launch::deferred, []() { return nullopt; });
     }
 };
@@ -70,21 +70,20 @@ struct OAuthServerProvider {
      * - In the error case, the redirect MUST include the `error` query parameter, and MAY include
      * an optional `error_description` query parameter.
      */
-    virtual future<void> Authorize(const Auth::OAuthClientInformationFull& Client,
+    virtual future<void> Authorize(const OAuthClientInformationFull& Client,
                                    const AuthorizationParams& Params, HTTP_Response& Response) = 0;
 
     /**
      * Returns the `codeChallenge` that was used when the indicated authorization began.
      */
-    virtual future<string>
-    ChallengeForAuthorizationCode(const Auth::OAuthClientInformationFull& Client,
-                                  const string& AuthorizationCode) = 0;
+    virtual future<string> ChallengeForAuthorizationCode(const OAuthClientInformationFull& Client,
+                                                         const string& AuthorizationCode) = 0;
 
     /**
      * Exchanges an authorization code for an access token.
      */
-    virtual future<Auth::OAuthTokens>
-    ExchangeAuthorizationCode(const Auth::OAuthClientInformationFull& Client,
+    virtual future<OAuthTokens>
+    ExchangeAuthorizationCode(const OAuthClientInformationFull& Client,
                               const string& AuthorizationCode,
                               const optional<string>& CodeVerifier = nullopt,
                               const optional<string>& RedirectURI = nullopt) = 0;
@@ -92,14 +91,14 @@ struct OAuthServerProvider {
     /**
      * Exchanges a refresh token for an access token.
      */
-    virtual future<Auth::OAuthTokens>
-    ExchangeRefreshToken(const Auth::OAuthClientInformationFull& Client, const string& RefreshToken,
+    virtual future<OAuthTokens>
+    ExchangeRefreshToken(const OAuthClientInformationFull& Client, const string& RefreshToken,
                          const optional<vector<string>>& Scopes = nullopt) = 0;
 
     /**
      * Verifies an access token and returns information about it.
      */
-    virtual future<Auth::AuthInfo> VerifyAccessToken(const string& Token) = 0;
+    virtual future<AuthInfo> VerifyAccessToken(const string& Token) = 0;
 
     /**
      * Revokes an access or refresh token. If unimplemented, token revocation is not supported (not
@@ -107,8 +106,8 @@ struct OAuthServerProvider {
      *
      * If the given token is invalid or already revoked, this method should do nothing.
      */
-    virtual future<void> RevokeToken(const Auth::OAuthClientInformationFull& Client,
-                                     const Auth::OAuthTokenRevocationRequest& Request) {
+    virtual future<void> RevokeToken(const OAuthClientInformationFull& Client,
+                                     const OAuthTokenRevocationRequest& Request) {
         return async(launch::deferred, []() {});
     }
 
@@ -133,7 +132,7 @@ struct OAuthTokenVerifier {
     /**
      * Verifies an access token and returns information about it.
      */
-    virtual future<Auth::AuthInfo> VerifyAccessToken(const string& Token) = 0;
+    virtual future<AuthInfo> VerifyAccessToken(const string& Token) = 0;
 };
 
 MCP_NAMESPACE_END

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/Common.hpp"
-#include "Auth.hpp"
+#include "Auth/Types/Auth.h"
+#include "Core.h"
 
 // TODO: Fix External Ref: pkce-challenge (PKCE challenge generation)
 // TODO: Fix External Ref: fetch API (HTTP requests)
@@ -29,7 +29,7 @@ class OAuthClientProvider {
     /**
      * Metadata about this OAuth client.
      */
-    virtual Auth::OAuthClientMetadata GetClientMetadata() const = 0;
+    virtual OAuthClientMetadata GetClientMetadata() const = 0;
 
     /**
      * Returns a OAuth2 state parameter.
@@ -43,8 +43,7 @@ class OAuthClientProvider {
      * server, or returns `nullopt` if the client is not registered with the
      * server.
      */
-    virtual variant<optional<Auth::OAuthClientInformation>,
-                    future<optional<Auth::OAuthClientInformation>>>
+    virtual variant<optional<OAuthClientInformation>, future<optional<OAuthClientInformation>>>
     GetClientInformation() = 0;
 
     /**
@@ -56,7 +55,7 @@ class OAuthClientProvider {
      * statically known (e.g., pre-registered).
      */
     virtual variant<void, future<void>>
-    SaveClientInformation(const Auth::OAuthClientInformationFull& ClientInformation) {
+    SaveClientInformation(const OAuthClientInformationFull& ClientInformation) {
         // Default implementation does nothing
     }
 
@@ -64,14 +63,13 @@ class OAuthClientProvider {
      * Loads any existing OAuth tokens for the current session, or returns
      * `nullopt` if there are no saved tokens.
      */
-    virtual variant<optional<Auth::OAuthTokens>, future<optional<Auth::OAuthTokens>>>
-    GetTokens() = 0;
+    virtual variant<optional<OAuthTokens>, future<optional<OAuthTokens>>> GetTokens() = 0;
 
     /**
      * Stores new OAuth tokens for the current session, after a successful
      * authorization.
      */
-    virtual variant<void, future<void>> SaveTokens(const Auth::OAuthTokens& Tokens) = 0;
+    virtual variant<void, future<void>> SaveTokens(const OAuthTokens& Tokens) = 0;
 
     /**
      * Invoked to redirect the user agent to the given URL to begin the authorization flow.
@@ -94,9 +92,9 @@ class OAuthClientProvider {
 
 enum class AuthResult { AUTHORIZED, REDIRECT };
 
-class UnauthorizedError : public Error {
+class UnauthorizedError : public exception {
   public:
-    explicit UnauthorizedError(const string& Message = "Unauthorized") : Error(Message) {}
+    explicit UnauthorizedError(const string& Message = "Unauthorized") : exception(Message) {}
 };
 
 struct AuthParams {
@@ -117,30 +115,30 @@ struct AuthorizationResult {
 };
 
 struct StartAuthorizationParams {
-    optional<Auth::OAuthMetadata> Metadata;
-    Auth::OAuthClientInformation ClientInformation;
+    optional<OAuthMetadata> Metadata;
+    OAuthClientInformation ClientInformation;
     string RedirectURL;
     optional<string> Scope;
     optional<string> State;
 };
 
 struct ExchangeAuthorizationParams {
-    optional<Auth::OAuthMetadata> Metadata;
-    Auth::OAuthClientInformation ClientInformation;
+    optional<OAuthMetadata> Metadata;
+    OAuthClientInformation ClientInformation;
     string AuthorizationCode;
     string CodeVerifier;
     string RedirectURI;
 };
 
 struct RefreshAuthorizationParams {
-    optional<Auth::OAuthMetadata> Metadata;
-    Auth::OAuthClientInformation ClientInformation;
+    optional<OAuthMetadata> Metadata;
+    OAuthClientInformation ClientInformation;
     string RefreshToken;
 };
 
 struct RegisterClientParams {
-    optional<Auth::OAuthMetadata> Metadata;
-    Auth::OAuthClientMetadata ClientMetadata;
+    optional<OAuthMetadata> Metadata;
+    OAuthClientMetadata ClientMetadata;
 };
 
 struct DiscoverMetadataOptions {
@@ -167,7 +165,7 @@ optional<string> ExtractResourceMetadataURL(const unordered_map<string, string>&
  * If the server returns a 404 for the well-known endpoint, this function will
  * throw an exception. Any other errors will be thrown as exceptions.
  */
-future<Auth::OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
+future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
     const string& ServerURL, const optional<DiscoverMetadataOptions>& Options = nullopt);
 
 /**
@@ -176,7 +174,7 @@ future<Auth::OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetad
  * If the server returns a 404 for the well-known endpoint, this function will
  * return `nullopt`. Any other errors will be thrown as exceptions.
  */
-future<optional<Auth::OAuthMetadata>>
+future<optional<OAuthMetadata>>
 DiscoverOAuthMetadataAsync(const string& AuthorizationServerURL,
                            const optional<DiscoverMetadataOptions>& Options = nullopt);
 
@@ -190,20 +188,20 @@ future<AuthorizationResult> StartAuthorizationAsync(const string& AuthorizationS
 /**
  * Exchanges an authorization code for an access token with the given server.
  */
-future<Auth::OAuthTokens> ExchangeAuthorizationAsync(const string& AuthorizationServerURL,
-                                                     const ExchangeAuthorizationParams& Params);
+future<OAuthTokens> ExchangeAuthorizationAsync(const string& AuthorizationServerURL,
+                                               const ExchangeAuthorizationParams& Params);
 
 /**
  * Exchange a refresh token for an updated access token.
  */
-future<Auth::OAuthTokens> RefreshAuthorizationAsync(const string& AuthorizationServerURL,
-                                                    const RefreshAuthorizationParams& Params);
+future<OAuthTokens> RefreshAuthorizationAsync(const string& AuthorizationServerURL,
+                                              const RefreshAuthorizationParams& Params);
 
 /**
  * Performs OAuth 2.0 Dynamic Client Registration according to RFC 7591.
  */
-future<Auth::OAuthClientInformationFull> RegisterClientAsync(const string& AuthorizationServerURL,
-                                                             const RegisterClientParams& Params);
+future<OAuthClientInformationFull> RegisterClientAsync(const string& AuthorizationServerURL,
+                                                       const RegisterClientParams& Params);
 
 // Helper functions and TODO implementations
 PKCE_Challenge GeneratePKCE_Challenge();
@@ -228,9 +226,40 @@ bool ValidateOAuthMetadata(const JSON& Data);
 bool ValidateOAuthTokens(const JSON& Data);
 bool ValidateOAuthClientInformationFull(const JSON& Data);
 
-Auth::OAuthProtectedResourceMetadata ParseOAuthProtectedResourceMetadata(const JSON& Data);
-Auth::OAuthMetadata ParseOAuthMetadata(const JSON& Data);
-Auth::OAuthTokens ParseOAuthTokens(const JSON& Data);
-Auth::OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& Data);
+OAuthProtectedResourceMetadata ParseOAuthProtectedResourceMetadata(const JSON& Data);
+OAuthMetadata ParseOAuthMetadata(const JSON& Data);
+OAuthTokens ParseOAuthTokens(const JSON& Data);
+OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& Data);
 
+/**
+ * Stores information about registered OAuth clients for this server.
+ */
+// TODO: Consider making a class since it has logic
+struct OAuthRegisteredClientsStore {
+    virtual ~OAuthRegisteredClientsStore() = default;
+
+    /**
+     * Returns information about a registered client, based on its ID.
+     */
+    virtual future<optional<OAuthClientInformationFull>> GetClient(const string& ClientID) = 0;
+
+    /**
+     * Registers a new client with the server. The client ID and secret will be automatically
+     * generated by the library. A modified version of the client information can be returned to
+     * reflect specific values enforced by the server.
+     *
+     * NOTE: Implementations should NOT delete expired client secrets in-place. Auth middleware
+     * provided by this library will automatically check the `client_secret_expires_at` field and
+     * reject requests with expired secrets. Any custom logic for authenticating clients should
+     * check the `client_secret_expires_at` field as well.
+     *
+     * If unimplemented, dynamic client registration is unsupported.
+     */
+    virtual future<optional<OAuthClientInformationFull>>
+    RegisterClient(const OAuthClientInformationFull& Client) {
+        return async(launch::deferred, []() {
+            return nullopt;
+        }); // Default implementation - dynamic client registration is unsupported
+    }
+};
 MCP_NAMESPACE_END

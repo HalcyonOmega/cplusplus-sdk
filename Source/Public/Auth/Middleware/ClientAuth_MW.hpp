@@ -1,6 +1,9 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Auth/Types/Auth.h"
+#include "Auth/Types/AuthErrors.h"
+#include "Core.h"
+
 
 MCP_NAMESPACE_BEGIN
 
@@ -62,23 +65,17 @@ struct ClientAuthenticatedRequestValidation {
             ClientAuthenticatedRequestValidation Result;
 
             // Validate client_id (required string)
-            if (!Body.contains("client_id") || !Body["client_id"].is_string()) {
-                return nullopt;
-            }
+            if (!Body.contains("client_id") || !Body["client_id"].is_string()) { return nullopt; }
             Result.ClientID = Body["client_id"].get<string>();
 
             // Validate client_secret (optional string)
             if (Body.contains("client_secret")) {
-                if (!Body["client_secret"].is_string()) {
-                    return nullopt;
-                }
+                if (!Body["client_secret"].is_string()) { return nullopt; }
                 Result.ClientSecret = Body["client_secret"].get<string>();
             }
 
             return Result;
-        } catch (...) {
-            return nullopt;
-        }
+        } catch (...) { return nullopt; }
     }
 };
 
@@ -152,9 +149,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
 
                         // Success! Set the client and call next middleware
                         Request.Client = Client;
-                        if (Next) {
-                            Next();
-                        }
+                        if (Next) { Next(); }
                         Promise->set_value();
 
                     } catch (const OAuthError& Error) {
@@ -227,8 +222,7 @@ struct AuthenticationTask {
 
     explicit AuthenticationTask(coroutine_handle<promise_type> H) : Handle(H) {}
     ~AuthenticationTask() {
-        if (Handle)
-            Handle.destroy();
+        if (Handle) Handle.destroy();
     }
 
     bool GetResult() const {

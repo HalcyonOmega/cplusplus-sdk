@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Core/Common.hpp"
-#include "../AuthErrors.hpp"
+#include "Auth/Types/AuthErrors.h"
+#include "Core.h"
 
 // TODO: Fix External Ref: MethodNotAllowedError
 
@@ -45,9 +45,7 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
         // Create Allow header with comma-separated methods (matching allowedMethods.join(', '))
         string AllowHeader = "";
         for (size_t i = 0; i < AllowedMethods.size(); ++i) {
-            if (i > 0) {
-                AllowHeader += ", ";
-            }
+            if (i > 0) { AllowHeader += ", "; }
             AllowHeader += AllowedMethods[i];
         }
 
