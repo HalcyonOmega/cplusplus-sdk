@@ -2,9 +2,6 @@
 
 #include "Core.h"
 
-// Constants
-#include "Constants.h"
-
 MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation

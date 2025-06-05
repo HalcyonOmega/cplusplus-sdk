@@ -5,9 +5,11 @@
 #include <optional>
 #include <string>
 
-#include "../Auth/Auth.hpp"
-#include "../Core/Types/General.hpp"
-#include "../Core/Types/Request.hpp"
+#include "Auth/Types/Auth.hpp"
+#include "Core.h"
+#include "Types/Error.h"
+#include "Types/General.h"
+#include "Types/Request.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -38,7 +40,7 @@ class Transport {
 
     // Sends a JSON-RPC message (request or response). If present, `relatedRequestID` is used to
     // indicate to the transport which incoming request to associate this outgoing message with.
-    virtual future<void> Send(const JSON_RPC_Message& Message,
+    virtual future<void> Send(const JSONRPCMessage& Message,
                               const optional<TransportSendOptions>& Options = nullopt) = 0;
 
     // Closes the connection.
@@ -57,7 +59,7 @@ class Transport {
 
     // Callback for when a message (request or response) is received over the connection. Includes
     // the authInfo if the transport is authenticated.
-    optional<function<void(const JSON_RPC_Message&, const optional<AuthInfo>&)>> OnMessage;
+    optional<function<void(const JSONRPCMessage&, const optional<AuthInfo>&)>> OnMessage;
 
     // The session ID generated for this connection.
     optional<string> SessionID;
