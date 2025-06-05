@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -53,18 +53,14 @@ class URLHelper {
         // Handle absolute paths
         if (Path.starts_with("/")) {
             string BaseURL = Base.Protocol + "//" + Base.Hostname;
-            if (!Base.Port.empty()) {
-                BaseURL += ":" + Base.Port;
-            }
+            if (!Base.Port.empty()) { BaseURL += ":" + Base.Port; }
             ParseURL(BaseURL + Path);
             return;
         }
 
         // Handle relative paths
         string BaseURL = Base.Protocol + "//" + Base.Hostname;
-        if (!Base.Port.empty()) {
-            BaseURL += ":" + Base.Port;
-        }
+        if (!Base.Port.empty()) { BaseURL += ":" + Base.Port; }
 
         string BasePath = Base.Pathname;
         if (!BasePath.ends_with("/")) {
@@ -86,9 +82,7 @@ class URLHelper {
 
         // Parse protocol
         size_t ProtocolEnd = URLString.find("://");
-        if (ProtocolEnd == string::npos) {
-            throw runtime_error("Invalid URL: missing protocol");
-        }
+        if (ProtocolEnd == string::npos) { throw runtime_error("Invalid URL: missing protocol"); }
 
         Protocol = URLString.substr(0, ProtocolEnd + 1);
         string Remaining = URLString.substr(ProtocolEnd + 3);
@@ -151,9 +145,7 @@ class URLHelper {
         }
 
         // Ensure pathname starts with /
-        if (Pathname.empty()) {
-            Pathname = "/";
-        }
+        if (Pathname.empty()) { Pathname = "/"; }
     }
 };
 
@@ -250,9 +242,7 @@ bool HasTokenRevocationSupport(const shared_ptr<OAuthServerProvider>& Provider) 
         auto Status = Future.wait_for(std::chrono::milliseconds(1));
         return Status
                != std::future_status::ready; // If it's not immediately ready, it's doing real work
-    } catch (...) {
-        return false;
-    }
+    } catch (...) { return false; }
 }
 
 OAuthMetadata CreateOAuthMetadata(const CreateOAuthMetadataOptions& Options) {
@@ -328,9 +318,7 @@ class ExpressRouter {
             // Route to specific handler
             string Path = Request.value("path", "");
             auto It = Routes.find(Path);
-            if (It != Routes.end()) {
-                It->second(Request, Response);
-            }
+            if (It != Routes.end()) { It->second(Request, Response); }
         };
     }
 };

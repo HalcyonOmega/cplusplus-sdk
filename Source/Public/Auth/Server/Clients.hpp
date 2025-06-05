@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Auth/Types/Auth.h"
+#include "Core.h"
 
 // TODO: Fix External Ref: OAuthClientInformationFull from "../../shared/auth.js"
 
@@ -9,14 +10,14 @@ MCP_NAMESPACE_BEGIN
 /**
  * Stores information about registered OAuth clients for this server.
  */
+// TODO: Consider making a class since it has logic
 struct OAuthRegisteredClientsStore {
     virtual ~OAuthRegisteredClientsStore() = default;
 
     /**
      * Returns information about a registered client, based on its ID.
      */
-    virtual future<optional<Auth::OAuthClientInformationFull>>
-    GetClient(const string& ClientID) = 0;
+    virtual future<optional<OAuthClientInformationFull>> GetClient(const string& ClientID) = 0;
 
     /**
      * Registers a new client with the server. The client ID and secret will be automatically
@@ -30,8 +31,8 @@ struct OAuthRegisteredClientsStore {
      *
      * If unimplemented, dynamic client registration is unsupported.
      */
-    virtual future<optional<Auth::OAuthClientInformationFull>>
-    RegisterClient(const Auth::OAuthClientInformationFull& Client) {
+    virtual future<optional<OAuthClientInformationFull>>
+    RegisterClient(const OAuthClientInformationFull& Client) {
         return async(launch::deferred, []() {
             return nullopt;
         }); // Default implementation - dynamic client registration is unsupported

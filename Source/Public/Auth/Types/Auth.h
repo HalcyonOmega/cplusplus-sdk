@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -139,4 +139,5 @@ struct AuthInfo {
      */
     optional<unordered_map<string, any>> extra;
 };
-}
+
+MCP_NAMESPACE_END

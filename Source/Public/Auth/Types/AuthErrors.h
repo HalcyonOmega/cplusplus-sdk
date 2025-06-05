@@ -1,6 +1,4 @@
-#pragma once
-
-#include "../Core/Common.hpp"
+#include "Auth/Types/Auth.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -9,7 +7,7 @@ MCP_NAMESPACE_BEGIN
 /**
  * Base class for all OAuth errors
  */
-class OAuthError : public Error {
+class OAuthError : public exception {
   private:
     string errorCode_;
     string message_;
@@ -37,14 +35,12 @@ class OAuthError : public Error {
     /**
      * Converts the error to a standard OAuth error response object
      */
-    Auth::OAuthErrorResponse ToResponseObject() const {
-        Auth::OAuthErrorResponse response;
+    OAuthErrorResponse ToResponseObject() const {
+        OAuthErrorResponse response;
         response.Error = errorCode_;
         response.ErrorDescription = message_;
 
-        if (errorURI_.has_value()) {
-            response.ErrorURI = errorURI_.value();
-        }
+        if (errorURI_.has_value()) { response.ErrorURI = errorURI_.value(); }
 
         return response;
     }

@@ -3,8 +3,9 @@
 #include "../../Auth.hpp"
 #include "../AuthErrors.hpp"
 #include "../Clients.hpp"
-#include "../Core/Common.hpp"
 #include "../Provider.hpp"
+#include "Core.h"
+
 
 MCP_NAMESPACE_BEGIN
 
@@ -140,14 +141,11 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
                                             {"code_challenge_method", "S256"}};
 
         // Add optional standard OAuth parameters
-        if (Params.State.has_value()) {
-            SearchParams["state"] = Params.State.value();
-        }
+        if (Params.State.has_value()) { SearchParams["state"] = Params.State.value(); }
         if (!Params.Scopes.empty()) {
             string ScopeStr;
             for (size_t I = 0; I < Params.Scopes.size(); ++I) {
-                if (I > 0)
-                    ScopeStr += " ";
+                if (I > 0) ScopeStr += " ";
                 ScopeStr += Params.Scopes[I];
             }
             SearchParams["scope"] = ScopeStr;
@@ -180,13 +178,9 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
             Params["client_secret"] = Client.Information.ClientSecret.value();
         }
 
-        if (CodeVerifier.has_value()) {
-            Params["code_verifier"] = CodeVerifier.value();
-        }
+        if (CodeVerifier.has_value()) { Params["code_verifier"] = CodeVerifier.value(); }
 
-        if (RedirectUri.has_value()) {
-            Params["redirect_uri"] = RedirectUri.value();
-        }
+        if (RedirectUri.has_value()) { Params["redirect_uri"] = RedirectUri.value(); }
 
         string Body = BuildFormEncodedBody(Params);
 
@@ -215,8 +209,7 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         if (Scopes.has_value() && !Scopes.value().empty()) {
             string ScopeStr;
             for (size_t I = 0; I < Scopes.value().size(); ++I) {
-                if (I > 0)
-                    ScopeStr += " ";
+                if (I > 0) ScopeStr += " ";
                 ScopeStr += Scopes.value()[I];
             }
             Params["scope"] = ScopeStr;
@@ -257,8 +250,7 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         string Body;
         bool First = true;
         for (const auto& [Key, Value] : Params) {
-            if (!First)
-                Body += "&";
+            if (!First) Body += "&";
             Body += URLEncode(Key) + "=" + URLEncode(Value);
             First = false;
         }
@@ -300,12 +292,8 @@ class ProxyOAuthServerProvider : public Auth::OAuthServerProvider {
         Result.AccessToken = Data.at("access_token").get<string>();
         Result.TokenType = Data.at("token_type").get<string>();
 
-        if (Data.contains("expires_in")) {
-            Result.ExpiresIn = Data.at("expires_in").get<int>();
-        }
-        if (Data.contains("scope")) {
-            Result.Scope = Data.at("scope").get<string>();
-        }
+        if (Data.contains("expires_in")) { Result.ExpiresIn = Data.at("expires_in").get<int>(); }
+        if (Data.contains("scope")) { Result.Scope = Data.at("scope").get<string>(); }
         if (Data.contains("refresh_token")) {
             Result.RefreshToken = Data.at("refresh_token").get<string>();
         }
