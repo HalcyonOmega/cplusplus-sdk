@@ -56,13 +56,13 @@ using ListResourcesCallback =
  * Callback to read a resource at a given URI.
  */
 using ReadResourceCallback = function<ReadResourceResult(
-    const string& uri, const RequestHandlerExtra<ServerRequest, ServerNotification>&)>;
+    const string& InURI, const RequestHandlerExtra<ServerRequest, ServerNotification>&)>;
 
 /**
  * Callback to read a resource at a given URI, following a filled-in URI template.
  */
 using ReadResourceTemplateCallback =
-    function<ReadResourceResult(const string& uri, const unordered_map<string, string>& variables,
+    function<ReadResourceResult(const string& InURI, const unordered_map<string, string>& InVariables,
                                 const RequestHandlerExtra<ServerRequest, ServerNotification>&)>;
 
 /**
@@ -71,17 +71,17 @@ using ReadResourceTemplateCallback =
  */
 class ResourceTemplate {
   private:
-    string URI_Template_;
-    optional<ListResourcesCallback> ListCallback_;
-    unordered_map<string, CompleteResourceTemplateCallback> CompleteCallbacks_;
+    string m_URI_Template;
+    optional<ListResourcesCallback> m_ListCallback;
+    unordered_map<string, CompleteResourceTemplateCallback> m_CompleteCallbacks;
 
   public:
-    ResourceTemplate(const string& uriTemplate, const optional<ListResourcesCallback>& listCallback,
+    ResourceTemplate(const string& InURI_Template, const optional<ListResourcesCallback>& InListCallback,
                      const optional<unordered_map<string, CompleteResourceTemplateCallback>>&
-                         completeCallbacks = nullopt)
-        : URI_Template_(uriTemplate), ListCallback_(listCallback) {
-        if (completeCallbacks) {
-            CompleteCallbacks_ = *completeCallbacks;
+                         InCompleteCallbacks = nullopt)
+        : m_URI_Template(InURI_Template), m_ListCallback(InListCallback) {
+        if (InCompleteCallbacks) {
+            m_CompleteCallbacks = *InCompleteCallbacks;
         }
     }
 
@@ -89,22 +89,22 @@ class ResourceTemplate {
      * Gets the URI template pattern.
      */
     const string& GetURI_Template() const {
-        return URI_Template_;
+        return m_URI_Template;
     }
 
     /**
      * Gets the list callback, if one was provided.
      */
     const optional<ListResourcesCallback>& GetListCallback() const {
-        return ListCallback_;
+        return m_ListCallback;
     }
 
     /**
      * Gets the callback for completing a specific URI template variable, if one was provided.
      */
-    optional<CompleteResourceTemplateCallback> GetCompleteCallback(const string& variable) const {
-        auto it = CompleteCallbacks_.find(variable);
-        return it != CompleteCallbacks_.end()
+    optional<CompleteResourceTemplateCallback> GetCompleteCallback(const string& InVariable) const {
+        auto it = m_CompleteCallbacks.find(InVariable);
+        return it != m_CompleteCallbacks.end()
                    ? optional<CompleteResourceTemplateCallback>(it->second)
                    : nullopt;
     }
@@ -112,32 +112,32 @@ class ResourceTemplate {
     /**
      * Matches a URI against this template and returns variables if successful.
      */
-    optional<unordered_map<string, string>> Match(const string& uri) const {
-        URI_Template uriTemplate(URI_Template_);
-        auto variables = uriTemplate.Match(uri);
+    optional<unordered_map<string, string>> Match(const string& InURI) const {
+        URI_Template URI_Template(m_URI_Template);
+        auto Variables = URI_Template.Match(InURI);
 
-        if (variables.empty()) {
+        if (Variables.empty()) {
             return nullopt;
         }
 
         // Convert Variables type to unordered_map<string, string>
-        unordered_map<string, string> result;
-        for (const auto& [key, value] : variables) {
-            if (std::holds_alternative<string>(value)) {
-                result[key] = std::get<string>(value);
-            } else if (std::holds_alternative<vector<string>>(value)) {
+        unordered_map<string, string> Result;
+        for (const auto& [Key, Value] : Variables) {
+            if (std::holds_alternative<string>(Value)) {
+                Result[Key] = std::get<string>(Value);
+            } else if (std::holds_alternative<vector<string>>(Value)) {
                 // Join vector values with comma for compatibility
-                const auto& values = std::get<vector<string>>(value);
-                string joined;
-                for (size_t i = 0; i < values.size(); ++i) {
+                const auto& Values = std::get<vector<string>>(Value);
+                string Joined;
+                for (size_t i = 0; i < Values.size(); ++i) {
                     if (i > 0)
-                        joined += ",";
-                    joined += values[i];
+                        Joined += ",";
+                    Joined += Values[i];
                 }
-                result[key] = joined;
+                Result[Key] = Joined;
             }
         }
-        return result;
+        return Result;
     }
 };
 

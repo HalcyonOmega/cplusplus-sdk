@@ -12,11 +12,11 @@ class MCP_Error {
   public:
     /**
      * Creates a new MCP_Error.
-     * @param code The error code
-     * @param message A short description of the error
-     * @param data Optional additional error data
+     * @param InCode The error code
+     * @param InMessage A short description of the error
+     * @param InData Optional additional error data
      */
-    MCP_Error(int code, const string& message, const optional<JSON>& data = nullopt);
+    MCP_Error(int InCode, const string& InMessage, const optional<JSON>& InData = nullopt);
 
     /**
      * Gets the error code.
@@ -44,15 +44,15 @@ class MCP_Error {
 
     /**
      * Creates an MCP_Error from a JSON object.
-     * @param json The JSON object to parse
+     * @param InJSON The JSON object to parse
      * @return MCP_Error object
      */
-    static MCP_Error FromJSON(const JSON& json);
+    static MCP_Error FromJSON(const JSON& InJSON);
 
   private:
-    int Code;
-    string Message;
-    optional<JSON> Data;
+    int m_Code;
+    string m_Message;
+    optional<JSON> m_Data;
 };
 
 MCP_NAMESPACE_END

@@ -1,5 +1,73 @@
+/* Begin Direct Translation JSON RPC Types */
 #pragma once
 
+#include "Constants.h"
+#include "Core.h"
+#include "Core/Types/Notification.hpp"
+
+MCP_NAMESPACE_BEGIN
+
+// A notification which does not expect a response.
+struct JSON_RPC_Notification : public Notification {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+};
+
+bool IsJSON_RPC_Notification(const JSON& value) {
+    return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == MSG_KEY_JSON_RPC_VERSION
+           && value.contains(MSG_KEY_METHOD) && !value.contains(MSG_KEY_ID);
+}
+
+// A response to a request that indicates an error occurred.
+struct JSON_RPC_Error {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+    RequestID ID;
+    struct {
+        ErrorCode Code; // The error type that occurred.
+        string Message; // A short description of the error. The message SHOULD be limited to a
+                        // concise single sentence.
+        optional<std::any>
+            Data; // Additional information about the error. The value of this member is defined by
+                  // the sender (e.g. detailed error information, nested errors etc.).
+    } Error;
+};
+
+bool IsJSON_RPC_Error(const JSON& value) {
+    return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == MSG_KEY_JSON_RPC_VERSION
+           && value.contains(MSG_KEY_ID) && value.contains(MSG_KEY_ERROR)
+           && !value.contains(MSG_KEY_RESULT);
+}
+
+// A request that expects a response.
+struct JSON_RPC_Request : public Request {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+    RequestID ID;
+};
+bool IsJSON_RPC_Request(const JSON& value) {
+    return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == MSG_KEY_JSON_RPC_VERSION
+           && value.contains(MSG_KEY_ID) && value.contains(MSG_KEY_METHOD)
+           && !value.contains(MSG_KEY_ERROR) && !value.contains(MSG_KEY_RESULT);
+}
+
+// A successful (non-error) response to a request.
+struct JSON_RPC_Response {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+    RequestID ID;
+    Result Result;
+};
+
+bool IsJSON_RPC_Response(const JSON& value) {
+    return value.is_object() && value.value(MSG_KEY_JSON_RPC, "") == MSG_KEY_JSON_RPC_VERSION
+           && value.contains(MSG_KEY_ID) && value.contains(MSG_KEY_RESULT)
+           && !value.contains(MSG_KEY_ERROR);
+}
+
+using JSON_RPC_Message =
+    variant<JSON_RPC_Request, JSON_RPC_Notification, JSON_RPC_Response, JSON_RPC_Error>;
+
+MCP_NAMESPACE_END
+/* End Direct Translation JSON RPC Types */
+
+/* Begin New JSON RPC Layer Types */
 #include "Core.h"
 #include "MCP_Error.h"
 #include "NotificationSchemas.h"
@@ -44,9 +112,9 @@ MCP_NAMESPACE_BEGIN
 /**
  * A request that expects a response.
  */
-struct JSONRPCRequest : public Request {
-    string jsonrpc = MSG_KEY_JSON_RPC_VERSION;
-    RequestId id;
+struct JSON_RPC_Request : public Request {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+    RequestID ID;
 };
 
 // JSONRPCNotification {
@@ -76,8 +144,8 @@ struct JSONRPCRequest : public Request {
 /**
  * A notification which does not expect a response.
  */
-struct JSONRPCNotification : public Notification {
-    string jsonrpc = MSG_KEY_JSON_RPC_VERSION;
+struct JSON_RPC_Notification : public Notification {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
 };
 
 // JSONRPCResponse {
@@ -94,19 +162,19 @@ struct JSONRPCNotification : public Notification {
 /**
  * A successful (non-error) response to a request.
  */
-struct JSONRPCResponse {
-    string jsonrpc = MSG_KEY_JSON_RPC_VERSION;
-    RequestId id;
-    Result result;
+struct JSON_RPC_Response {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+    RequestID ID;
+    Result Result;
 };
 
 /**
  * A response to a request that indicates an error occurred.
  */
-struct JSONRPCError {
-    string jsonrpc = MSG_KEY_JSON_RPC_VERSION;
-    RequestId id;
-    MCP_Error error;
+struct JSON_RPC_Error {
+    string JSON_RPC = MSG_KEY_JSON_RPC_VERSION;
+    RequestID ID;
+    MCP_Error Error;
 };
 
 // JSONRPCBatchRequest {
@@ -125,7 +193,7 @@ struct JSONRPCError {
  * A JSON-RPC batch request, as described in
  * https://www.jsonrpc.org/specification#batch.
  */
-using JSONRPCBatchRequest = vector<variant<JSONRPCRequest, JSONRPCNotification>>;
+using JSON_RPC_BatchRequest = vector<variant<JSON_RPC_Request, JSON_RPC_Notification>>;
 
 // JSONRPCBatchResponse {
 //   "description" : "A JSON-RPC batch response, as described in "
@@ -143,7 +211,7 @@ using JSONRPCBatchRequest = vector<variant<JSONRPCRequest, JSONRPCNotification>>
  * A JSON-RPC batch response, as described in
  * https://www.jsonrpc.org/specification#batch.
  */
-using JSONRPCBatchResponse = vector<variant<JSONRPCResponse, JSONRPCError>>;
+using JSON_RPC_BatchResponse = vector<variant<JSON_RPC_Response, JSON_RPC_Error>>;
 
 // JSONRPCMessage {
 //   "anyOf" : [
@@ -180,7 +248,8 @@ using JSONRPCBatchResponse = vector<variant<JSONRPCResponse, JSONRPCError>>;
  * Refers to any valid JSON-RPC object that can be decoded off the wire, or
  * encoded to be sent.
  */
-using JSONRPCMessage = variant<JSONRPCRequest, JSONRPCNotification, JSONRPCBatchRequest,
-                               JSONRPCResponse, JSONRPCError, JSONRPCBatchResponse>;
+using JSON_RPC_Message = variant<JSON_RPC_Request, JSON_RPC_Notification, JSON_RPC_BatchRequest,
+                               JSON_RPC_Response, JSON_RPC_Error, JSON_RPC_BatchResponse>;
 
 MCP_NAMESPACE_END
+/* End New JSON RPC Layer Types */

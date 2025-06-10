@@ -16,11 +16,11 @@ enum class SessionState { Uninitialized, Initializing, Initialized, ShuttingDown
 
 class Session {
   public:
-    Session(std::shared_ptr<Transport> transport, const ClientCapabilities& clientCaps,
-            const Implementation& clientInfo);
+    Session(std::shared_ptr<Transport> Transport, const ClientCapabilities& ClientCaps,
+            const Implementation& ClientInfo);
     ~Session();
 
-    void Initialize(std::function<void(const std::optional<MCP_Error>&)> callback);
+    void Initialize(std::function<void(const std::optional<MCP_Error>&)> Callback);
     void Shutdown();
 
     SessionState GetState() const;
@@ -31,8 +31,8 @@ class Session {
     const std::optional<std::string>& GetNegotiatedProtocolVersion() const;
 
   private:
-    void HandleTransportMessage(const std::string& message);
-    void ProcessInitializeResult(const InitializeResult& result);
+    void HandleTransportMessage(const std::string& InMessage);
+    void ProcessInitializeResult(const InitializeResult& InResult);
     void SendInitializedNotification();
 
     std::shared_ptr<Transport> m_Transport;

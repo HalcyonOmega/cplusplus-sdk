@@ -9,26 +9,26 @@ MCP_NAMESPACE_BEGIN
 
 class NotificationBase : public MessageBase {
   private:
-    string Method;
+    string m_Method;
 
   public:
-    NotificationBase(const string& method) : Method(method) {}
+    NotificationBase(const string& InMethod) : m_Method(InMethod) {}
 
     const string& GetMethod() const {
-        return Method;
+        return m_Method;
     }
 };
 
 template <typename ParamsType> class Notification : public NotificationBase {
   private:
-    ParamsType Params;
+    ParamsType m_Params;
 
   public:
-    Notification(const std::string& method, const ParamsType& params)
-        : NotificationBase(method), Params(params) {}
+    Notification(const std::string& InMethod, const ParamsType& InParams)
+        : NotificationBase(InMethod), m_Params(InParams) {}
 
     const ParamsType& GetParams() const {
-        return Params;
+        return m_Params;
     }
 };
 

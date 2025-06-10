@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Core/Types/JSON_RPC.hpp"
-#include "../Transport/Transport.hpp"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -15,8 +13,6 @@ struct AuthInfo;
 struct Request;
 struct Notification;
 struct Result;
-struct ClientCapabilities;
-struct ServerCapabilities;
 struct Progress;
 struct RequestMeta;
 
@@ -45,7 +41,7 @@ struct ProtocolOptions {
 /**
  * Options that can be given per request.
  */
-struct RequestOptions : public Transport::TransportSendOptions {
+struct RequestOptions : public TransportSendOptions {
     /**
      * If set, requests progress notifications from the remote end (if supported). When progress
      * notifications are received, this callback will be invoked.
@@ -174,23 +170,23 @@ struct TimeoutInfo {
  */
 template <typename SendRequestT, typename SendNotificationT, typename SendResultT> class Protocol {
   private:
-    shared_ptr<Transport> Transport_;
-    atomic<int64_t> RequestMessageId_{0};
+    shared_ptr<Transport> m_Transport;
+    atomic<int64_t> m_RequestMessageID{0};
 
     unordered_map<string, function<future<SendResultT>(
                               const JSON_RPC_Request&,
                               const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>>
-        RequestHandlers_;
-    unordered_map<RequestID, AbortSignal> RequestHandlerAbortControllers_;
+        m_RequestHandlers;
+    unordered_map<RequestID, AbortSignal> m_RequestHandlerAbortControllers;
     unordered_map<string, function<future<void>(const JSON_RPC_Notification&)>>
-        NotificationHandlers_;
-    unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, McpError>&)>>
-        ResponseHandlers_;
-    unordered_map<int64_t, ProgressCallback> ProgressHandlers_;
-    unordered_map<int64_t, TimeoutInfo> TimeoutInfo_;
+        m_NotificationHandlers;
+    unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, MCP_Error>&)>>
+        m_ResponseHandlers;
+    unordered_map<int64_t, ProgressCallback> m_ProgressHandlers;
+    unordered_map<int64_t, TimeoutInfo> m_TimeoutInfo;
 
-    mutex HandlersMutex_;
-    optional<ProtocolOptions> Options_;
+    mutex m_HandlersMutex;
+    optional<ProtocolOptions> m_Options;
 
   public:
     /**
@@ -218,360 +214,359 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      */
     function<future<void>(const Notification&)> FallbackNotificationHandler;
 
-    explicit Protocol(const optional<ProtocolOptions>& options = nullopt) : Options_(options) {
+    explicit Protocol(const optional<ProtocolOptions>& InOptions = nullopt) : m_Options(InOptions) {
         // Set up default handlers for cancelled notifications and progress notifications
         SetNotificationHandler(
             MTHD_NOTIFICATION_CANCELLED,
-            [this](const JSON_RPC_Notification& notification) -> future<void> {
+            [this](const JSON_RPC_Notification& InNotification) -> future<void> {
                 // Extract RequestID and reason from notification params
-                if (notification.params && notification.params->contains(MSG_KEY_REQUEST_ID)) {
-                    RequestID requestId = (*notification.params)[MSG_KEY_REQUEST_ID];
+                if (InNotification.Params && InNotification.Params->contains(MSG_KEY_REQUEST_ID)) {
+                    RequestID RequestID = (*InNotification.Params)[MSG_KEY_REQUEST_ID];
 
-                    lock_guard<mutex> lock(HandlersMutex_);
-                    auto it = RequestHandlerAbortControllers_.find(requestId);
-                    if (it != RequestHandlerAbortControllers_.end()) {
+                    lock_guard<mutex> lock(m_HandlersMutex);
+                    auto it = m_RequestHandlerAbortControllers.find(RequestID);
+                    if (it != m_RequestHandlerAbortControllers.end()) {
                         // TODO: Fix External Ref: AbortSignal - Signal abort with reason
-                        string reason = notification.params->value("reason", "Request cancelled");
+                        string Reason = InNotification.Params->value("reason", "Request cancelled");
                         // it->second.abort(reason);
                     }
                 }
-                promise<void> p;
-                p.set_value();
-                return p.get_future();
+                promise<void> Promise;
+                Promise.set_value();
+                return Promise.get_future();
             });
 
         SetNotificationHandler(MTHD_NOTIFICATION_PROGRESS,
-                               [this](const JSON_RPC_Notification& notification) -> future<void> {
-                                   OnProgress(notification);
-                                   promise<void> p;
-                                   p.set_value();
-                                   return p.get_future();
+                               [this](const JSON_RPC_Notification& InNotification) -> future<void> {
+                                   OnProgress(InNotification);
+                                   promise<void> Promise;
+                                   Promise.set_value();
+                                   return Promise.get_future();
                                });
 
         // Automatic pong by default for ping requests
         SetRequestHandler(MTHD_PING,
-                          [](const JSON_RPC_Request& request,
-                             const RequestHandlerExtra<SendRequestT, SendNotificationT>& extra)
+                          [](const JSON_RPC_Request& InRequest,
+                             const RequestHandlerExtra<SendRequestT, SendNotificationT>& InExtra)
                               -> future<SendResultT> {
                               // Return empty object as ping response
-                              promise<SendResultT> p;
-                              p.set_value(SendResultT{});
-                              return p.get_future();
+                              promise<SendResultT> Promise;
+                              Promise.set_value(SendResultT{});
+                              return Promise.get_future();
                           });
     }
 
   private:
-    void OnProgress(const JSON_RPC_Notification& notification) {
-        if (!notification.params || !notification.params->contains(MSG_KEY_PROGRESS_TOKEN)) {
+    void OnProgress(const JSON_RPC_Notification& InNotification) {
+        if (!InNotification.Params || !InNotification.Params->contains(MSG_KEY_PROGRESS_TOKEN)) {
             OnErrorInternal(runtime_error("Received a progress notification without progressToken: "
-                                          + notification.method));
+                                          + InNotification.Method));
             return;
         }
 
-        int64_t progressToken = (*notification.params)[MSG_KEY_PROGRESS_TOKEN];
+        int64_t ProgressToken = (*InNotification.Params)[MSG_KEY_PROGRESS_TOKEN];
 
-        ProgressCallback handler;
+        ProgressCallback Handler;
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            auto it = ProgressHandlers_.find(progressToken);
-            if (it != ProgressHandlers_.end()) { handler = it->second; }
+            lock_guard<mutex> lock(m_HandlersMutex);
+            auto it = m_ProgressHandlers.find(ProgressToken);
+            if (it != m_ProgressHandlers.end()) { Handler = it->second; }
         }
 
-        if (!handler) {
+        if (!Handler) {
             OnErrorInternal(runtime_error("Received a progress notification for an unknown token: "
-                                          + to_string(progressToken)));
+                                          + to_string(ProgressToken)));
             return;
         }
 
-        auto responseHandler = ResponseHandlers_.find(progressToken);
-        auto timeoutIt = TimeoutInfo_.find(progressToken);
+        auto ResponseHandler = m_ResponseHandlers.find(ProgressToken);
+        auto TimeoutIt = m_TimeoutInfo.find(ProgressToken);
 
-        if (timeoutIt != TimeoutInfo_.end() && responseHandler != ResponseHandlers_.end()
-            && timeoutIt->second.ResetTimeoutOnProgress) {
+        if (TimeoutIt != m_TimeoutInfo.end() && ResponseHandler != m_ResponseHandlers.end()
+            && TimeoutIt->second.ResetTimeoutOnProgress) {
             try {
-                ResetTimeout(progressToken);
-            } catch (const McpError& error) {
-                responseHandler->second(error);
+                ResetTimeout(ProgressToken);
+            } catch (const MCP_Error& InError) {
+                ResponseHandler->second(InError);
                 return;
             }
         }
 
         // Extract the params excluding progressToken (equivalent to TypeScript destructuring)
-        Progress progressData;
-        progressData.progressToken = progressToken;
+        Progress ProgressData;
+        ProgressData.ProgressToken = ProgressToken;
 
         // Extract the params excluding progressToken (equivalent to TypeScript destructuring)
-        if (notification.params->contains(MSG_KEY_DATA)) {
-            progressData.data = (*notification.params)[MSG_KEY_DATA];
+        if (InNotification.Params->contains(MSG_KEY_DATA)) {
+            ProgressData.Data = (*InNotification.Params)[MSG_KEY_DATA];
         }
 
-        handler(progressData);
+        Handler(ProgressData);
     }
 
-    void SetupTimeout(int64_t messageId, int64_t timeout, const optional<int64_t>& maxTotalTimeout,
-                      function<void()> onTimeout, bool resetTimeoutOnProgress = false) {
-        TimeoutInfo info{.TimeoutId = static_cast<uint64_t>(messageId),
+    void SetupTimeout(int64_t InMessageID, int64_t InTimeout,
+                      const optional<int64_t>& InMaxTotalTimeout, function<void()> InOnTimeout,
+                      bool InResetTimeoutOnProgress = false) {
+        TimeoutInfo Info{.TimeoutID = static_cast<uint64_t>(InMessageID),
                          .StartTime = chrono::steady_clock::now(),
-                         .Timeout = timeout,
-                         .MaxTotalTimeout = maxTotalTimeout,
-                         .ResetTimeoutOnProgress = resetTimeoutOnProgress,
-                         .OnTimeout = move(onTimeout)};
+                         .Timeout = InTimeout,
+                         .MaxTotalTimeout = InMaxTotalTimeout,
+                         .ResetTimeoutOnProgress = InResetTimeoutOnProgress,
+                         .OnTimeout = move(InOnTimeout)};
 
-        lock_guard<mutex> lock(HandlersMutex_);
-        TimeoutInfo_[messageId] = move(info);
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        m_TimeoutInfo[InMessageID] = move(Info);
 
         // TODO: Fix External Ref: Timer/Timeout mechanism - Set up actual timer that calls
         // onTimeout after timeout milliseconds
     }
 
-    bool ResetTimeout(int64_t messageId) {
-        lock_guard<mutex> lock(HandlersMutex_);
-        auto it = TimeoutInfo_.find(messageId);
-        if (it == TimeoutInfo_.end()) return false;
+    bool ResetTimeout(int64_t InMessageID) {
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        auto It = m_TimeoutInfo.find(InMessageID);
+        if (It == m_TimeoutInfo.end()) return false;
 
-        auto& info = it->second;
-        auto totalElapsed = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()
-                                                                        - info.StartTime)
+        auto& Info = It->second;
+        auto TotalElapsed = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()
+                                                                        - Info.StartTime)
                                 .count();
 
-        if (info.MaxTotalTimeout && totalElapsed >= *info.MaxTotalTimeout) {
-            TimeoutInfo_.erase(it);
-            throw McpError(
+        if (Info.MaxTotalTimeout && TotalElapsed >= *Info.MaxTotalTimeout) {
+            m_TimeoutInfo.erase(It);
+            throw MCP_Error(
                 ErrorCode::RequestTimeout, "Maximum total timeout exceeded",
-                JSON{{"maxTotalTimeout", *info.MaxTotalTimeout}, {"totalElapsed", totalElapsed}});
+                JSON{{"maxTotalTimeout", *Info.MaxTotalTimeout}, {"totalElapsed", TotalElapsed}});
         }
 
         // TODO: Fix External Ref: Timer/Timeout mechanism - Reset actual timer
         return true;
     }
 
-    void CleanupTimeout(int64_t messageId) {
-        lock_guard<mutex> lock(HandlersMutex_);
-        auto it = TimeoutInfo_.find(messageId);
-        if (it != TimeoutInfo_.end()) {
+    void CleanupTimeout(int64_t InMessageID) {
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        auto It = m_TimeoutInfo.find(InMessageID);
+        if (It != m_TimeoutInfo.end()) {
             // TODO: Fix External Ref: Timer/Timeout mechanism - Cancel actual timer
-            TimeoutInfo_.erase(it);
+            m_TimeoutInfo.erase(It);
         }
     }
 
     void OnCloseInternal() {
-        unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, McpError>&)>>
-            responseHandlers;
+        unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, MCP_Error>&)>>
+            ResponseHandlers;
 
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            responseHandlers = move(ResponseHandlers_);
-            ResponseHandlers_.clear();
-            ProgressHandlers_.clear();
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            ResponseHandlers = move(m_ResponseHandlers);
+            m_ResponseHandlers.clear();
+            m_ProgressHandlers.clear();
         }
 
-        Transport_.reset();
+        m_Transport.reset();
 
-        if (OnClose) { OnClose(); }
+        if (m_OnClose) { m_OnClose(); }
 
-        McpError error(ErrorCode::ConnectionClosed, "Connection closed");
-        for (const auto& [id, handler] : responseHandlers) { handler(error); }
+        MCP_Error Error(ErrorCode::ConnectionClosed, "Connection closed");
+        for (const auto& [ID, Handler] : ResponseHandlers) { Handler(Error); }
     }
 
-    void OnErrorInternal(const exception& error) {
-        if (OnError) { OnError(error); }
+    void OnErrorInternal(const exception& InError) {
+        if (m_OnError) { m_OnError(InError); }
     }
 
-    void OnNotification(const JSON_RPC_Notification& notification) {
-        function<future<void>(const JSON_RPC_Notification&)> handler;
+    void OnNotification(const JSON_RPC_Notification& InNotification) {
+        function<future<void>(const JSON_RPC_Notification&)> Handler;
 
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            auto it = NotificationHandlers_.find(notification.method);
-            if (it != NotificationHandlers_.end()) { handler = it->second; }
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            auto It = m_NotificationHandlers.find(InNotification.Method);
+            if (It != m_NotificationHandlers.end()) { Handler = It->second; }
         }
 
         if (!handler && FallbackNotificationHandler) {
             // Convert JSON_RPC_Notification to Notification type
-            Notification notif;
-            notif.method = notification.method;
-            notif.params = notification.params;
+            Notification Notification;
+            Notification.Method = InNotification.Method;
+            Notification.Params = InNotification.Params;
 
-            handler = [this, notif](const JSON_RPC_Notification&) -> future<void> {
-                return FallbackNotificationHandler(notif);
+            Handler = [this, Notification](const JSON_RPC_Notification&) -> future<void> {
+                return FallbackNotificationHandler(Notification);
             };
         }
 
         // Ignore notifications not being subscribed to.
-        if (!handler) { return; }
+        if (!Handler) { return; }
 
         // Execute handler asynchronously and catch errors
-        async(launch::async, [this, handler, notification]() {
+        async(launch::async, [this, Handler, InNotification]() {
             try {
-                auto future = handler(notification);
-                future.wait();
-            } catch (const exception& e) {
-                OnErrorInternal(
-                    runtime_error("Uncaught error in notification handler: " + string(e.what())));
+                auto Future = Handler(InNotification);
+                Future.wait();
+            } catch (const exception& InError) {
+                OnErrorInternal(runtime_error("Uncaught error in notification handler: "
+                                              + string(InError.what())));
             }
         });
     }
 
-    void OnRequest(const JSON_RPC_Request& request, const optional<AuthInfo>& authInfo = nullopt) {
+    void OnRequest(const JSON_RPC_Request& InRequest,
+                   const optional<AuthInfo>& InAuthInfo = nullopt) {
         function<future<SendResultT>(const JSON_RPC_Request&,
                                      const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>
-            handler;
+            Handler;
 
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            auto it = RequestHandlers_.find(request.method);
-            if (it != RequestHandlers_.end()) { handler = it->second; }
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            auto It = m_RequestHandlers.find(InRequest.Method);
+            if (It != m_RequestHandlers.end()) { Handler = It->second; }
         }
 
-        if (!handler && FallbackRequestHandler) {
+        if (!Handler && FallbackRequestHandler) {
             // Convert and use fallback handler
-            Request req;
-            req.method = request.method;
-            req.params = request.params;
+            Request Request;
+            Request.Method = InRequest.Method;
+            Request.Params = InRequest.Params;
 
-            handler = [this, req](const JSON_RPC_Request&,
-                                  const RequestHandlerExtra<SendRequestT, SendNotificationT>&)
-                -> future<SendResultT> { return FallbackRequestHandler(req); };
+            Handler = [this, Request](const JSON_RPC_Request&,
+                                      const RequestHandlerExtra<SendRequestT, SendNotificationT>&)
+                -> future<SendResultT> { return FallbackRequestHandler(Request); };
         }
 
-        if (!handler) {
+        if (!Handler) {
             // Send method not found error
-            JSON_RPC_Error errorResponse;
-            errorResponse.jsonrpc = "2.0";
-            errorResponse.id = request.id;
-            errorResponse.error.code = static_cast<int32_t>(ErrorCode::MethodNotFound);
-            errorResponse.error.message = "Method not found";
+            JSON_RPC_Error ErrorResponse;
+            ErrorResponse.JSON_RPC = "2.0";
+            ErrorResponse.ID = InRequest.ID;
+            ErrorResponse.Error.Code = static_cast<int32_t>(ErrorCode::MethodNotFound);
+            ErrorResponse.Error.Message = "Method not found";
 
-            if (Transport_) {
+            if (m_Transport) {
                 // TODO: Fix External Ref: Transport - Send error response via transport
-                // Transport_->Send(errorResponse);
+                // m_Transport->Send(ErrorResponse);
             }
             return;
         }
 
         // TODO: Fix External Ref: AbortSignal - Create proper AbortSignal
-        AbortSignal abortSignal;
+        AbortSignal AbortSignal;
 
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            RequestHandlerAbortControllers_[request.id] = abortSignal;
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            m_RequestHandlerAbortControllers[InRequest.ID] = AbortSignal;
         }
 
-        RequestHandlerExtra<SendRequestT, SendNotificationT> extra;
-        extra.Signal = abortSignal;
-        extra.SessionID = Transport_ ? Transport_->SessionID : nullopt;
-        extra.AuthInfo = authInfo;
-        extra.Meta = (request.params && request.params->contains(MSG_KEY_META))
+        RequestHandlerExtra<SendRequestT, SendNotificationT> Extra;
+        Extra.Signal = AbortSignal;
+        Extra.SessionID = m_Transport ? m_Transport->SessionID : nullopt;
+        Extra.AuthInfo = InAuthInfo;
+        Extra.Meta = (InRequest.Params && InRequest.Params->contains(MSG_KEY_META))
                          ? optional<RequestMeta>{RequestMeta{}} // Basic extraction
                          : nullopt;
-        extra.RequestID = request.id;
+        Extra.RequestID = InRequest.ID;
 
-        extra.SendNotification =
-            [this, requestId = request.id](const SendNotificationT& notification) -> future<void> {
-            return Notification(notification, NotificationOptions{.RelatedRequestID = requestId});
+        Extra.SendNotification = [this, RequestID = InRequest.ID](
+                                     const SendNotificationT& InNotification) -> future<void> {
+            return Notification(InNotification, NotificationOptions{.RelatedRequestID = RequestID});
         };
 
-        extra.SendRequest = [this, requestId = request.id]<typename ResultT, typename SchemaT>(
-                                const SendRequestT& req, const SchemaT& schema,
-                                const optional<RequestOptions>& opts) -> future<ResultT> {
-            RequestOptions options = opts.value_or(RequestOptions{});
-            options.RelatedRequestID = requestId;
-            return Request<ResultT>(req, options);
+        Extra.SendRequest = [this, RequestID = InRequest.ID]<typename ResultT, typename SchemaT>(
+                                const SendRequestT& InRequest, const SchemaT& InSchema,
+                                const optional<RequestOptions>& InOptions) -> future<ResultT> {
+            RequestOptions Options = InOptions.value_or(RequestOptions{});
+            Options.RelatedRequestID = RequestID;
+            return Request<ResultT>(InRequest, Options);
         };
 
         // Execute handler asynchronously
-        async(launch::async, [this, handler, request, extra]() {
+        async(launch::async, [this, Handler, InRequest, Extra]() {
             try {
-                auto resultFuture = handler(request, extra);
-                auto result = resultFuture.get();
+                auto ResultFuture = Handler(InRequest, Extra);
+                auto Result = ResultFuture.get();
 
                 // TODO: Fix External Ref: AbortSignal - Check if request was aborted
-                // if (!extra.Signal.IsAborted()) {
-                if (Transport_) {
-                    JSON_RPC_Response response;
-                    response.jsonrpc = "2.0";
-                    response.id = request.id;
-                    response.result = JSON{}; // Convert SendResultT to JSON
+                if (!Extra.Signal.IsAborted()) {
+                    if (m_Transport) {
+                        JSON_RPC_Response Response;
+                        Response.JSON_RPC = "2.0";
+                        Response.ID = InRequest.ID;
+                        Response.Result = JSON{}; // Convert SendResultT to JSON
 
-                    // TODO: Fix External Ref: Transport - Send response via transport
-                    // Transport_->Send(response);
+                        // TODO: Fix External Ref: Transport - Send response via transport
+                        m_Transport->Send(Response);
+                    }
                 }
-                // }
-            } catch (const exception& e) {
+            } catch (const exception& InError) {
                 // TODO: Fix External Ref: AbortSignal - Check if request was aborted
-                // if (!extra.Signal.IsAborted()) {
-                // Send error response
-                JSON_RPC_Error errorResponse;
-                errorResponse.jsonrpc = "2.0";
-                errorResponse.id = request.id;
-                errorResponse.error.code = static_cast<int32_t>(ErrorCode::InternalError);
-                errorResponse.error.message = e.what();
+                if (!Extra.Signal.IsAborted()) {
+                    // Send error response
+                    JSON_RPC_Error ErrorResponse;
+                    ErrorResponse.JSON_RPC = "2.0";
+                    ErrorResponse.ID = InRequest.ID;
+                    ErrorResponse.Error.Code = static_cast<int32_t>(ErrorCode::InternalError);
+                    ErrorResponse.Error.Message = InError.what();
 
-                if (Transport_) {
-                    // TODO: Fix External Ref: Transport - Send error response via transport
-                    // Transport_->Send(errorResponse);
+                    if (m_Transport) { m_Transport->Send(ErrorResponse); }
                 }
-                // }
             }
 
             // Cleanup
             {
-                lock_guard<mutex> lock(HandlersMutex_);
-                RequestHandlerAbortControllers_.erase(request.id);
+                lock_guard<mutex> Lock(m_HandlersMutex);
+                m_RequestHandlerAbortControllers.erase(InRequest.ID);
             }
         });
     }
 
-    void OnResponse(const variant<JSON_RPC_Response, JSON_RPC_Error>& response) {
-        RequestID responseId;
+    void OnResponse(const variant<JSON_RPC_Response, JSON_RPC_Error>& InResponse) {
+        RequestID ResponseID;
 
-        if (holds_alternative<JSON_RPC_Response>(response)) {
-            responseId = get<JSON_RPC_Response>(response).id;
+        if (holds_alternative<JSON_RPC_Response>(InResponse)) {
+            ResponseID = get<JSON_RPC_Response>(InResponse).ID;
         } else {
-            responseId = get<JSON_RPC_Error>(response).id;
+            ResponseID = get<JSON_RPC_Error>(InResponse).ID;
         }
 
         // Convert RequestID to int64_t for message correlation
-        int64_t messageId = 0;
-        if (holds_alternative<int64_t>(responseId)) {
-            messageId = get<int64_t>(responseId);
-        } else if (holds_alternative<string>(responseId)) {
+        int64_t MessageID = 0;
+        if (holds_alternative<int64_t>(ResponseID)) {
+            MessageID = get<int64_t>(ResponseID);
+        } else if (holds_alternative<string>(ResponseID)) {
             // Handle string IDs by parsing to int
             try {
-                messageId = stoll(get<string>(responseId));
+                MessageID = stoll(get<string>(ResponseID));
             } catch (const exception&) {
                 OnErrorInternal(runtime_error("Cannot correlate response with string ID: "
-                                              + get<string>(responseId)));
+                                              + get<string>(ResponseID)));
                 return;
             }
         }
 
-        function<void(const variant<JSON_RPC_Response, McpError>&)> handler;
+        function<void(const variant<JSON_RPC_Response, McpError>&)> Handler;
 
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            auto it = ResponseHandlers_.find(messageId);
-            if (it != ResponseHandlers_.end()) {
-                handler = it->second;
-                ResponseHandlers_.erase(it);
-                ProgressHandlers_.erase(messageId);
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            auto It = m_ResponseHandlers.find(MessageID);
+            if (It != m_ResponseHandlers.end()) {
+                Handler = It->second;
+                m_ResponseHandlers.erase(It);
+                m_ProgressHandlers.erase(MessageID);
             }
         }
 
-        if (!handler) {
+        if (!Handler) {
             OnErrorInternal(runtime_error("Received a response for an unknown message ID"));
             return;
         }
 
-        CleanupTimeout(messageId);
+        CleanupTimeout(MessageID);
 
-        if (holds_alternative<JSON_RPC_Response>(response)) {
-            handler(get<JSON_RPC_Response>(response));
+        if (holds_alternative<JSON_RPC_Response>(InResponse)) {
+            Handler(get<JSON_RPC_Response>(InResponse));
         } else {
-            const auto& errorResp = get<JSON_RPC_Error>(response);
-            McpError error(static_cast<ErrorCode>(errorResp.error.code), errorResp.error.message,
-                           errorResp.error.data);
-            handler(error);
+            const auto& ErrorResp = get<JSON_RPC_Error>(InResponse);
+            McpError Error(static_cast<ErrorCode>(ErrorResp.Error.Code), ErrorResp.Error.Message,
+                           ErrorResp.Error.Data);
+            Handler(Error);
         }
     }
 
@@ -583,68 +578,71 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      * already been set, and expects that it is the only user of the Transport instance going
      * forward.
      */
-    future<void> Connect(shared_ptr<Transport> transport) {
-        Transport_ = transport;
+    future<void> Connect(shared_ptr<Transport> InTransport) {
+        m_Transport = InTransport;
 
         // Set up transport callbacks
-        Transport_->OnClose = [this]() { OnCloseInternal(); };
-        Transport_->OnError = [this](const exception& e) { OnErrorInternal(e); };
-        Transport_->OnMessage = [this](const JSON& message, const optional<AuthInfo>& extra) {
+        m_Transport->OnClose = [this]() { OnCloseInternal(); };
+        m_Transport->OnError = [this](const exception& InError) { OnErrorInternal(InError); };
+        m_Transport->OnMessage = [this](const JSON& InMessage,
+                                        const optional<AuthInfo>& InAuthInfo) {
             // Parse JSON message and route to appropriate handler
-            if (IsJSONRPCResponse(message) || IsJSONRPCError(message)) {
-                if (IsJSONRPCResponse(message)) {
-                    JSON_RPC_Response response;
-                    response.jsonrpc = message[MSG_KEY_JSON_RPC];
-                    response.id = message[MSG_KEY_ID];
-                    response.result = message[MSG_KEY_RESULT];
+            if (IsJSONRPCResponse(InMessage) || IsJSONRPCError(InMessage)) {
+                if (IsJSONRPCResponse(InMessage)) {
+                    JSON_RPC_Response Response;
+                    Response.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
+                    Response.ID = InMessage[MSG_KEY_ID];
+                    Response.Result = InMessage[MSG_KEY_RESULT];
                     OnResponse(response);
                 } else {
-                    JSON_RPC_Error error;
-                    error.jsonrpc = message[MSG_KEY_JSON_RPC];
-                    error.id = message[MSG_KEY_ID];
-                    error.error.code = message[MSG_KEY_ERROR][MSG_KEY_CODE];
-                    error.error.message = message[MSG_KEY_ERROR][MSG_KEY_MESSAGE];
-                    if (message[MSG_KEY_ERROR].contains(MSG_KEY_DATA)) {
-                        error.error.data = message[MSG_KEY_ERROR][MSG_KEY_DATA];
+                    JSON_RPC_Error ErrorResponse;
+                    ErrorResponse.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
+                    ErrorResponse.ID = InMessage[MSG_KEY_ID];
+                    ErrorResponse.Error.Code = InMessage[MSG_KEY_ERROR][MSG_KEY_CODE];
+                    ErrorResponse.Error.Message = InMessage[MSG_KEY_ERROR][MSG_KEY_MESSAGE];
+                    if (InMessage[MSG_KEY_ERROR].contains(MSG_KEY_DATA)) {
+                        ErrorResponse.Error.Data = InMessage[MSG_KEY_ERROR][MSG_KEY_DATA];
                     }
                     OnResponse(error);
                 }
-            } else if (IsJSONRPCRequest(message)) {
-                JSON_RPC_Request request;
-                request.jsonrpc = message[MSG_KEY_JSON_RPC];
-                request.id = message[MSG_KEY_ID];
-                request.method = message[MSG_KEY_METHOD];
-                if (message.contains(MSG_KEY_PARAMS)) { request.params = message[MSG_KEY_PARAMS]; }
-                OnRequest(request, extra);
-            } else if (IsJSONRPCNotification(message)) {
-                JSON_RPC_Notification notification;
-                notification.jsonrpc = message[MSG_KEY_JSON_RPC];
-                notification.method = message[MSG_KEY_METHOD];
-                if (message.contains(MSG_KEY_PARAMS)) {
-                    notification.params = message[MSG_KEY_PARAMS];
+            } else if (IsJSONRPCRequest(InMessage)) {
+                JSON_RPC_Request Request;
+                Request.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
+                Request.ID = InMessage[MSG_KEY_ID];
+                Request.Method = InMessage[MSG_KEY_METHOD];
+                if (InMessage.contains(MSG_KEY_PARAMS)) {
+                    Request.Params = InMessage[MSG_KEY_PARAMS];
                 }
-                OnNotification(notification);
+                OnRequest(Request, InAuthInfo);
+            } else if (IsJSONRPCNotification(InMessage)) {
+                JSON_RPC_Notification Notification;
+                Notification.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
+                Notification.Method = InMessage[MSG_KEY_METHOD];
+                if (InMessage.contains(MSG_KEY_PARAMS)) {
+                    Notification.Params = InMessage[MSG_KEY_PARAMS];
+                }
+                OnNotification(Notification);
             } else {
-                OnErrorInternal(runtime_error("Unknown message type: " + message.dump()));
+                OnErrorInternal(runtime_error("Unknown message type: " + InMessage.dump()));
             }
         };
 
         // Start transport
-        return Transport_->Start();
+        return m_Transport->Start();
     }
 
     shared_ptr<Transport> GetTransport() const {
-        return Transport_;
+        return m_Transport;
     }
 
     /**
      * Closes the connection.
      */
     future<void> Close() {
-        if (Transport_) { return Transport_->Close(); }
-        promise<void> p;
-        p.set_value();
-        return p.get_future();
+        if (m_Transport) { return m_Transport->Close(); }
+        promise<void> Promise;
+        Promise.set_value();
+        return Promise.get_future();
     }
 
   protected:
@@ -654,7 +652,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      *
      * This should be implemented by subclasses.
      */
-    virtual void AssertCapabilityForMethod(const string& method) = 0;
+    virtual void AssertCapabilityForMethod(const string& InMethod) = 0;
 
     /**
      * A method to check if a notification is supported by the local side, for the given method to
@@ -662,7 +660,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      *
      * This should be implemented by subclasses.
      */
-    virtual void AssertNotificationCapability(const string& method) = 0;
+    virtual void AssertNotificationCapability(const string& InMethod) = 0;
 
     /**
      * A method to check if a request handler is supported by the local side, for the given method
@@ -670,7 +668,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      *
      * This should be implemented by subclasses.
      */
-    virtual void AssertRequestHandlerCapability(const string& method) = 0;
+    virtual void AssertRequestHandlerCapability(const string& InMethod) = 0;
 
   public:
     /**
@@ -679,88 +677,89 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      * Do not use this method to emit notifications! Use Notification() instead.
      */
     template <typename ResultT>
-    future<ResultT> Request(const SendRequestT& request,
-                            const optional<RequestOptions>& options = nullopt) {
-        if (!Transport_) { throw runtime_error("Not connected"); }
+    future<ResultT> Request(const SendRequestT& InRequest,
+                            const optional<RequestOptions>& InOptions = nullopt) {
+        if (!m_Transport) { throw runtime_error("Not connected"); }
 
-        if (Options_ && Options_->EnforceStrictCapabilities.value_or(false)) {
-            AssertCapabilityForMethod(request.method);
+        if (InOptions && InOptions->EnforceStrictCapabilities.value_or(false)) {
+            AssertCapabilityForMethod(InRequest.Method);
         }
 
-        if (options && options->Signal && options->Signal->IsAborted()) {
+        if (InOptions && InOptions->Signal && InOptions->Signal->IsAborted()) {
             throw runtime_error("Request was aborted");
         }
 
-        int64_t messageId = RequestMessageId_++;
+        int64_t MessageID = m_RequestMessageID++;
 
-        JSON_RPC_Request jsonRpcRequest;
-        jsonRpcRequest.jsonrpc = "2.0";
-        jsonRpcRequest.id = messageId;
-        jsonRpcRequest.method = request.method;
-        jsonRpcRequest.params = request.params;
+        JSON_RPC_Request Request;
+        Request.JSON_RPC = "2.0";
+        Request.ID = MessageID;
+        Request.Method = InRequest.Method;
+        Request.Params = InRequest.Params;
 
-        promise<ResultT> resultPromise;
-        auto resultFuture = resultPromise.get_future();
+        promise<ResultT> ResultPromise;
+        auto ResultFuture = ResultPromise.get_future();
 
-        if (options && options->OnProgress) {
-            lock_guard<mutex> lock(HandlersMutex_);
-            ProgressHandlers_[messageId] = *options->OnProgress;
+        if (InOptions && InOptions->OnProgress) {
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            m_ProgressHandlers[MessageID] = *InOptions->OnProgress;
 
-            if (!jsonRpcRequest.params) { jsonRpcRequest.params = JSON::object(); }
-            if (!jsonRpcRequest.params->contains(MSG_KEY_META)) {
-                (*jsonRpcRequest.params)[MSG_KEY_META] = JSON::object();
+            if (!Request.Params) { Request.Params = JSON::object(); }
+            if (!Request.Params->contains(MSG_KEY_META)) {
+                (*Request.Params)[MSG_KEY_META] = JSON::object();
             }
-            (*jsonRpcRequest.params)[MSG_KEY_META][MSG_KEY_PROGRESS_TOKEN] = messageId;
+            (*Request.Params)[MSG_KEY_META][MSG_KEY_PROGRESS_TOKEN] = MessageID;
         }
 
-        auto cancel = [this, messageId](const string& reason) {
+        auto Cancel = [this, MessageID](const string& InReason) {
             {
-                lock_guard<mutex> lock(HandlersMutex_);
-                ResponseHandlers_.erase(messageId);
-                ProgressHandlers_.erase(messageId);
+                lock_guard<mutex> Lock(m_HandlersMutex);
+                m_ResponseHandlers.erase(MessageID);
+                m_ProgressHandlers.erase(MessageID);
             }
-            CleanupTimeout(messageId);
+            CleanupTimeout(MessageID);
 
             // Send cancellation notification
-            if (Transport_) {
-                JSON_RPC_Notification cancelNotification;
-                cancelNotification.jsonrpc = "2.0";
-                cancelNotification.method = MTHD_NOTIFICATION_CANCELLED;
-                cancelNotification.params = JSON::object();
-                (*cancelNotification.params)[MSG_KEY_REQUEST_ID] = messageId;
-                (*cancelNotification.params)["reason"] = reason;
+            if (m_Transport) {
+                JSON_RPC_Notification CancelNotification;
+                CancelNotification.JSON_RPC = "2.0";
+                CancelNotification.Method = MTHD_NOTIFICATION_CANCELLED;
+                CancelNotification.Params = JSON::object();
+                (*CancelNotification.Params)[MSG_KEY_REQUEST_ID] = MessageID;
+                (*CancelNotification.Params)["reason"] = InReason;
 
-                // TODO: Fix External Ref: Transport - Send cancellation notification
-                // Transport_->Send(cancelNotification);
+                m_Transport->Send(CancelNotification);
             }
         };
 
         {
-            lock_guard<mutex> lock(HandlersMutex_);
-            ResponseHandlers_[messageId] =
-                [promise = move(resultPromise), cancel,
-                 options](const variant<JSON_RPC_Response, McpError>& response) mutable {
+            lock_guard<mutex> Lock(m_HandlersMutex);
+            m_ResponseHandlers[MessageID] =
+                [ResultPromise = move(ResultPromise), Cancel,
+                 InOptions](const variant<JSON_RPC_Response, McpError>& InResponse) mutable {
                     // TODO: Fix External Ref: AbortSignal - Check if request was aborted
                     // if (options && options->Signal && options->Signal->IsAborted()) {
                     //     return;
                     // }
 
-                    if (holds_alternative<McpError>(response)) {
-                        promise.set_exception(make_exception_ptr(get<McpError>(response)));
+                    if (holds_alternative<McpError>(InResponse)) {
+                        ResultPromise.set_exception(make_exception_ptr(get<McpError>(InResponse)));
                         return;
                     }
 
                     try {
-                        const auto& jsonResponse = get<JSON_RPC_Response>(response);
+                        const auto& Response = get<JSON_RPC_Response>(InResponse);
                         // Parse response result as ResultT using simple JSON conversion
                         if constexpr (std::is_same_v<ResultT, JSON>) {
-                            promise.set_value(jsonResponse.result);
+                            ResultPromise.set_value(Response.Result);
                         } else {
                             // Simple JSON to type conversion
-                            ResultT result = jsonResponse.result.get<ResultT>();
-                            promise.set_value(result);
+                            ResultT Result = Response.Result.get<ResultT>();
+                            ResultPromise.set_value(Result);
                         }
-                    } catch (const exception& e) { promise.set_exception(current_exception()); }
+                    } catch (const exception& InException) {
+                        ResultPromise.set_exception(current_exception());
+                    }
                 };
         }
 
@@ -769,67 +768,68 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         //     options->Signal->OnAbort([cancel]() { cancel("Request was cancelled"); });
         // }
 
-        int64_t timeout =
-            options && options->Timeout ? *options->Timeout : DEFAULT_REQUEST_TIMEOUT_MSEC;
-        auto timeoutHandler = [cancel]() { cancel("Request timed out"); };
+        int64_t Timeout =
+            InOptions && InOptions->Timeout ? *InOptions->Timeout : DEFAULT_REQUEST_TIMEOUT_MSEC;
+        auto TimeoutHandler = [Cancel]() { Cancel("Request timed out"); };
 
-        SetupTimeout(messageId, timeout, options ? options->MaxTotalTimeout : nullopt,
-                     timeoutHandler,
-                     options ? options->ResetTimeoutOnProgress.value_or(false) : false);
+        SetupTimeout(MessageID, Timeout,
+                     InOptions && InOptions->MaxTotalTimeout ? *InOptions->MaxTotalTimeout
+                                                             : nullopt,
+                     TimeoutHandler,
+                     InOptions && InOptions->ResetTimeoutOnProgress.value_or(false)
+                         ? *InOptions->ResetTimeoutOnProgress
+                         : false);
 
         // Send request via transport
+        // TODO: Relook RequestJSON type
         try {
-            JSON requestJson = {{MSG_KEY_JSON_RPC, jsonRpcRequest.jsonrpc},
-                                {MSG_KEY_ID, jsonRpcRequest.id},
-                                {MSG_KEY_METHOD, jsonRpcRequest.method}};
-            if (jsonRpcRequest.params) { requestJson[MSG_KEY_PARAMS] = *jsonRpcRequest.params; }
+            JSON RequestJSON = {{MSG_KEY_JSON_RPC, Request.JSON_RPC},
+                                {MSG_KEY_ID, Request.ID},
+                                {MSG_KEY_METHOD, Request.Method}};
+            if (Request.Params) { RequestJSON[MSG_KEY_PARAMS] = *Request.Params; }
 
-            Transport::TransportSendOptions transportOptions;
-            if (options) {
-                transportOptions.RelatedRequestID = options->RelatedRequestID;
-                transportOptions.ResumptionToken = options->ResumptionToken;
-                transportOptions.OnResumptionToken = options->OnResumptionToken;
+            Transport::TransportSendOptions TransportOptions;
+            if (InOptions) {
+                TransportOptions.RelatedRequestID = InOptions->RelatedRequestID;
+                TransportOptions.ResumptionToken = InOptions->ResumptionToken;
+                TransportOptions.OnResumptionToken = InOptions->OnResumptionToken;
             }
 
-            // TODO: Fix External Ref: Transport - Send request message
-            // Transport_->Send(requestJson, transportOptions);
-        } catch (const exception& e) {
-            CleanupTimeout(messageId);
+            m_Transport->Send(RequestJSON, TransportOptions);
+        } catch (const exception& InException) {
+            CleanupTimeout(MessageID);
             throw;
         }
 
-        return resultFuture;
+        return ResultFuture;
     }
 
     /**
      * Emits a notification, which is a one-way message that does not expect a response.
      */
-    future<void> Notification(const SendNotificationT& notification,
-                              const optional<NotificationOptions>& options = nullopt) {
-        if (!Transport_) { throw runtime_error("Not connected"); }
+    future<void> Notification(const SendNotificationT& InNotification,
+                              const optional<NotificationOptions>& InOptions = nullopt) {
+        if (!m_Transport) { throw runtime_error("Not connected"); }
 
-        AssertNotificationCapability(notification.method);
+        AssertNotificationCapability(InNotification.Method);
 
-        JSON_RPC_Notification jsonRpcNotification;
-        jsonRpcNotification.jsonrpc = "2.0";
-        jsonRpcNotification.method = notification.method;
-        jsonRpcNotification.params = notification.params;
+        JSON_RPC_Notification Notification;
+        Notification.JSON_RPC = "2.0";
+        Notification.Method = InNotification.Method;
+        Notification.Params = InNotification.Params;
 
-        JSON notificationJson = {{MSG_KEY_JSON_RPC, jsonRpcNotification.jsonrpc},
-                                 {MSG_KEY_METHOD, jsonRpcNotification.method}};
-        if (jsonRpcNotification.params) {
-            notificationJson[MSG_KEY_PARAMS] = *jsonRpcNotification.params;
-        }
+        JSON NotificationJSON = {{MSG_KEY_JSON_RPC, Notification.JSON_RPC},
+                                 {MSG_KEY_METHOD, Notification.Method}};
+        if (Notification.Params) { NotificationJSON[MSG_KEY_PARAMS] = *Notification.Params; }
 
-        Transport::TransportSendOptions transportOptions;
-        if (options) { transportOptions.RelatedRequestID = options->RelatedRequestID; }
+        Transport::TransportSendOptions TransportOptions;
+        if (InOptions) { TransportOptions.RelatedRequestID = InOptions->RelatedRequestID; }
 
-        // TODO: Fix External Ref: Transport - Send notification via transport
-        // return Transport_->Send(notificationJson, transportOptions);
+        m_Transport->Send(NotificationJSON, TransportOptions);
 
-        promise<void> p;
-        p.set_value();
-        return p.get_future();
+        promise<void> Promise;
+        Promise.set_value();
+        return Promise.get_future();
     }
 
     /**
@@ -839,14 +839,14 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      * Note that this will replace any previous request handler for the same method.
      */
     void SetRequestHandler(
-        const string& method,
+        const string& InMethod,
         function<future<SendResultT>(const JSON_RPC_Request&,
                                      const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>
-            handler) {
-        AssertRequestHandlerCapability(method);
+            InHandler) {
+        AssertRequestHandlerCapability(InMethod);
 
-        lock_guard<mutex> lock(HandlersMutex_);
-        RequestHandlers_[method] = move(handler);
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        m_RequestHandlers[InMethod] = move(InHandler);
     }
 
     /**
@@ -855,28 +855,28 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      *
      * Note that this will replace any previous notification handler for the same method.
      */
-    void SetNotificationHandler(const string& method,
-                                function<future<void>(const JSON_RPC_Notification&)> handler) {
-        lock_guard<mutex> lock(HandlersMutex_);
-        NotificationHandlers_[method] = move(handler);
+    void SetNotificationHandler(const string& InMethod,
+                                function<future<void>(const JSON_RPC_Notification&)> InHandler) {
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        m_NotificationHandlers[InMethod] = move(InHandler);
     }
 
     /**
      * Removes the request handler for the given method.
      */
-    void RemoveRequestHandler(const string& method) {
-        lock_guard<mutex> lock(HandlersMutex_);
-        RequestHandlers_.erase(method);
+    void RemoveRequestHandler(const string& InMethod) {
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        m_RequestHandlers.erase(InMethod);
     }
 
     /**
      * Asserts that a request handler has not already been set for the given method, in preparation
      * for a new one being automatically installed.
      */
-    void AssertCanSetRequestHandler(const string& method) {
-        lock_guard<mutex> lock(HandlersMutex_);
-        if (RequestHandlers_.find(method) != RequestHandlers_.end()) {
-            throw runtime_error("A request handler for " + method
+    void AssertCanSetRequestHandler(const string& InMethod) {
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        if (m_RequestHandlers.find(InMethod) != m_RequestHandlers.end()) {
+            throw runtime_error("A request handler for " + InMethod
                                 + " already exists, which would be overridden");
         }
     }
@@ -884,21 +884,21 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     /**
      * Removes the notification handler for the given method.
      */
-    void RemoveNotificationHandler(const string& method) {
-        lock_guard<mutex> lock(HandlersMutex_);
-        NotificationHandlers_.erase(method);
+    void RemoveNotificationHandler(const string& InMethod) {
+        lock_guard<mutex> Lock(m_HandlersMutex);
+        m_NotificationHandlers.erase(InMethod);
     }
 };
 
-template <typename T> T MergeCapabilities(const T& base, const T& additional) {
-    T result = base;
+template <typename T> T MergeCapabilities(const T& InBase, const T& InAdditional) {
+    T Result = InBase;
 
     // Simple capability merging - merge JSON fields
     // This assumes T has a member that can be JSON-merged
     // The exact implementation would depend on the specific capability structure
     // TODO: Fix External Ref: Capabilities - Implement proper capability structure merging
 
-    return result;
+    return Result;
 }
 
 MCP_NAMESPACE_END

@@ -11,24 +11,6 @@ MCP_NAMESPACE_BEGIN
 // Modern C++20 callback types
 using OnClientRetrievedCallback = function<void(shared_ptr<OAuthClientInformationFull>)>;
 using OnMiddlewareCompleteCallback = function<void(bool)>;
-using NextFunction = function<void()>;
-
-// HTTP Request/Response abstraction for middleware pattern
-struct HTTPRequest {
-    JSON Body;
-    shared_ptr<OAuthClientInformationFull> Client = nullptr;
-};
-
-struct HTTPResponse {
-    int StatusCode = 200;
-    JSON Body;
-
-    void SetStatus(int Status);
-    void SetJSON(const JSON& Data);
-};
-
-// Modern C++20 middleware function type
-using RequestHandler = function<future<void>(HTTPRequest&, HTTPResponse&, NextFunction)>;
 
 struct ClientAuthenticationMiddlewareOptions {
     /**
@@ -46,7 +28,7 @@ struct ClientAuthenticatedRequestValidation {
 };
 
 // Main middleware function (matches original TypeScript authenticateClient)
-RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& Options);
+RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& InOptions);
 
 struct AuthenticationTask {
     struct promise_type {
@@ -86,7 +68,7 @@ struct AuthenticationTask {
     }
 };
 
-AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlewareOptions& Options,
-                                               HTTPRequest& Request, HTTPResponse& Response);
+AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlewareOptions& InOptions,
+                                               HTTP_Request& InRequest, HTTP_Response& InResponse);
 
 MCP_NAMESPACE_END

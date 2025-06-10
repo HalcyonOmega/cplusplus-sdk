@@ -2,7 +2,6 @@
 
 #include "Core.h"
 #include "Transport.h"
-#include "httplib.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -14,36 +13,36 @@ class StreamableHTTPTransport : public Transport {
     // Transport interface implementation
     void Start() override;
     void Stop() override;
-    void Send(const std::string& message, const TransportSendOptions& options = {}) override;
-    void SetOnMessage(MessageCallback callback) override;
-    void SetOnError(ErrorCallback callback) override;
-    void SetOnClose(CloseCallback callback) override;
-    void SetOnStart(StartCallback callback) override;
-    void SetOnStop(StopCallback callback) override;
-    void WriteSSEEvent(const std::string& event, const std::string& data) override;
+    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override;
+    void SetOnMessage(MessageCallback InCallback) override;
+    void SetOnError(ErrorCallback InCallback) override;
+    void SetOnClose(CloseCallback InCallback) override;
+    void SetOnStart(StartCallback InCallback) override;
+    void SetOnStop(StopCallback InCallback) override;
+    void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override;
 
     // New method for resumability support
-    bool Resume(const std::string& resumptionToken) override;
+    bool Resume(const std::string& InResumptionToken) override;
 
-    std::optional<std::string> GetSessionId() const;
+    std::optional<std::string> GetSessionID() const;
 
   private:
     void ReadLoop();
-    void ParseSSEData(const std::string& data);
+    void ParseSSEData(const std::string& InData);
 
-    std::string _url;
-    std::string _path;
-    int _port;
-    std::unique_ptr<httplib::Client> _client;
-    std::atomic<bool> _isRunning;
-    std::thread _readThread;
-    std::optional<std::string> _sessionId;
+    std::string m_URL;
+    std::string m_Path;
+    int m_Port;
+    std::unique_ptr<HTTP_Client> m_Client;
+    std::atomic<bool> m_IsRunning;
+    std::thread m_ReadThread;
+    std::optional<std::string> m_SessionID;
 
-    MessageCallback _onMessage;
-    ErrorCallback _onError;
-    CloseCallback _onClose;
-    StartCallback _onStart;
-    StopCallback _onStop;
+    MessageCallback m_OnMessage;
+    ErrorCallback m_OnError;
+    CloseCallback m_OnClose;
+    StartCallback m_OnStart;
+    StopCallback m_OnStop;
 };
 
 MCP_NAMESPACE_END

@@ -35,35 +35,35 @@ struct OAuthServerProvider {
      * - In the error case, the redirect MUST include the `error` query parameter, and MAY include
      * an optional `error_description` query parameter.
      */
-    virtual future<void> Authorize(const OAuthClientInformationFull& Client,
-                                   const AuthorizationParams& Params, HTTP_Response& Response) = 0;
+    virtual future<void> Authorize(const OAuthClientInformationFull& InClient,
+                                   const AuthorizationParams& InParams, HTTP_Response& InResponse) = 0;
 
     /**
      * Returns the `codeChallenge` that was used when the indicated authorization began.
      */
-    virtual future<string> ChallengeForAuthorizationCode(const OAuthClientInformationFull& Client,
-                                                         const string& AuthorizationCode) = 0;
+    virtual future<string> ChallengeForAuthorizationCode(const OAuthClientInformationFull& InClient,
+                                                         const string& InAuthorizationCode) = 0;
 
     /**
      * Exchanges an authorization code for an access token.
      */
     virtual future<OAuthTokens>
-    ExchangeAuthorizationCode(const OAuthClientInformationFull& Client,
-                              const string& AuthorizationCode,
-                              const optional<string>& CodeVerifier = nullopt,
-                              const optional<string>& RedirectURI = nullopt) = 0;
+    ExchangeAuthorizationCode(const OAuthClientInformationFull& InClient,
+                              const string& InAuthorizationCode,
+                              const optional<string>& InCodeVerifier = nullopt,
+                              const optional<string>& InRedirectURI = nullopt) = 0;
 
     /**
      * Exchanges a refresh token for an access token.
      */
     virtual future<OAuthTokens>
-    ExchangeRefreshToken(const OAuthClientInformationFull& Client, const string& RefreshToken,
-                         const optional<vector<string>>& Scopes = nullopt) = 0;
+    ExchangeRefreshToken(const OAuthClientInformationFull& InClient, const string& InRefreshToken,
+                         const optional<vector<string>>& InScopes = nullopt) = 0;
 
     /**
      * Verifies an access token and returns information about it.
      */
-    virtual future<AuthInfo> VerifyAccessToken(const string& Token) = 0;
+    virtual future<AuthInfo> VerifyAccessToken(const string& InToken) = 0;
 
     /**
      * Revokes an access or refresh token. If unimplemented, token revocation is not supported (not
@@ -71,8 +71,8 @@ struct OAuthServerProvider {
      *
      * If the given token is invalid or already revoked, this method should do nothing.
      */
-    virtual future<void> RevokeToken(const OAuthClientInformationFull& Client,
-                                     const OAuthTokenRevocationRequest& Request) {
+    virtual future<void> RevokeToken(const OAuthClientInformationFull& InClient,
+                                     const OAuthTokenRevocationRequest& InRequest) {
         return async(launch::deferred, []() {});
     }
 

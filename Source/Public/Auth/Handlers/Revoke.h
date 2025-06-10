@@ -14,33 +14,27 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: OAuthServerProvider
-// TODO: Fix External Ref: HttpRouter (Express equivalent)
-// TODO: Fix External Ref: HttpRequest/HttpResponse
 // TODO: Fix External Ref: CorsMiddleware
 // TODO: Fix External Ref: RateLimitMiddleware
 // TODO: Fix External Ref: ClientAuthMiddleware
 // TODO: Fix External Ref: OAuthTokenRevocationRequestSchema
-// TODO: Fix External Ref: HttpMethod restrictions
 
 // Configuration for the revocation handler
 struct RevocationHandlerOptions {
-    shared_ptr<OAuthServerProvider> provider;
+    shared_ptr<OAuthServerProvider> Provider;
     // Rate limiting configuration for the token revocation endpoint.
     // Set to nullopt to disable rate limiting for this endpoint.
-    optional<RateLimitOptions> rate_limit;
+    optional<RateLimitOptions> RateLimit;
 };
 
 // OAuth Token Revocation Request validation
 struct OAuthTokenRevocationRequest {
-    string token;
-    optional<string> token_type_hint;
+    string Token;
+    optional<string> TokenTypeHint;
 
-    static bool validate(const JSON& request_body);
-    static OAuthTokenRevocationRequest from_json(const JSON& request_body);
+    static bool Validate(const JSON& InRequestBody);
+    static OAuthTokenRevocationRequest FromJSON(const JSON& InRequestBody);
 };
-
-// Request handler function type
-using RequestHandler = function<void(shared_ptr<HttpRequest>, shared_ptr<HttpResponse>)>;
 
 // Async request handler coroutine
 struct AsyncRequestHandler {
@@ -90,9 +84,9 @@ struct AsyncRequestHandler {
 };
 
 // Main revocation handler function
-RequestHandler revocation_handler(const RevocationHandlerOptions& options);
+RequestHandler RevocationHandler(const RevocationHandlerOptions& InOptions);
 
 // Factory function to create a configured router with middleware
-shared_ptr<HttpRouter> create_revocation_router(const RevocationHandlerOptions& options);
+shared_ptr<HTTP_Router> CreateRevocationRouter(const RevocationHandlerOptions& InOptions);
 
 MCP_NAMESPACE_END

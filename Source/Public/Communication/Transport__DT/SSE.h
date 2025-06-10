@@ -4,52 +4,33 @@
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: Fix External Ref: HTTP Server Response functionality
-// TODO: Fix External Ref: HTTP Request/Response handling
 // TODO: Fix External Ref: Server-Sent Events implementation
 // TODO: Fix External Ref: Raw body parsing
 // TODO: Fix External Ref: Content-Type parsing
 
-// Forward declarations for external dependencies
-struct IncomingMessage {
-    // TODO: Implement HTTP request structure
-    map<string, string> headers;
-    optional<AuthInfo> auth; // Optional auth info
-};
+using IncomingMessage = HTTP_Request;
+using ServerResponse = HTTP_Response;
 
-// TODO: Consider making a class since it has logic
-struct ServerResponse {
-    // TODO: Implement HTTP response structure
-    bool is_ended = false;
-
-    void writeHead(int status_code, const optional<map<string, string>>& headers = nullopt);
-
-    void write(const string& data);
-
-    void end(const optional<string>& data = nullopt);
-
-    void on(const string& event, optional<function<void()>> callback);
-};
 
 // TODO: Fix External Ref: UUID generation
-string generateRandomUUID();
+string GenerateRandomUUID();
 
 // TODO: Fix External Ref: URL parsing and manipulation
 // TODO: Consider making a class since it has logic
 struct URLHelper {
-    static string addSessionParam(const string& endpoint, const string& session_id);
+    static string AddSessionParam(const string& InEndpoint, const string& InSessionID);
 };
 
 // TODO: Fix External Ref: Content-Type parsing
 struct ContentTypeResult {
-    string type;
-    map<string, string> parameters;
+    string Type;
+    map<string, string> Params;
 };
 
-ContentTypeResult parseContentType(const string& content_type_header);
+ContentTypeResult ParseContentType(const string& InContentTypeHeader);
 
 // TODO: Fix External Ref: Raw body parsing
-string getRawBodyEquivalent(IncomingMessage* req, const string& limit, const string& encoding);
+string GetRawBodyEquivalent(IncomingMessage* InRequest, const string& InLimit, const string& InEncoding);
 
 const string MAXIMUM_MESSAGE_SIZE = "4mb";
 
@@ -61,24 +42,24 @@ const string MAXIMUM_MESSAGE_SIZE = "4mb";
  */
 class SSEServerTransport {
   private:
-    optional<ServerResponse*> _sseResponse;
-    string _sessionId;
-    string _endpoint;
-    ServerResponse* res;
+    optional<ServerResponse*> m_SSEResponse;
+    string m_SessionID;
+    string m_Endpoint;
+    ServerResponse* m_Res;
 
   public:
-    optional<function<void()>> onclose;
-    optional<function<void(const Error&)>> onerror;
-    optional<function<void(const JSONRPCMessage&, const optional<map<string, AuthInfo>>& extra)>>
-        onmessage;
+    optional<function<void()>> OnClose;
+    optional<function<void(const Error&)>> OnError;
+    optional<function<void(const JSON_RPC_Message& InMessage, const optional<map<string, AuthInfo>>& InExtra)>>
+        OnMessage;
 
     /**
      * Creates a new SSE server transport, which will direct the client to POST messages to the
      * relative or absolute URL identified by _endpoint.
      */
-    SSEServerTransport(const string& endpoint, ServerResponse* res_param)
-        : _endpoint(endpoint), res(res_param), _sseResponse(nullopt) {
-        _sessionId = generateRandomUUID();
+    SSEServerTransport(const string& InEndpoint, ServerResponse* InResParam)
+        : m_Endpoint(InEndpoint), m_Res(InResParam), m_SSEResponse(nullopt) {
+        m_SessionID = generateRandomUUID();
     }
 
     /**
@@ -86,32 +67,32 @@ class SSEServerTransport {
      *
      * This should be called when a GET request is made to establish the SSE stream.
      */
-    void start();
+    void Start();
 
     /**
      * Handles incoming POST messages.
      *
      * This should be called when a POST request is made to send a message to the server.
      */
-    void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
-                           const optional<JSON>& parsedBody = nullopt);
+    void HandlePostMessage(IncomingMessage* InRequest, ServerResponse* InResponse,
+                           const optional<JSON>& InParsedBody = nullopt);
 
     /**
      * Handle a client message, regardless of how it arrived. This can be used to inform the server
      * of messages that arrive via a means different than HTTP POST.
      */
-    void handleMessage(const JSON& message, const optional<map<string, AuthInfo>>& extra = nullopt);
+    void HandleMessage(const JSON& InMessage, const optional<map<string, AuthInfo>>& InExtra = nullopt);
 
-    void close();
+    void Close();
 
-    void send(const JSONRPCMessage& message);
+    void Send(const JSON_RPC_Message& InMessage);
 
     /**
      * Returns the session ID for this transport.
      *
      * This can be used to route incoming POST requests.
      */
-    string sessionId() const;
+    string GetSessionID() const;
 };
 
 // ##########################################################
@@ -120,33 +101,22 @@ class SSEServerTransport {
 // ##########################################################
 // ##########################################################
 
-// HTTP Response struct (moved up for forward declaration)
-// TODO: Consider making a class since it has logic
-struct HttpResponse {
-    int status;
-    string body;
-    map<string, string> headers;
-    bool ok;
-
-    future<string> text() const;
-};
-
 // URL class placeholder
 // TODO: Fix External Ref: Implement proper URL class
 class URL {
   public:
-    string href;
-    string origin;
+    string Href;
+    string Origin;
 
-    URL(const string& url_string) : href(url_string) {
+    URL(const string& InURLString) : href(InURLString) {
         // TODO: Proper URL parsing
-        origin = url_string; // Simplified
+        Origin = InURLString; // Simplified
     }
 
-    URL(const string& relative, const URL& base) {
+    URL(const string& InRelative, const URL& InBase) {
         // TODO: Proper relative URL resolution
-        href = base.href + "/" + relative;
-        origin = base.origin;
+        Href = InBase.Href + "/" + InRelative;
+        Origin = InBase.Origin;
     }
 };
 
@@ -162,15 +132,15 @@ using RequestInit = map<string, variant<string, HeadersInit, bool>>;
 // ErrorEvent equivalent
 // TODO: Fix External Ref: Implement proper ErrorEvent
 struct ErrorEvent {
-    optional<int> code;
-    string message;
+    optional<int> Code;
+    string Message;
 };
 
-class SseError : public exception {
+class SSEError : public exception {
   public:
-    SseError(optional<int> code, const string& message, const ErrorEvent& event)
-        : code_(code), event_(event) {
-        message_ = "SSE error: " + message;
+    SSEError(optional<int> InCode, const string& InMessage, const ErrorEvent& InEvent)
+        : Code_(InCode), Event_(InEvent) {
+        Message_ = "SSE error: " + InMessage;
     }
 
     const char* what() const noexcept;
@@ -209,7 +179,7 @@ struct SSEClientTransportOptions {
      * UnauthorizedError might also be thrown when sending any message over the SSE transport,
      * indicating that the session has expired, and needs to be re-authed and reconnected.
      */
-    shared_ptr<OAuthClientProvider> authProvider = nullptr;
+    shared_ptr<OAuthClientProvider> AuthProvider = nullptr;
 
     /**
      * Customizes the initial SSE request to the server (the request that begins the stream).
@@ -219,12 +189,12 @@ struct SSEClientTransportOptions {
      * also given. This can be worked around by setting the Authorization header
      * manually.
      */
-    optional<EventSourceInit> eventSourceInit = nullopt;
+    optional<EventSourceInit> EventSourceInit = nullopt;
 
     /**
      * Customizes recurring POST requests to the server.
      */
-    optional<RequestInit> requestInit = nullopt;
+    optional<RequestInit> RequestInit = nullopt;
 };
 
 /**
@@ -233,55 +203,55 @@ struct SSEClientTransportOptions {
  */
 class SSEClientTransport : public Transport {
   public:
-    SSEClientTransport(const URL& url, const optional<SSEClientTransportOptions>& opts)
-        : _eventSource(nullptr), _endpoint(nullopt), _abortController(nullptr), _url(url),
+    SSEClientTransport(const URL& InURL, const optional<SSEClientTransportOptions>& InOpts)
+        : _eventSource(nullptr), _endpoint(nullopt), _abortController(nullptr), _url(InURL),
           _resourceMetadataUrl(nullopt),
-          _eventSourceInit(opts.has_value() ? opts.value().eventSourceInit : nullopt),
-          _requestInit(opts.has_value() ? opts.value().requestInit : nullopt),
-          _authProvider(opts.has_value() ? opts.value().authProvider : nullptr) {}
+          _eventSourceInit(InOpts.has_value() ? InOpts.value().EventSourceInit : nullopt),
+          _requestInit(InOpts.has_value() ? InOpts.value().RequestInit : nullopt),
+          _authProvider(InOpts.has_value() ? InOpts.value().AuthProvider : nullptr) {}
 
     // TODO: Identify proper constructor signature
-    SSEClientTransport(const URL& url, const optional<SSEClientTransportOptions>& opts = nullopt);
+    SSEClientTransport(const URL& InURL, const optional<SSEClientTransportOptions>& InOpts = nullopt);
 
   private:
     // TODO: Fix External Ref: EventSource equivalent
-    void* _eventSource; // Placeholder for EventSource
-    optional<URL> _endpoint;
+    void* m_EventSource; // Placeholder for EventSource
+    optional<URL> m_Endpoint;
     // TODO: Fix External Ref: AbortController equivalent
-    void* _abortController; // Placeholder for AbortController
-    URL _url;
-    optional<URL> _resourceMetadataUrl;
-    optional<EventSourceInit> _eventSourceInit;
-    optional<RequestInit> _requestInit;
-    shared_ptr<OAuthClientProvider> _authProvider;
+    void* m_AbortController; // Placeholder for AbortController
+    URL m_URL;
+    optional<URL> m_ResourceMetadataUrl;
+    optional<EventSourceInit> m_EventSourceInit;
+    optional<RequestInit> m_RequestInit;
+    shared_ptr<OAuthClientProvider> m_AuthProvider;
 
   public:
     // Callback function types (exactly matching TypeScript)
-    function<void()> onclose;
-    function<void(const exception& error)> onerror;
-    function<void(const JSONRPCMessage& message)> onmessage;
+    function<void()> OnClose;
+    function<void(const exception& error)> OnError;
+    function<void(const JSON_RPC_Message& InMessage)> OnMessage;
 
     // Public interface methods (async equivalent using futures for Promise pattern)
-    future<void> start();
-    future<void> finishAuth(const string& authorizationCode);
-    future<void> close();
-    future<void> send(const JSONRPCMessage& message);
+    future<void> Start();
+    future<void> FinishAuth(const string& InAuthorizationCode);
+    future<void> Close();
+    future<void> Send(const JSON_RPC_Message& InMessage);
 
   private:
     // Private methods (exactly matching TypeScript structure)
-    future<void> _authThenStart();
-    future<HeadersInit> _commonHeaders();
-    future<void> _startOrAuth();
+    future<void> m_AuthThenStart();
+    future<HeadersInit> m_CommonHeaders();
+    future<void> m_StartOrAuth();
 
     // TODO: Fix External Ref: Auth function
-    future<AuthResult> auth(shared_ptr<OAuthClientProvider> authProvider,
-                            const map<string, variant<URL, string>>& params);
+    future<AuthResult> Auth(shared_ptr<OAuthClientProvider> InAuthProvider,
+                            const map<string, variant<URL, string>>& InParams);
 
     // TODO: Fix External Ref: extractResourceMetadataUrl function
-    optional<URL> extractResourceMetadataUrl(const HttpResponse& response);
+    optional<URL> ExtractResourceMetadataUrl(const HTTP_Response& InResponse);
 
     // TODO: Fix External Ref: HTTP functionality
-    future<HttpResponse> fetch(const URL& url, const RequestInit& init);
+    future<HTTP_Response> Fetch(const URL& InURL, const RequestInit& InInit);
 };
 
 MCP_NAMESPACE_END

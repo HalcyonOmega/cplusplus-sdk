@@ -9,23 +9,8 @@
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: Fix External Ref: HTTP request/response types
-
-struct IncomingMessage {
-    string method;
-    unordered_map<string, string> headers;
-    string body;
-    optional<AuthInfo> auth;
-};
-
-struct ServerResponse {
-    function<void(int, const unordered_map<string, string>&)> writeHead;
-    function<void(const string&)> end;
-    function<bool(const string&)> write;
-    function<void()> flushHeaders;
-    function<void(function<void()>)> on;
-    bool closed = false;
-};
+using IncomingMessage = HTTP_Request;
+using ServerResponse = HTTP_Response;
 
 const string MAXIMUM_MESSAGE_SIZE = "4mb";
 
@@ -38,15 +23,15 @@ class EventStore {
 
     /**
      * Stores an event for later retrieval
-     * @param StreamID ID of the stream the event belongs to
-     * @param message The JSON-RPC message to store
+     * @param InStreamID ID of the stream the event belongs to
+     * @param InMessage The JSON-RPC message to store
      * @returns The generated event ID for the stored event
      */
-    virtual future<EventID> storeEvent(const StreamID& StreamID, const JSONRPCMessage& message) = 0;
+    virtual future<EventID> StoreEvent(const StreamID& InStreamID, const JSON_RPC_Message& InMessage) = 0;
 
     virtual future<StreamID>
-    replayEventsAfter(const EventID& lastEventID,
-                      function<future<void>(const EventID&, const JSONRPCMessage&)> send) = 0;
+    ReplayEventsAfter(const EventID& InLastEventID,
+                      function<future<void>(const EventID&, const JSON_RPC_Message&)> InSend) = 0;
 };
 
 /**
@@ -69,20 +54,20 @@ struct StreamableHTTPServerTransportOptions {
      * and need to keep track of them.
      * @param SessionID The generated session ID
      */
-    optional<function<void(const string&)>> onsessioninitialized;
+    optional<function<void(const string&)>> OnSessionInitialized;
 
     /**
      * If true, the server will return JSON responses instead of starting an SSE stream.
      * This can be useful for simple request/response scenarios without streaming.
      * Default is false (SSE streams are preferred).
      */
-    bool enableJsonResponse = false;
+    bool EnableJsonResponse = false;
 
     /**
      * Event store for resumability support
      * If provided, resumability will be enabled, allowing clients to reconnect and resume messages
      */
-    shared_ptr<EventStore> eventStore;
+    shared_ptr<EventStore> EventStore;
 };
 
 /**
@@ -117,88 +102,88 @@ struct StreamableHTTPServerTransportOptions {
 class StreamableHTTPServerTransport : public Transport {
   private:
     // when SessionID is not set (nullopt), it means the transport is in stateless mode
-    optional<function<string()>> SessionIDGenerator;
-    bool _started = false;
-    unordered_map<string, shared_ptr<ServerResponse>> _streamMapping;
-    unordered_map<RequestID, string> _requestToStreamMapping;
-    unordered_map<RequestID, JSONRPCMessage> _requestResponseMap;
-    bool _initialized = false;
-    bool _enableJsonResponse = false;
-    string _standaloneSseStreamID = "_GET_stream";
-    shared_ptr<EventStore> _eventStore;
-    optional<function<void(const string&)>> _onsessioninitialized;
+    optional<function<string()>> m_SessionIDGenerator;
+    bool m_Started = false;
+    unordered_map<string, shared_ptr<ServerResponse>> m_StreamMapping;
+    unordered_map<RequestID, string> m_RequestToStreamMapping;
+    unordered_map<RequestID, JSON_RPC_Message> m_RequestResponseMap;
+    bool m_Initialized = false;
+    bool m_EnableJSONResponse = false;
+    string m_StandaloneSSEStreamID = "_GET_stream";
+    shared_ptr<EventStore> m_EventStore;
+    optional<function<void(const string&)>> m_OnSessionInitialized;
 
   public:
     optional<string> SessionID;
 
-    explicit StreamableHTTPServerTransport(const StreamableHTTPServerTransportOptions& options)
-        : SessionIDGenerator(options.SessionIDGenerator),
-          _enableJsonResponse(options.enableJsonResponse), _eventStore(options.eventStore),
-          _onsessioninitialized(options.onsessioninitialized) {}
+    explicit StreamableHTTPServerTransport(const StreamableHTTPServerTransportOptions& InOptions)
+        : m_SessionIDGenerator(InOptions.SessionIDGenerator),
+          m_EnableJSONResponse(InOptions.EnableJSONResponse), m_EventStore(InOptions.EventStore),
+          m_OnSessionInitialized(InOptions.OnSessionInitialized) {}
 
     /**
      * Starts the transport. This is required by the Transport interface but is a no-op
      * for the Streamable HTTP transport as connections are managed per-request.
      */
-    future<void> start() override;
+    future<void> Start() override;
 
     /**
      * Handles an incoming HTTP request, whether GET or POST
      */
-    future<void> handleRequest(const IncomingMessage& req, shared_ptr<ServerResponse> res,
-                               const optional<JSON>& parsedBody = nullopt);
+    future<void> HandleRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse,
+                               const optional<JSON>& InParsedBody = nullopt);
 
   private:
     /**
      * Handles GET requests for SSE stream
      */
-    future<void> handleGetRequest(const IncomingMessage& req, shared_ptr<ServerResponse> res);
+    future<void> HandleGetRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse);
 
     /**
      * Replays events that would have been sent after the specified event ID
      * Only used when resumability is enabled
      */
-    future<void> replayEvents(const string& lastEventID, shared_ptr<ServerResponse> res);
+    future<void> ReplayEvents(const string& InLastEventID, shared_ptr<ServerResponse> InResponse);
 
     /**
      * Writes an event to the SSE stream with proper formatting
      */
-    bool writeSSEEvent(shared_ptr<ServerResponse> res, const JSONRPCMessage& message,
-                       const optional<string>& EventID = nullopt);
+    bool WriteSSEEvent(shared_ptr<ServerResponse> InResponse, const JSON_RPC_Message& InMessage,
+                       const optional<string>& InEventID = nullopt);
 
     /**
      * Handles unsupported requests (PUT, PATCH, etc.)
      */
-    future<void> handleUnsupportedRequest(shared_ptr<ServerResponse> res);
+    future<void> HandleUnsupportedRequest(shared_ptr<ServerResponse> InResponse);
 
     /**
      * Handles POST requests containing JSON-RPC messages
      */
-    future<void> handlePostRequest(const IncomingMessage& req, shared_ptr<ServerResponse> res,
-                                   const optional<JSON>& parsedBody = nullopt);
+    future<void> HandlePostRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse,
+                                   const optional<JSON>& InParsedBody = nullopt);
 
     /**
      * Handles DELETE requests to terminate sessions
      */
-    future<void> handleDeleteRequest(const IncomingMessage& req, shared_ptr<ServerResponse> res);
+    future<void> HandleDeleteRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse);
 
     /**
      * Validates session ID for non-initialization requests
      * Returns true if the session is valid, false otherwise
      */
-    bool validateSession(const IncomingMessage& req, shared_ptr<ServerResponse> res);
+    bool ValidateSession(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse);
 
   public:
-    future<void> close() override;
+    future<void> Close() override;
 
-    future<void> send(const JSONRPCMessage& message,
-                      const optional<RequestID>& relatedRequestID = nullopt) override;
+    future<void> Send(const JSON_RPC_Message& InMessage,
+                      const optional<RequestID>& InRelatedRequestID = nullopt) override;
 
   private:
     /**
      * Generates a UUID-like string for request/stream IDs
      */
-    string generateUUID();
+    string GenerateUUID();
 };
 
 // ##########################################################
@@ -209,10 +194,10 @@ class StreamableHTTPServerTransport : public Transport {
 
 // Default reconnection options for StreamableHTTP connections
 struct StreamableHTTPReconnectionOptions {
-    int maxReconnectionDelay = 30000;    // 30 seconds
-    int initialReconnectionDelay = 1000; // 1 second
-    double reconnectionDelayGrowFactor = 1.5;
-    int maxRetries = 2;
+    int MaxReconnectionDelay = 30000;    // 30 seconds
+    int InitialReconnectionDelay = 1000; // 1 second
+    double ReconnectionDelayGrowFactor = 1.5;
+    int MaxRetries = 2;
 };
 
 const StreamableHTTPReconnectionOptions DEFAULT_STREAMABLE_HTTP_RECONNECTION_OPTIONS = {
@@ -224,33 +209,33 @@ const StreamableHTTPReconnectionOptions DEFAULT_STREAMABLE_HTTP_RECONNECTION_OPT
 
 class StreamableHTTPError : public exception {
   private:
-    optional<int> code_;
-    string message_;
-    string full_message_;
+    optional<int> m_Code;
+    string m_Message;
+    string m_FullMessage;
 
   public:
     const char* what() const noexcept override;
 
-    optional<int> getCode() const;
-    const string& getMessage() const;
+    optional<int> GetCode() const;
+    const string& GetMessage() const;
 };
 
 /**
  * Options for starting or authenticating an SSE connection
  */
 struct StartSSEOptions {
-    optional<string> resumptionToken;
-    function<void(const string&)> onresumptiontoken;
-    optional<string> replayMessageId; // Can be string or number
+    optional<string> ResumptionToken;
+    function<void(const string&)> OnResumptionToken;
+    optional<string> ReplayMessageID; // Can be string or number
 };
 
 /**
  * Configuration options for the `StreamableHTTPClientTransport`.
  */
 struct StreamableHTTPClientTransportOptions {
-    shared_ptr<OAuthClientProvider> authProvider;
-    map<string, string> requestHeaders; // RequestInit equivalent
-    StreamableHTTPReconnectionOptions reconnectionOptions =
+    shared_ptr<OAuthClientProvider> AuthProvider;
+    map<string, string> RequestHeaders; // RequestInit equivalent
+    StreamableHTTPReconnectionOptions ReconnectionOptions =
         DEFAULT_STREAMABLE_HTTP_RECONNECTION_OPTIONS;
     optional<string> SessionID;
 };
@@ -262,64 +247,64 @@ struct StreamableHTTPClientTransportOptions {
  */
 class StreamableHTTPClientTransport {
   private:
-    atomic<bool> abort_requested_;
-    string url_;
-    optional<string> resource_metadata_url_;
-    map<string, string> request_headers_;
-    shared_ptr<OAuthClientProvider> auth_provider_;
-    optional<string> session_id_;
-    StreamableHTTPReconnectionOptions reconnection_options_;
+    atomic<bool> m_AbortRequested;
+    string m_URL;
+    optional<string> m_ResourceMetadataURL;
+    map<string, string> m_RequestHeaders;
+    shared_ptr<OAuthClientProvider> m_AuthProvider;
+    optional<string> m_SessionID;
+    StreamableHTTPReconnectionOptions m_ReconnectionOptions;
 
   public:
-    function<void()> onclose;
-    function<void(const exception&)> onerror;
-    function<void(const JSONRPCMessage&)> onmessage;
+    function<void()> OnClose;
+    function<void(const exception&)> OnError;
+    function<void(const JSON_RPC_Message&)> OnMessage;
 
-    StreamableHTTPClientTransport(const string& url,
-                                  const StreamableHTTPClientTransportOptions& opts = {})
-        : abort_requested_(false), url_(url), request_headers_(opts.requestHeaders),
-          auth_provider_(opts.authProvider), session_id_(opts.SessionID),
-          reconnection_options_(opts.reconnectionOptions) {}
+    StreamableHTTPClientTransport(const string& InURL,
+                                  const StreamableHTTPClientTransportOptions& InOptions = {})
+        : m_AbortRequested(false), m_URL(InURL), m_RequestHeaders(InOptions.RequestHeaders),
+          m_AuthProvider(InOptions.AuthProvider), m_SessionID(InOptions.SessionID),
+          m_ReconnectionOptions(InOptions.ReconnectionOptions) {}
 
   private:
-    future<void> authThenStart();
+    future<void> AuthThenStart();
 
-    future<map<string, string>> commonHeaders();
+    future<map<string, string>> CommonHeaders();
 
-    future<void> startOrAuthSse(const StartSSEOptions& options);
+    future<void> StartOrAuthSSE(const StartSSEOptions& InOptions);
 
-    int getNextReconnectionDelay(int attempt);
+    int GetNextReconnectionDelay(int InAttempt);
 
-    void scheduleReconnection(const StartSSEOptions& options, int attemptCount = 0);
+    void ScheduleReconnection(const StartSSEOptions& InOptions, int InAttemptCount = 0);
 
-    void handleSseStream(const string& streamData, const StartSSEOptions& options);
+    void HandleSSEStream(const string& InStreamData, const StartSSEOptions& InOptions);
 
   public:
-    future<void> start();
+    future<void> Start();
 
     /**
      * Call this method after the user has finished authorizing via their user agent and is
      * redirected back to the MCP client application.
      */
-    future<void> finishAuth(const string& authorizationCode);
+    future<void> FinishAuth(const string& InAuthorizationCode);
 
-    future<void> close();
+    future<void> Close();
 
     struct SendOptions {
-        optional<string> resumptionToken;
-        function<void(const string&)> onresumptiontoken;
+        optional<string> ResumptionToken;
+        function<void(const string&)> OnResumptionToken;
     };
 
-    future<void> send(const JSONRPCMessage& message, const SendOptions& options = {});
+    future<void> Send(const JSON_RPC_Message& InMessage, const SendOptions& InOptions = {});
 
-    future<void> send(const vector<JSONRPCMessage>& messages, const SendOptions& options = {});
+    future<void> Send(const vector<JSON_RPC_Message>& InMessages, const SendOptions& InOptions = {});
 
-    optional<string> getSessionID() const;
+    optional<string> GetSessionID() const;
 
     /**
      * Terminates the current session by sending a DELETE request to the server.
      */
-    future<void> terminateSession();
+    future<void> TerminateSession();
 };
 
 MCP_NAMESPACE_END

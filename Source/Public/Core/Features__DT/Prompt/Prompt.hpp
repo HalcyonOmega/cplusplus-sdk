@@ -1,3 +1,18 @@
+// The following is from what was originally Prompt.h in the v2 SDK
+
+// *   `PromptArgument` *   `Prompt`: (Defines a prompt, contains `PromptArgument`s)
+//         *   `PromptMessage`: (`Role`, `Content` of `ContentBase` type)
+//                                  *   `PromptsGetResult`
+//     : (`Description ?`, `Messages`: array of `PromptMessage`)
+//     - Returned by the `Get` method.*   `PromptsClientStub` Methods
+//     : *   `List(Cursor ?: std::optional<std::string>)`
+//           ->Result
+//     : `ListResult<Prompt>` *   `Get(Name : std::string, Arguments ?: json_object)`
+//     ->Result : `PromptsGetResult` *   `notifications
+//           / prompts / listChanged` (Notification) : (no parameters)
+
+// End of original Prompt.h
+
 #pragma once
 
 #include "Core.h"

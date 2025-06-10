@@ -56,7 +56,7 @@ struct ProcessedCreateParams {
 };
 
 // Like original processCreateParams function - DECLARED EARLY
-template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params);
+template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& InParams);
 
 template <typename T> struct CompletableDef : public TypeDef {
     shared_ptr<MCP_Type<T, TypeDef, T>> Type; // Store the wrapped type like original
@@ -73,37 +73,37 @@ template <typename TOutput, typename TInput = TOutput> class ParseResult {
     optional<TOutput> Value;
     optional<string> Error;
 
-    ParseResult(bool success) : Success(success) {}
-    ParseResult(const TOutput& value) : Success(true), Value(value) {}
-    ParseResult(const string& error) : Success(false), Error(error) {}
+    ParseResult(bool InSuccess) : Success(InSuccess) {}
+    ParseResult(const TOutput& InValue) : Success(true), Value(InValue) {}
+    ParseResult(const string& InError) : Success(false), Error(InError) {}
 };
 
 template <typename TOutput, typename TDef, typename TInput = TOutput> class MCP_Type {
   public:
     TDef Definition;
 
-    virtual ParseResult<TOutput, TInput> Parse(const ParseContext& input) = 0;
+    virtual ParseResult<TOutput, TInput> Parse(const ParseContext& InInput) = 0;
     virtual ~MCP_Type() = default;
 
   protected:
-    ParseContext ProcessInputParams(const ParseContext& input);
+    ParseContext ProcessInputParams(const ParseContext& InInput);
 };
 
 template <typename T> class Completable : public MCP_Type<T, CompletableDef<T>, T> {
   public:
     // Delegate parsing to the wrapped type (like original _parse method)
-    ParseResult<T, T> Parse(const ParseContext& input) override;
+    ParseResult<T, T> Parse(const ParseContext& InInput) override;
 
     // Return the wrapped type (like original unwrap method)
     shared_ptr<MCP_Type<T, TypeDef, T>> Unwrap();
 
-    vector<T> GetCompletions(const T& value);
+    vector<T> GetCompletions(const T& InValue);
 
-    future<vector<T>> GetAsyncCompletions(const T& value);
+    future<vector<T>> GetAsyncCompletions(const T& InValue);
 
     // Like original static create method
-    static shared_ptr<Completable<T>> Create(shared_ptr<MCP_Type<T, TypeDef, T>> type,
-                                             const CreateParams<T>& params);
+    static shared_ptr<Completable<T>> Create(shared_ptr<MCP_Type<T, TypeDef, T>> InType,
+                                             const CreateParams<T>& InParams);
 };
 
 /**
@@ -112,7 +112,7 @@ template <typename T> class Completable : public MCP_Type<T, CompletableDef<T>, 
  * CompleteCallback<T>)
  */
 template <typename T>
-shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> schema,
-                                             CompleteCallback<T> complete);
+shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> InSchema,
+                                             CompleteCallback<T> InComplete);
 
 MCP_NAMESPACE_END

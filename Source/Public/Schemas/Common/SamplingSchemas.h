@@ -29,8 +29,8 @@ MCP_NAMESPACE_BEGIN
  * Describes a message issued to or received from an LLM API.
  */
 struct SamplingMessage {
-    Role role;
-    variant<TextContent, ImageContent, AudioContent> content;
+    Role Role;
+    variant<TextContent, ImageContent, AudioContent> Content;
 };
 
 // ModelHint {
@@ -78,7 +78,7 @@ struct ModelHint {
      * family, as long as it fills a similar niche; for example:
      *  - `gemini-1.5-flash` could match `claude-3-haiku-20240307`
      */
-    optional<string> name;
+    optional<string> Name;
 };
 
 // ModelPreferences {
@@ -170,7 +170,7 @@ struct ModelPreferences {
      * The client SHOULD prioritize these hints over the numeric priorities, but
      * MAY still use the priorities to select from ambiguous matches.
      */
-    optional<vector<ModelHint>> hints;
+    optional<vector<ModelHint>> Hints;
 
     /**
      * How much to prioritize cost when selecting a model. A value of 0 means cost
@@ -181,7 +181,7 @@ struct ModelPreferences {
      * @minimum 0
      * @maximum 1
      */
-    optional<number> costPriority;
+    optional<number> CostPriority;
 
     /**
      * How much to prioritize sampling speed (latency) when selecting a model. A
@@ -192,7 +192,7 @@ struct ModelPreferences {
      * @minimum 0
      * @maximum 1
      */
-    optional<number> speedPriority;
+    optional<number> SpeedPriority;
 
     /**
      * How much to prioritize intelligence and capabilities when selecting a
@@ -203,43 +203,43 @@ struct ModelPreferences {
      * @minimum 0
      * @maximum 1
      */
-    optional<number> intelligencePriority;
+    optional<number> IntelligencePriority;
 };
 
 enum class IncludeContext { none, thisServer, allServers };
 
 struct CreateMessageRequestParams {
-    vector<SamplingMessage> messages;
+    vector<SamplingMessage> Messages;
     /**
      * The server's preferences for which model to select. The client MAY ignore these
      * preferences.
      */
-    optional<ModelPreferences> modelPreferences;
+    optional<ModelPreferences> ModelPreferences;
     /**
      * An optional system prompt the server wants to use for sampling. The client MAY modify or
      * omit this prompt.
      */
-    optional<string> systemPrompt;
+    optional<string> SystemPrompt;
     /**
      * A request to include context from one or more MCP servers (including the caller), to be
      * attached to the prompt. The client MAY ignore this request.
      */
-    optional<IncludeContext> includeContext;
+    optional<IncludeContext> IncludeContext;
     /**
      * @TJS-type number
      */
-    optional<number> temperature;
+    optional<number> Temperature;
     /**
      * The maximum number of tokens to sample, as requested by the server. The client MAY choose
      * to sample fewer tokens than requested.
      */
-    number maxTokens;
-    optional<vector<string>> stopSequences;
+    number MaxTokens;
+    optional<vector<string>> StopSequences;
     /**
      * Optional metadata to pass through to the LLM provider. The format of this metadata is
      * provider-specific.
      */
-    optional<JSON> metadata;
+    optional<JSON> Metadata;
 };
 
 // CreateMessageRequest {
@@ -311,7 +311,7 @@ struct CreateMessageRequestParams {
  * them to inspect the request (human in the loop) and decide whether to approve it.
  */
 struct CreateMessageRequest : public Request {
-    CreateMessageRequestParams params;
+    CreateMessageRequestParams Params;
 
     CreateMessageRequest() {
         method = MTHD_SAMPLING_CREATE_MESSAGE;
@@ -366,11 +366,11 @@ struct CreateMessageResult : public Result, SamplingMessage {
     /**
      * The name of the model that generated the message.
      */
-    string model;
+    string Model;
     /**
      * The reason why sampling stopped, if known.
      */
-    optional<variant<StopReason, string>> stopReason;
+    optional<variant<StopReason, string>> StopReason;
 };
 
 MCP_NAMESPACE_END

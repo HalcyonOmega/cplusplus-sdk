@@ -17,24 +17,23 @@ class CLI {
 
   private:
     // Client functionality
-    static future<void> RunClient(const string& url_or_command,
-                                  const vector<string>& args);
+    static future<void> RunClient(const string& InURLOrCommand, const vector<string>& InArgs);
 
     // Server functionality
-    static future<void> RunServer(int port); // port = -1 for stdio
+    static future<void> RunServer(int InPort); // port = -1 for stdio
 
     // Utility functions
-    static bool IsValidUrl(const string& url);
-    static string GetUrlProtocol(const string& url);
+    static bool IsValidURL(const string& InURL);
+    static string GetURLProtocol(const string& InURL);
     static void PrintUsage();
-    static void LogMessage(const string& message);
-    static void LogError(const string& error);
+    static void LogMessage(const string& InMessage);
+    static void LogError(const string& InError);
 
     // HTTP server handlers
-    static void HandleSSEConnection(HttpRequest& req, HttpResponse& res);
-    static void HandlePostMessage(HttpRequest& req, HttpResponse& res);
+    static void HandleSSEConnection(HTTP_Request& InRequest, HTTP_Response& InResponse);
+    static void HandlePostMessage(HTTP_Request& InRequest, HTTP_Response& InResponse);
 
     // Static members for server state
-    static vector<shared_ptr<MCP::Server>> active_servers_;
-    static shared_ptr<HttpServer> http_server_;
+    static vector<shared_ptr<MCP::Server>> m_ActiveServers;
+    static shared_ptr<HTTP_Server> m_HTTPServer;
 };

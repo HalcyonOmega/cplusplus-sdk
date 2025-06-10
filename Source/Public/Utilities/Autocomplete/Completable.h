@@ -74,37 +74,37 @@ template <typename TOutput, typename TInput> class ParseResult {
     optional<TOutput> Value;
     optional<string> Error;
 
-    ParseResult(bool success) : Success(success) {}
-    ParseResult(const TOutput& value) : Success(true), Value(value) {}
-    ParseResult(const string& error) : Success(false), Error(error) {}
+    ParseResult(bool InSuccess) : Success(InSuccess) {}
+    ParseResult(const TOutput& InValue) : Success(true), Value(InValue) {}
+    ParseResult(const string& InError) : Success(false), Error(InError) {}
 };
 
 template <typename TOutput, typename TDef, typename TInput> class MCP_Type {
   public:
     TDef Definition;
 
-    virtual ParseResult<TOutput, TInput> Parse(const ParseContext& input) = 0;
+    virtual ParseResult<TOutput, TInput> Parse(const ParseContext& InInput) = 0;
     virtual ~MCP_Type() = default;
 
   protected:
-    ParseContext ProcessInputParams(const ParseContext& input);
+    ParseContext ProcessInputParams(const ParseContext& InInput);
 };
 
 template <typename T> class Completable : public MCP_Type<T, CompletableDef<T>, T> {
   public:
     // Delegate parsing to the wrapped type (like original _parse method)
-    ParseResult<T, T> Parse(const ParseContext& input) override;
+    ParseResult<T, T> Parse(const ParseContext& InInput) override;
 
     // Return the wrapped type (like original unwrap method)
     shared_ptr<MCP_Type<T, TypeDef, T>> Unwrap();
 
-    vector<T> GetCompletions(const T& value);
+    vector<T> GetCompletions(const T& InValue);
 
-    future<vector<T>> GetAsyncCompletions(const T& value);
+    future<vector<T>> GetAsyncCompletions(const T& InValue);
 
     // Like original static create method
-    static shared_ptr<Completable<T>> Create(shared_ptr<MCP_Type<T, TypeDef, T>> type,
-                                             const CreateParams<T>& params);
+    static shared_ptr<Completable<T>> Create(shared_ptr<MCP_Type<T, TypeDef, T>> InType,
+                                             const CreateParams<T>& InParams);
 };
 
 /**
@@ -113,16 +113,16 @@ template <typename T> class Completable : public MCP_Type<T, CompletableDef<T>, 
  * CompleteCallback<T>)
  */
 template <typename T>
-shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> schema,
-                                             CompleteCallback<T> complete);
+shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> InSchema,
+                                             CompleteCallback<T> InComplete);
 
 // Template implementations (must be in header)
 
 // Like original processCreateParams function
-template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& params) {
-    ProcessedCreateParams result;
+template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& InParams) {
+    ProcessedCreateParams Result;
 
-    if (params.ErrorMap.has_value()
+    if (InParams.ErrorMap.has_value()
         && (params.InvalidTypeError.has_value() || params.RequiredError.has_value())) {
         throw runtime_error("Can't use \"InvalidTypeError\" or \"RequiredError\" in conjunction "
                             "with custom error map.");
@@ -135,40 +135,39 @@ template <typename T> ProcessedCreateParams ProcessCreateParams(const CreatePara
     }
 
     // Create custom error map like original
-    auto customMap = [params](const string& issueCode, const ParseContext& ctx) -> string {
-        const string& message = params.Message.value_or("");
+    auto CustomMap = [InParams](const string& IssueCode, const ParseContext& Context) -> string {
+        const string& Message = InParams.Message.value_or("");
 
-        if (issueCode == "invalid_enum_value") {
-            return !message.empty() ? message : "Invalid enum value";
+        if (IssueCode == "invalid_enum_value") {
+            return !Message.empty() ? Message : "Invalid enum value";
         }
-        if (ctx.Data.is_null()) {
-            return !message.empty() ? message
-                                    : params.RequiredError.value_or("Required field missing");
+        if (Context.Data.is_null()) {
+            return !Message.empty() ? Message : InParams.RequiredError.value_or("Required field missing");
         }
-        if (issueCode != "invalid_type") {
+        if (IssueCode != "invalid_type") {
             return "Validation error";
         }
-        return !message.empty() ? message : params.InvalidTypeError.value_or("Invalid type");
+        return !Message.empty() ? Message : InParams.InvalidTypeError.value_or("Invalid type");
     };
 
-    result.ErrorMap = customMap;
-    result.Description = params.Description.value_or("");
-    return result;
+    Result.ErrorMap = CustomMap;
+    Result.Description = InParams.Description.value_or("");
+    return Result;
 }
 
 // Delegate parsing to the wrapped type (like original _parse method)
-template <typename T> ParseResult<T, T> Completable<T>::Parse(const ParseContext& input) {
-    auto ctx = this->ProcessInputParams(input);
+template <typename T> ParseResult<T, T> Completable<T>::Parse(const ParseContext& InInput) {
+    auto Context = this->ProcessInputParams(InInput);
     if (this->Definition.Type) {
-        return this->Definition.Type->Parse(ctx);
+        return this->Definition.Type->Parse(Context);
     }
 
     // Fallback if no wrapped type
     try {
-        T value = ctx.Data.template get<T>();
-        return ParseResult<T, T>(value);
-    } catch (const exception& e) {
-        return ParseResult<T, T>(string("Parse error: ") + e.what());
+        T Value = Context.Data.template get<T>();
+        return ParseResult<T, T>(Value);
+    } catch (const exception& Exception) {
+        return ParseResult<T, T>(string("Parse error: ") + Exception.what());
     }
 }
 
@@ -177,57 +176,57 @@ template <typename T> shared_ptr<MCP_Type<T, TypeDef, T>> Completable<T>::Unwrap
     return this->Definition.Type;
 }
 
-template <typename T> vector<T> Completable<T>::GetCompletions(const T& value) {
+template <typename T> vector<T> Completable<T>::GetCompletions(const T& InValue) {
     if (this->Definition.Complete) {
-        auto result = this->Definition.Complete(value);
+        auto Result = this->Definition.Complete(InValue);
 
         // Handle variant return type
-        if (std::holds_alternative<vector<T>>(result)) {
-            return std::get<vector<T>>(result);
+        if (std::holds_alternative<vector<T>>(Result)) {
+            return std::get<vector<T>>(Result);
         } else {
             // If it's a future, wait for it
-            auto future_result = std::get<future<vector<T>>>(result);
-            return future_result.get();
+            auto FutureResult = std::get<future<vector<T>>>(Result);
+            return FutureResult.get();
         }
     }
     return vector<T>{};
 }
 
-template <typename T> future<vector<T>> Completable<T>::GetAsyncCompletions(const T& value) {
+template <typename T> future<vector<T>> Completable<T>::GetAsyncCompletions(const T& InValue) {
     if (this->Definition.Complete) {
-        auto result = this->Definition.Complete(value);
+        auto Result = this->Definition.Complete(InValue);
 
-        if (std::holds_alternative<future<vector<T>>>(result)) {
-            return std::get<future<vector<T>>>(result);
+        if (std::holds_alternative<future<vector<T>>>(Result)) {
+            return std::get<future<vector<T>>>(Result);
         } else {
             // Wrap synchronous result in future
-            promise<vector<T>> promise;
-            future<vector<T>> future_result = promise.get_future();
-            promise.set_value(std::get<vector<T>>(result));
-            return future_result;
+            promise<vector<T>> Promise;
+            future<vector<T>> FutureResult = Promise.get_future();
+            Promise.set_value(std::get<vector<T>>(Result));
+            return FutureResult;
         }
     }
 
-    promise<vector<T>> promise;
-    future<vector<T>> future_result = promise.get_future();
-    promise.set_value(vector<T>{});
-    return future_result;
+    promise<vector<T>> Promise;
+    future<vector<T>> FutureResult = Promise.get_future();
+    Promise.set_value(vector<T>{});
+    return FutureResult;
 }
 
 // Like original static create method
 template <typename T>
-shared_ptr<Completable<T>> Completable<T>::Create(shared_ptr<MCP_Type<T, TypeDef, T>> type,
-                                                  const CreateParams<T>& params) {
-    auto completable = make_shared<Completable<T>>();
-    completable->Definition.Type = type;
-    completable->Definition.Complete = params.Complete;
+shared_ptr<Completable<T>> Completable<T>::Create(shared_ptr<MCP_Type<T, TypeDef, T>> InType,
+                                                  const CreateParams<T>& InParams) {
+    auto Completable = make_shared<Completable<T>>();
+    Completable->Definition.Type = InType;
+    Completable->Definition.Complete = InParams.Complete;
 
     // Process create params like original processCreateParams
-    auto processedParams = ProcessCreateParams(params);
-    completable->Definition.Description = processedParams.Description;
-    completable->Definition.ErrorMessage = processedParams.ErrorMessage;
+    auto ProcessedParams = ProcessCreateParams(InParams);
+    Completable->Definition.Description = ProcessedParams.Description;
+    Completable->Definition.ErrorMessage = ProcessedParams.ErrorMessage;
 
-    return completable;
+    return Completable;
 }
 
 /**
@@ -236,14 +235,14 @@ shared_ptr<Completable<T>> Completable<T>::Create(shared_ptr<MCP_Type<T, TypeDef
  * CompleteCallback<T>)
  */
 template <typename T>
-shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> schema,
-                                             CompleteCallback<T> complete) {
-    CreateParams<T> params;
-    params.Complete = complete;
+shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>> InSchema,
+                                             CompleteCallback<T> InComplete) {
+    CreateParams<T> Params;
+    Params.Complete = InComplete;
     // Copy schema definition like original: { ...schema._def, complete }
-    params.Description = schema->Definition.Description;
+    Params.Description = InSchema->Definition.Description;
 
-    return Completable<T>::Create(schema, params);
+    return Completable<T>::Create(InSchema, Params);
 }
 
 MCP_NAMESPACE_END

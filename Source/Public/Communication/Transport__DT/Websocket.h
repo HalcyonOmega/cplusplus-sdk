@@ -18,39 +18,39 @@ const string SUBPROTOCOL = "mcp";
 class WebSocket_Client_Transport : public Transport {
   private:
     // TODO: Fix External Ref: WebSocket - replace with actual WebSocket implementation
-    optional<void*> Socket_; // Optional WebSocket instance (was _socket?: WebSocket)
-    string URL_;             // URL was not optional in TypeScript
+    optional<void*> m_Socket; // Optional WebSocket instance (was _socket?: WebSocket)
+    string m_URL;             // URL was not optional in TypeScript
 
     // Helper method to validate JSON-RPC message structure
-    bool ValidateJSON_RPC_Message(const JSON& json) const;
+    bool ValidateMessage(const JSON& InJSON) const;
 
     // Helper method to convert JSON to JSON_RPC_Message
-    optional<JSONRPCMessage> JSONToMessage(const JSON& json) const;
+    optional<JSON_RPC_Message> JSONToMessage(const JSON& InJSON) const;
 
     // Helper method to convert JSON_RPC_Message to JSON
-    JSON MessageToJSON(const JSONRPCMessage& message) const;
+    JSON MessageToJSON(const JSON_RPC_Message& InMessage) const;
 
   public:
     // Event handlers - optional callbacks matching TypeScript interface
     optional<function<void()>> OnClose;
     optional<function<void(const exception&)>> OnError;
-    optional<function<void(const JSONRPCMessage&, const optional<AuthInfo>&)>> OnMessage;
+    optional<function<void(const JSON_RPC_Message&, const optional<AuthInfo>&)>> OnMessage;
 
     // Session ID as required by Transport interface
     optional<string> SessionID;
 
-    explicit WebSocket_Client_Transport(const string& Url) : URL_(Url), Socket_(nullopt) {}
+    explicit WebSocket_Client_Transport(const string& InURL) : m_URL(InURL), m_Socket(nullopt) {}
 
     future<void> Start() override;
 
     future<void> Close() override;
 
     // Updated Send method to match Transport interface signature
-    future<void> Send(const JSONRPCMessage& Message,
-                      const optional<TransportSendOptions>& Options = nullopt) override;
+    future<void> Send(const JSON_RPC_Message& InMessage,
+                      const optional<TransportSendOptions>& InOptions = nullopt) override;
 
     // Legacy Send method for backward compatibility (matching original signature)
-    future<void> Send(const JSONRPCMessage& Message);
+    future<void> Send(const JSON_RPC_Message& InMessage);
 };
 
 MCP_NAMESPACE_END

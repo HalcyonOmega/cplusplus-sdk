@@ -5,12 +5,11 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Transport interface
-// TODO: Fix External Ref: JSON_RPC_Message type
 // TODO: Fix External Ref: RequestID type
 // TODO: Fix External Ref: AuthInfo type
 
 struct QueuedMessage {
-    JSONRPCMessage Message;
+    JSON_RPC_Message Message;
     optional<AuthInfo> AuthInfo;
 };
 
@@ -20,13 +19,13 @@ struct QueuedMessage {
  */
 class InMemoryTransport : public Transport {
   private:
-    InMemoryTransport* _otherTransport = nullptr;
-    vector<QueuedMessage> _messageQueue;
+    InMemoryTransport* m_OtherTransport = nullptr;
+    vector<QueuedMessage> m_MessageQueue;
 
   public:
-    optional<function<void()>> onclose;
-    optional<function<void(const string&)>> onerror;
-    optional<function<void(const JSONRPCMessage&, const optional<AuthInfo>&)>> onmessage;
+    optional<function<void()>> OnClose;
+    optional<function<void(const string&)>> OnError;
+    optional<function<void(const JSON_RPC_Message&, const optional<AuthInfo>&)>> OnMessage;
     optional<string> SessionID;
 
     InMemoryTransport() = default;
@@ -36,25 +35,24 @@ class InMemoryTransport : public Transport {
     InMemoryTransport& operator=(const InMemoryTransport&) = delete;
 
     // Enable move constructor and assignment operator
-    InMemoryTransport(InMemoryTransport&& other) noexcept
-        : _otherTransport(other._otherTransport), _messageQueue(move(other._messageQueue)),
-          onclose(move(other.onclose)), onerror(move(other.onerror)),
-          onmessage(move(other.onmessage)), SessionID(move(other.SessionID)) {
-        other._otherTransport = nullptr;
-        if (_otherTransport) { _otherTransport->_otherTransport = this; }
+    InMemoryTransport(InMemoryTransport&& InOther) noexcept
+        : m_OtherTransport(InOther.m_OtherTransport), m_MessageQueue(move(InOther.m_MessageQueue)),
+          OnClose(move(InOther.OnClose)), OnError(move(InOther.OnError)),
+          OnMessage(move(InOther.OnMessage)), SessionID(move(InOther.SessionID)) {
+        InOther.m_OtherTransport = nullptr;
+        if (m_OtherTransport) { m_OtherTransport->m_OtherTransport = this; }
     }
 
-    InMemoryTransport& operator=(InMemoryTransport&& other) noexcept {
-        if (this != &other) {
-            _otherTransport = other._otherTransport;
-            _messageQueue = move(other._messageQueue);
-            onclose = move(other.onclose);
-            onerror = move(other.onerror);
-            onmessage = move(other.onmessage);
-            SessionID = move(other.SessionID);
+    InMemoryTransport& operator=(InMemoryTransport&& InOther) noexcept {
+        if (this != &InOther) {
+            m_OtherTransport = InOther.m_OtherTransport;
+            m_MessageQueue = move(InOther.m_MessageQueue);
+            OnClose(move(InOther.OnClose)),
+            OnError(move(InOther.OnError)), OnMessage(move(InOther.OnMessage)),
+            SessionID(move(InOther.SessionID)) {
 
-            other._otherTransport = nullptr;
-            if (_otherTransport) { _otherTransport->_otherTransport = this; }
+            InOther.m_OtherTransport = nullptr;
+            if (m_OtherTransport) { m_OtherTransport->m_OtherTransport = this; }
         }
         return *this;
     }
@@ -63,16 +61,16 @@ class InMemoryTransport : public Transport {
      * Creates a pair of linked in-memory transports that can communicate with each other.
      * One should be passed to a Client and one to a Server.
      */
-    static pair<InMemoryTransport, InMemoryTransport> createLinkedPair() {
-        InMemoryTransport clientTransport;
-        InMemoryTransport serverTransport;
+    static pair<InMemoryTransport, InMemoryTransport> CreateLinkedPair() {
+        InMemoryTransport ClientTransport;
+        InMemoryTransport ServerTransport;
 
-        clientTransport._otherTransport = &serverTransport;
-        serverTransport._otherTransport = &clientTransport;
+        ClientTransport.m_OtherTransport = &ServerTransport;
+        ServerTransport.m_OtherTransport = &ClientTransport;
 
-        return make_pair(move(clientTransport), move(serverTransport));
+        return make_pair(move(ClientTransport), move(ServerTransport));
     }
-    void start();
+    void Start();
 
     void close();
 
@@ -80,12 +78,13 @@ class InMemoryTransport : public Transport {
      * Sends a message with optional auth info.
      * This is useful for testing authentication scenarios.
      */
-    void send(const JSONRPCMessage& message, const optional<{
-                                                 optional<RequestID> relatedRequestID;
-                                                 optional<AuthInfo> authInfo;
-                                             }>& options = nullopt);
+    void Send(const JSON_RPC_Message& InMessage, const optional<{
+                                                 optional<RequestID> RelatedRequestID;
+                                                 optional<AuthInfo> AuthInfo;
+                                             }>& InOptions = nullopt);
 
     ~InMemoryTransport();
+}
 };
 
 MCP_NAMESPACE_END

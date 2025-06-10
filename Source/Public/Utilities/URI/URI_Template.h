@@ -5,9 +5,9 @@
 MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
-string EncodeURI(const string& Value);
+string EncodeURI(const string& InValue);
 
-string EncodeURIComponent(const string& Value);
+string EncodeURIComponent(const string& InValue);
 
 using Variables = unordered_map<string, std::variant<string, vector<string>>>;
 
@@ -18,46 +18,46 @@ class URI_Template {
      * A template expression is a sequence of characters enclosed in curly
      * braces, like {foo} or {?bar}.
      */
-    static bool IsTemplate(const string& Str);
+    static bool IsTemplate(const string& InString);
 
     vector<string> GetVariableNames() const;
 
-    explicit URI_Template(const string& TemplateStr);
+    explicit URI_Template(const string& InTemplateStr);
 
     string ToString() const;
 
-    string Expand(const Variables& variables) const;
+    string Expand(const Variables& InVariables) const;
 
-    Variables Match(const string& uri) const;
+    Variables Match(const string& InURI) const;
 
   private:
     struct TemplatePart {
-        string name;
-        string operatorChar;
-        vector<string> names;
-        bool exploded;
+        string m_Name;
+        string m_OperatorChar;
+        vector<string> m_Names;
+        bool m_Exploded;
     };
 
     using Part = variant<string, TemplatePart>;
 
-    string template_;
-    vector<Part> parts_;
+    string m_Template;
+    vector<Part> m_Parts;
 
-    static void ValidateLength(const string& str, size_t max, const string& context);
+    static void ValidateLength(const string& InString, size_t InMax, const string& InContext);
 
-    vector<Part> Parse(const string& templateStr);
+    vector<Part> Parse(const string& InTemplateStr);
 
-    string GetOperator(const string& expr) const;
+    string GetOperator(const string& InExpression) const;
 
-    vector<string> GetNames(const string& expr) const;
+    vector<string> GetNames(const string& InExpression) const;
 
-    string EncodeValue(const string& value, const string& operatorChar) const;
+    string EncodeValue(const string& InValue, const string& InOperatorChar) const;
 
-    string ExpandPart(const TemplatePart& part, const Variables& variables) const;
+    string ExpandPart(const TemplatePart& InPart, const Variables& InVariables) const;
 
-    string EscapeRegExp(const string& str) const;
+    string EscapeRegExp(const string& InString) const;
 
-    vector<std::pair<string, string>> PartToRegExp(const TemplatePart& part) const;
+    vector<std::pair<string, string>> PartToRegExp(const TemplatePart& InPart) const;
 };
 
 MCP_NAMESPACE_END

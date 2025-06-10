@@ -4,7 +4,6 @@
 #include "Core.h"
 
 // TODO: Fix External Ref: pkce-challenge (PKCE challenge generation)
-// TODO: Fix External Ref: fetch API (HTTP requests)
 // TODO: Fix External Ref: LATEST_PROTOCOL_VERSION from "../types.js"
 // TODO: Fix External Ref: Zod schemas validation
 
@@ -201,15 +200,6 @@ future<OAuthClientInformationFull> RegisterClientAsync(const string& Authorizati
 
 // Helper functions and TODO implementations
 PKCE_Challenge GeneratePKCE_Challenge();
-
-// TODO: Consider making this a class because it has functionality
-// TODO: Cleanup this duplicate definition
-struct HTTP_Response {
-    int StatusCode;
-    unordered_map<string, string> Headers;
-    string Body;
-    bool IsOK() const;
-};
 
 future<HTTP_Response> FetchAsync(const string& URL,
                                  const unordered_map<string, string>& Headers = {});

@@ -2,7 +2,6 @@
 
 #include "Core.h"
 
-// TODO: Fix External Ref: express (HTTP server framework)
 // TODO: Fix External Ref: cors (CORS middleware)
 // TODO: Fix External Ref: express-rate-limit (Rate limiting middleware)
 

@@ -27,7 +27,7 @@
 #include <vector>
 
 // Third-party includes
-#include "httplib.h"
+// #include "httplib.h"
 #include "json.hpp"
 
 MCP_NAMESPACE_BEGIN

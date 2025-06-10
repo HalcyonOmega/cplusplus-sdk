@@ -8,8 +8,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: Fix External Ref: Response (express equivalent)
-// TODO: Fix External Ref: URL encoding functionality
+// TODO: Fix External: URL encoding functionality
 
 struct ProxyEndpoints {
     string AuthorizationUrl;
@@ -40,9 +39,9 @@ struct ProxyOptions {
  */
 class ProxyOAuthServerProvider : public OAuthServerProvider {
   protected:
-    const ProxyEndpoints _Endpoints;
-    const function<future<AuthInfo>(const string&)> _VerifyAccessToken;
-    const function<future<optional<OAuthClientInformationFull>>(const string&)> _GetClient;
+    const ProxyEndpoints m_Endpoints;
+    const function<future<AuthInfo>(const string&)> m_VerifyAccessToken;
+    const function<future<optional<OAuthClientInformationFull>>(const string&)> m_GetClient;
 
   public:
     bool SkipLocalPkceValidation = true;
@@ -51,13 +50,13 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
                                    const OAuthTokenRevocationRequest&)>>
         RevokeToken;
 
-    explicit ProxyOAuthServerProvider(const ProxyOptions& Options)
-        : _Endpoints(Options.Endpoints), _VerifyAccessToken(Options.VerifyAccessToken),
-          _GetClient(Options.GetClient) {
-        if (Options.Endpoints.RevocationUrl.has_value()) {
-            RevokeToken = [this](const OAuthClientInformationFull& Client,
-                                 const OAuthTokenRevocationRequest& Request) -> future<void> {
-                const auto& RevocationUrl = this->_Endpoints.RevocationUrl;
+    explicit ProxyOAuthServerProvider(const ProxyOptions& InOptions)
+        : m_Endpoints(InOptions.Endpoints), m_VerifyAccessToken(InOptions.VerifyAccessToken),
+          m_GetClient(InOptions.GetClient) {
+        if (InOptions.Endpoints.RevocationUrl.has_value()) {
+            RevokeToken = [this](const OAuthClientInformationFull& InClient,
+                                 const OAuthTokenRevocationRequest& InRequest) -> future<void> {
+                const auto& RevocationUrl = this->m_Endpoints.RevocationUrl;
 
                 if (!RevocationUrl.has_value()) {
                     throw runtime_error("No revocation endpoint configured");
@@ -76,12 +75,12 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
                 // Build form-encoded body
                 string Body = BuildFormEncodedBody(Params);
 
-                auto Response = co_await HttpPost(
+                auto Response = co_await HTTP_Post(
                     RevocationUrl.value(), {{"Content-Type", "application/x-www-form-urlencoded"}},
                     Body);
 
-                if (!Response.Ok) {
-                    throw ServerError("Token revocation failed: " + to_string(Response.Status));
+                if (!Response.IsOK()) {
+                    throw ServerError("Token revocation failed: " + to_string(Response.StatusCode));
                 }
 
                 co_return;
@@ -91,37 +90,37 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
 
     OAuthRegisteredClientsStore GetClientsStore() const;
 
-    future<void> Authorize(const OAuthClientInformationFull& Client,
-                           const AuthorizationParams& Params, Response& Res) const;
+    future<void> Authorize(const OAuthClientInformationFull& InClient,
+                           const AuthorizationParams& InParams, Response& InResponse) const;
 
-    future<string> ChallengeForAuthorizationCode(const OAuthClientInformationFull& Client,
-                                                 const string& AuthorizationCode) const;
+    future<string> ChallengeForAuthorizationCode(const OAuthClientInformationFull& InClient,
+                                                 const string& InAuthorizationCode) const;
 
     future<OAuthTokens>
-    ExchangeAuthorizationCode(const OAuthClientInformationFull& Client,
+    ExchangeAuthorizationCode(const OAuthClientInformationFull& InClient,
                               const string& AuthorizationCode,
                               const optional<string>& CodeVerifier = nullopt,
                               const optional<string>& RedirectUri = nullopt) const;
 
     future<OAuthTokens>
-    ExchangeRefreshToken(const OAuthClientInformationFull& Client, const string& RefreshToken,
-                         const optional<vector<string>>& Scopes = nullopt) const;
+    ExchangeRefreshToken(const OAuthClientInformationFull& InClient, const string& InRefreshToken,
+                         const optional<vector<string>>& InScopes = nullopt) const;
 
-    future<AuthInfo> VerifyAccessToken(const string& Token) const;
+    future<AuthInfo> VerifyAccessToken(const string& InToken) const;
 
   private:
-    static future<HttpResponse> HttpPost(const string& Url, const map<string, string>& Headers,
-                                         const string& Body);
+    static future<HTTP_Response> HTTP_Post(const string& InUrl, const map<string, string>& InHeaders,
+                                         const string& InBody);
 
-    static string BuildFormEncodedBody(const map<string, string>& Params);
+    static string BuildFormEncodedBody(const map<string, string>& InParams);
 
-    static string BuildQueryString(const map<string, string>& Params);
+    static string BuildQueryString(const map<string, string>& InParams);
 
-    static string URLEncode(const string& Value);
+    static string URLEncode(const string& InValue);
 
-    static OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& Data);
+    static OAuthClientInformationFull ParseOAuthClientInformationFull(const JSON& InData);
 
-    static OAuthTokens ParseOAuthTokens(const JSON& Data);
+    static OAuthTokens ParseOAuthTokens(const JSON& InData);
 };
 
 MCP_NAMESPACE_END

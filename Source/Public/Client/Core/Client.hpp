@@ -1,5 +1,7 @@
 #pragma once
 
+#include <future>
+
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN

@@ -5,14 +5,16 @@
 MCP_NAMESPACE_BEGIN
 
 class MessageBase {
+  private:
+    JSON m_Message;
+
   public:
-    JSON Message;
     // Optionally, add getter/setter for encapsulation
     const JSON& GetMessage() const {
-        return Message;
+        return m_Message;
     }
-    void SetMessage(const JSON& msg) {
-        Message = msg;
+    void SetMessage(const JSON& InMessage) {
+        m_Message = InMessage;
     }
 };
 

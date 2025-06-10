@@ -12,65 +12,62 @@ MCP_NAMESPACE_BEGIN
  */
 class ReadBuffer {
   private:
-    optional<vector<uint8_t>> _buffer;
+    optional<vector<uint8_t>> m_Buffer;
 
   public:
-    void append(const vector<uint8_t>& chunk) {
-        if (_buffer.has_value()) {
-            _buffer->insert(_buffer->end(), chunk.begin(), chunk.end());
+    void Append(const vector<uint8_t>& InChunk) {
+        if (m_Buffer.has_value()) {
+            m_Buffer->insert(m_Buffer->end(), InChunk.begin(), InChunk.end());
         } else {
-            _buffer = chunk;
+            m_Buffer = InChunk;
         }
     }
 
-    // TODO: Fix External Ref: Should return JSON_RPC_Message type when available
-    optional<JSON> readMessage() {
-        if (!_buffer.has_value()) {
+    optional<JSON_RPC_Message> ReadMessage() {
+        if (!m_Buffer.has_value()) {
             return nullopt;
         }
 
         // Find newline character
-        auto it = find(_buffer->begin(), _buffer->end(), '\n');
-        if (it == _buffer->end()) {
+        auto it = find(m_Buffer->begin(), m_Buffer->end(), '\n');
+        if (it == m_Buffer->end()) {
             return nullopt;
         }
 
         // Extract line up to newline (equivalent to toString("utf8", 0, index))
-        ptrdiff_t index = distance(_buffer->begin(), it);
-        string line(reinterpret_cast<const char*>(_buffer->data()), index);
+        ptrdiff_t Index = distance(m_Buffer->begin(), it);
+        string Line(reinterpret_cast<const char*>(m_Buffer->data()), Index);
 
         // Remove carriage return if present (equivalent to .replace(/\r$/, ''))
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
+        if (!Line.empty() && Line.back() == '\r') {
+            Line.pop_back();
         }
 
         // Remove processed data from buffer (equivalent to subarray(index + 1))
         // Use erase for efficiency instead of creating new vector
-        _buffer->erase(_buffer->begin(), _buffer->begin() + index + 1);
+        m_Buffer->erase(m_Buffer->begin(), m_Buffer->begin() + index + 1);
 
         // Clear buffer if empty to match TypeScript behavior
-        if (_buffer->empty()) {
-            _buffer = nullopt;
+        if (m_Buffer->empty()) {
+            m_Buffer = nullopt;
         }
 
-        return deserializeMessage(line);
+        return DeserializeMessage(Line);
     }
 
-    void clear() {
-        _buffer = nullopt;
+    void Clear() {
+        m_Buffer = nullopt;
     }
 };
 
-// TODO: Fix External Ref: Should return JSON_RPC_Message type when available
-JSON deserializeMessage(const string& line) {
+JSON_RPC_Message DeserializeMessage(const string& InLine) {
     // TODO: Fix External Ref: JSON_RPC_MessageSchema validation equivalent
     // Original: JSON_RPC_MessageSchema.parse(JSON.parse(line))
-    return JSON::parse(line);
+    return JSON::parse(InLine);
 }
 
-// TODO: Fix External Ref: Should accept JSON_RPC_Message type when available
-string serializeMessage(const JSON& message) {
-    return message.dump() + "\n";
+string SerializeMessage(const JSON_RPC_Message& InMessage) {
+    return InMessage.dump() + "\n";
 }
 
 MCP_NAMESPACE_END

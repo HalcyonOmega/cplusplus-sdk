@@ -40,8 +40,8 @@ class Transport {
 
     // Sends a JSON-RPC message (request or response). If present, `relatedRequestID` is used to
     // indicate to the transport which incoming request to associate this outgoing message with.
-    virtual future<void> Send(const JSONRPCMessage& Message,
-                              const optional<TransportSendOptions>& Options = nullopt) = 0;
+    virtual future<void> Send(const JSON_RPC_Message& InMessage,
+                              const optional<TransportSendOptions>& InOptions = nullopt) = 0;
 
     // Closes the connection.
     virtual future<void> Close() = 0;
@@ -59,7 +59,7 @@ class Transport {
 
     // Callback for when a message (request or response) is received over the connection. Includes
     // the authInfo if the transport is authenticated.
-    optional<function<void(const JSONRPCMessage&, const optional<AuthInfo>&)>> OnMessage;
+    optional<function<void(const JSON_RPC_Message&, const optional<AuthInfo>&)>> OnMessage;
 
     // The session ID generated for this connection.
     optional<string> SessionID;

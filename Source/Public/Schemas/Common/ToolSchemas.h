@@ -72,14 +72,14 @@ struct ToolAnnotations {
     /**
      * A human-readable title for the tool.
      */
-    optional<string> title;
+    optional<string> Title;
 
     /**
      * If true, the tool does not modify its environment.
      *
      * Default: false
      */
-    optional<bool> readOnlyHint;
+    optional<bool> ReadOnlyHint;
 
     /**
      * If true, the tool may perform destructive updates to its environment.
@@ -89,7 +89,7 @@ struct ToolAnnotations {
      *
      * Default: true
      */
-    optional<bool> destructiveHint;
+    optional<bool> DestructiveHint;
 
     /**
      * If true, calling the tool repeatedly with the same arguments
@@ -99,7 +99,7 @@ struct ToolAnnotations {
      *
      * Default: false
      */
-    optional<bool> idempotentHint;
+    optional<bool> IdempotentHint;
 
     /**
      * If true, this tool may interact with an "open world" of external
@@ -109,13 +109,13 @@ struct ToolAnnotations {
      *
      * Default: true
      */
-    optional<bool> openWorldHint;
+    optional<bool> OpenWorldHint;
 };
 
 struct ToolInputSchema {
-    string type = "object";
-    optional<AdditionalObjects> properties;
-    optional<vector<string>> required;
+    string Type = "object";
+    optional<AdditionalObjects> Properties;
+    optional<vector<string>> Required;
 };
 
 // Tool {
@@ -166,7 +166,7 @@ struct Tool {
     /**
      * The name of the tool.
      */
-    string name;
+    string Name;
 
     /**
      * A human-readable description of the tool.
@@ -174,17 +174,17 @@ struct Tool {
      * This can be used by clients to improve the LLM's understanding of available
      * tools. It can be thought of like a "hint" to the model.
      */
-    optional<string> description;
+    optional<string> Description;
 
     /**
      * A JSON Schema object defining the expected parameters for the tool.
      */
-    ToolInputSchema inputSchema;
+    ToolInputSchema InputSchema;
 
     /**
      * Optional additional tool information.
      */
-    optional<ToolAnnotations> annotations;
+    optional<ToolAnnotations> Annotations;
 };
 
 // ListToolsRequest {
@@ -248,7 +248,7 @@ struct ListToolsRequest : public PaginatedRequest {
  * The server's response to a tools/list request from the client.
  */
 struct ListToolsResult : public PaginatedResult {
-    vector<Tool> tools;
+    vector<Tool> Tools;
 };
 
 // CallToolResult {
@@ -305,19 +305,19 @@ struct ListToolsResult : public PaginatedResult {
  * should be reported as an MCP error response.
  */
 struct CallToolResult : public Result {
-    vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>> content;
+    vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>> Content;
 
     /**
      * Whether the tool call ended in an error.
      *
      * If not set, this is assumed to be false (the call was successful).
      */
-    optional<bool> isError;
+    optional<bool> IsError;
 };
 
 struct CallToolRequestParams {
-    string name;
-    optional<AdditionalProperties> arguments;
+    string Name;
+    optional<AdditionalProperties> Arguments;
 };
 
 // CallToolRequest {
@@ -343,7 +343,7 @@ struct CallToolRequestParams {
  * Used by the client to invoke a tool provided by the server.
  */
 struct CallToolRequest : public Request {
-    CallToolRequestParams params;
+    CallToolRequestParams Params;
 
     CallToolRequest() {
         method = MTHD_TOOLS_CALL;
