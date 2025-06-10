@@ -49,7 +49,7 @@ future<void> ProxyOAuthServerProvider::Authorize(const OAuthClientInformationFul
     string TargetUrl = _Endpoints.AuthorizationUrl;
 
     map<string, string> SearchParams = {{"client_id", Client.Information.ClientID},
-                                        {"response_type", MSG_KEY_CODE},
+                                        {"response_type", MSG_CODE},
                                         {"redirect_uri", Params.RedirectUri},
                                         {"code_challenge", Params.CodeChallenge},
                                         {"code_challenge_method", "S256"}};
@@ -86,7 +86,7 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeAuthorizationCode(
     const optional<string>& RedirectUri = nullopt) const {
     map<string, string> Params = {{"grant_type", "authorization_code"},
                                   {"client_id", Client.Information.ClientID},
-                                  {MSG_KEY_CODE, AuthorizationCode}};
+                                  {MSG_CODE, AuthorizationCode}};
 
     if (Client.Information.ClientSecret.has_value()) {
         Params["client_secret"] = Client.Information.ClientSecret.value();

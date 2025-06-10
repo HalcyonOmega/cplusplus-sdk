@@ -150,7 +150,7 @@ OAuthMetadata CreateOAuthMetadata(const CreateOAuthMetadataOptions& Options) {
 
     URLHelper BaseToUse = BaseURL ? *BaseURL : Issuer;
     Metadata.AuthorizationEndpoint = URLHelper(AuthorizationEndpoint, BaseToUse).Href;
-    Metadata.ResponseTypesSupported = {MSG_KEY_CODE};
+    Metadata.ResponseTypesSupported = {MSG_CODE};
     Metadata.CodeChallengeMethodsSupported = {"S256"};
 
     Metadata.TokenEndpoint = URLHelper(TokenEndpoint, BaseToUse).Href;
@@ -206,7 +206,7 @@ RequestHandler MCP_AuthRouter(const AuthRouterOptions& Options) {
                [=](const JSON& Request, JSON& Response) {
                    // TODO: Call AuthorizationHandler({ provider: Options.Provider,
                    // ...Options.AuthorizationOptions })
-                   Response[MSG_KEY_ERROR] = "authorization_handler_not_implemented";
+                   Response[MSG_ERROR] = "authorization_handler_not_implemented";
                });
 
     // Add token endpoint
@@ -214,7 +214,7 @@ RequestHandler MCP_AuthRouter(const AuthRouterOptions& Options) {
                [=](const JSON& Request, JSON& Response) {
                    // TODO: Call TokenHandler({ provider: Options.Provider, ...Options.TokenOptions
                    // })
-                   Response[MSG_KEY_ERROR] = "token_handler_not_implemented";
+                   Response[MSG_ERROR] = "token_handler_not_implemented";
                });
 
     // Add metadata router
@@ -234,7 +234,7 @@ RequestHandler MCP_AuthRouter(const AuthRouterOptions& Options) {
                        //   clientsStore: Options.Provider->GetClientsStore(),
                        //   ...Options.ClientRegistrationOptions,
                        // })
-                       Response[MSG_KEY_ERROR] = "registration_handler_not_implemented";
+                       Response[MSG_ERROR] = "registration_handler_not_implemented";
                    });
     }
 
@@ -244,7 +244,7 @@ RequestHandler MCP_AuthRouter(const AuthRouterOptions& Options) {
                    [=](const JSON& Request, JSON& Response) {
                        // TODO: Call RevocationHandler({ provider: Options.Provider,
                        // ...Options.RevocationOptions })
-                       Response[MSG_KEY_ERROR] = "revocation_handler_not_implemented";
+                       Response[MSG_ERROR] = "revocation_handler_not_implemented";
                    });
     }
 
@@ -256,9 +256,9 @@ RequestHandler MetadataHandler(const JSON& Metadata) {
         // TODO: Configure CORS to allow any origin, to make accessible to web-based MCP clients
         // TODO: Use allowedMethods(['GET'])
 
-        string Method = Request.value(MSG_KEY_METHOD, "GET");
+        string Method = Request.value(MSG_METHOD, "GET");
         if (Method != "GET") {
-            Response[MSG_KEY_ERROR] = "method_not_allowed";
+            Response[MSG_ERROR] = "method_not_allowed";
             Response["error_description"] =
                 "The method " + Method + " is not allowed for this endpoint";
             Response["status"] = 405;
@@ -278,7 +278,7 @@ RequestHandler MCP_AuthMetadataRouter(const AuthMetadataOptions& Options) {
 
     // Create protected resource metadata
     JSON ProtectedResourceMetadata = JSON::object();
-    ProtectedResourceMetadata[MSG_KEY_RESOURCE] = Options.ResourceServerURL.Href;
+    ProtectedResourceMetadata[MSG_RESOURCE] = Options.ResourceServerURL.Href;
     ProtectedResourceMetadata["authorization_servers"] =
         JSON::array({Options.OAuthMetadata.Issuer});
 

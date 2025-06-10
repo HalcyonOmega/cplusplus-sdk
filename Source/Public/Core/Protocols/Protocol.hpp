@@ -220,8 +220,8 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             MTHD_NOTIFICATION_CANCELLED,
             [this](const JSON_RPC_Notification& InNotification) -> future<void> {
                 // Extract RequestID and reason from notification params
-                if (InNotification.Params && InNotification.Params->contains(MSG_KEY_REQUEST_ID)) {
-                    RequestID RequestID = (*InNotification.Params)[MSG_KEY_REQUEST_ID];
+                if (InNotification.Params && InNotification.Params->contains(MSG_REQUEST_ID)) {
+                    RequestID RequestID = (*InNotification.Params)[MSG_REQUEST_ID];
 
                     lock_guard<mutex> lock(m_HandlersMutex);
                     auto it = m_RequestHandlerAbortControllers.find(RequestID);
@@ -258,13 +258,13 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
   private:
     void OnProgress(const JSON_RPC_Notification& InNotification) {
-        if (!InNotification.Params || !InNotification.Params->contains(MSG_KEY_PROGRESS_TOKEN)) {
+        if (!InNotification.Params || !InNotification.Params->contains(MSG_PROGRESS_TOKEN)) {
             OnErrorInternal(runtime_error("Received a progress notification without progressToken: "
                                           + InNotification.Method));
             return;
         }
 
-        int64_t ProgressToken = (*InNotification.Params)[MSG_KEY_PROGRESS_TOKEN];
+        int64_t ProgressToken = (*InNotification.Params)[MSG_PROGRESS_TOKEN];
 
         ProgressCallback Handler;
         {
@@ -297,8 +297,8 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         ProgressData.ProgressToken = ProgressToken;
 
         // Extract the params excluding progressToken (equivalent to TypeScript destructuring)
-        if (InNotification.Params->contains(MSG_KEY_DATA)) {
-            ProgressData.Data = (*InNotification.Params)[MSG_KEY_DATA];
+        if (InNotification.Params->contains(MSG_DATA)) {
+            ProgressData.Data = (*InNotification.Params)[MSG_DATA];
         }
 
         Handler(ProgressData);
@@ -459,7 +459,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         Extra.Signal = AbortSignal;
         Extra.SessionID = m_Transport ? m_Transport->SessionID : nullopt;
         Extra.AuthInfo = InAuthInfo;
-        Extra.Meta = (InRequest.Params && InRequest.Params->contains(MSG_KEY_META))
+        Extra.Meta = (InRequest.Params && InRequest.Params->contains(MSG_META))
                          ? optional<RequestMeta>{RequestMeta{}} // Basic extraction
                          : nullopt;
         Extra.RequestID = InRequest.ID;
@@ -590,37 +590,33 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             if (IsJSONRPCResponse(InMessage) || IsJSONRPCError(InMessage)) {
                 if (IsJSONRPCResponse(InMessage)) {
                     JSON_RPC_Response Response;
-                    Response.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
-                    Response.ID = InMessage[MSG_KEY_ID];
-                    Response.Result = InMessage[MSG_KEY_RESULT];
+                    Response.JSON_RPC = InMessage[MSG_JSON_RPC];
+                    Response.ID = InMessage[MSG_ID];
+                    Response.Result = InMessage[MSG_RESULT];
                     OnResponse(response);
                 } else {
                     JSON_RPC_Error ErrorResponse;
-                    ErrorResponse.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
-                    ErrorResponse.ID = InMessage[MSG_KEY_ID];
-                    ErrorResponse.Error.Code = InMessage[MSG_KEY_ERROR][MSG_KEY_CODE];
-                    ErrorResponse.Error.Message = InMessage[MSG_KEY_ERROR][MSG_KEY_MESSAGE];
-                    if (InMessage[MSG_KEY_ERROR].contains(MSG_KEY_DATA)) {
-                        ErrorResponse.Error.Data = InMessage[MSG_KEY_ERROR][MSG_KEY_DATA];
+                    ErrorResponse.JSON_RPC = InMessage[MSG_JSON_RPC];
+                    ErrorResponse.ID = InMessage[MSG_ID];
+                    ErrorResponse.Error.Code = InMessage[MSG_ERROR][MSG_CODE];
+                    ErrorResponse.Error.Message = InMessage[MSG_ERROR][MSG_MESSAGE];
+                    if (InMessage[MSG_ERROR].contains(MSG_DATA)) {
+                        ErrorResponse.Error.Data = InMessage[MSG_ERROR][MSG_DATA];
                     }
                     OnResponse(error);
                 }
             } else if (IsJSONRPCRequest(InMessage)) {
                 JSON_RPC_Request Request;
-                Request.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
-                Request.ID = InMessage[MSG_KEY_ID];
-                Request.Method = InMessage[MSG_KEY_METHOD];
-                if (InMessage.contains(MSG_KEY_PARAMS)) {
-                    Request.Params = InMessage[MSG_KEY_PARAMS];
-                }
+                Request.JSON_RPC = InMessage[MSG_JSON_RPC];
+                Request.ID = InMessage[MSG_ID];
+                Request.Method = InMessage[MSG_METHOD];
+                if (InMessage.contains(MSG_PARAMS)) { Request.Params = InMessage[MSG_PARAMS]; }
                 OnRequest(Request, InAuthInfo);
             } else if (IsJSONRPCNotification(InMessage)) {
                 JSON_RPC_Notification Notification;
-                Notification.JSON_RPC = InMessage[MSG_KEY_JSON_RPC];
-                Notification.Method = InMessage[MSG_KEY_METHOD];
-                if (InMessage.contains(MSG_KEY_PARAMS)) {
-                    Notification.Params = InMessage[MSG_KEY_PARAMS];
-                }
+                Notification.JSON_RPC = InMessage[MSG_JSON_RPC];
+                Notification.Method = InMessage[MSG_METHOD];
+                if (InMessage.contains(MSG_PARAMS)) { Notification.Params = InMessage[MSG_PARAMS]; }
                 OnNotification(Notification);
             } else {
                 OnErrorInternal(runtime_error("Unknown message type: " + InMessage.dump()));
@@ -705,10 +701,10 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             m_ProgressHandlers[MessageID] = *InOptions->OnProgress;
 
             if (!Request.Params) { Request.Params = JSON::object(); }
-            if (!Request.Params->contains(MSG_KEY_META)) {
-                (*Request.Params)[MSG_KEY_META] = JSON::object();
+            if (!Request.Params->contains(MSG_META)) {
+                (*Request.Params)[MSG_META] = JSON::object();
             }
-            (*Request.Params)[MSG_KEY_META][MSG_KEY_PROGRESS_TOKEN] = MessageID;
+            (*Request.Params)[MSG_META][MSG_PROGRESS_TOKEN] = MessageID;
         }
 
         auto Cancel = [this, MessageID](const string& InReason) {
@@ -725,7 +721,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 CancelNotification.JSON_RPC = "2.0";
                 CancelNotification.Method = MTHD_NOTIFICATION_CANCELLED;
                 CancelNotification.Params = JSON::object();
-                (*CancelNotification.Params)[MSG_KEY_REQUEST_ID] = MessageID;
+                (*CancelNotification.Params)[MSG_REQUEST_ID] = MessageID;
                 (*CancelNotification.Params)["reason"] = InReason;
 
                 m_Transport->Send(CancelNotification);
@@ -783,10 +779,10 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         // Send request via transport
         // TODO: Relook RequestJSON type
         try {
-            JSON RequestJSON = {{MSG_KEY_JSON_RPC, Request.JSON_RPC},
-                                {MSG_KEY_ID, Request.ID},
-                                {MSG_KEY_METHOD, Request.Method}};
-            if (Request.Params) { RequestJSON[MSG_KEY_PARAMS] = *Request.Params; }
+            JSON RequestJSON = {{MSG_JSON_RPC, Request.JSON_RPC},
+                                {MSG_ID, Request.ID},
+                                {MSG_METHOD, Request.Method}};
+            if (Request.Params) { RequestJSON[MSG_PARAMS] = *Request.Params; }
 
             Transport::TransportSendOptions TransportOptions;
             if (InOptions) {
@@ -818,9 +814,9 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         Notification.Method = InNotification.Method;
         Notification.Params = InNotification.Params;
 
-        JSON NotificationJSON = {{MSG_KEY_JSON_RPC, Notification.JSON_RPC},
-                                 {MSG_KEY_METHOD, Notification.Method}};
-        if (Notification.Params) { NotificationJSON[MSG_KEY_PARAMS] = *Notification.Params; }
+        JSON NotificationJSON = {{MSG_JSON_RPC, Notification.JSON_RPC},
+                                 {MSG_METHOD, Notification.Method}};
+        if (Notification.Params) { NotificationJSON[MSG_PARAMS] = *Notification.Params; }
 
         Transport::TransportSendOptions TransportOptions;
         if (InOptions) { TransportOptions.RelatedRequestID = InOptions->RelatedRequestID; }

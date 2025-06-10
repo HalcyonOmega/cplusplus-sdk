@@ -2,50 +2,36 @@
 
 #include <cstdint>
 
-#include "Constants.h"
 #include "Core.h"
+#include "Core/Constants/ErrorConstants.h"
 
 MCP_NAMESPACE_BEGIN
 
-// Error codes defined by the JSON-RPC specification.
-enum class ErrorCode : int32_t {
-    // SDK error codes
-    ConnectionClosed = ERRCODE_CONNECTION_CLOSED,
-    RequestTimeout = ERRCODE_REQUEST_TIMEOUT,
-
-    // Standard JSON-RPC error codes
-    ParseError = ERRCODE_PARSE_ERROR,
-    InvalidRequest = ERRCODE_INVALID_REQUEST,
-    MethodNotFound = ERRCODE_METHOD_NOT_FOUND,
-    InvalidParams = ERRCODE_INVALID_PARAMS,
-    InternalError = ERRCODE_INTERNAL_ERROR,
-};
-
 class MCP_Error {
   private:
-    ErrorCode code_;
-    string message_;
-    optional<JSON> data_;
-    string full_message_;
+    Errors m_Code;
+    string m_Message;
+    optional<JSON> m_Data;
+    string m_FullMessage;
 
   public:
-    Error(ErrorCode code, const string& message, optional<JSON> data = nullopt)
-        : code_(code), message_(message), data_(data) {
-        full_message_ = "MCP error " + std::to_string(code) + ": " + message;
+    Error(Errors Code, const string& Message, optional<JSON> Data = nullopt)
+        : m_Code(Code), m_Message(Message), m_Data(Data) {
+        m_FullMessage = "MCP error " + std::to_string(Code) + ": " + Message;
     }
 
     const char* what() const noexcept {
-        return full_message_.c_str();
+        return m_FullMessage.c_str();
     }
 
-    ErrorCode getCode() const {
-        return code_;
+    Errors getCode() const {
+        return m_Code;
     }
     const string& getMessage() const {
-        return message_;
+        return m_Message;
     }
     const optional<JSON>& getData() const {
-        return data_;
+        return m_Data;
     }
 };
 

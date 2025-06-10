@@ -8,16 +8,15 @@ MCP_NAMESPACE_BEGIN
 
 bool WebSocket_Client_Transport::ValidateMessageBase(const JSON& json) const {
     // Basic JSON-RPC validation equivalent to MessageBaseSchema.parse()
-    if (!json.contains(MSG_KEY_JSON_RPC)
-        || json[MSG_KEY_JSON_RPC] != MSG_KEY_MSG_KEY_JSON_RPC_VERSION) {
+    if (!json.contains(MSG_JSON_RPC) || json[MSG_JSON_RPC] != MSG_MSG_JSON_RPC_VERSION) {
         return false;
     }
 
     // Check if it's a request, notification, response, or error
-    bool hasId = json.contains(MSG_KEY_ID);
-    bool hasMethod = json.contains(MSG_KEY_METHOD);
-    bool hasResult = json.contains(MSG_KEY_RESULT);
-    bool hasError = json.contains(MSG_KEY_ERROR);
+    bool hasId = json.contains(MSG_ID);
+    bool hasMethod = json.contains(MSG_METHOD);
+    bool hasResult = json.contains(MSG_RESULT);
+    bool hasError = json.contains(MSG_ERROR);
 
     // Request: must have id and method
     if (hasId && hasMethod && !hasResult && !hasError) { return true; }

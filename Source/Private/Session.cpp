@@ -74,7 +74,7 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
     m_State = SessionState::Initializing;
 
     InitializeRequest request;
-    request.params.protocolVersion = LATEST_PROTOCOL_VERSION; // From Constants.h via Core.h
+    request.params.protocolVersion = MCP_LATEST_PROTOCOL_VERSION; // From Constants.h via Core.h
     request.params.capabilities = m_ClientCapabilities;
     request.params.clientInfo = m_ClientInfo;
 
@@ -95,14 +95,13 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
     // as an example, and to highlight where to_json methods are needed.
 
     JSON jsonRequest;
-    jsonRequest[MSG_KEY_JSON_RPC] = MSG_KEY_JSON_RPC_VERSION; // "2.0"
-    jsonRequest[MSG_KEY_ID] =
-        request.id.get<std::string>(); // Assuming RequestID is variant<string, int> and we use
-                                       // string here
-    jsonRequest[MSG_KEY_METHOD] = request.method; // Should be "initialize" (MTHD_INITIALIZE)
+    jsonRequest[MSG_JSON_RPC] = MSG_JSON_RPC_VERSION;    // "2.0"
+    jsonRequest[MSG_ID] = request.id.get<std::string>(); // Assuming RequestID is variant<string,
+                                                         // int> and we use string here
+    jsonRequest[MSG_METHOD] = request.method;            // Should be "initialize" (MTHD_INITIALIZE)
 
     JSON paramsJson;
-    paramsJson[MSG_KEY_PROTOCOL_VERSION] = request.params.protocolVersion;
+    paramsJson[MSG_PROTOCOL_VERSION] = request.params.protocolVersion;
 
     // Manual serialization for ClientCapabilities (example - ideally ClientCapabilities has
     // to_json)
@@ -110,24 +109,24 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
     if (request.params.capabilities.roots) {
         JSON rootsJson;
         if (request.params.capabilities.roots->listChanged) {
-            rootsJson[MSG_KEY_LIST_CHANGED] = *request.params.capabilities.roots->listChanged;
+            rootsJson[MSG_LIST_CHANGED] = *request.params.capabilities.roots->listChanged;
         }
-        clientCapabilitiesJson[MSG_KEY_ROOTS] = rootsJson; // MSG_KEY_ROOTS needed in Constants.h
+        clientCapabilitiesJson[MSG_ROOTS] = rootsJson; // MSG_ROOTS needed in Constants.h
     }
     if (request.params.capabilities.sampling) {
         // Sampling is optional<JSON> in ClientSchemas.h, use it if present
-        clientCapabilitiesJson[MSG_KEY_SAMPLING] =
-            *request.params.capabilities.sampling; // MSG_KEY_SAMPLING needed
+        clientCapabilitiesJson[MSG_SAMPLING] =
+            *request.params.capabilities.sampling; // MSG_SAMPLING needed
     }
     // Add other capabilities if present...
-    paramsJson[MSG_KEY_CAPABILITIES] = clientCapabilitiesJson;
+    paramsJson[MSG_CAPABILITIES] = clientCapabilitiesJson;
 
     JSON clientInfoJson;
-    clientInfoJson[MSG_KEY_NAME] = request.params.clientInfo.name;
-    clientInfoJson[MSG_KEY_VERSION] = request.params.clientInfo.version;
-    paramsJson[MSG_KEY_CLIENT_INFO] = clientInfoJson;
+    clientInfoJson[MSG_NAME] = request.params.clientInfo.name;
+    clientInfoJson[MSG_VERSION] = request.params.clientInfo.version;
+    paramsJson[MSG_CLIENT_INFO] = clientInfoJson;
 
-    jsonRequest[MSG_KEY_PARAMS] = paramsJson;
+    jsonRequest[MSG_PARAMS] = paramsJson;
 
     if (m_Transport) {
         m_Transport->Send(jsonRequest.dump());

@@ -72,7 +72,7 @@ struct ResourceTemplate {
 
 // The contents of a resource, embedded into a prompt or tool call result.
 struct EmbeddedResource {
-    z.literal(MSG_KEY_RESOURCE) Type;
+    z.literal(MSG_RESOURCE) Type;
     variant<TextResourceContents, BLOB_ResourceContents> Resource;
     Passthrough Additional;
 };

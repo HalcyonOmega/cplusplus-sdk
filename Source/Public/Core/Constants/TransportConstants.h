@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core.h"
+#include "Macros.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -39,9 +39,6 @@ static constexpr const char* TRANSPORT_ERR_INVALID_UTF8 = "Invalid UTF-8 encodin
 static constexpr const char* TRANSPORT_ERR_INVALID_JSON_RPC = "Invalid JSON-RPC message format";
 static constexpr const char* TRANSPORT_ERR_HTTP_REQUEST_FAILED = "HTTP request failed: ";
 static constexpr const char* TRANSPORT_ERR_NOT_RUNNING = "Transport is not running";
-
-// Transport protocol version
-static constexpr const char* TRANSPORT_JSONRPC_VERSION = "2.0";
 
 // Transport error codes
 constexpr const char* TRANSPORT_ERR_NOT_CONNECTED = "TRANSPORT_ERR_NOT_CONNECTED";

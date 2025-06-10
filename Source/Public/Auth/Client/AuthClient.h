@@ -4,7 +4,7 @@
 #include "Core.h"
 
 // TODO: Fix External Ref: pkce-challenge (PKCE challenge generation)
-// TODO: Fix External Ref: LATEST_PROTOCOL_VERSION from "../types.js"
+// TODO: Fix External Ref: MCP_LATEST_PROTOCOL_VERSION from "../types.js"
 // TODO: Fix External Ref: Zod schemas validation
 
 MCP_NAMESPACE_BEGIN

@@ -42,8 +42,8 @@ class StdioServerTransport : public Transport {
         }
 
         this._started = true;
-        this._stdin.on(MSG_KEY_DATA, this._ondata);
-        this._stdin.on(MSG_KEY_ERROR, this._onerror);
+        this._stdin.on(MSG_DATA, this._ondata);
+        this._stdin.on(MSG_ERROR, this._onerror);
     }
 
   private
@@ -60,8 +60,8 @@ class StdioServerTransport : public Transport {
 
     async close() : Promise<void> {
         // Remove our event listeners first
-        this._stdin.off(MSG_KEY_DATA, this._ondata);
-        this._stdin.off(MSG_KEY_ERROR, this._onerror);
+        this._stdin.off(MSG_DATA, this._ondata);
+        this._stdin.off(MSG_ERROR, this._onerror);
 
         // Check if we were the only data listener
         const remainingDataListeners = this._stdin.listenerCount('data');

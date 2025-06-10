@@ -32,7 +32,7 @@ bool TokenRequestSchema::Validate(const JSON& Body, TokenRequestSchema& Out, str
 
 bool AuthorizationCodeGrantSchema::Validate(const JSON& Body, AuthorizationCodeGrantSchema& Out,
                                             string& ErrorMessage) {
-    if (!Body.contains(MSG_KEY_CODE) || !Body[MSG_KEY_CODE].is_string()) {
+    if (!Body.contains(MSG_CODE) || !Body[MSG_CODE].is_string()) {
         ErrorMessage = "Missing or invalid code";
         return false;
     }
@@ -41,7 +41,7 @@ bool AuthorizationCodeGrantSchema::Validate(const JSON& Body, AuthorizationCodeG
         return false;
     }
 
-    Out.Code = Body[MSG_KEY_CODE];
+    Out.Code = Body[MSG_CODE];
     Out.CodeVerifier = Body["code_verifier"];
 
     if (Body.contains("redirect_uri") && Body["redirect_uri"].is_string()) {

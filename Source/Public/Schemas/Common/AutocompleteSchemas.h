@@ -39,7 +39,7 @@ struct ResourceReference : public AutocompleteReference {
     string uri;
 
     ResourceReference() {
-        type = MSG_KEY_REF_RESOURCE;
+        type = MSG_REF_RESOURCE;
     }
 };
 
@@ -67,7 +67,7 @@ struct PromptReference : public AutocompleteReference {
     string name;
 
     PromptReference() {
-        type = MSG_KEY_REF_PROMPT;
+        type = MSG_REF_PROMPT;
     }
 };
 

@@ -157,12 +157,12 @@ void send(const MessageBase& message) {
     // Convert MessageBase to JSON
 
     JSON jsonMessage;
-    jsonMessage[MSG_KEY_JSON_RPC] = message.jsonrpc;
-    if (message.id.has_value()) { jsonMessage[MSG_KEY_ID] = message.id.value(); }
-    if (message.method.has_value()) { jsonMessage[MSG_KEY_METHOD] = message.method.value(); }
-    if (message.params.has_value()) { jsonMessage[MSG_KEY_PARAMS] = message.params.value(); }
-    if (message.result.has_value()) { jsonMessage[MSG_KEY_RESULT] = message.result.value(); }
-    if (message.error.has_value()) { jsonMessage[MSG_KEY_ERROR] = message.error.value(); }
+    jsonMessage[MSG_JSON_RPC] = message.jsonrpc;
+    if (message.id.has_value()) { jsonMessage[MSG_ID] = message.id.value(); }
+    if (message.method.has_value()) { jsonMessage[MSG_METHOD] = message.method.value(); }
+    if (message.params.has_value()) { jsonMessage[MSG_PARAMS] = message.params.value(); }
+    if (message.result.has_value()) { jsonMessage[MSG_RESULT] = message.result.value(); }
+    if (message.error.has_value()) { jsonMessage[MSG_ERROR] = message.error.value(); }
 
     string eventData = "event: message\ndata: " + jsonMessage.dump() + "\n\n";
     _sseResponse.value()->write(eventData);
@@ -373,7 +373,7 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
 
             RequestInit init;
             if (_requestInit.has_value()) { init = _requestInit.value(); }
-            init[MSG_KEY_METHOD] = string("POST");
+            init[MSG_METHOD] = string("POST");
             init["headers"] = headers;
             // TODO: Fix External Ref: JSON.stringify(message)
             init["body"] = string("{}"); // JSON::stringify(message);

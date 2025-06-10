@@ -128,7 +128,7 @@
 //     z.enum(["user", "assistant"]) Role; // The role of the message.
 
 //     // The content of the message.
-//     z.discriminatedUnion(MSG_KEY_TYPE, [TextContent, ImageContent, AudioContent]) Content;
+//     z.discriminatedUnion(MSG_TYPE, [TextContent, ImageContent, AudioContent]) Content;
 // };
 
 // // The server's response to a completion/complete request

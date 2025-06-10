@@ -168,14 +168,14 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
     if (TransportPtr->GetSessionId()) { co_return; }
 
     try {
-        JSON InitializeRequest = JSON{
-            {MSG_KEY_METHOD, MTHD_INITIALIZE},
-            {MSG_KEY_PARAMS,
-             JSON{
-                 {MSG_KEY_PROTOCOL_VERSION, LATEST_PROTOCOL_VERSION},
-                 {MSG_KEY_CAPABILITIES, JSON::object()}, // TODO: Serialize Capabilities_ properly
-                 {MSG_KEY_CLIENT_INFO, JSON::object()}   // TODO: Serialize ClientInfo_ properly
-             }}};
+        JSON InitializeRequest =
+            JSON{{MSG_METHOD, MTHD_INITIALIZE},
+                 {MSG_PARAMS,
+                  JSON{
+                      {MSG_PROTOCOL_VERSION, MCP_LATEST_PROTOCOL_VERSION},
+                      {MSG_CAPABILITIES, JSON::object()}, // TODO: Serialize Capabilities_ properly
+                      {MSG_CLIENT_INFO, JSON::object()}   // TODO: Serialize ClientInfo_ properly
+                  }}};
 
         JSON Result = co_await Request(InitializeRequest, "InitializeResultSchema", Options);
 
@@ -184,19 +184,19 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
         }
 
         // TODO: Implement SUPPORTED_PROTOCOL_VERSIONS validation
-        // if (!SUPPORTED_PROTOCOL_VERSIONS.contains(Result[MSG_KEY_PROTOCOL_VERSION])) {
+        // if (!SUPPORTED_PROTOCOL_VERSIONS.contains(Result[MSG_PROTOCOL_VERSION])) {
         //     throw runtime_error("Server's protocol version is not supported: " +
-        //     Result[MSG_KEY_PROTOCOL_VERSION].get<string>());
+        //     Result[MSG_PROTOCOL_VERSION].get<string>());
         // }
 
         // TODO: Parse and set ServerCapabilities_, ServerVersion_, Instructions_ from Result
-        // ServerCapabilities_ = ParseServerCapabilities(Result[MSG_KEY_CAPABILITIES]);
-        // ServerVersion_ = ParseImplementation(Result[MSG_KEY_SERVER_INFO]);
+        // ServerCapabilities_ = ParseServerCapabilities(Result[MSG_CAPABILITIES]);
+        // ServerVersion_ = ParseImplementation(Result[MSG_SERVER_INFO]);
         // if (Result.contains("instructions")) {
         //     Instructions_ = Result["instructions"].get<string>();
         // }
 
-        JSON InitializedNotification = JSON{{MSG_KEY_METHOD, MTHD_NOTIFICATION_INITIALIZED}};
+        JSON InitializedNotification = JSON{{MSG_METHOD, MTHD_NOTIFICATION_INITIALIZED}};
         co_await Notification(InitializedNotification);
 
     } catch (const exception& Error) {
@@ -299,14 +299,14 @@ void Client<RequestT, NotificationT, ResultT>::AssertRequestHandlerCapability(
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::Ping(const optional<RequestOptions>& Options) {
-    return co_await Request(JSON{{MSG_KEY_METHOD, MTHD_PING}}, "EmptyResultSchema", Options);
+    return co_await Request(JSON{{MSG_METHOD, MTHD_PING}}, "EmptyResultSchema", Options);
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::Complete(const JSON& Params,
                                                    const optional<RequestOptions>& Options) {
-    JSON CompleteRequest = JSON{{MSG_KEY_METHOD, "completion/complete"}, {MSG_KEY_PARAMS, Params}};
+    JSON CompleteRequest = JSON{{MSG_METHOD, "completion/complete"}, {MSG_PARAMS, Params}};
     return co_await Request(CompleteRequest, "CompleteResultSchema", Options);
 }
 
@@ -314,8 +314,8 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::SetLoggingLevel(LoggingLevel Level,
                                                           const optional<RequestOptions>& Options) {
-    JSON SetLevelRequest = JSON{{MSG_KEY_METHOD, "logging/setLevel"},
-                                {MSG_KEY_PARAMS, JSON{{"level", static_cast<int>(Level)}}}};
+    JSON SetLevelRequest = JSON{{MSG_METHOD, "logging/setLevel"},
+                                {MSG_PARAMS, JSON{{"level", static_cast<int>(Level)}}}};
     return co_await Request(SetLevelRequest, "EmptyResultSchema", Options);
 }
 
@@ -323,7 +323,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::GetPrompt(const JSON& Params,
                                                     const optional<RequestOptions>& Options) {
-    JSON GetPromptRequest = JSON{{MSG_KEY_METHOD, "prompts/get"}, {MSG_KEY_PARAMS, Params}};
+    JSON GetPromptRequest = JSON{{MSG_METHOD, "prompts/get"}, {MSG_PARAMS, Params}};
     return co_await Request(GetPromptRequest, "GetPromptResultSchema", Options);
 }
 
@@ -331,8 +331,8 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListPrompts(const optional<JSON>& Params,
                                                       const optional<RequestOptions>& Options) {
-    JSON ListPromptsRequest = JSON{{MSG_KEY_METHOD, "prompts/list"}};
-    if (Params) { ListPromptsRequest[MSG_KEY_PARAMS] = *Params; }
+    JSON ListPromptsRequest = JSON{{MSG_METHOD, "prompts/list"}};
+    if (Params) { ListPromptsRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListPromptsRequest, "ListPromptsResultSchema", Options);
 }
 
@@ -340,16 +340,16 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListResources(const optional<JSON>& Params,
                                                         const optional<RequestOptions>& Options) {
-    JSON ListResourcesRequest = JSON{{MSG_KEY_METHOD, "resources/list"}};
-    if (Params) { ListResourcesRequest[MSG_KEY_PARAMS] = *Params; }
+    JSON ListResourcesRequest = JSON{{MSG_METHOD, "resources/list"}};
+    if (Params) { ListResourcesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourcesRequest, "ListResourcesResultSchema", Options);
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::ListResourceTemplates(
     const optional<JSON>& Params, const optional<RequestOptions>& Options) {
-    JSON ListResourceTemplatesRequest = JSON{{MSG_KEY_METHOD, "resources/templates/list"}};
-    if (Params) { ListResourceTemplatesRequest[MSG_KEY_PARAMS] = *Params; }
+    JSON ListResourceTemplatesRequest = JSON{{MSG_METHOD, "resources/templates/list"}};
+    if (Params) { ListResourceTemplatesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourceTemplatesRequest, "ListResourceTemplatesResultSchema",
                             Options);
 }
@@ -358,22 +358,21 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ReadResource(const JSON& Params,
                                                        const optional<RequestOptions>& Options) {
-    JSON ReadResourceRequest = JSON{{MSG_KEY_METHOD, "resources/read"}, {MSG_KEY_PARAMS, Params}};
+    JSON ReadResourceRequest = JSON{{MSG_METHOD, "resources/read"}, {MSG_PARAMS, Params}};
     return co_await Request(ReadResourceRequest, "ReadResourceResultSchema", Options);
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::SubscribeResource(
     const JSON& Params, const optional<RequestOptions>& Options) {
-    JSON SubscribeRequest = JSON{{MSG_KEY_METHOD, "resources/subscribe"}, {MSG_KEY_PARAMS, Params}};
+    JSON SubscribeRequest = JSON{{MSG_METHOD, "resources/subscribe"}, {MSG_PARAMS, Params}};
     return co_await Request(SubscribeRequest, "EmptyResultSchema", Options);
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::UnsubscribeResource(
     const JSON& Params, const optional<RequestOptions>& Options) {
-    JSON UnsubscribeRequest =
-        JSON{{MSG_KEY_METHOD, "resources/unsubscribe"}, {MSG_KEY_PARAMS, Params}};
+    JSON UnsubscribeRequest = JSON{{MSG_METHOD, "resources/unsubscribe"}, {MSG_PARAMS, Params}};
     return co_await Request(UnsubscribeRequest, "EmptyResultSchema", Options);
 }
 
@@ -381,16 +380,16 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const string& ResultSchema,
                                                    const optional<RequestOptions>& Options) {
-    JSON CallToolRequest = JSON{{MSG_KEY_METHOD, MTHD_TOOLS_CALL}, {MSG_KEY_PARAMS, Params}};
+    JSON CallToolRequest = JSON{{MSG_METHOD, MTHD_TOOLS_CALL}, {MSG_PARAMS, Params}};
 
     JSON Result = co_await Request(CallToolRequest, ResultSchema, Options);
 
     // Check if the tool has an outputSchema
-    string ToolName = Params[MSG_KEY_NAME];
+    string ToolName = Params[MSG_NAME];
     auto Validator = GetToolOutputValidator(ToolName);
     if (Validator) {
         // If tool has outputSchema, it MUST return structuredContent (unless it's an error)
-        if (!Result.contains("structuredContent") && !Result.value(MSG_KEY_IS_ERROR, false)) {
+        if (!Result.contains("structuredContent") && !Result.value(MSG_IS_ERROR, false)) {
             throw MCP_Error(ErrorCode::InvalidRequest,
                             "Tool " + ToolName
                                 + " has an output schema but did not return structured content");
@@ -446,8 +445,8 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListTools(const optional<JSON>& Params,
                                                     const optional<RequestOptions>& Options) {
-    JSON ListToolsRequest = JSON{{MSG_KEY_METHOD, MTHD_TOOLS_LIST}};
-    if (Params) { ListToolsRequest[MSG_KEY_PARAMS] = *Params; }
+    JSON ListToolsRequest = JSON{{MSG_METHOD, MTHD_TOOLS_LIST}};
+    if (Params) { ListToolsRequest[MSG_PARAMS] = *Params; }
 
     JSON Result = co_await Request(ListToolsRequest, "ListToolsResultSchema", Options);
 
@@ -461,7 +460,7 @@ Client<RequestT, NotificationT, ResultT>::ListTools(const optional<JSON>& Params
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<void> Client<RequestT, NotificationT, ResultT>::SendRootsListChanged() {
-    JSON RootsListChangedNotification = JSON{{MSG_KEY_METHOD, "notifications/roots/list_changed"}};
+    JSON RootsListChangedNotification = JSON{{MSG_METHOD, "notifications/roots/list_changed"}};
     co_await Notification(RootsListChangedNotification);
 }
 

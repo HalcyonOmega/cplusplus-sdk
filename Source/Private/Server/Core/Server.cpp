@@ -45,9 +45,7 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
 
     // Set notification handler for InitializedNotificationSchema
     this->SetNotificationHandler(InitializedNotificationSchema{}, [this]() {
-        if (this->OnInitialized) {
-            (*this->OnInitialized)();
-        }
+        if (this->OnInitialized) { (*this->OnInitialized)(); }
     });
 
     /**
@@ -160,11 +158,11 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
             }
         }
 
-        result.protocolVersion = versionSupported
-                                     ? requestedVersion
-                                     : LATEST_PROTOCOL_VERSION; // TODO: Set protocolVersion field
-        result.capabilities = GetCapabilities();                // TODO: Set capabilities field
-        result.serverInfo = ServerInfo_;                        // TODO: Set serverInfo field
+        result.protocolVersion =
+            versionSupported ? requestedVersion
+                             : MCP_LATEST_PROTOCOL_VERSION; // TODO: Set protocolVersion field
+        result.capabilities = GetCapabilities();            // TODO: Set capabilities field
+        result.serverInfo = ServerInfo_;                    // TODO: Set serverInfo field
 
         if (Instructions_) {
             result.instructions = Instructions_; // TODO: Set instructions field
@@ -196,57 +194,55 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
 
     future<JSON> Server::Ping() {
         JSON request;
-        request[MSG_KEY_METHOD] = MTHD_PING;
+        request[MSG_METHOD] = MTHD_PING;
         return this->Request(request, EmptyResultSchema{});
     }
 
     future<JSON> Server::CreateMessage(const JSON& params,
                                        const optional<RequestOptions>& options = nullopt) {
         JSON request;
-        request[MSG_KEY_METHOD] = "sampling/createMessage";
-        request[MSG_KEY_PARAMS] = params;
+        request[MSG_METHOD] = "sampling/createMessage";
+        request[MSG_PARAMS] = params;
         return this->Request(request, CreateMessageResultSchema{}, options);
     }
 
     future<JSON> Server::ListRoots(const optional<JSON>& params = nullopt,
                                    const optional<RequestOptions>& options = nullopt) {
         JSON request;
-        request[MSG_KEY_METHOD] = "roots/list";
-        if (params) {
-            request[MSG_KEY_PARAMS] = *params;
-        }
+        request[MSG_METHOD] = "roots/list";
+        if (params) { request[MSG_PARAMS] = *params; }
         return this->Request(request, ListRootsResultSchema{}, options);
     }
 
     future<void> Server::SendLoggingMessage(const JSON& params) {
         JSON notification;
-        notification[MSG_KEY_METHOD] = "notifications/message";
-        notification[MSG_KEY_PARAMS] = params;
+        notification[MSG_METHOD] = "notifications/message";
+        notification[MSG_PARAMS] = params;
         return this->Notification(notification);
     }
 
     future<void> Server::SendResourceUpdated(const JSON& params) {
         JSON notification;
-        notification[MSG_KEY_METHOD] = "notifications/resources/updated";
-        notification[MSG_KEY_PARAMS] = params;
+        notification[MSG_METHOD] = "notifications/resources/updated";
+        notification[MSG_PARAMS] = params;
         return this->Notification(notification);
     }
 
     future<void> Server::SendResourceListChanged() {
         JSON notification;
-        notification[MSG_KEY_METHOD] = "notifications/resources/list_changed";
+        notification[MSG_METHOD] = "notifications/resources/list_changed";
         return this->Notification(notification);
     }
 
     future<void> Server::SendToolListChanged() {
         JSON notification;
-        notification[MSG_KEY_METHOD] = "notifications/tools/list_changed";
+        notification[MSG_METHOD] = "notifications/tools/list_changed";
         return this->Notification(notification);
     }
 
     future<void> Server::SendPromptListChanged() {
         JSON notification;
-        notification[MSG_KEY_METHOD] = "notifications/prompts/list_changed";
+        notification[MSG_METHOD] = "notifications/prompts/list_changed";
         return this->Notification(notification);
     }
 };

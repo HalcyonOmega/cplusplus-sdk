@@ -33,7 +33,7 @@ bool RequestAuthorizationParams::Validate(const map<string, string>& Params,
                                           RequestAuthorizationParams& Output,
                                           string& ErrorMessage) {
     auto ResponseTypeIt = Params.find("response_type");
-    if (ResponseTypeIt == Params.end() || ResponseTypeIt->second != MSG_KEY_CODE) {
+    if (ResponseTypeIt == Params.end() || ResponseTypeIt->second != MSG_CODE) {
         ErrorMessage = "response_type must be 'code'";
         return false;
     }

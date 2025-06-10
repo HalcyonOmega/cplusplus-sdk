@@ -42,11 +42,11 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
         if (acceptIt == req.headers.end()
             || acceptIt->second.find("text/event-stream") == string::npos) {
             JSON errorResponse = {
-                {MSG_KEY_JSON_RPC, "2.0"},
-                {MSG_KEY_ERROR,
-                 {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
-                  {MSG_KEY_MESSAGE, "Not Acceptable: Client must accept text/event-stream"}}},
-                {MSG_KEY_ID, nullptr}};
+                {MSG_JSON_RPC, "2.0"},
+                {MSG_ERROR,
+                 {{MSG_CODE, Errors::CONNECTION_CLOSED},
+                  {MSG_MESSAGE, "Not Acceptable: Client must accept text/event-stream"}}},
+                {MSG_ID, nullptr}};
             res->writeHead(406, {});
             res->end(errorResponse.dump());
             return;
@@ -79,11 +79,11 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
         if (_streamMapping.find(_standaloneSseStreamID) != _streamMapping.end()) {
             // Only one GET SSE stream is allowed per session
             JSON errorResponse = {
-                {MSG_KEY_JSON_RPC, "2.0"},
-                {MSG_KEY_ERROR,
-                 {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
-                  {MSG_KEY_MESSAGE, "Conflict: Only one SSE stream is allowed per session"}}},
-                {MSG_KEY_ID, nullptr}};
+                {MSG_JSON_RPC, "2.0"},
+                {MSG_ERROR,
+                 {{MSG_CODE, Errors::ConnectionClosed},
+                  {MSG_MESSAGE, "Conflict: Only one SSE stream is allowed per session"}}},
+                {MSG_ID, nullptr}};
             res->writeHead(409, {});
             res->end(errorResponse.dump());
             return;
@@ -148,10 +148,10 @@ future<void>
 StreamableHTTPServerTransport::handleUnsupportedRequest(shared_ptr<ServerResponse> res) {
     return async(launch::async, [res]() {
         JSON errorResponse = {
-            {MSG_KEY_JSON_RPC, "2.0"},
-            {MSG_KEY_ERROR,
-             {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED}, {MSG_KEY_MESSAGE, "Method not allowed."}}},
-            {MSG_KEY_ID, nullptr}};
+            {MSG_JSON_RPC, "2.0"},
+            {MSG_ERROR,
+             {{MSG_CODE, Errors::ConnectionClosed}, {MSG_MESSAGE, "Method not allowed."}}},
+            {MSG_ID, nullptr}};
         unordered_map<string, string> headers = {{"Allow", "GET, POST, DELETE"}};
         res->writeHead(405, headers);
         res->end(errorResponse.dump());
@@ -171,13 +171,12 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             if (acceptIt == req.headers.end()
                 || acceptIt->second.find("application/json") == string::npos
                 || acceptIt->second.find("text/event-stream") == string::npos) {
-                JSON errorResponse = {
-                    {MSG_KEY_JSON_RPC, "2.0"},
-                    {MSG_KEY_ERROR,
-                     {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
-                      {MSG_KEY_MESSAGE, "Not Acceptable: Client must accept both "
-                                        "application/json and text/event-stream"}}},
-                    {MSG_KEY_ID, nullptr}};
+                JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+                                      {MSG_ERROR,
+                                       {{MSG_CODE, Errors::ConnectionClosed},
+                                        {MSG_MESSAGE, "Not Acceptable: Client must accept both "
+                                                      "application/json and text/event-stream"}}},
+                                      {MSG_ID, nullptr}};
                 res->writeHead(406, {});
                 res->end(errorResponse.dump());
                 return;
@@ -187,12 +186,12 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             if (ctIt == req.headers.end()
                 || ctIt->second.find("application/json") == string::npos) {
                 JSON errorResponse = {
-                    {MSG_KEY_JSON_RPC, "2.0"},
-                    {MSG_KEY_ERROR,
-                     {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
-                      {MSG_KEY_MESSAGE,
+                    {MSG_JSON_RPC, "2.0"},
+                    {MSG_ERROR,
+                     {{MSG_CODE, Errors::ConnectionClosed},
+                      {MSG_MESSAGE,
                        "Unsupported Media Type: Content-Type must be application/json"}}},
-                    {MSG_KEY_ID, nullptr}};
+                    {MSG_ID, nullptr}};
                 res->writeHead(415, {});
                 res->end(errorResponse.dump());
                 return;
@@ -229,8 +228,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             bool isInitializationRequest = false;
             for (const auto& msg : messages) {
                 // Placeholder check - would need actual implementation
-                if (msg.data.contains(MSG_KEY_METHOD)
-                    && msg.data[MSG_KEY_METHOD] == MTHD_INITIALIZE) {
+                if (msg.data.contains(MSG_METHOD) && msg.data[MSG_METHOD] == MTHD_INITIALIZE) {
                     isInitializationRequest = true;
                     break;
                 }
@@ -241,23 +239,23 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 // should reject the request to avoid re-initialization.
                 if (_initialized && SessionID.has_value()) {
                     JSON errorResponse = {
-                        {MSG_KEY_JSON_RPC, "2.0"},
-                        {MSG_KEY_ERROR,
-                         {{MSG_KEY_CODE, ERRCODE_INVALID_REQUEST},
-                          {MSG_KEY_MESSAGE, "Invalid Request: Server already initialized"}}},
-                        {MSG_KEY_ID, nullptr}};
+                        {MSG_JSON_RPC, "2.0"},
+                        {MSG_ERROR,
+                         {{MSG_CODE, Errors::InvalidRequest},
+                          {MSG_MESSAGE, "Invalid Request: Server already initialized"}}},
+                        {MSG_ID, nullptr}};
                     res->writeHead(400, {});
                     res->end(errorResponse.dump());
                     return;
                 }
                 if (messages.size() > 1) {
                     JSON errorResponse = {
-                        {MSG_KEY_JSON_RPC, "2.0"},
-                        {MSG_KEY_ERROR,
-                         {{MSG_KEY_CODE, ERRCODE_INVALID_REQUEST},
-                          {MSG_KEY_MESSAGE,
+                        {MSG_JSON_RPC, "2.0"},
+                        {MSG_ERROR,
+                         {{MSG_CODE, Errors::InvalidRequest},
+                          {MSG_MESSAGE,
                            "Invalid Request: Only one initialization request is allowed"}}},
-                        {MSG_KEY_ID, nullptr}};
+                        {MSG_ID, nullptr}};
                     res->writeHead(400, {});
                     res->end(errorResponse.dump());
                     return;
@@ -315,7 +313,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 for (const auto& message : messages) {
                     if (IsRequestMessage(message)) {
                         _streamMapping[StreamID] = res;
-                        _requestToStreamMapping[message.data[MSG_KEY_ID]] = StreamID;
+                        _requestToStreamMapping[message.data[MSG_ID]] = StreamID;
                     }
                 }
                 // Set up close handler for client disconnects
@@ -330,12 +328,12 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             }
         } catch (const exception& error) {
             // return JSON-RPC formatted error
-            JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
-                                  {MSG_KEY_ERROR,
-                                   {{MSG_KEY_CODE, ERRCODE_PARSE_ERROR},
-                                    {MSG_KEY_MESSAGE, "Parse error"},
-                                    {MSG_KEY_DATA, error.what()}}},
-                                  {MSG_KEY_ID, nullptr}};
+            JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+                                  {MSG_ERROR,
+                                   {{MSG_CODE, Errors::ParseError},
+                                    {MSG_MESSAGE, "Parse error"},
+                                    {MSG_DATA, error.what()}}},
+                                  {MSG_ID, nullptr}};
             res->writeHead(400, {});
             res->end(errorResponse.dump());
             if (onerror) { onerror(error); }
@@ -362,11 +360,11 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
     }
     if (!_initialized) {
         // If the server has not been initialized yet, reject all requests
-        JSON errorResponse = {{MSG_KEY_JSON_RPC, "2.0"},
-                              {MSG_KEY_ERROR,
-                               {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
-                                {MSG_KEY_MESSAGE, "Bad Request: Server not initialized"}}},
-                              {MSG_KEY_ID, nullptr}};
+        JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+                              {MSG_ERROR,
+                               {{MSG_CODE, Errors::ConnectionClosed},
+                                {MSG_MESSAGE, "Bad Request: Server not initialized"}}},
+                              {MSG_ID, nullptr}};
         res->writeHead(400, {});
         res->end(errorResponse.dump());
         return false;
@@ -376,22 +374,20 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
 
     if (SessionIDIt == req.headers.end()) {
         // Non-initialization requests without a session ID should return 400 Bad Request
-        JSON errorResponse = {
-            {MSG_KEY_JSON_RPC, "2.0"},
-            {MSG_KEY_ERROR,
-             {{MSG_KEY_CODE, ERRCODE_CONNECTION_CLOSED},
-              {MSG_KEY_MESSAGE, "Bad Request: Mcp-Session-Id header is required"}}},
-            {MSG_KEY_ID, nullptr}};
+        JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+                              {MSG_ERROR,
+                               {{MSG_CODE, Errors::ConnectionClosed},
+                                {MSG_MESSAGE, "Bad Request: Mcp-Session-Id header is required"}}},
+                              {MSG_ID, nullptr}};
         res->writeHead(400, {});
         res->end(errorResponse.dump());
         return false;
     } else if (SessionIDIt->second != SessionID.value_or("")) {
         // Reject requests with invalid session ID with 404 Not Found
         JSON errorResponse = {
-            {MSG_KEY_JSON_RPC, "2.0"},
-            {MSG_KEY_ERROR,
-             {{MSG_KEY_CODE, ERRCODE_REQUEST_TIMEOUT}, {MSG_KEY_MESSAGE, "Session not found"}}},
-            {MSG_KEY_ID, nullptr}};
+            {MSG_JSON_RPC, "2.0"},
+            {MSG_ERROR, {{MSG_CODE, Errors::RequestTimeout}, {MSG_MESSAGE, "Session not found"}}},
+            {MSG_ID, nullptr}};
         res->writeHead(404, {});
         res->end(errorResponse.dump());
         return false;
@@ -420,7 +416,7 @@ future<void> StreamableHTTPServerTransport::send(
         bool isResponse = IsResponseMessage(message);
         if (isResponse) {
             // If the message is a response, use the request ID from the message
-            if (message.data.contains(MSG_KEY_ID)) { RequestID = message.data[MSG_KEY_ID]; }
+            if (message.data.contains(MSG_ID)) { RequestID = message.data[MSG_ID]; }
         }
 
         // Check if this message should be sent on the standalone SSE stream (no request ID)
@@ -702,12 +698,12 @@ void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
         //         }
         //     }
         //
-        //     if (event.event.empty() || event.event == MSG_KEY_MESSAGE) {
+        //     if (event.event.empty() || event.event == MSG_MESSAGE) {
         //         try {
         //             // TODO: Fix External Ref: MessageBaseSchema validation
         //             auto message = JSON::parse(event.data);
         //             if (options.replayMessageId && IsResponseMessage(message)) {
-        //                 message[MSG_KEY_ID] = *options.replayMessageId;
+        //                 message[MSG_ID] = *options.replayMessageId;
         //             }
         //             if (onmessage) onmessage(message);
         //         } catch (const exception& error) {

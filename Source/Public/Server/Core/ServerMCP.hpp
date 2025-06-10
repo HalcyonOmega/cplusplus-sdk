@@ -61,9 +61,9 @@ using ReadResourceCallback = function<ReadResourceResult(
 /**
  * Callback to read a resource at a given URI, following a filled-in URI template.
  */
-using ReadResourceTemplateCallback =
-    function<ReadResourceResult(const string& InURI, const unordered_map<string, string>& InVariables,
-                                const RequestHandlerExtra<ServerRequest, ServerNotification>&)>;
+using ReadResourceTemplateCallback = function<ReadResourceResult(
+    const string& InURI, const unordered_map<string, string>& InVariables,
+    const RequestHandlerExtra<ServerRequest, ServerNotification>&)>;
 
 /**
  * A resource template combines a URI pattern with optional functionality to enumerate
@@ -76,13 +76,12 @@ class ResourceTemplate {
     unordered_map<string, CompleteResourceTemplateCallback> m_CompleteCallbacks;
 
   public:
-    ResourceTemplate(const string& InURI_Template, const optional<ListResourcesCallback>& InListCallback,
+    ResourceTemplate(const string& InURI_Template,
+                     const optional<ListResourcesCallback>& InListCallback,
                      const optional<unordered_map<string, CompleteResourceTemplateCallback>>&
                          InCompleteCallbacks = nullopt)
         : m_URI_Template(InURI_Template), m_ListCallback(InListCallback) {
-        if (InCompleteCallbacks) {
-            m_CompleteCallbacks = *InCompleteCallbacks;
-        }
+        if (InCompleteCallbacks) { m_CompleteCallbacks = *InCompleteCallbacks; }
     }
 
     /**
@@ -116,9 +115,7 @@ class ResourceTemplate {
         URI_Template URI_Template(m_URI_Template);
         auto Variables = URI_Template.Match(InURI);
 
-        if (Variables.empty()) {
-            return nullopt;
-        }
+        if (Variables.empty()) { return nullopt; }
 
         // Convert Variables type to unordered_map<string, string>
         unordered_map<string, string> Result;
@@ -130,8 +127,7 @@ class ResourceTemplate {
                 const auto& Values = std::get<vector<string>>(Value);
                 string Joined;
                 for (size_t i = 0; i < Values.size(); ++i) {
-                    if (i > 0)
-                        Joined += ",";
+                    if (i > 0) Joined += ",";
                     Joined += Values[i];
                 }
                 Result[Key] = Joined;
@@ -180,15 +176,13 @@ struct RegisteredTool {
         Update({{"enabled", false}});
     }
     void Remove() {
-        Update({{MSG_KEY_NAME, nullptr}});
+        Update({{MSG_NAME, nullptr}});
     }
 
     void Update(const unordered_map<string, JSON>& updates) {
         // Implementation for updating tool properties
         for (const auto& [key, value] : updates) {
-            if (key == "enabled" && value.is_boolean()) {
-                Enabled = value.get<bool>();
-            }
+            if (key == "enabled" && value.is_boolean()) { Enabled = value.get<bool>(); }
             // Handle other update fields
         }
         // Trigger tool list changed notification
@@ -208,15 +202,13 @@ struct RegisteredResource {
         Update({{"enabled", false}});
     }
     void Remove() {
-        Update({{MSG_KEY_URI, nullptr}});
+        Update({{MSG_URI, nullptr}});
     }
 
     void Update(const unordered_map<string, JSON>& updates) {
         // Implementation for updating resource properties
         for (const auto& [key, value] : updates) {
-            if (key == "enabled" && value.is_boolean()) {
-                Enabled = value.get<bool>();
-            }
+            if (key == "enabled" && value.is_boolean()) { Enabled = value.get<bool>(); }
             // Handle other update fields
         }
         // Trigger resource list changed notification
@@ -238,15 +230,13 @@ struct RegisteredResourceTemplate {
         Update({{"enabled", false}});
     }
     void Remove() {
-        Update({{MSG_KEY_NAME, nullptr}});
+        Update({{MSG_NAME, nullptr}});
     }
 
     void Update(const unordered_map<string, JSON>& updates) {
         // Implementation for updating resource template properties
         for (const auto& [key, value] : updates) {
-            if (key == "enabled" && value.is_boolean()) {
-                Enabled = value.get<bool>();
-            }
+            if (key == "enabled" && value.is_boolean()) { Enabled = value.get<bool>(); }
             // Handle other update fields
         }
         // Trigger resource list changed notification
@@ -268,15 +258,13 @@ struct RegisteredPrompt {
         Update({{"enabled", false}});
     }
     void Remove() {
-        Update({{MSG_KEY_NAME, nullptr}});
+        Update({{MSG_NAME, nullptr}});
     }
 
     void Update(const unordered_map<string, JSON>& updates) {
         // Implementation for updating prompt properties
         for (const auto& [key, value] : updates) {
-            if (key == "enabled" && value.is_boolean()) {
-                Enabled = value.get<bool>();
-            }
+            if (key == "enabled" && value.is_boolean()) { Enabled = value.get<bool>(); }
             // Handle other update fields
         }
         // Trigger prompt list changed notification
@@ -340,9 +328,7 @@ class MCPServer {
 
   private:
     void SetToolRequestHandlers() {
-        if (ToolHandlersInitialized_) {
-            return;
-        }
+        if (ToolHandlersInitialized_) { return; }
 
         // Assert can set request handlers
         ServerInstance_->AssertCanSetRequestHandler(MTHD_TOOLS_LIST);
@@ -362,16 +348,13 @@ class MCPServer {
                 ListToolsResult result;
 
                 for (const auto& [name, tool] : RegisteredTools_) {
-                    if (!tool.Enabled)
-                        continue;
+                    if (!tool.Enabled) continue;
 
                     Tool toolDef;
                     toolDef.Name = name;
                     toolDef.Description = tool.Description;
                     toolDef.InputSchema = tool.InputSchema.value_or(EmptyObjectJSONSchema_);
-                    if (tool.OutputSchema) {
-                        toolDef.OutputSchema = *tool.OutputSchema;
-                    }
+                    if (tool.OutputSchema) { toolDef.OutputSchema = *tool.OutputSchema; }
                     toolDef.Annotations = tool.Annotations;
 
                     result.Tools.push_back(toolDef);
@@ -386,8 +369,8 @@ class MCPServer {
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> CallToolResult {
-                auto toolName = request[MSG_KEY_PARAMS][MSG_KEY_NAME].get<string>();
-                auto toolArgs = request[MSG_KEY_PARAMS].value(MSG_KEY_ARGUMENTS, JSON::object());
+                auto toolName = request[MSG_PARAMS][MSG_NAME].get<string>();
+                auto toolArgs = request[MSG_PARAMS].value(MSG_ARGUMENTS, JSON::object());
 
                 auto it = RegisteredTools_.find(toolName);
                 if (it == RegisteredTools_.end()) {
@@ -442,9 +425,7 @@ class MCPServer {
     }
 
     void SetCompletionRequestHandler() {
-        if (CompletionHandlerInitialized_) {
-            return;
-        }
+        if (CompletionHandlerInitialized_) { return; }
 
         // Assert can set request handler
         ServerInstance_->AssertCanSetRequestHandler("completion/complete");
@@ -454,7 +435,7 @@ class MCPServer {
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> CompleteResult {
-                auto refType = request[MSG_KEY_PARAMS]["ref"][MSG_KEY_TYPE].get<string>();
+                auto refType = request[MSG_PARAMS]["ref"][MSG_TYPE].get<string>();
 
                 if (refType == "ref/prompt") {
                     return HandlePromptCompletion(request, extra);
@@ -472,7 +453,7 @@ class MCPServer {
     CompleteResult
     HandlePromptCompletion(const JSON& request,
                            const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-        auto promptName = request[MSG_KEY_PARAMS]["ref"][MSG_KEY_NAME].get<string>();
+        auto promptName = request[MSG_PARAMS]["ref"][MSG_NAME].get<string>();
 
         auto it = RegisteredPrompts_.find(promptName);
         if (it == RegisteredPrompts_.end()) {
@@ -484,9 +465,7 @@ class MCPServer {
             throw MCP_Error(ErrorCode::InvalidParams, "Prompt " + promptName + " disabled");
         }
 
-        if (!prompt.ArgsSchema) {
-            return EmptyCompletionResult_;
-        }
+        if (!prompt.ArgsSchema) { return EmptyCompletionResult_; }
 
         // TODO: Implement completion logic for prompt arguments
         return EmptyCompletionResult_;
@@ -495,16 +474,16 @@ class MCPServer {
     CompleteResult
     HandleResourceCompletion(const JSON& request,
                              const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-        auto uri = request[MSG_KEY_PARAMS]["ref"][MSG_KEY_URI].get<string>();
+        auto uri = request[MSG_PARAMS]["ref"][MSG_URI].get<string>();
 
         // Find matching template
         for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
             auto variables = templateEntry.Template.Match(uri);
             if (variables) {
-                auto argName = request[MSG_KEY_PARAMS]["argument"][MSG_KEY_NAME].get<string>();
+                auto argName = request[MSG_PARAMS]["argument"][MSG_NAME].get<string>();
                 auto completer = templateEntry.Template.GetCompleteCallback(argName);
                 if (completer) {
-                    auto argValue = request[MSG_KEY_PARAMS]["argument"]["value"].get<string>();
+                    auto argValue = request[MSG_PARAMS]["argument"]["value"].get<string>();
                     auto suggestions = (*completer)(argValue);
                     return CreateCompletionResult(suggestions);
                 }
@@ -520,9 +499,7 @@ class MCPServer {
     }
 
     void SetResourceRequestHandlers() {
-        if (ResourceHandlersInitialized_) {
-            return;
-        }
+        if (ResourceHandlersInitialized_) { return; }
 
         // Assert can set request handlers
         ServerInstance_->AssertCanSetRequestHandler("resources/list");
@@ -544,8 +521,7 @@ class MCPServer {
 
                 // Add fixed resources
                 for (const auto& [uri, resource] : RegisteredResources_) {
-                    if (!resource.Enabled)
-                        continue;
+                    if (!resource.Enabled) continue;
 
                     Resource res;
                     res.Uri = uri;
@@ -596,7 +572,7 @@ class MCPServer {
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> ReadResourceResult {
-                auto uri = request[MSG_KEY_PARAMS][MSG_KEY_URI].get<string>();
+                auto uri = request[MSG_PARAMS][MSG_URI].get<string>();
 
                 // Check for exact resource match first
                 auto resourceIt = RegisteredResources_.find(uri);
@@ -610,9 +586,7 @@ class MCPServer {
                 // Check templates
                 for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
                     auto variables = templateEntry.Template.Match(uri);
-                    if (variables) {
-                        return templateEntry.Callback(uri, *variables, extra);
-                    }
+                    if (variables) { return templateEntry.Callback(uri, *variables, extra); }
                 }
 
                 throw MCP_Error(ErrorCode::InvalidParams, "Resource " + uri + " not found");
@@ -623,9 +597,7 @@ class MCPServer {
     }
 
     void SetPromptRequestHandlers() {
-        if (PromptHandlersInitialized_) {
-            return;
-        }
+        if (PromptHandlersInitialized_) { return; }
 
         // Assert can set request handlers
         ServerInstance_->AssertCanSetRequestHandler("prompts/list");
@@ -645,8 +617,7 @@ class MCPServer {
                 ListPromptsResult result;
 
                 for (const auto& [name, prompt] : RegisteredPrompts_) {
-                    if (!prompt.Enabled)
-                        continue;
+                    if (!prompt.Enabled) continue;
 
                     Prompt promptDef;
                     promptDef.Name = name;
@@ -667,8 +638,8 @@ class MCPServer {
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> GetPromptResult {
-                auto promptName = request[MSG_KEY_PARAMS][MSG_KEY_NAME].get<string>();
-                auto args = request[MSG_KEY_PARAMS].value(MSG_KEY_ARGUMENTS, JSON::object());
+                auto promptName = request[MSG_PARAMS][MSG_NAME].get<string>();
+                auto args = request[MSG_PARAMS].value(MSG_ARGUMENTS, JSON::object());
 
                 auto it = RegisteredPrompts_.find(promptName);
                 if (it == RegisteredPrompts_.end()) {
@@ -877,20 +848,14 @@ class MCPServer {
         optional<JSON> outputSchema;
         optional<ToolAnnotations> annotations;
 
-        auto descIt = config.find(MSG_KEY_DESCRIPTION);
-        if (descIt != config.end()) {
-            description = descIt->second.get<string>();
-        }
+        auto descIt = config.find(MSG_DESCRIPTION);
+        if (descIt != config.end()) { description = descIt->second.get<string>(); }
 
-        auto inputIt = config.find(MSG_KEY_INPUT_SCHEMA);
-        if (inputIt != config.end()) {
-            inputSchema = inputIt->second;
-        }
+        auto inputIt = config.find(MSG_INPUT_SCHEMA);
+        if (inputIt != config.end()) { inputSchema = inputIt->second; }
 
         auto outputIt = config.find("outputSchema");
-        if (outputIt != config.end()) {
-            outputSchema = outputIt->second;
-        }
+        if (outputIt != config.end()) { outputSchema = outputIt->second; }
 
         auto annotIt = config.find("annotations");
         if (annotIt != config.end()) {
@@ -1013,32 +978,26 @@ class MCPServer {
      * Sends a resource list changed event to the client, if connected.
      */
     void SendResourceListChanged() {
-        if (IsConnected()) {
-            ServerInstance_->SendResourceListChanged();
-        }
+        if (IsConnected()) { ServerInstance_->SendResourceListChanged(); }
     }
 
     /**
      * Sends a tool list changed event to the client, if connected.
      */
     void SendToolListChanged() {
-        if (IsConnected()) {
-            ServerInstance_->SendToolListChanged();
-        }
+        if (IsConnected()) { ServerInstance_->SendToolListChanged(); }
     }
 
     /**
      * Sends a prompt list changed event to the client, if connected.
      */
     void SendPromptListChanged() {
-        if (IsConnected()) {
-            ServerInstance_->SendPromptListChanged();
-        }
+        if (IsConnected()) { ServerInstance_->SendPromptListChanged(); }
     }
 };
 
 // Static member definitions
-const JSON MCPServer::EmptyObjectJSONSchema_ = JSON{{MSG_KEY_TYPE, "object"}};
+const JSON MCPServer::EmptyObjectJSONSchema_ = JSON{{MSG_TYPE, "object"}};
 const CompleteResult MCPServer::EmptyCompletionResult_ =
     CompleteResult{/* TODO: Initialize empty completion result */};
 

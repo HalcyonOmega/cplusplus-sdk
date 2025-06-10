@@ -16,6 +16,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Constants/MessageConstants.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -38,14 +39,14 @@ struct Prompt {
 
 // Describes a message returned as part of a prompt.
 struct PromptMessage {
-    z.enum(["user", "assistant"]) Role;
-    variant<TextContent, ImageContent, AudioContent, EmbeddedResource, > Content;
+    Role Role;
+    variant<TextContent, ImageContent, AudioContent, EmbeddedResource> Content;
     Passthrough Additional;
 };
 
 // Autocomplete - Identifies a prompt.
 struct PromptReference {
-    z.literal("ref/prompt") Type;
+    string Type = MSG_REF_PROMPT;
 
     string Name;            // The name of the prompt or prompt template
     Passthrough Additional; // Additional properties.
