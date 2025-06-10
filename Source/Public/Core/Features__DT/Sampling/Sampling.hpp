@@ -24,7 +24,7 @@ struct ModelPreferences {
 
 // Describes a message issued to or received from an LLM API.
 struct SamplingMessage {
-    z.enum(["user", "assistant"]) Role;
+    Role Role;
     variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
     Passthrough Additional;                                   // Additional properties.
 };

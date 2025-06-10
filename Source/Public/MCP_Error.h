@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Constants/ErrorConstants.h"
 #include "Core/Includes/Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -16,13 +17,13 @@ class MCP_Error {
      * @param InMessage A short description of the error
      * @param InData Optional additional error data
      */
-    MCP_Error(int InCode, const string& InMessage, const optional<JSON>& InData = nullopt);
+    MCP_Error(Errors InCode, const string& InMessage, const optional<JSON>& InData = nullopt);
 
     /**
      * Gets the error code.
      * @return The error code
      */
-    int GetCode() const;
+    Errors GetCode() const;
 
     /**
      * Gets the error message.
@@ -50,7 +51,7 @@ class MCP_Error {
     static MCP_Error FromJSON(const JSON& InJSON);
 
   private:
-    int m_Code;
+    Errors m_Code;
     string m_Message;
     optional<JSON> m_Data;
 };

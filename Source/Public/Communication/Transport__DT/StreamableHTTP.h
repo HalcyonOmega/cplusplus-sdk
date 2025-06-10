@@ -8,7 +8,6 @@
 #include "Communication/Message.h"
 #include "Core.h"
 
-
 MCP_NAMESPACE_BEGIN
 
 using IncomingMessage = HTTP_Request;
@@ -34,7 +33,7 @@ class EventStore {
 
     virtual future<StreamID>
     ReplayEventsAfter(const EventID& InLastEventID,
-                      function<future<void>(const EventID&, const JSON_RPC_Message&)> InSend) = 0;
+                      function<future<void>(const EventID&, const MessageBase&)> InSend) = 0;
 };
 
 /**
@@ -109,7 +108,7 @@ class StreamableHTTPServerTransport : public Transport {
     bool m_Started = false;
     unordered_map<string, shared_ptr<ServerResponse>> m_StreamMapping;
     unordered_map<RequestID, string> m_RequestToStreamMapping;
-    unordered_map<RequestID, JSON_RPC_Message> m_RequestResponseMap;
+    unordered_map<RequestID, MessageBase> m_RequestResponseMap;
     bool m_Initialized = false;
     bool m_EnableJSONResponse = false;
     string m_StandaloneSSEStreamID = "_GET_stream";
@@ -153,7 +152,7 @@ class StreamableHTTPServerTransport : public Transport {
     /**
      * Writes an event to the SSE stream with proper formatting
      */
-    bool WriteSSEEvent(shared_ptr<ServerResponse> InResponse, const JSON_RPC_Message& InMessage,
+    bool WriteSSEEvent(shared_ptr<ServerResponse> InResponse, const MessageBase& InMessage,
                        const optional<string>& InEventID = nullopt);
 
     /**
@@ -183,7 +182,7 @@ class StreamableHTTPServerTransport : public Transport {
   public:
     future<void> Close() override;
 
-    future<void> Send(const JSON_RPC_Message& InMessage,
+    future<void> Send(const MessageBase& InMessage,
                       const optional<RequestID>& InRelatedRequestID = nullopt) override;
 
   private:
@@ -265,7 +264,7 @@ class StreamableHTTPClientTransport {
   public:
     function<void()> OnClose;
     function<void(const exception&)> OnError;
-    function<void(const JSON_RPC_Message&)> OnMessage;
+    function<void(const MessageBase&)> OnMessage;
 
     StreamableHTTPClientTransport(const string& InURL,
                                   const StreamableHTTPClientTransportOptions& InOptions = {})
@@ -302,10 +301,9 @@ class StreamableHTTPClientTransport {
         function<void(const string&)> OnResumptionToken;
     };
 
-    future<void> Send(const JSON_RPC_Message& InMessage, const SendOptions& InOptions = {});
+    future<void> Send(const MessageBase& InMessage, const SendOptions& InOptions = {});
 
-    future<void> Send(const vector<JSON_RPC_Message>& InMessages,
-                      const SendOptions& InOptions = {});
+    future<void> Send(const vector<MessageBase>& InMessages, const SendOptions& InOptions = {});
 
     optional<string> GetSessionID() const;
 

@@ -1,5 +1,7 @@
 #include "Session.h" // Only direct include needed for public headers from this .cpp file
 
+#include "Core/Constants/ErrorConstants.h"
+
 MCP_NAMESPACE_BEGIN
 
 Session::Session(std::shared_ptr<Transport> transport, const ClientCapabilities& clientCaps,
@@ -64,8 +66,8 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
     if (m_State != SessionState::Uninitialized) {
         if (callback) {
             // TODO: Define proper error codes/messages in ErrorConstants.h or similar
-            callback(
-                MCP_Error(-32000, "Session already initialized or initializing.", std::nullopt));
+            callback(MCP_Error(Errors::ConnectionClosed,
+                               "Session already initialized or initializing.", std::nullopt));
         }
         return;
     }
@@ -134,7 +136,8 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
         if (m_InitializeCallback) {
             m_State = SessionState::Error;
             // TODO: Define proper error codes/messages
-            m_InitializeCallback(MCP_Error(-32001, "Transport not available.", std::nullopt));
+            m_InitializeCallback(
+                MCP_Error(Errors::RequestTimeout, "Transport not available.", std::nullopt));
         }
     }
 }

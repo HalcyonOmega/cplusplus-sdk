@@ -5,26 +5,11 @@
 #include <string>
 #include <vector>
 
-#include "Message.h"
+#include "Communication/Message.h"
+#include "Core.h"
+#include "Core/Constants/MessageConstants.h"
 
 MCP_NAMESPACE_BEGIN
-
-/**
- * Deserialize a JSON-RPC message from a string.
- */
-inline MessageBase DeserializeMessage(const std::string& line) {
-    MessageBase msg;
-    msg.Message = JSON::parse(line);
-    // TODO: Add schema validation if needed
-    return msg;
-}
-
-/**
- * Serialize a message to JSON string with newline.
- */
-inline std::string SerializeMessage(const MessageBase& message) {
-    return message.Message.dump() + "\n";
-}
 
 /**
  * Buffers a continuous stdio stream into discrete JSON-RPC messages.
@@ -38,10 +23,10 @@ class ReadBuffer {
      * Append new data to the buffer.
      */
     void Append(const std::vector<uint8_t>& chunk) {
-        if (_buffer.empty()) {
-            _buffer = chunk;
+        if (m_Buffer.empty()) {
+            m_Buffer = chunk;
         } else {
-            _buffer.insert(_buffer.end(), chunk.begin(), chunk.end());
+            m_Buffer.insert(m_Buffer.end(), chunk.begin(), chunk.end());
         }
     }
 
@@ -50,24 +35,24 @@ class ReadBuffer {
      * Returns nullopt if no complete message is available.
      */
     std::optional<MessageBase> ReadMessage() {
-        if (_buffer.empty()) { return std::nullopt; }
+        if (m_Buffer.empty()) { return std::nullopt; }
 
         // Find message boundary (newline)
-        auto it = std::find(_buffer.begin(), _buffer.end(), '\n');
-        if (it == _buffer.end()) { return std::nullopt; }
+        auto it = std::find(m_Buffer.begin(), m_Buffer.end(), '\n');
+        if (it == m_Buffer.end()) { return std::nullopt; }
 
         // Extract message and remove carriage return if present
-        std::string line(_buffer.begin(), it);
+        std::string line(m_Buffer.begin(), it);
         if (!line.empty() && line.back() == '\r') { line.pop_back(); }
 
         // Remove the processed message from buffer
-        _buffer.erase(_buffer.begin(), it + 1);
+        m_Buffer.erase(m_Buffer.begin(), it + 1);
 
         try {
             return DeserializeMessage(line);
         } catch (const std::exception&) {
             // Invalid message, clear the buffer to prevent getting stuck
-            _buffer.clear();
+            m_Buffer.clear();
             return std::nullopt;
         }
     }
@@ -76,11 +61,11 @@ class ReadBuffer {
      * Clear the buffer.
      */
     void Clear() {
-        _buffer.clear();
+        m_Buffer.clear();
     }
 
   private:
-    std::vector<uint8_t> _buffer;
+    std::vector<uint8_t> m_Buffer;
 };
 
 MCP_NAMESPACE_END

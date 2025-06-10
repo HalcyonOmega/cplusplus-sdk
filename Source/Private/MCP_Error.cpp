@@ -2,26 +2,23 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCP_Error::MCP_Error(int code, const string& message, const optional<JSON>& data)
-    : Code(code), Message(message), Data(data) {}
-
-int MCP_Error::GetCode() const {
-    return Code;
+Errors MCP_Error::GetCode() const {
+    return m_Code;
 }
 
 const string& MCP_Error::GetMessage() const {
-    return Message;
+    return m_Message;
 }
 
 const optional<JSON>& MCP_Error::GetData() const {
-    return Data;
+    return m_Data;
 }
 
 JSON MCP_Error::ToJSON() const {
     JSON json;
-    json["code"] = Code;
-    json["message"] = Message;
-    if (Data) { json["data"] = *Data; }
+    json["code"] = m_Code;
+    json["message"] = m_Message;
+    if (m_Data) { json["data"] = *m_Data; }
     return json;
 }
 
@@ -33,7 +30,7 @@ MCP_Error MCP_Error::FromJSON(const JSON& json) {
     optional<JSON> data;
     if (json.contains("data")) { data = json["data"]; }
 
-    return MCP_Error(json["code"].get<int>(), json["message"].get<string>(), data);
+    return MCP_Error(json["code"].get<Errors>(), json["message"].get<string>(), data);
 }
 
 MCP_NAMESPACE_END

@@ -22,6 +22,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Constants/MessageConstants.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -72,7 +73,7 @@ struct ResourceTemplate {
 
 // The contents of a resource, embedded into a prompt or tool call result.
 struct EmbeddedResource {
-    z.literal(MSG_RESOURCE) Type;
+    string Type = MSG_RESOURCE;
     variant<TextResourceContents, BLOB_ResourceContents> Resource;
     Passthrough Additional;
 };
@@ -80,7 +81,7 @@ struct EmbeddedResource {
 /* Autocomplete */
 // A reference to a resource or resource template definition.
 struct ResourceReference {
-    z.literal("ref/resource") Type;
+    string Type = MSG_REF_RESOURCE;
 
     string URI;             // The URI or URI template of the resource.
     Passthrough Additional; // Additional properties.

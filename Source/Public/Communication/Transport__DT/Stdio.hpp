@@ -79,6 +79,7 @@ class StdioServerTransport : public Transport {
 
     send(MessageBase Message) : Promise<void> {
         return new Promise((resolve) = > {
+            // TODO: SerializeMessage may need to return with newline
             const json = serializeMessage(message);
             if (this._stdout.write(json)) {
                 resolve();
@@ -186,7 +187,7 @@ class StdioClientTransport : public Transport {
 
     onclose ?: () = > void;
     onerror ?: (error : Error) = > void;
-    onmessage ?: (message : JSON_RPC_Message) = > void;
+    onmessage ?: (message : MessageBase) = > void;
 
     constructor(server : StdioServerParameters) {
         this._serverParams = server;
@@ -288,12 +289,13 @@ class StdioClientTransport : public Transport {
         this._readBuffer.clear();
     }
 
-    send(message : JSON_RPC_Message) : Promise<void> {
+    send(message : MessageBase) : Promise<void> {
         return new Promise((resolve) = > {
       if (!this._process?.stdin) {
           throw new Error("Not connected");
       }
 
+      // TODO: SerializeMessage may need to return with newline
       const json = serializeMessage(message);
       if (this._process.stdin.write(json)) {
           resolve();
