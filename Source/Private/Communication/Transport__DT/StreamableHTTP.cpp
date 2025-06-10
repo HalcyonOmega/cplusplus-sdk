@@ -33,8 +33,8 @@ StreamableHTTPServerTransport::handleRequest(const IncomingMessage& req,
     }
 }
 
-future<void> StreamableHTTPServerTransport::handleGetRequest(const IncomingMessage& req,
-                                                             shared_ptr<ServerResponse> res) {
+future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessage& req,
+                                                             shared_ptr<ResponseMessage> res) {
     return async(launch::async, [this, req, res]() {
         // The client MUST include an Accept header, listing text/event-stream as a supported
         // content type.
@@ -116,8 +116,7 @@ future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEvent
 
             auto StreamIDFuture = _eventStore->replayEventsAfter(
                 lastEventID,
-                [this, res](const EventID& EventID,
-                            const JSON_RPC_Message& message) -> future<void> {
+                [this, res](const EventID& EventID, const MessageBase& message) -> future<void> {
                     return async(launch::async, [this, res, EventID, message]() {
                         if (!writeSSEEvent(res, message, EventID)) {
                             if (onerror) { onerror(runtime_error("Failed replay events")); }
@@ -135,7 +134,7 @@ future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEvent
 }
 
 bool StreamableHTTPServerTransport::writeSSEEvent(shared_ptr<ServerResponse> res,
-                                                  const JSON_RPC_Message& message,
+                                                  const MessageBase& message,
                                                   const optional<string>& EventID = nullopt) {
     string eventData = "event: message\n";
     // Include event ID if provided - this is important for resumability
@@ -212,16 +211,16 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 }
             }
 
-            vector<JSON_RPC_Message> messages;
+            vector<MessageBase> messages;
 
             // handle batch and single messages
             if (rawMessage.is_array()) {
                 for (const auto& msg : rawMessage) {
-                    // TODO: Fix External Ref: JSON_RPC_MessageSchema validation
+                    // TODO: Fix External Ref: MessageBaseSchema validation
                     messages.emplace_back(msg);
                 }
             } else {
-                // TODO: Fix External Ref: JSON_RPC_MessageSchema validation
+                // TODO: Fix External Ref: MessageBaseSchema validation
                 messages.emplace_back(rawMessage);
             }
 
@@ -280,11 +279,9 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             if (!isInitializationRequest && !validateSession(req, res)) { return; }
 
             // check if it contains requests
-            // TODO: Fix External Ref: isJSON_RPC_Request function
             bool hasRequests = false;
             for (const auto& msg : messages) {
-                // Placeholder check - would need actual implementation
-                if (msg.data.contains(MSG_KEY_METHOD) && msg.data.contains(MSG_KEY_ID)) {
+                if (IsRequestMessage(msg)) {
                     hasRequests = true;
                     break;
                 }
@@ -316,9 +313,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 // Store the response for this request to send messages back through this
                 // connection We need to track by request ID to maintain the connection
                 for (const auto& message : messages) {
-                    // TODO: Fix External Ref: isJSON_RPC_Request function
-                    if (message.data.contains(MSG_KEY_METHOD)
-                        && message.data.contains(MSG_KEY_ID)) {
+                    if (IsRequestMessage(message)) {
                         _streamMapping[StreamID] = res;
                         _requestToStreamMapping[message.data[MSG_KEY_ID]] = StreamID;
                     }
@@ -418,14 +413,11 @@ future<void> StreamableHTTPServerTransport::close() override {
 }
 
 future<void> StreamableHTTPServerTransport::send(
-    const JSON_RPC_Message& message,
-    const optional<RequestID>& relatedRequestID = nullopt) override {
+    const MessageBase& message, const optional<RequestID>& relatedRequestID = nullopt) override {
     return async(launch::async, [this, message, relatedRequestID]() {
         optional<RequestID> RequestID = relatedRequestID;
 
-        // TODO: Fix External Ref: isJSON_RPC_Response and isJSON_RPC_Error functions
-        bool isResponse =
-            message.data.contains(MSG_KEY_RESULT) || message.data.contains(MSG_KEY_ERROR);
+        bool isResponse = IsResponseMessage(message);
         if (isResponse) {
             // If the message is a response, use the request ID from the message
             if (message.data.contains(MSG_KEY_ID)) { RequestID = message.data[MSG_KEY_ID]; }
@@ -712,9 +704,9 @@ void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
         //
         //     if (event.event.empty() || event.event == MSG_KEY_MESSAGE) {
         //         try {
-        //             // TODO: Fix External Ref: JSON_RPC_MessageSchema validation
+        //             // TODO: Fix External Ref: MessageBaseSchema validation
         //             auto message = JSON::parse(event.data);
-        //             if (options.replayMessageId && isJSON_RPC_Response(message)) {
+        //             if (options.replayMessageId && IsResponseMessage(message)) {
         //                 message[MSG_KEY_ID] = *options.replayMessageId;
         //             }
         //             if (onmessage) onmessage(message);
@@ -774,7 +766,7 @@ future<void> StreamableHTTPClientTransport::close() {
     });
 }
 
-future<void> StreamableHTTPClientTransport::send(const JSON_RPC_Message& message,
+future<void> StreamableHTTPClientTransport::send(const MessageBase& message,
                                                  const SendOptions& options = {}) {
     return async(launch::async, [this, message, options]() {
         try {
@@ -843,7 +835,7 @@ future<void> StreamableHTTPClientTransport::send(const JSON_RPC_Message& message
     });
 }
 
-future<void> StreamableHTTPClientTransport::send(const vector<JSON_RPC_Message>& messages,
+future<void> StreamableHTTPClientTransport::send(const vector<MessageBase>& messages,
                                                  const SendOptions& options = {}) {
     return async(launch::async, [this, messages, options]() {
         // TODO: Implement batch message sending

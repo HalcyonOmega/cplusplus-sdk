@@ -134,9 +134,9 @@ void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
 }
 
 void handleMessage(const JSON& message, const optional<map<string, AuthInfo>>& extra = nullopt) {
-    JSONRPCMessage parsedMessage;
+    MessageBase parsedMessage;
     try {
-        parsedMessage = JSONRPCMessageSchema::parse(message);
+        parsedMessage = MessageBaseSchema::parse(message);
     } catch (const exception& error) {
         if (onerror.has_value()) { onerror.value()(Error(error.what())); }
         throw;
@@ -151,10 +151,11 @@ void close() {
     if (onclose.has_value()) { onclose.value()(); }
 }
 
-void send(const JSONRPCMessage& message) {
+void send(const MessageBase& message) {
     if (!_sseResponse.has_value()) { throw runtime_error("Not connected"); }
 
-    // Convert JSONRPCMessage to JSON
+    // Convert MessageBase to JSON
+
     JSON jsonMessage;
     jsonMessage[MSG_KEY_JSON_RPC] = message.jsonrpc;
     if (message.id.has_value()) { jsonMessage[MSG_KEY_ID] = message.id.value(); }
@@ -286,10 +287,10 @@ future<void> SSEClientTransport::_startOrAuth() {
         // });
 
         // _eventSource->onmessage = [this](const MessageEvent& event) {
-        //     JSONRPCMessage message;
+        //     MessageBase message;
         //     try {
-        //         // TODO: Fix External Ref: JSONRPCMessageSchema.parse(JSON.parse(event.data))
-        //         // message = JSONRPCMessageSchema::parse(JSON::parse(event.data));
+        //         // TODO: Fix External Ref: MessageBaseSchema.parse(JSON.parse(event.data))
+        //         // message = MessageBaseSchema::parse(JSON::parse(event.data));
         //     } catch (const exception& error) {
         //         if (onerror) {
         //             onerror(error);
@@ -345,7 +346,7 @@ future<void> SSEClientTransport::close() {
     });
 }
 
-future<void> SSEClientTransport::send(const JSONRPCMessage& message) {
+future<void> SSEClientTransport::send(const MessageBase& message) {
     // Fix: Copy message to avoid reference issues
     return async(launch::async, [this, message]() -> void {
         if (!_endpoint.has_value()) { throw runtime_error("Not connected"); }

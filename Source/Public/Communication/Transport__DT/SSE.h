@@ -11,7 +11,6 @@ MCP_NAMESPACE_BEGIN
 using IncomingMessage = HTTP_Request;
 using ServerResponse = HTTP_Response;
 
-
 // TODO: Fix External Ref: UUID generation
 string GenerateRandomUUID();
 
@@ -30,7 +29,8 @@ struct ContentTypeResult {
 ContentTypeResult ParseContentType(const string& InContentTypeHeader);
 
 // TODO: Fix External Ref: Raw body parsing
-string GetRawBodyEquivalent(IncomingMessage* InRequest, const string& InLimit, const string& InEncoding);
+string GetRawBodyEquivalent(IncomingMessage* InRequest, const string& InLimit,
+                            const string& InEncoding);
 
 const string MAXIMUM_MESSAGE_SIZE = "4mb";
 
@@ -50,7 +50,8 @@ class SSEServerTransport {
   public:
     optional<function<void()>> OnClose;
     optional<function<void(const Error&)>> OnError;
-    optional<function<void(const JSON_RPC_Message& InMessage, const optional<map<string, AuthInfo>>& InExtra)>>
+    optional<function<void(const MessageBase& InMessage,
+                           const optional<map<string, AuthInfo>>& InExtra)>>
         OnMessage;
 
     /**
@@ -81,11 +82,12 @@ class SSEServerTransport {
      * Handle a client message, regardless of how it arrived. This can be used to inform the server
      * of messages that arrive via a means different than HTTP POST.
      */
-    void HandleMessage(const JSON& InMessage, const optional<map<string, AuthInfo>>& InExtra = nullopt);
+    void HandleMessage(const JSON& InMessage,
+                       const optional<map<string, AuthInfo>>& InExtra = nullopt);
 
     void Close();
 
-    void Send(const JSON_RPC_Message& InMessage);
+    void Send(const MessageBase& InMessage);
 
     /**
      * Returns the session ID for this transport.
@@ -211,7 +213,8 @@ class SSEClientTransport : public Transport {
           _authProvider(InOpts.has_value() ? InOpts.value().AuthProvider : nullptr) {}
 
     // TODO: Identify proper constructor signature
-    SSEClientTransport(const URL& InURL, const optional<SSEClientTransportOptions>& InOpts = nullopt);
+    SSEClientTransport(const URL& InURL,
+                       const optional<SSEClientTransportOptions>& InOpts = nullopt);
 
   private:
     // TODO: Fix External Ref: EventSource equivalent
@@ -229,13 +232,13 @@ class SSEClientTransport : public Transport {
     // Callback function types (exactly matching TypeScript)
     function<void()> OnClose;
     function<void(const exception& error)> OnError;
-    function<void(const JSON_RPC_Message& InMessage)> OnMessage;
+    function<void(const MessageBase& InMessage)> OnMessage;
 
     // Public interface methods (async equivalent using futures for Promise pattern)
     future<void> Start();
     future<void> FinishAuth(const string& InAuthorizationCode);
     future<void> Close();
-    future<void> Send(const JSON_RPC_Message& InMessage);
+    future<void> Send(const MessageBase& InMessage);
 
   private:
     // Private methods (exactly matching TypeScript structure)

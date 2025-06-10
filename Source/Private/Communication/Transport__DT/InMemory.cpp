@@ -3,7 +3,7 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Transport interface
-// TODO: Fix External Ref: JSON_RPC_Message type
+// TODO: Fix External Ref: MessageBase type
 // TODO: Fix External Ref: RequestID type
 // TODO: Fix External Ref: AuthInfo type
 
@@ -29,11 +29,10 @@ void InMemoryTransport::close() {
  * Sends a message with optional auth info.
  * This is useful for testing authentication scenarios.
  */
-void InMemoryTransport::send(const JSONRPCMessage& message,
-                             const optional<struct {
-                                 optional<RequestID> relatedRequestID;
-                                 optional<AuthInfo> authInfo;
-                             }>& options = nullopt) {
+void InMemoryTransport::send(const MessageBase& message, const optional<struct {
+                                                             optional<RequestID> relatedRequestID;
+                                                             optional<AuthInfo> authInfo;
+                                                         }>& options = nullopt) {
     if (!_otherTransport) {
         if (onerror.has_value()) { onerror.value()("Not connected"); }
         return;

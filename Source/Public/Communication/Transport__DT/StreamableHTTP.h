@@ -5,7 +5,9 @@
 // TODO: Fix External Ref: JSON-RPC message types and validation
 // TODO: Fix External Ref: AuthInfo type
 
+#include "Communication/Message.h"
 #include "Core.h"
+
 
 MCP_NAMESPACE_BEGIN
 
@@ -27,7 +29,8 @@ class EventStore {
      * @param InMessage The JSON-RPC message to store
      * @returns The generated event ID for the stored event
      */
-    virtual future<EventID> StoreEvent(const StreamID& InStreamID, const JSON_RPC_Message& InMessage) = 0;
+    virtual future<EventID> StoreEvent(const StreamID& InStreamID,
+                                       const MessageBase& InMessage) = 0;
 
     virtual future<StreamID>
     ReplayEventsAfter(const EventID& InLastEventID,
@@ -130,14 +133,16 @@ class StreamableHTTPServerTransport : public Transport {
     /**
      * Handles an incoming HTTP request, whether GET or POST
      */
-    future<void> HandleRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse,
+    future<void> HandleRequest(const IncomingMessage& InRequest,
+                               shared_ptr<ServerResponse> InResponse,
                                const optional<JSON>& InParsedBody = nullopt);
 
   private:
     /**
      * Handles GET requests for SSE stream
      */
-    future<void> HandleGetRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse);
+    future<void> HandleGetRequest(const IncomingMessage& InRequest,
+                                  shared_ptr<ServerResponse> InResponse);
 
     /**
      * Replays events that would have been sent after the specified event ID
@@ -159,13 +164,15 @@ class StreamableHTTPServerTransport : public Transport {
     /**
      * Handles POST requests containing JSON-RPC messages
      */
-    future<void> HandlePostRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse,
+    future<void> HandlePostRequest(const IncomingMessage& InRequest,
+                                   shared_ptr<ServerResponse> InResponse,
                                    const optional<JSON>& InParsedBody = nullopt);
 
     /**
      * Handles DELETE requests to terminate sessions
      */
-    future<void> HandleDeleteRequest(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse);
+    future<void> HandleDeleteRequest(const IncomingMessage& InRequest,
+                                     shared_ptr<ServerResponse> InResponse);
 
     /**
      * Validates session ID for non-initialization requests
@@ -297,7 +304,8 @@ class StreamableHTTPClientTransport {
 
     future<void> Send(const JSON_RPC_Message& InMessage, const SendOptions& InOptions = {});
 
-    future<void> Send(const vector<JSON_RPC_Message>& InMessages, const SendOptions& InOptions = {});
+    future<void> Send(const vector<JSON_RPC_Message>& InMessages,
+                      const SendOptions& InOptions = {});
 
     optional<string> GetSessionID() const;
 

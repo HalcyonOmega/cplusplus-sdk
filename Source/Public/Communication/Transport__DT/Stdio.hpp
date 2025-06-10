@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Common.hpp"
+#include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -11,17 +11,17 @@ MCP_NAMESPACE_BEGIN
  * This transport is only available in Node.js environments.
  */
 class StdioServerTransport : public Transport {
-  private
-    _readBuffer : ReadBuffer = new ReadBuffer();
-  private
-    _started = false;
+  private:
+    ReadBuffer m_ReadBuffer;
+    bool m_Started = false;
 
+  public:
     constructor(private _stdin : Readable = process.stdin,
                 private _stdout : Writable = process.stdout, ) {}
 
     onclose ?: () = > void;
-    onerror ?: (error : Error) = > void;
-    onmessage ?: (message : JSON_RPC_Message) = > void;
+    onerror ?: (ErrorMessage Error) = > void;
+    onmessage ?: (MessageBase Message) = > void;
 
     // Arrow functions to bind `this` properly, while maintaining function identity.
     _ondata = (chunk : Buffer) => {
@@ -51,14 +51,10 @@ class StdioServerTransport : public Transport {
         while (true) {
             try {
                 const message = this._readBuffer.readMessage();
-                if (message == = null) {
-                    break;
-                }
+                if (message == = null) { break; }
 
                 this.onmessage ?.(message);
-            } catch (error) {
-                this.onerror ?.(error as Error);
-            }
+            } catch (error) { this.onerror ?.(error as Error); }
         }
     }
 
@@ -81,7 +77,7 @@ class StdioServerTransport : public Transport {
         this.onclose ?.();
     }
 
-    send(message : JSON_RPC_Message) : Promise<void> {
+    send(MessageBase Message) : Promise<void> {
         return new Promise((resolve) = > {
             const json = serializeMessage(message);
             if (this._stdout.write(json)) {
@@ -97,19 +93,19 @@ struct StdioServerParameters {
     /**
      * The executable to run to start the server.
      */
-    command : string;
+    string Command;
 
     /**
      * Command line arguments to pass to the executable.
      */
-    args ?: string[];
+    optional<vector<string>> Args;
 
     /**
      * The environment to use when spawning the process.
      *
      * If not specified, the result of getDefaultEnvironment() will be used.
      */
-    env ?: Record<string, string>;
+    optional<unordered_map<string, string>> Env;
 
     /**
      * How to handle stderr of the child process. This matches the semantics of Node's
@@ -125,7 +121,7 @@ struct StdioServerParameters {
      *
      * If not specified, the current working directory will be inherited.
      */
-    cwd ?: string;
+    optional<string> CWD;
 };
 
 /**
@@ -157,9 +153,7 @@ Record<string, string> GetDefaultEnvironment() {
 
     for (const key of DEFAULT_INHERITED_ENV_VARS) {
         const value = process.env[key];
-        if (value == = undefined) {
-            continue;
-        }
+        if (value == = undefined) { continue; }
 
         if (value.startsWith("()")) {
             // Skip functions, which are a security risk.
@@ -227,7 +221,7 @@ class StdioClientTransport : public Transport {
       );
 
       this._process.on(
-          MSG_KEY_ERROR, (error) = > {
+          MSG_ERROR, (error) = > {
               if (error.name == = "AbortError") {
                   // Expected when close() is called.
                   this.onclose ?.();
@@ -246,15 +240,15 @@ class StdioClientTransport : public Transport {
               this.onclose ?.();
           });
 
-      this._process.stdin ?.on(MSG_KEY_ERROR, (error) = > { this.onerror ?.(error); });
+      this._process.stdin ?.on(MSG_ERROR, (error) = > { this.onerror ?.(error); });
 
       this._process.stdout ?.on(
-                                MSG_KEY_DATA, (chunk) = > {
+                                MSG_DATA, (chunk) = > {
                                     this._readBuffer.append(chunk);
                                     this.processReadBuffer();
                                 });
 
-      this._process.stdout ?.on(MSG_KEY_ERROR, (error) = > { this.onerror ?.(error); });
+      this._process.stdout ?.on(MSG_ERROR, (error) = > { this.onerror ?.(error); });
 
       if (this._stderrStream && this._process.stderr) {
           this._process.stderr.pipe(this._stderrStream);
@@ -271,9 +265,7 @@ class StdioClientTransport : public Transport {
      * early error output emitted by the child process.
      */
     get stderr() : Stream | null {
-        if (this._stderrStream) {
-            return this._stderrStream;
-        }
+        if (this._stderrStream) { return this._stderrStream; }
 
         return this._process ?.stderr ? ? null;
     }
@@ -283,14 +275,10 @@ class StdioClientTransport : public Transport {
         while (true) {
             try {
                 const message = this._readBuffer.readMessage();
-                if (message == = null) {
-                    break;
-                }
+                if (message == = null) { break; }
 
                 this.onmessage ?.(message);
-            } catch (error) {
-                this.onerror ?.(error as Error);
-            }
+            } catch (error) { this.onerror ?.(error as Error); }
         }
     }
 
@@ -318,7 +306,7 @@ class StdioClientTransport : public Transport {
 
 function
 isElectron() {
-    return MSG_KEY_TYPE in process;
+    return MSG_TYPE in process;
 }
 
 MCP_NAMESPACE_END

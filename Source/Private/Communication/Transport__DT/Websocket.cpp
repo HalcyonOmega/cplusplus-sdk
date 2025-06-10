@@ -6,8 +6,8 @@
 
 MCP_NAMESPACE_BEGIN
 
-bool WebSocket_Client_Transport::ValidateJSON_RPC_Message(const JSON& json) const {
-    // Basic JSON-RPC validation equivalent to JSON_RPC_MessageSchema.parse()
+bool WebSocket_Client_Transport::ValidateMessageBase(const JSON& json) const {
+    // Basic JSON-RPC validation equivalent to MessageBaseSchema.parse()
     if (!json.contains(MSG_KEY_JSON_RPC)
         || json[MSG_KEY_JSON_RPC] != MSG_KEY_MSG_KEY_JSON_RPC_VERSION) {
         return false;
@@ -34,18 +34,18 @@ bool WebSocket_Client_Transport::ValidateJSON_RPC_Message(const JSON& json) cons
     return false;
 }
 
-// Helper method to convert JSON to JSON_RPC_Message
-optional<JSONRPCMessage> WebSocket_Client_Transport::JSONToMessage(const JSON& json) const {
-    // This would need to be implemented based on the actual JSON_RPC_Message variant structure
-    // TODO: Implement actual conversion based on JSON_RPC_Message definition
+// Helper method to convert JSON to MessageBase
+optional<MessageBase> WebSocket_Client_Transport::JSONToMessage(const JSON& json) const {
+    // This would need to be implemented based on the actual MessageBase variant structure
+    // TODO: Implement actual conversion based on MessageBase definition
     // For now, returning nullopt as placeholder
     return nullopt;
 }
 
-// Helper method to convert JSON_RPC_Message to JSON
-JSON WebSocket_Client_Transport::MessageToJSON(const JSONRPCMessage& message) const {
-    // This would need to be implemented based on the actual JSON_RPC_Message variant structure
-    // TODO: Implement actual conversion based on JSON_RPC_Message definition
+// Helper method to convert MessageBase to JSON
+JSON WebSocket_Client_Transport::MessageToJSON(const MessageBase& message) const {
+    // This would need to be implemented based on the actual MessageBase variant structure
+    // TODO: Implement actual conversion based on MessageBase definition
     // For now, returning empty JSON as placeholder
     return JSON{};
 }
@@ -94,7 +94,7 @@ future<void> WebSocket_Client_Transport::Start() {
             //         JSON parsed = JSON::parse(event.data);
             //
             //         // Validate JSON-RPC message structure (equivalent to
-            //         JSON_RPC_MessageSchema.parse) if (!ValidateJSON_RPC_Message(parsed)) {
+            //         MessageBaseSchema.parse) if (!ValidateMessageBase(parsed)) {
             //             if (OnError.has_value()) {
             //                 OnError.value()(runtime_error("Invalid JSON-RPC message
             //                 format"));
@@ -102,12 +102,12 @@ future<void> WebSocket_Client_Transport::Start() {
             //             return;
             //         }
             //
-            //         // Convert to JSON_RPC_Message
+            //         // Convert to MessageBase
             //         auto message = JSONToMessage(parsed);
             //         if (!message.has_value()) {
             //             if (OnError.has_value()) {
             //                 OnError.value()(runtime_error("Failed to convert JSON to
-            //                 JSON_RPC_Message"));
+            //                 MessageBase"));
             //             }
             //             return;
             //         }
@@ -149,7 +149,7 @@ future<void> WebSocket_Client_Transport::Close() {
 
 // Updated Send method to match Transport interface signature
 future<void>
-WebSocket_Client_Transport::Send(const JSONRPCMessage& Message,
+WebSocket_Client_Transport::Send(const MessageBase& Message,
                                  const optional<TransportSendOptions>& Options = nullopt) {
     // Create promise/future pair to match TypeScript Promise pattern
     auto promise_ptr = make_shared<promise<void>>();
@@ -160,7 +160,7 @@ WebSocket_Client_Transport::Send(const JSONRPCMessage& Message,
         try {
             if (!Socket_.has_value()) { throw runtime_error("Not connected"); }
 
-            // Convert JSON_RPC_Message to JSON string
+            // Convert MessageBase to JSON string
             JSON serialized_message = MessageToJSON(Message);
             string message_str = serialized_message.dump();
 
@@ -176,7 +176,7 @@ WebSocket_Client_Transport::Send(const JSONRPCMessage& Message,
 }
 
 // Legacy Send method for backward compatibility (matching original signature)
-future<void> WebSocket_Client_Transport::Send(const JSONRPCMessage& Message) {
+future<void> WebSocket_Client_Transport::Send(const MessageBase& Message) {
     return Send(Message, nullopt);
 }
 
