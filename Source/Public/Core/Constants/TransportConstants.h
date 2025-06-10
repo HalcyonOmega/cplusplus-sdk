@@ -41,7 +41,7 @@ static constexpr const char* TRANSPORT_ERR_HTTP_REQUEST_FAILED = "HTTP request f
 static constexpr const char* TRANSPORT_ERR_NOT_RUNNING = "Transport is not running";
 
 // Transport protocol version
-constexpr const char* TRANSPORT_PROTOCOL_VERSION = "1.0";
+static constexpr const char* TRANSPORT_JSONRPC_VERSION = "2.0";
 
 // Transport error codes
 constexpr const char* TRANSPORT_ERR_NOT_CONNECTED = "TRANSPORT_ERR_NOT_CONNECTED";

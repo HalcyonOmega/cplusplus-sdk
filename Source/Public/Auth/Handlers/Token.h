@@ -170,10 +170,10 @@ class PKCEVerifier {
 class TokenHandler {
   public:
     TokenHandlerOptions Options;
-    shared_ptr<RateLimitState> RateLimitState_;
+    shared_ptr<RateLimitState> m_RateLimitState;
 
     TokenHandler(const TokenHandlerOptions& InOptions)
-        : Options(InOptions), RateLimitState_(make_shared<RateLimitState>()) {}
+        : Options(InOptions), m_RateLimitState(make_shared<RateLimitState>()) {}
 
     // Middleware application equivalent to Express router setup
     struct MiddlewareResult {

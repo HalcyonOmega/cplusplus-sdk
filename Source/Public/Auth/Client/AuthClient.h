@@ -248,4 +248,5 @@ struct OAuthRegisteredClientsStore {
         }); // Default implementation - dynamic client registration is unsupported
     }
 };
+
 MCP_NAMESPACE_END

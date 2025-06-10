@@ -4,7 +4,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: Fix External Ref: Express Router functionality
 // TODO: Fix External Ref: Client registration handler
 // TODO: Fix External Ref: Token handler
 // TODO: Fix External Ref: Authorization handler
@@ -135,10 +134,11 @@ bool HasTokenRevocationSupport(const shared_ptr<OAuthServerProvider>& Provider);
 
 OAuthMetadata CreateOAuthMetadata(const CreateOAuthMetadataOptions& Options);
 
+// TODO: Fix External Ref: Express HTTP_Router functionality
 /**
- * Express Router equivalent - handles HTTP routing
+ * Express HTTP_Router equivalent - handles HTTP routing
  */
-class ExpressRouter {
+class HTTP_Router {
   private:
     unordered_map<string, RequestHandler> Routes;
     vector<RequestHandler> Middleware;
