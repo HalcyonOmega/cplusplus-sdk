@@ -49,7 +49,7 @@ struct SetLevelRequestParams {
 //   MSG_DESCRIPTION
 //       : "A request from the client to the server, to enable or adjust logging.",
 //         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : "logging/setLevel", MSG_TYPE : MSG_STRING},
+//           MSG_METHOD : {MSG_CONST : MTHD_LOGGING_SET_LEVEL, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               "level" : {
@@ -103,7 +103,7 @@ struct LoggingMessageNotificationParams {
 //         "logging/setLevel request has been sent from the client, the server "
 //         "MAY decide which messages to send automatically.",
 //         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : "notifications/message", MSG_TYPE : MSG_STRING},
+//           MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_MESSAGE, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               MSG_DATA : {

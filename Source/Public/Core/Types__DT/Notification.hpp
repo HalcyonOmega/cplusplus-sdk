@@ -88,7 +88,7 @@ struct ProgressNotification : public Notification {
 // from the client.
 struct ResourceListChangedNotification : public Notification {
     ResourceListChangedNotification() {
-        Method = "notifications/resources/list_changed";
+        Method = MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED;
     }
 };
 
@@ -103,7 +103,7 @@ struct ResourceUpdatedNotification : public Notification {
     } Params;
 
     ResourceUpdatedNotification() {
-        Method = "notifications/resources/updated";
+        Method = MTHD_NOTIFICATIONS_RESOURCES_UPDATED;
     }
 };
 
@@ -112,7 +112,7 @@ struct ResourceUpdatedNotification : public Notification {
 // client.
 struct PromptListChangedNotification : public Notification {
     PromptListChangedNotification() {
-        Method = "notifications/prompts/list_changed";
+        Method = MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED;
     }
 };
 
@@ -121,7 +121,7 @@ struct PromptListChangedNotification : public Notification {
 // client.
 struct ToolListChangedNotification : public Notification {
     ToolListChangedNotification() {
-        Method = "notifications/tools/list_changed";
+        Method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
     }
 };
 
@@ -137,14 +137,14 @@ struct LoggingMessageNotification : public Notification {
     } Params;
 
     LoggingMessageNotification() {
-        Method = "notifications/message";
+        Method = MTHD_NOTIFICATIONS_MESSAGE;
     }
 };
 
 // A notification from the client to the server, informing it that the list of roots has changed.
 struct RootsListChangedNotification : public Notification {
     RootsListChangedNotification() {
-        Method = "notifications/roots/list_changed";
+        Method = MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED;
     }
 };
 

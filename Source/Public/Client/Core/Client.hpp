@@ -224,25 +224,25 @@ optional<string> Client<RequestT, NotificationT, ResultT>::GetInstructions() con
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const string& Method) {
-    if (Method == "logging/setLevel") {
+    if (Method == MTHD_LOGGING_SET_LEVEL) {
         if (!ServerCapabilities_
             || !ServerCapabilities_->Logging) { // TODO: Access logging capability properly
             throw runtime_error("Server does not support logging (required for " + Method + ")");
         }
-    } else if (Method == "prompts/get" || Method == "prompts/list") {
+    } else if (Method == MTHD_PROMPTS_GET || Method == MTHD_PROMPTS_LIST) {
         if (!ServerCapabilities_
             || !ServerCapabilities_->Prompts) { // TODO: Access prompts capability properly
             throw runtime_error("Server does not support prompts (required for " + Method + ")");
         }
-    } else if (Method == "resources/list" || Method == "resources/templates/list"
-               || Method == "resources/read" || Method == "resources/subscribe"
-               || Method == "resources/unsubscribe") {
+    } else if (Method == MTHD_RESOURCES_LIST || Method == MTHD_RESOURCES_TEMPLATES_LIST
+               || Method == MTHD_RESOURCES_READ || Method == MTHD_RESOURCES_SUBSCRIBE
+               || Method == MTHD_RESOURCES_UNSUBSCRIBE) {
         if (!ServerCapabilities_
             || !ServerCapabilities_->Resources) { // TODO: Access resources capability properly
             throw runtime_error("Server does not support resources (required for " + Method + ")");
         }
 
-        if (Method == "resources/subscribe") {
+        if (Method == MTHD_RESOURCES_SUBSCRIBE) {
             // TODO: Check ServerCapabilities_->Resources->Subscribe
             // if (!ServerCapabilities_->Resources->Subscribe) {
             //     throw runtime_error("Server does not support resource subscriptions (required for
@@ -254,7 +254,7 @@ void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const s
             || !ServerCapabilities_->Tools) { // TODO: Access tools capability properly
             throw runtime_error("Server does not support tools (required for " + Method + ")");
         }
-    } else if (Method == "completion/complete") {
+    } else if (Method == MTHD_COMPLETION_COMPLETE) {
         if (!ServerCapabilities_
             || !ServerCapabilities_->Completions) { // TODO: Access completions capability properly
             throw runtime_error("Server does not support completions (required for " + Method
@@ -266,7 +266,7 @@ void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const s
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::AssertNotificationCapability(const string& Method) {
-    if (Method == "notifications/roots/list_changed") {
+    if (Method == MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED) {
         // TODO: Check Capabilities_.Roots.ListChanged properly
         // if (!Capabilities_.Roots || !Capabilities_.Roots->ListChanged) {
         //     throw runtime_error("Client does not support roots list changed notifications
@@ -280,13 +280,13 @@ void Client<RequestT, NotificationT, ResultT>::AssertNotificationCapability(cons
 template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::AssertRequestHandlerCapability(
     const string& Method) {
-    if (Method == "sampling/createMessage") {
+    if (Method == MTHD_SAMPLING_CREATE_MESSAGE) {
         // TODO: Check Capabilities_.Sampling properly
         // if (!Capabilities_.Sampling) {
         //     throw runtime_error("Client does not support sampling capability (required for " +
         //     Method + ")");
         // }
-    } else if (Method == "roots/list") {
+    } else if (Method == MTHD_ROOTS_LIST) {
         // TODO: Check Capabilities_.Roots properly
         // if (!Capabilities_.Roots) {
         //     throw runtime_error("Client does not support roots capability (required for " +
@@ -306,7 +306,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::Complete(const JSON& Params,
                                                    const optional<RequestOptions>& Options) {
-    JSON CompleteRequest = JSON{{MSG_METHOD, "completion/complete"}, {MSG_PARAMS, Params}};
+    JSON CompleteRequest = JSON{{MSG_METHOD, MTHD_COMPLETION_COMPLETE}, {MSG_PARAMS, Params}};
     return co_await Request(CompleteRequest, "CompleteResultSchema", Options);
 }
 
@@ -314,7 +314,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::SetLoggingLevel(LoggingLevel Level,
                                                           const optional<RequestOptions>& Options) {
-    JSON SetLevelRequest = JSON{{MSG_METHOD, "logging/setLevel"},
+    JSON SetLevelRequest = JSON{{MSG_METHOD, MTHD_LOGGING_SET_LEVEL},
                                 {MSG_PARAMS, JSON{{"level", static_cast<int>(Level)}}}};
     return co_await Request(SetLevelRequest, "EmptyResultSchema", Options);
 }
@@ -323,7 +323,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::GetPrompt(const JSON& Params,
                                                     const optional<RequestOptions>& Options) {
-    JSON GetPromptRequest = JSON{{MSG_METHOD, "prompts/get"}, {MSG_PARAMS, Params}};
+    JSON GetPromptRequest = JSON{{MSG_METHOD, MTHD_PROMPTS_GET}, {MSG_PARAMS, Params}};
     return co_await Request(GetPromptRequest, "GetPromptResultSchema", Options);
 }
 
@@ -331,7 +331,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListPrompts(const optional<JSON>& Params,
                                                       const optional<RequestOptions>& Options) {
-    JSON ListPromptsRequest = JSON{{MSG_METHOD, "prompts/list"}};
+    JSON ListPromptsRequest = JSON{{MSG_METHOD, MTHD_PROMPTS_LIST}};
     if (Params) { ListPromptsRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListPromptsRequest, "ListPromptsResultSchema", Options);
 }
@@ -340,7 +340,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ListResources(const optional<JSON>& Params,
                                                         const optional<RequestOptions>& Options) {
-    JSON ListResourcesRequest = JSON{{MSG_METHOD, "resources/list"}};
+    JSON ListResourcesRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_LIST}};
     if (Params) { ListResourcesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourcesRequest, "ListResourcesResultSchema", Options);
 }
@@ -348,7 +348,7 @@ Client<RequestT, NotificationT, ResultT>::ListResources(const optional<JSON>& Pa
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::ListResourceTemplates(
     const optional<JSON>& Params, const optional<RequestOptions>& Options) {
-    JSON ListResourceTemplatesRequest = JSON{{MSG_METHOD, "resources/templates/list"}};
+    JSON ListResourceTemplatesRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_TEMPLATES_LIST}};
     if (Params) { ListResourceTemplatesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourceTemplatesRequest, "ListResourceTemplatesResultSchema",
                             Options);
@@ -358,21 +358,21 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON>
 Client<RequestT, NotificationT, ResultT>::ReadResource(const JSON& Params,
                                                        const optional<RequestOptions>& Options) {
-    JSON ReadResourceRequest = JSON{{MSG_METHOD, "resources/read"}, {MSG_PARAMS, Params}};
+    JSON ReadResourceRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_READ}, {MSG_PARAMS, Params}};
     return co_await Request(ReadResourceRequest, "ReadResourceResultSchema", Options);
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::SubscribeResource(
     const JSON& Params, const optional<RequestOptions>& Options) {
-    JSON SubscribeRequest = JSON{{MSG_METHOD, "resources/subscribe"}, {MSG_PARAMS, Params}};
+    JSON SubscribeRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_SUBSCRIBE}, {MSG_PARAMS, Params}};
     return co_await Request(SubscribeRequest, "EmptyResultSchema", Options);
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<JSON> Client<RequestT, NotificationT, ResultT>::UnsubscribeResource(
     const JSON& Params, const optional<RequestOptions>& Options) {
-    JSON UnsubscribeRequest = JSON{{MSG_METHOD, "resources/unsubscribe"}, {MSG_PARAMS, Params}};
+    JSON UnsubscribeRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_UNSUBSCRIBE}, {MSG_PARAMS, Params}};
     return co_await Request(UnsubscribeRequest, "EmptyResultSchema", Options);
 }
 
@@ -462,7 +462,7 @@ Client<RequestT, NotificationT, ResultT>::ListTools(const optional<JSON>& Params
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 async<void> Client<RequestT, NotificationT, ResultT>::SendRootsListChanged() {
-    JSON RootsListChangedNotification = JSON{{MSG_METHOD, "notifications/roots/list_changed"}};
+    JSON RootsListChangedNotification = JSON{{MSG_METHOD, MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED}};
     co_await Notification(RootsListChangedNotification);
 }
 

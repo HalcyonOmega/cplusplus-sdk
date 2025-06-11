@@ -32,7 +32,7 @@ struct InitializeRequestParams {
 //                   "first connects, asking it to begin initialization.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "initialize", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_INITIALIZE, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_CAPABILITIES : {"$ref" : "#/definitions/ClientCapabilities"},
@@ -129,7 +129,7 @@ struct InitializeResult : public Result {
 //                   "server after initialization has finished.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "notifications/initialized", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_INITIALIZED, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_ADDITIONAL_PROPERTIES : {},
 //           MSG_PROPERTIES : {

@@ -75,7 +75,7 @@ struct CancelledNotificationParams {
 //         "client MUST NOT attempt to cancel its `initialize` request.",
 //         MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "notifications/cancelled", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_CANCELLED, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             "reason" : {
@@ -173,7 +173,7 @@ struct ProgressNotificationParams : public NotificationParams {
 //                   "of a progress update for a long-running request.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "notifications/progress", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_PROGRESS, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_MESSAGE : {

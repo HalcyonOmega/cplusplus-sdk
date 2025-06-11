@@ -187,7 +187,7 @@ struct ResourceTemplate {
 //       : "Sent from the client to request a list of resources the server
 //       has.",
 //         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : "resources/list", MSG_TYPE : MSG_STRING},
+//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_LIST, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               MSG_CURSOR : {
@@ -252,7 +252,7 @@ struct ListResourcesResult : public PaginatedResult {
 //                   "templates the server has.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "resources/templates/list", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_TEMPLATES_LIST, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_CURSOR : {
@@ -332,7 +332,7 @@ struct ResourceUpdatedNotificationParams {
 //                   MSG_PROPERTIES
 //       : {
 //         MSG_METHOD :
-//             {MSG_CONST : "notifications/resources/updated", MSG_TYPE : MSG_STRING},
+//             {MSG_CONST : MTHD_NOTIFICATIONS_RESOURCES_UPDATED, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_URI : {
@@ -379,7 +379,7 @@ struct SubscribeRequestParams {
 //       "
 //         "the server whenever a particular resource changes.",
 //         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : "resources/subscribe", MSG_TYPE : MSG_STRING},
+//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_SUBSCRIBE, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               MSG_URI : {
@@ -425,7 +425,7 @@ struct UnsubscribeRequestParams {
 //                   "should follow a previous resources/subscribe request.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "resources/unsubscribe", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_UNSUBSCRIBE, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_URI : {
@@ -469,7 +469,7 @@ struct ReadResourceRequestParams {
 //       : "Sent from the client to the server, to read a specific resource
 //       URI.",
 //         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : "resources/read", MSG_TYPE : MSG_STRING},
+//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_READ, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               MSG_URI : {
@@ -542,7 +542,7 @@ struct ReadResourceResult : public Result {
 //                   MSG_PROPERTIES
 //       : {
 //         MSG_METHOD : {
-//           MSG_CONST : "notifications/resources/list_changed",
+//           MSG_CONST : MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED,
 //           MSG_TYPE : MSG_STRING
 //         },
 //         MSG_PARAMS : {

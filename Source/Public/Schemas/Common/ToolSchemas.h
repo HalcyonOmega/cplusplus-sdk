@@ -191,7 +191,7 @@ struct Tool {
 //   MSG_DESCRIPTION
 //       : "Sent from the client to request a list of tools the server has.",
 //         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : "tools/list", MSG_TYPE : MSG_STRING},
+//           MSG_METHOD : {MSG_CONST : MTHD_TOOLS_LIST, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               MSG_CURSOR : {
@@ -325,7 +325,7 @@ struct CallToolRequestParams {
 //   server.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "tools/call", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_TOOLS_CALL, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_ARGUMENTS : {MSG_ADDITIONAL_PROPERTIES : {}, MSG_TYPE : MSG_OBJECT},
@@ -358,7 +358,7 @@ struct CallToolRequest : public Request {
 //         MSG_PROPERTIES
 //       : {
 //         MSG_METHOD :
-//             {MSG_CONST : "notifications/tools/list_changed", MSG_TYPE :
+//             {MSG_CONST : MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED, MSG_TYPE :
 //             MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_ADDITIONAL_PROPERTIES : {},

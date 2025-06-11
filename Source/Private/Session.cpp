@@ -93,7 +93,7 @@ void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)>
     jsonRequest[MSG_JSON_RPC] = MSG_JSON_RPC_VERSION;    // "2.0"
     jsonRequest[MSG_ID] = request.id.get<std::string>(); // Assuming RequestID is variant<string,
                                                          // int> and we use string here
-    jsonRequest[MSG_METHOD] = request.method;            // Should be "initialize" (MTHD_INITIALIZE)
+    jsonRequest[MSG_METHOD] = request.method; // Should be MTHD_INITIALIZE (MTHD_INITIALIZE)
 
     JSON paramsJson;
     paramsJson[MSG_PROTOCOL_VERSION] = request.params.protocolVersion;

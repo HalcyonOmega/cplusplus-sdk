@@ -41,7 +41,7 @@ MCP_NAMESPACE_BEGIN
 //                     "then request an updated list of roots using the ListRootsRequest.",
 //                     MSG_PROPERTIES
 //         : {
-//             MSG_METHOD: {MSG_CONST: "notifications/roots/list_changed", MSG_TYPE: MSG_STRING},
+//             MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED, MSG_TYPE: MSG_STRING},
 //             MSG_PARAMS: {
 //                 MSG_ADDITIONAL_PROPERTIES: {},
 //                 MSG_PROPERTIES: {
@@ -70,7 +70,7 @@ MCP_NAMESPACE_BEGIN
 //           "system\nstructure "
 //           "or access specific locations that the client has permission to read from.",
 //           MSG_PROPERTIES : {
-//               MSG_METHOD: {MSG_CONST: "roots/list", MSG_TYPE: MSG_STRING},
+//               MSG_METHOD: {MSG_CONST: MTHD_ROOTS_LIST, MSG_TYPE: MSG_STRING},
 //               MSG_PARAMS: {
 //                   MSG_ADDITIONAL_PROPERTIES: {},
 //                   MSG_PROPERTIES: {

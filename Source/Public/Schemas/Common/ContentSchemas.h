@@ -3,20 +3,14 @@
 #include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
+#include "Core/Constants/MessageConstants.h"
 #include "Schemas/Client/ClientSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
 struct Content {
-    /**
-     * The type of content.
-     */
-    string type;
-
-    /**
-     * Optional annotations for the client.
-     */
-    optional<Annotations> annotations;
+    string Type;                       // The type of content.
+    optional<Annotations> Annotations; // Optional annotations for the client.
 };
 
 // TextContent {
@@ -36,17 +30,12 @@ struct Content {
 //                                               MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Text provided to or from an LLM.
- */
+// Text provided to or from an LLM.
 struct TextContent : public Content {
-    /**
-     * The text content of the message.
-     */
-    string text;
+    string Text; // The text content of the message.
 
     TextContent() {
-        type = MSG_TEXT;
+        Type = MSG_TEXT;
     }
 };
 
@@ -78,20 +67,17 @@ struct TextContent : public Content {
  * An image provided to or from an LLM.
  */
 struct ImageContent : public Content {
-    /**
-     * The base64-encoded image data.
-     *
-     * @format byte
-     */
-    string data;
+    /* The base64-encoded image data.
+     * @format byte */
+    string Data;
 
     /**
      * The MIME type of the image. Different providers may support different image types.
      */
-    string mimeType;
+    string MIME_Type;
 
     ImageContent() {
-        type = CONST_IMAGE;
+        Type = CONST_IMAGE;
     }
 };
 
@@ -128,15 +114,15 @@ struct AudioContent : public Content {
      *
      * @format byte
      */
-    string data;
+    string Data;
 
     /**
      * The MIME type of the audio. Different providers may support different audio types.
      */
-    string mimeType;
+    string MIME_Type;
 
     AudioContent() {
-        type = CONST_AUDIO;
+        Type = CONST_AUDIO;
     }
 };
 
@@ -167,12 +153,12 @@ struct ResourceContents {
      *
      * @format uri
      */
-    string uri;
+    string URI;
 
     /**
      * The MIME type of this resource, if known.
      */
-    optional<string> mimeType;
+    optional<string> MIME_Type;
 };
 
 // TextResourceContents {
@@ -203,7 +189,7 @@ struct TextResourceContents : public ResourceContents {
      * The text of the item. This must only be set if the item can actually be
      * represented as text (not binary data).
      */
-    string text;
+    string Text;
 };
 
 // BlobResourceContents {
@@ -235,7 +221,7 @@ struct BlobResourceContents : public ResourceContents {
      *
      * @format byte
      */
-    string blob;
+    string Blob;
 };
 
 // EmbeddedResource {
@@ -271,7 +257,7 @@ struct EmbeddedResource : public Content {
     variant<TextResourceContents, BlobResourceContents> resource;
 
     EmbeddedResource() {
-        type = MSG_RESOURCE;
+        Type = MSG_RESOURCE;
     }
 };
 

@@ -252,7 +252,7 @@ struct CreateMessageRequestParams {
 //         "request (human in the loop) and decide whether to approve it.",
 //         MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "sampling/createMessage", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_SAMPLING_CREATE_MESSAGE, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             "includeContext" : {

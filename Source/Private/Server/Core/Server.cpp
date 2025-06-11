@@ -63,13 +63,13 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
     }
 
     void Server::AssertCapabilityForMethod(const string& method) {
-        if (method == "sampling/createMessage") {
+        if (method == MTHD_SAMPLING_CREATE_MESSAGE) {
             if (!ClientCapabilities_
                 || !ClientCapabilities_->sampling) { // TODO: Access sampling field
                 throw runtime_error("Client does not support sampling (required for " + method
                                     + ")");
             }
-        } else if (method == "roots/list") {
+        } else if (method == MTHD_ROOTS_LIST) {
             if (!ClientCapabilities_ || !ClientCapabilities_->roots) { // TODO: Access roots field
                 throw runtime_error("Client does not support listing roots (required for " + method
                                     + ")");
@@ -80,25 +80,25 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
     }
 
     void Server::AssertNotificationCapability(const string& method) {
-        if (method == "notifications/message") {
+        if (method == MTHD_NOTIFICATIONS_MESSAGE) {
             if (!Capabilities_.logging) { // TODO: Access logging field
                 throw runtime_error("Server does not support logging (required for " + method
                                     + ")");
             }
-        } else if (method == "notifications/resources/updated"
-                   || method == "notifications/resources/list_changed") {
+        } else if (method == MTHD_NOTIFICATIONS_RESOURCES_UPDATED
+                   || method == MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED) {
             if (!Capabilities_.resources) { // TODO: Access resources field
                 throw runtime_error(
                     "Server does not support notifying about resources (required for " + method
                     + ")");
             }
-        } else if (method == "notifications/tools/list_changed") {
+        } else if (method == MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED) {
             if (!Capabilities_.tools) { // TODO: Access tools field
                 throw runtime_error(
                     "Server does not support notifying of tool list changes (required for " + method
                     + ")");
             }
-        } else if (method == "notifications/prompts/list_changed") {
+        } else if (method == MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED) {
             if (!Capabilities_.prompts) { // TODO: Access prompts field
                 throw runtime_error(
                     "Server does not support notifying of prompt list changes (required for "
@@ -110,23 +110,23 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
     }
 
     void Server::AssertRequestHandlerCapability(const string& method) {
-        if (method == "sampling/createMessage") {
+        if (method == MTHD_SAMPLING_CREATE_MESSAGE) {
             if (!Capabilities_.sampling) { // TODO: Access sampling field
                 throw runtime_error("Server does not support sampling (required for " + method
                                     + ")");
             }
-        } else if (method == "logging/setLevel") {
+        } else if (method == MTHD_LOGGING_SET_LEVEL) {
             if (!Capabilities_.logging) { // TODO: Access logging field
                 throw runtime_error("Server does not support logging (required for " + method
                                     + ")");
             }
-        } else if (method == "prompts/get" || method == "prompts/list") {
+        } else if (method == MTHD_PROMPTS_GET || method == MTHD_PROMPTS_LIST) {
             if (!Capabilities_.prompts) { // TODO: Access prompts field
                 throw runtime_error("Server does not support prompts (required for " + method
                                     + ")");
             }
-        } else if (method == "resources/list" || method == "resources/templates/list"
-                   || method == "resources/read") {
+        } else if (method == MTHD_RESOURCES_LIST || method == MTHD_RESOURCES_TEMPLATES_LIST
+                   || method == MTHD_RESOURCES_READ) {
             if (!Capabilities_.resources) { // TODO: Access resources field
                 throw runtime_error("Server does not support resources (required for " + method
                                     + ")");
@@ -201,7 +201,7 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
     future<JSON> Server::CreateMessage(const JSON& params,
                                        const optional<RequestOptions>& options = nullopt) {
         JSON request;
-        request[MSG_METHOD] = "sampling/createMessage";
+        request[MSG_METHOD] = MTHD_SAMPLING_CREATE_MESSAGE;
         request[MSG_PARAMS] = params;
         return this->Request(request, CreateMessageResultSchema{}, options);
     }
@@ -209,40 +209,40 @@ Server(const Implementation& serverInfo, const optional<ServerOptions>& options 
     future<JSON> Server::ListRoots(const optional<JSON>& params = nullopt,
                                    const optional<RequestOptions>& options = nullopt) {
         JSON request;
-        request[MSG_METHOD] = "roots/list";
+        request[MSG_METHOD] = MTHD_ROOTS_LIST;
         if (params) { request[MSG_PARAMS] = *params; }
         return this->Request(request, ListRootsResultSchema{}, options);
     }
 
     future<void> Server::SendLoggingMessage(const JSON& params) {
         JSON notification;
-        notification[MSG_METHOD] = "notifications/message";
+        notification[MSG_METHOD] = MTHD_NOTIFICATIONS_MESSAGE;
         notification[MSG_PARAMS] = params;
         return this->Notification(notification);
     }
 
     future<void> Server::SendResourceUpdated(const JSON& params) {
         JSON notification;
-        notification[MSG_METHOD] = "notifications/resources/updated";
+        notification[MSG_METHOD] = MTHD_NOTIFICATIONS_RESOURCES_UPDATED;
         notification[MSG_PARAMS] = params;
         return this->Notification(notification);
     }
 
     future<void> Server::SendResourceListChanged() {
         JSON notification;
-        notification[MSG_METHOD] = "notifications/resources/list_changed";
+        notification[MSG_METHOD] = MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED;
         return this->Notification(notification);
     }
 
     future<void> Server::SendToolListChanged() {
         JSON notification;
-        notification[MSG_METHOD] = "notifications/tools/list_changed";
+        notification[MSG_METHOD] = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
         return this->Notification(notification);
     }
 
     future<void> Server::SendPromptListChanged() {
         JSON notification;
-        notification[MSG_METHOD] = "notifications/prompts/list_changed";
+        notification[MSG_METHOD] = MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED;
         return this->Notification(notification);
     }
 };

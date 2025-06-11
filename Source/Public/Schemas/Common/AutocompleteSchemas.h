@@ -95,7 +95,7 @@ struct CompleteRequestParams {
 //                   "completion options.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "completion/complete", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_COMPLETION_COMPLETE, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             "argument" : {

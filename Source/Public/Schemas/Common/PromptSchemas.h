@@ -126,7 +126,7 @@ struct Prompt {
 //                   "prompt templates the server has.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "prompts/list", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_LIST, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_CURSOR : {
@@ -203,7 +203,7 @@ struct GetPromptRequestParams {
 //   server.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "prompts/get", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_GET, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_PROPERTIES : {
 //             MSG_ARGUMENTS : {
@@ -280,7 +280,7 @@ struct GetPromptResult : public Result {
 //                   MSG_PROPERTIES
 //       : {
 //         MSG_METHOD :
-//             {MSG_CONST : "notifications/prompts/list_changed", MSG_TYPE :
+//             {MSG_CONST : MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED, MSG_TYPE :
 //             MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_ADDITIONAL_PROPERTIES : {},

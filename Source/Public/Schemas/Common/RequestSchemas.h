@@ -71,7 +71,7 @@ struct Request {
 //                   "must promptly respond, or else may be disconnected.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_METHOD : {MSG_CONST : "ping", MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_CONST : MTHD_PING, MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {
 //           MSG_ADDITIONAL_PROPERTIES : {},
 //           MSG_PROPERTIES : {

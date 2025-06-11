@@ -66,14 +66,14 @@ struct PaginatedRequest : public Request {
 // Sent from the client to request a list of resources the server has.
 struct ListResourcesRequest : public PaginatedRequest {
     ListResourcesRequest() {
-        Method = "resources/list";
+        Method = MTHD_RESOURCES_LIST;
     }
 };
 
 // Sent from the client to request a list of resource templates the server has.
 struct ListResourceTemplatesRequest : public PaginatedRequest {
     ListResourceTemplatesRequest() {
-        Method = "resources/templates/list";
+        Method = MTHD_RESOURCES_TEMPLATES_LIST;
     }
 };
 
@@ -86,7 +86,7 @@ struct ReadResourceRequest : public Request {
     } Params;
 
     ReadResourceRequest() {
-        Method = "resources/read";
+        Method = MTHD_RESOURCES_READ;
     }
 };
 
@@ -100,7 +100,7 @@ struct SubscribeRequest : public Request {
     } Params;
 
     SubscribeRequest() {
-        Method = "resources/subscribe";
+        Method = MTHD_RESOURCES_SUBSCRIBE;
     }
 };
 
@@ -113,14 +113,14 @@ struct UnsubscribeRequest : public Request {
     } Params;
 
     UnsubscribeRequest() {
-        Method = "resources/unsubscribe";
+        Method = MTHD_RESOURCES_UNSUBSCRIBE;
     }
 };
 
 // Sent from the client to request a list of prompts and prompt templates the server has.
 struct ListPromptsRequest : public PaginatedRequest {
     ListPromptsRequest() {
-        Method = "prompts/list";
+        Method = MTHD_PROMPTS_LIST;
     }
 };
 
@@ -134,7 +134,7 @@ struct GetPromptRequest : public Request {
     } Params;
 
     GetPromptRequest() {
-        Method = "prompts/get";
+        Method = MTHD_PROMPTS_GET;
     }
 };
 
@@ -168,7 +168,7 @@ struct SetLevelRequest : public Request {
     } Params;
 
     SetLevelRequest() {
-        Method = "logging/setLevel";
+        Method = MTHD_LOGGING_SET_LEVEL;
     }
 };
 
@@ -197,7 +197,7 @@ struct CreateMessageRequest : public Request {
     } Params;
 
     CreateMessageRequest() {
-        Method = "sampling/createMessage";
+        Method = MTHD_SAMPLING_CREATE_MESSAGE;
     }
 };
 
@@ -214,14 +214,14 @@ struct CompleteRequest : public Request {
     } Params;
 
     CompleteRequest() {
-        Method = "completion/complete";
+        Method = MTHD_COMPLETION_COMPLETE;
     }
 };
 
 // Sent from the server to request a list of root URIs from the client.
 struct ListRootsRequest : public Request {
     ListRootsRequest() {
-        Method = "roots/list";
+        Method = MTHD_ROOTS_LIST;
     }
 };
 

@@ -428,10 +428,10 @@ class MCPServer {
         if (CompletionHandlerInitialized_) { return; }
 
         // Assert can set request handler
-        ServerInstance_->AssertCanSetRequestHandler("completion/complete");
+        ServerInstance_->AssertCanSetRequestHandler(MTHD_COMPLETION_COMPLETE);
 
         ServerInstance_->SetRequestHandler(
-            "completion/complete",
+            MTHD_COMPLETION_COMPLETE,
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> CompleteResult {
@@ -502,9 +502,9 @@ class MCPServer {
         if (ResourceHandlersInitialized_) { return; }
 
         // Assert can set request handlers
-        ServerInstance_->AssertCanSetRequestHandler("resources/list");
-        ServerInstance_->AssertCanSetRequestHandler("resources/templates/list");
-        ServerInstance_->AssertCanSetRequestHandler("resources/read");
+        ServerInstance_->AssertCanSetRequestHandler(MTHD_RESOURCES_LIST);
+        ServerInstance_->AssertCanSetRequestHandler(MTHD_RESOURCES_TEMPLATES_LIST);
+        ServerInstance_->AssertCanSetRequestHandler(MTHD_RESOURCES_READ);
 
         // Register capabilities
         ServerCapabilities caps;
@@ -513,7 +513,7 @@ class MCPServer {
 
         // Set handler for resources/list
         ServerInstance_->SetRequestHandler(
-            "resources/list",
+            MTHD_RESOURCES_LIST,
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> ListResourcesResult {
@@ -547,7 +547,7 @@ class MCPServer {
 
         // Set handler for resources/templates/list
         ServerInstance_->SetRequestHandler(
-            "resources/templates/list",
+            MTHD_RESOURCES_TEMPLATES_LIST,
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> ListResourceTemplatesResult {
@@ -568,7 +568,7 @@ class MCPServer {
 
         // Set handler for resources/read
         ServerInstance_->SetRequestHandler(
-            "resources/read",
+            MTHD_RESOURCES_READ,
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> ReadResourceResult {
@@ -601,8 +601,8 @@ class MCPServer {
         if (PromptHandlersInitialized_) { return; }
 
         // Assert can set request handlers
-        ServerInstance_->AssertCanSetRequestHandler("prompts/list");
-        ServerInstance_->AssertCanSetRequestHandler("prompts/get");
+        ServerInstance_->AssertCanSetRequestHandler(MTHD_PROMPTS_LIST);
+        ServerInstance_->AssertCanSetRequestHandler(MTHD_PROMPTS_GET);
 
         // Register capabilities
         ServerCapabilities caps;
@@ -611,7 +611,7 @@ class MCPServer {
 
         // Set handler for prompts/list
         ServerInstance_->SetRequestHandler(
-            "prompts/list",
+            MTHD_PROMPTS_LIST,
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> ListPromptsResult {
@@ -635,7 +635,7 @@ class MCPServer {
 
         // Set handler for prompts/get
         ServerInstance_->SetRequestHandler(
-            "prompts/get",
+            MTHD_PROMPTS_GET,
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> GetPromptResult {
