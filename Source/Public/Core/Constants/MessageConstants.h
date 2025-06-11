@@ -9,8 +9,6 @@ std::string REGEXSearch; // Just this part => "[^\\"]*"
 
 static constexpr const char* MSG_URITEMPLATE = "uri-template"; // TODO: Check duplicates with above
 
-static constexpr const char* MSG_STATUS = "status";
-
 // Message Keys
 static constexpr const char* MSG_NULL = "";
 static constexpr const char* MSG_ID = "id";
@@ -58,6 +56,7 @@ static constexpr const char* MSG_SCOPE = "scope";
 static constexpr const char* MSG_STATE = "state";
 static constexpr const char* MSG_HEADERS = "headers";
 static constexpr const char* MSG_BODY = "body";
+static constexpr const char* MSG_STATUS = "status";
 
 // JSON-RPC
 static constexpr const char* MSG_JSON_RPC = "jsonrpc";
@@ -81,11 +80,7 @@ static constexpr const char* MSG_IS_ERROR = "isError";
 static constexpr const char* MSG_CONTENT = "content";
 static constexpr const char* MSG_TEXT = "text";
 static constexpr const char* MSG_MIME_TYPE = "mimeType";
-static constexpr const char* MSG_URI = "uri";
-static constexpr const char* MSG_BLOB = "blob";
-static constexpr const char* MSG_RESOURCE = "resource";
 static constexpr const char* MSG_META = "_meta";
-static constexpr const char* MSG_PROGRESS = "progress";
 static constexpr const char* MSG_TOTAL = "total";
 static constexpr const char* MSG_REQUEST_ID = "requestId";
 static constexpr const char* MSG_REF_RESOURCE = "ref/resource";

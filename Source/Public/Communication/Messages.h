@@ -14,19 +14,7 @@ struct MessageID {
     variant<string, int, long long> m_MessageID;
 
   public:
-    string_view ToString() const {
-        return visit(
-            [](const auto& VisitID) -> string_view {
-                if constexpr (is_same_v<decay_t<decltype(VisitID)>, string>) {
-                    return VisitID;
-                } else {
-                    static thread_local string Buffer;
-                    Buffer = to_string(VisitID);
-                    return Buffer;
-                }
-            },
-            m_MessageID);
-    }
+    [[nodiscard]] string_view ToString() const;
 
     MessageID(string StringID) : m_MessageID(std::move(StringID)) {}
     MessageID(int IntID) : m_MessageID(IntID) {}
@@ -34,9 +22,7 @@ struct MessageID {
 };
 
 struct MessageParams {
-    [[nodiscard]] virtual string Serialize() const {
-        return "";
-    }
+    [[nodiscard]] virtual string Serialize() const;
     virtual MessageParams Deserialize(string InString) = 0;
 };
 
@@ -45,22 +31,15 @@ class MessageBase {
     string m_JSONRPC = MSG_JSON_RPC_VERSION;
 
   public:
-    string_view GetJSONRPCVersion() const {
-        return m_JSONRPC;
-    };
+    [[nodiscard]] string_view GetJSONRPCVersion() const;
 
     virtual ~MessageBase() = default;
 
     // Helpers
-    // JSON
     [[nodiscard]] virtual JSON ToJSON() const = 0;
-    virtual MessageBase Deserialize(JSON InJSON) = 0;
-
-    // String
-    [[nodiscard]] virtual string Serialize() const {
-        return ToJSON().dump();
-    };
-    virtual MessageBase Deserialize(string InString) = 0;
+    [[nodiscard]] virtual MessageBase FromJSON(JSON InJSON) = 0;
+    [[nodiscard]] virtual string Serialize() const;
+    [[nodiscard]] virtual MessageBase Deserialize(string InString) = 0;
 };
 
 // A request that expects a response.
@@ -68,110 +47,52 @@ class RequestMessage : public MessageBase {
   private:
     MessageID m_ID;
     string m_Method;
-    optional<MessageParams> m_Params = nullopt;
+    optional<unique_ptr<MessageParams>> m_Params = nullopt;
 
   public: // Direct Getters
-    MessageID GetMessageID() const {
-        return m_ID;
-    };
+    [[nodiscard]] MessageID GetMessageID() const;
+    [[nodiscard]] string_view GetMethod() const;
+    [[nodiscard]] optional<MessageParams> GetParams() const;
 
-    string_view GetMethod() const {
-        return m_Method;
-    };
-
-    optional<MessageParams> GetParams() const {
-        if (m_Params.has_value()) { return m_Params.value(); }
-        return nullopt;
-    };
-
-  private: // String Getters
-    string_view GetMessageIDString() const {
-        return GetMessageID().ToString();
-    };
-
-    string_view GetMethodString() const {
-        return GetMethod();
-    };
-
-    string_view GetParamsString() const {
-        if (m_Params.has_value()) { return m_Params.value().Serialize(); }
-        return MSG_NULL;
-    };
-
-  public:
-    JSON ToJSON() const override {
-        JSON JSON_Object;
-        JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
-        JSON_Object[MSG_ID] = GetMessageIDString();
-        JSON_Object[MSG_METHOD] = GetMethodString();
-        JSON_Object[MSG_PARAMS] = GetParamsString();
-        return JSON_Object;
-    }
+    // MessageBase Overrides
+    [[nodiscard]] JSON ToJSON() const override;
+    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] string Serialize() const override;
+    [[nodiscard]] MessageBase Deserialize(string InString) override;
 };
 
 // A successful (non-error) response to a request.
 class ResponseMessage : public MessageBase {
   private:
     MessageID m_ID;
-    MessageParams m_Result;
+    unique_ptr<MessageParams> m_Result;
 
   public:
-    MessageID GetID() const {
-        return m_ID;
-    };
+    [[nodiscard]] MessageID GetMessageID() const;
+    [[nodiscard]] MessageParams& GetResult() const;
 
-    MessageParams GetResult() const {
-        return m_Result;
-    };
-
-  private:
-    string_view GetIDString() const {
-        return GetID().ToString();
-    };
-
-    string_view GetResultString() const {
-        return GetResult().Serialize();
-    };
-
-    JSON ToJSON() const override {
-        JSON JSON_Object;
-        JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
-        JSON_Object[MSG_ID] = GetIDString();
-        JSON_Object[MSG_RESULT] = GetResultString();
-        return JSON_Object;
-    }
+    // MessageBase Overrides
+    [[nodiscard]] JSON ToJSON() const override;
+    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] string Serialize() const override;
+    [[nodiscard]] MessageBase Deserialize(string InString) override;
 };
 
 // A notification which does not expect a response.
 class NotificationMessage : public MessageBase {
   private:
     string m_Method;
-    optional<MessageParams> m_Params = nullopt;
+    optional<unique_ptr<MessageParams>> m_Params = nullopt;
 
   public:
-    string GetMethod() const {
-        return m_Method;
-    };
+    [[nodiscard]] string_view GetMethod() const;
+    [[nodiscard]] optional<MessageParams> GetParams() const;
 
-    optional<MessageParams> GetParams() const {
-        if (m_Params.has_value()) { return m_Params.value(); }
-        return nullopt;
-    };
-
-  private:
-    string_view GetParamsString() const {
-        if (m_Params.has_value()) { return m_Params.value().Serialize(); }
-        return MSG_NULL;
-    };
-
-  public:
-    JSON ToJSON() const override {
-        JSON JSON_Object;
-        JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
-        JSON_Object[MSG_METHOD] = GetMethod();
-        JSON_Object[MSG_PARAMS] = GetParamsString();
-        return JSON_Object;
-    }
+    // MessageBase Overrides
+    [[nodiscard]] JSON ToJSON() const override;
+    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] string Serialize() const override;
+    [[nodiscard]] MessageBase Deserialize(string InString) override;
 };
 
 struct ErrorParams {
@@ -190,28 +111,15 @@ class ErrorMessage : public MessageBase {
     ErrorParams m_Error;
 
   public:
-    MessageID GetID() const {
-        return m_ID;
-    };
+    // Direct Getters
+    [[nodiscard]] MessageID GetID() const;
+    [[nodiscard]] ErrorParams GetError() const;
 
-    ErrorParams GetError() const {
-        return m_Error;
-    };
-
-  private:
-    string_view GetErrorString() const {
-        return GetError().Message;
-    };
-
-  public:
-    JSON ToJSON() const override {
-        JSON JSON_Object;
-        JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
-        JSON_Object[MSG_ID] = GetID().ToString();
-        // TODO: Fix Accessor
-        JSON_Object[MSG_ERROR] = GetError().Message;
-        return JSON_Object;
-    }
+    // MessageBase Overrides
+    [[nodiscard]] JSON ToJSON() const override;
+    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] string Serialize() const override;
+    [[nodiscard]] MessageBase Deserialize(string InString) override;
 
     // TODO: Check MessageID default IntID = 0 - should this be another default?
     ErrorMessage(Errors Code, string Message, optional<any> Data = nullopt)
