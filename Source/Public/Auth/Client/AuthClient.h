@@ -157,7 +157,7 @@ optional<string> ExtractResourceMetadataURL(const unordered_map<string, string>&
 /**
  * Looks up RFC 9728 OAuth 2.0 Protected Resource Metadata.
  *
- * If the server returns a 404 for the well-known endpoint, this function will
+ * If the server returns a HTTPStatus::NotFound for the well-known endpoint, this function will
  * throw an exception. Any other errors will be thrown as exceptions.
  */
 future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
@@ -166,7 +166,7 @@ future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsy
 /**
  * Looks up RFC 8414 OAuth 2.0 Authorization Server Metadata.
  *
- * If the server returns a 404 for the well-known endpoint, this function will
+ * If the server returns a HTTPStatus::NotFound for the well-known endpoint, this function will
  * return `nullopt`. Any other errors will be thrown as exceptions.
  */
 future<optional<OAuthMetadata>>

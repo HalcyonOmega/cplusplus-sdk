@@ -7,11 +7,11 @@
 MCP_NAMESPACE_BEGIN
 
 // Implementation {
-//   "description" : "Describes the name and version of an MCP implementation.",
-//                   "properties"
-//       : {"name" : {"type" : "string"}, "version" : {"type" : "string"}},
-//         "required" : [ "name", "version" ],
-//                      "type" : "object"
+//   MSG_DESCRIPTION : "Describes the name and version of an MCP implementation.",
+//                   MSG_PROPERTIES
+//       : {MSG_NAME : {MSG_TYPE : MSG_STRING}, MSG_VERSION : {MSG_TYPE : MSG_STRING}},
+//         MSG_REQUIRED : [ MSG_NAME, MSG_VERSION ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -23,10 +23,10 @@ struct Implementation {
 };
 
 // Role {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The sender or recipient of messages and data in a conversation.",
 //         "enum" : [ "assistant", "user" ],
-//                  "type" : "string"
+//                  MSG_TYPE : MSG_STRING
 // };
 
 /**

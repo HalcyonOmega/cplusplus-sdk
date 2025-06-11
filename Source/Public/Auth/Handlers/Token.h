@@ -11,6 +11,8 @@
 
 #include "Auth/Types/Auth.h"
 #include "Core.h"
+#include "Core/Constants/TransportConstants.h"
+
 
 // TODO: Fix External Ref: express framework integration
 // TODO: Fix External Ref: cors library integration
@@ -179,7 +181,7 @@ class TokenHandler {
     struct MiddlewareResult {
         bool ShouldContinue = true;
         string ErrorResponse;
-        int StatusCode = 200;
+        HTTPStatus StatusCode = HTTPStatus::Ok;
         JSON Headers;
     };
 

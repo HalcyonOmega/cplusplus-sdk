@@ -10,9 +10,9 @@
 MCP_NAMESPACE_BEGIN
 
 // SamplingMessage {
-//   "description" : "Describes a message issued to or received from an LLM API.",
-//                   "properties" : {
-//                     "content" : {
+//   MSG_DESCRIPTION : "Describes a message issued to or received from an LLM API.",
+//                   MSG_PROPERTIES : {
+//                     MSG_CONTENT : {
 //                       "anyOf" : [
 //                         {"$ref" : "#/definitions/TextContent"},
 //                         {"$ref" : "#/definitions/ImageContent"},
@@ -21,8 +21,8 @@ MCP_NAMESPACE_BEGIN
 //                     },
 //                     "role" : {"$ref" : "#/definitions/Role"}
 //                   },
-//                                  "required" : [ "content", "role" ],
-//                                               "type" : "object"
+//                                  MSG_REQUIRED : [ MSG_CONTENT, "role" ],
+//                                               MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -34,13 +34,13 @@ struct SamplingMessage {
 };
 
 // ModelHint {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Hints to use for model selection.\n\nKeys not declared here are "
 //         "currently left "
 //         "unspecified by the spec and are up\nto the client to interpret.",
-//         "properties" : {
-//           "name" : {
-//             "description" :
+//         MSG_PROPERTIES : {
+//           MSG_NAME : {
+//             MSG_DESCRIPTION :
 //                 "A hint for a model name.\n\nThe client SHOULD treat this as a "
 //                 "substring of a model name; for example:\n - "
 //                 "`claude-3-5-sonnet` should "
@@ -53,10 +53,10 @@ struct SamplingMessage {
 //                 "model "
 //                 "family, as long as it fills a similar niche; for example:\n - "
 //                 "`gemini-1.5-flash` could match `claude-3-haiku-20240307`",
-//             "type" : "string"
+//             MSG_TYPE : MSG_STRING
 //           }
 //         },
-//                        "type" : "object"
+//                        MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -82,7 +82,7 @@ struct ModelHint {
 };
 
 // ModelPreferences {
-//   "description" : "The server's preferences for model selection, requested of "
+//   MSG_DESCRIPTION : "The server's preferences for model selection, requested of "
 //                   "the client during "
 //                   "sampling.\n\nBecause LLMs can vary along multiple "
 //                   "dimensions, choosing the \"best\" "
@@ -99,20 +99,20 @@ struct ModelHint {
 //                   "client to decide how to interpret these preferences and how "
 //                   "to\nbalance them against "
 //                   "other considerations.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
 //         "costPriority" : {
-//           "description" : "How much to prioritize cost when selecting a model. "
+//           MSG_DESCRIPTION : "How much to prioritize cost when selecting a model. "
 //                           "A value of 0 "
 //                           "means cost\nis not important, while a value of 1 "
 //                           "means cost is the "
 //                           "most important\nfactor.",
-//           "maximum" : 1,
-//           "minimum" : 0,
-//           "type" : "number"
+//           MSG_MAXIMUM : 1,
+//           MSG_MINIMUM : 0,
+//           MSG_TYPE : MSG_NUMBER
 //         },
 //         "hints" : {
-//           "description" :
+//           MSG_DESCRIPTION :
 //               "Optional hints to use for model selection.\n\nIf multiple hints "
 //               "are specified, the client MUST evaluate them in order\n(such "
 //               "that "
@@ -120,31 +120,31 @@ struct ModelHint {
 //               "these "
 //               "hints over the numeric priorities, but\nMAY still use the "
 //               "priorities to select from ambiguous matches.",
-//           "items" : {"$ref" : "#/definitions/ModelHint"},
-//           "type" : "array"
+//           MSG_ITEMS : {"$ref" : "#/definitions/ModelHint"},
+//           MSG_TYPE : MSG_ARRAY
 //         },
 //         "intelligencePriority" : {
-//           "description" : "How much to prioritize intelligence and "
+//           MSG_DESCRIPTION : "How much to prioritize intelligence and "
 //                           "capabilities when selecting a\nmodel. "
 //                           "A value of 0 means intelligence is not important, "
 //                           "while a value of 1\nmeans "
 //                           "intelligence is the most important factor.",
-//           "maximum" : 1,
-//           "minimum" : 0,
-//           "type" : "number"
+//           MSG_MAXIMUM : 1,
+//           MSG_MINIMUM : 0,
+//           MSG_TYPE : MSG_NUMBER
 //         },
 //         "speedPriority" : {
-//           "description" : "How much to prioritize sampling speed (latency) "
+//           MSG_DESCRIPTION : "How much to prioritize sampling speed (latency) "
 //                           "when selecting a "
 //                           "model. A\nvalue of 0 means speed is not important, "
 //                           "while a value "
 //                           "of 1 means speed is\nthe most important factor.",
-//           "maximum" : 1,
-//           "minimum" : 0,
-//           "type" : "number"
+//           MSG_MAXIMUM : 1,
+//           MSG_MINIMUM : 0,
+//           MSG_TYPE : MSG_NUMBER
 //         }
 //       },
-//         "type" : "object"
+//         MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -243,66 +243,66 @@ struct CreateMessageRequestParams {
 };
 
 // CreateMessageRequest {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "A request from the server to sample an LLM via the client. The client "
 //         "has full discretion over which model to select. The client should "
 //         "also "
 //         "inform the user before beginning sampling, to allow them to inspect "
 //         "the "
 //         "request (human in the loop) and decide whether to approve it.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "sampling/createMessage", "type" : "string"},
-//         "params" : {
-//           "properties" : {
+//         MSG_METHOD : {MSG_CONST : "sampling/createMessage", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
 //             "includeContext" : {
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "A request to include context from one or more MCP "
 //                   "servers (including the caller), to be attached to "
 //                   "the prompt. The client MAY ignore this request.",
 //               "enum" : [ "allServers", "none", "thisServer" ],
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             },
 //             "maxTokens" : {
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "The maximum number of tokens to sample, as "
 //                   "requested by the server. The client MAY choose to "
 //                   "sample fewer tokens than requested.",
-//               "type" : "integer"
+//               MSG_TYPE : "integer"
 //             },
 //             "messages" : {
-//               "items" : {"$ref" : "#/definitions/SamplingMessage"},
-//               "type" : "array"
+//               MSG_ITEMS : {"$ref" : "#/definitions/SamplingMessage"},
+//               MSG_TYPE : MSG_ARRAY
 //             },
 //             "metadata" : {
-//               "additionalProperties" : true,
-//               "description" :
+//               MSG_ADDITIONAL_PROPERTIES : true,
+//               MSG_DESCRIPTION :
 //                   "Optional metadata to pass through to the LLM provider. The "
 //                   "format of this metadata is provider-specific.",
-//               "properties" : {},
-//               "type" : "object"
+//               MSG_PROPERTIES : {},
+//               MSG_TYPE : MSG_OBJECT
 //             },
 //             "modelPreferences" : {
 //               "$ref" : "#/definitions/ModelPreferences",
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "The server's preferences for which model to select. "
 //                   "The client MAY ignore these preferences."
 //             },
-//             "stopSequences" : {"items" : {"type" : "string"}, "type" : "array"},
+//             "stopSequences" : {MSG_ITEMS : {MSG_TYPE : MSG_STRING}, MSG_TYPE : MSG_ARRAY},
 //             "systemPrompt" : {
-//               "description" : "An optional system prompt the server wants to "
+//               MSG_DESCRIPTION : "An optional system prompt the server wants to "
 //                               "use for sampling. "
 //                               "The client MAY modify or omit this prompt.",
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             },
-//             "temperature" : {"type" : "number"}
+//             "temperature" : {MSG_TYPE : MSG_NUMBER}
 //           },
-//           "required" : [ "maxTokens", "messages" ],
-//           "type" : "object"
+//           MSG_REQUIRED : [ "maxTokens", "messages" ],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -321,21 +321,21 @@ struct CreateMessageRequest : public Request {
 enum class StopReason { endTurn, stopSequence, maxTokens };
 
 // CreateMessageResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The client's response to a sampling/create_message request from the "
 //         "server. The client should inform the user before returning the "
 //         "sampled message, to allow them to inspect the response (human in "
 //         "the loop) and decide whether to allow the server to see it.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol to "
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "content" : {
+//         MSG_CONTENT : {
 //           "anyOf" : [
 //             {"$ref" : "#/definitions/TextContent"},
 //             {"$ref" : "#/definitions/ImageContent"},
@@ -343,17 +343,17 @@ enum class StopReason { endTurn, stopSequence, maxTokens };
 //           ]
 //         },
 //         "model" : {
-//           "description" : "The name of the model that generated the message.",
-//           "type" : "string"
+//           MSG_DESCRIPTION : "The name of the model that generated the message.",
+//           MSG_TYPE : MSG_STRING
 //         },
 //         "role" : {"$ref" : "#/definitions/Role"},
 //         "stopReason" : {
-//           "description" : "The reason why sampling stopped, if known.",
-//           "type" : "string"
+//           MSG_DESCRIPTION : "The reason why sampling stopped, if known.",
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "required" : [ "content", "model", "role" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_CONTENT, "model", "role" ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 // TODO: Typescript extended from Result and SamplingMessage - How to convert properly?

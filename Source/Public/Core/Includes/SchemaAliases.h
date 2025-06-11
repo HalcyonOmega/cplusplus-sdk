@@ -19,9 +19,9 @@ MCP_NAMESPACE_BEGIN
 /* General */
 
 // Cursor {
-//   "description" : "An opaque token used to represent a cursor for
+//   MSG_DESCRIPTION : "An opaque token used to represent a cursor for
 //   pagination.",
-//                   "type" : "string"
+//                   MSG_TYPE : MSG_STRING
 // };
 
 /**

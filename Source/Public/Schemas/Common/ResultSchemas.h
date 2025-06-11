@@ -29,38 +29,38 @@ struct PaginatedResult : public Result {
 using EmptyResult = Result;
 
 // PaginatedResult {
-//   "properties" : {
-//     "_meta" : {
-//       "additionalProperties" : {},
-//       "description" : "This result property is reserved by the protocol "
+//   MSG_PROPERTIES : {
+//     MSG_META : {
+//       MSG_ADDITIONAL_PROPERTIES : {},
+//       MSG_DESCRIPTION : "This result property is reserved by the protocol "
 //                       "to allow clients and servers to attach additional "
 //                       "metadata to their responses.",
-//       "type" : "object"
+//       MSG_TYPE : MSG_OBJECT
 //     },
-//     "nextCursor" : {
-//       "description" : "An opaque token representing the pagination "
+//     MSG_NEXT_CURSOR : {
+//       MSG_DESCRIPTION : "An opaque token representing the pagination "
 //                       "position after the last returned result.\nIf "
 //                       "present, there may be more results available.",
-//       "type" : "string"
+//       MSG_TYPE : MSG_STRING
 //     }
 //   },
-//                  "type" : "object"
+//                  MSG_TYPE : MSG_OBJECT
 // };
 
 // Result {
-//   "additionalProperties" : {},
-//                            "properties"
+//   MSG_ADDITIONAL_PROPERTIES : {},
+//                            MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "type" : "object"
+//         MSG_TYPE : MSG_OBJECT
 // };
 
 // EmptyResult {

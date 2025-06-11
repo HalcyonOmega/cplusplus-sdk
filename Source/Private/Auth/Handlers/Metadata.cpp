@@ -9,10 +9,11 @@ RequestHandler MetadataHandler(const MetadataType& Metadata) {
     // Configure CORS to allow any origin, to make accessible to web-based MCP clients
     Router.Use(CORS());
 
-    Router.Use(AllowedMethods({"GET"}));
+    Router.Use(AllowedMethods({MTHD_GET}));
 
-    Router.Get("/",
-               [Metadata](const Request& Req, Response& Res) { Res.Status(200).JSON(Metadata); });
+    Router.Get("/", [Metadata](const Request& Req, Response& Res) {
+        Res.Status(HTTPStatus::Ok).JSON(Metadata);
+    });
 
     return Router;
 }

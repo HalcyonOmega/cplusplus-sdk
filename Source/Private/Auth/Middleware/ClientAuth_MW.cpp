@@ -16,8 +16,8 @@ ClientAuthenticatedRequestValidation::Validate(const JSON& Body) {
         ClientAuthenticatedRequestValidation Result;
 
         // Validate client_id (required string)
-        if (!Body.contains("client_id") || !Body["client_id"].is_string()) { return nullopt; }
-        Result.ClientID = Body["client_id"].get<string>();
+        if (!Body.contains(MSG_CLIENT_ID) || !Body[MSG_CLIENT_ID].is_string()) { return nullopt; }
+        Result.ClientID = Body[MSG_CLIENT_ID].get<string>();
 
         // Validate client_secret (optional string)
         if (Body.contains("client_secret")) {

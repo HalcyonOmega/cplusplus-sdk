@@ -45,7 +45,7 @@ RequestHandler RevocationHandler(const RevocationHandlerOptions& options) {
             res->set_header("Cache-Control", "no-store");
 
             // Validate request method
-            if (req->get_method() != "POST") { throw InvalidRequestError("Method not allowed"); }
+            if (req->get_method() != MTHD_POST) { throw InvalidRequestError("Method not allowed"); }
 
             // Parse and validate request body
             JSON request_body = req->get_json_body();
@@ -67,7 +67,7 @@ RequestHandler RevocationHandler(const RevocationHandlerOptions& options) {
             co_await options.provider->revoke_token(*client, revocation_request);
 
             // Send successful response
-            res->set_status(200);
+            res->set_status(HTTPStatus::Ok);
             res->send_json(JSON{});
 
         } catch (const OAuthError& error) {
@@ -93,7 +93,7 @@ shared_ptr<HttpRouter> create_revocation_router(const RevocationHandlerOptions& 
     router->use_cors();
 
     // Restrict to POST method only
-    router->allow_methods({"POST"});
+    router->allow_methods({MTHD_POST});
 
     // Parse URL-encoded bodies
     router->use_url_encoded_parser(false); // extended: false

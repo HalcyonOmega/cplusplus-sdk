@@ -10,57 +10,58 @@
 MCP_NAMESPACE_BEGIN
 
 // Root {
-//     "description" : "Represents a root directory or file that the server can operate on.",
-//                     "properties"
+//     MSG_DESCRIPTION : "Represents a root directory or file that the server can operate on.",
+//                     MSG_PROPERTIES
 //         : {
-//             "name": {
-//                 "description": "An optional name for the root. This can be used to provide a "
+//             MSG_NAME: {
+//                 MSG_DESCRIPTION: "An optional name for the root. This can be used to provide a "
 //                                "human-readable\nidentifier for the root, which may be useful for
 //                                " "display purposes " "or for\nreferencing the root in other parts
 //                                of the application.",
-//                 "type": "string"
+//                 MSG_TYPE: MSG_STRING
 //             },
-//             "uri": {
-//                 "description": "The URI identifying the root. This *must* start with file:// for
+//             MSG_URI: {
+//                 MSG_DESCRIPTION: "The URI identifying the root. This *must* start with file://
+//                 for
 //                 "
 //                                "now.\nThis restriction may be relaxed in future versions of the "
 //                                "protocol to allow\nother URI schemes.",
-//                 "format": "uri",
-//                 "type": "string"
+//                 MSG_FORMAT: MSG_URI,
+//                 MSG_TYPE: MSG_STRING
 //             }
 //         },
-//           "required" : ["uri"],
-//                        "type" : "object"
+//           MSG_REQUIRED : [MSG_URI],
+//                        MSG_TYPE : MSG_OBJECT
 // };
 
 // RootsListChangedNotification {
-//     "description" : "A notification from the client to the server, informing it that the "
+//     MSG_DESCRIPTION : "A notification from the client to the server, informing it that the "
 //                     "list of roots has changed.\nThis notification should be sent whenever "
 //                     "the client adds, removes, or modifies any root.\nThe server should "
 //                     "then request an updated list of roots using the ListRootsRequest.",
-//                     "properties"
+//                     MSG_PROPERTIES
 //         : {
-//             "method": {"const": "notifications/roots/list_changed", "type": "string"},
-//             "params": {
-//                 "additionalProperties": {},
-//                 "properties": {
-//                     "_meta": {
-//                         "additionalProperties": {},
-//                         "description":
+//             MSG_METHOD: {MSG_CONST: "notifications/roots/list_changed", MSG_TYPE: MSG_STRING},
+//             MSG_PARAMS: {
+//                 MSG_ADDITIONAL_PROPERTIES: {},
+//                 MSG_PROPERTIES: {
+//                     MSG_META: {
+//                         MSG_ADDITIONAL_PROPERTIES: {},
+//                         MSG_DESCRIPTION:
 //                             "This parameter name is reserved by MCP to allow clients and "
 //                             "servers to attach additional metadata to their notifications.",
-//                         "type": "object"
+//                         MSG_TYPE: MSG_OBJECT
 //                     }
 //                 },
-//                 "type": "object"
+//                 MSG_TYPE: MSG_OBJECT
 //             }
 //         },
-//           "required" : ["method"],
-//                        "type" : "object"
+//           MSG_REQUIRED : [MSG_METHOD],
+//                        MSG_TYPE : MSG_OBJECT
 // };
 
 // ListRootsRequest {
-//     "description"
+//     MSG_DESCRIPTION
 //         : "Sent from the server to request a list of root URIs from the client. Roots "
 //           "allow\nservers "
 //           "to ask for specific directories or files to operate on. A common example\nfor roots is
@@ -68,16 +69,16 @@ MCP_NAMESPACE_BEGIN
 //           " "request is typically used when the server needs to understand the file "
 //           "system\nstructure "
 //           "or access specific locations that the client has permission to read from.",
-//           "properties" : {
-//               "method": {"const": "roots/list", "type": "string"},
-//               "params": {
-//                   "additionalProperties": {},
-//                   "properties": {
-//                       "_meta": {
-//                           "properties": {
-//                               "progressToken": {
+//           MSG_PROPERTIES : {
+//               MSG_METHOD: {MSG_CONST: "roots/list", MSG_TYPE: MSG_STRING},
+//               MSG_PARAMS: {
+//                   MSG_ADDITIONAL_PROPERTIES: {},
+//                   MSG_PROPERTIES: {
+//                       MSG_META: {
+//                           MSG_PROPERTIES: {
+//                               MSG_PROGRESS_TOKEN: {
 //                                   "$ref": "#/definitions/ProgressToken",
-//                                   "description":
+//                                   MSG_DESCRIPTION:
 //                                       "If specified, the caller is requesting out-of-band
 //                                       progress " "notifications for this request (as represented
 //                                       by " "notifications/progress). The value of this parameter
@@ -86,34 +87,36 @@ MCP_NAMESPACE_BEGIN
 //                                       obligated to provide these notifications."
 //                               }
 //                           },
-//                           "type": "object"
+//                           MSG_TYPE: MSG_OBJECT
 //                       }
 //                   },
-//                   "type": "object"
+//                   MSG_TYPE: MSG_OBJECT
 //               }
 //           },
-//                          "required" : ["method"],
-//                                       "type" : "object"
+//                          MSG_REQUIRED : [MSG_METHOD],
+//                                       MSG_TYPE : MSG_OBJECT
 // };
 
 // ListRootsResult {
-//     "description" : "The client's response to a roots/list request from the server.\nThis result
+//     MSG_DESCRIPTION : "The client's response to a roots/list request from the server.\nThis
+//     result
 //     "
 //                     "contains an array of Root objects, each representing a root directory\nor "
 //                     "file that the server can operate on.",
-//                     "properties"
+//                     MSG_PROPERTIES
 //         : {
-//             "_meta": {
-//                 "additionalProperties": {},
-//                 "description": "This result property is reserved by the protocol to allow clients
+//             MSG_META: {
+//                 MSG_ADDITIONAL_PROPERTIES: {},
+//                 MSG_DESCRIPTION: "This result property is reserved by the protocol to allow
+//                 clients
 //                 "
 //                                "and servers to attach additional metadata to their responses.",
-//                 "type": "object"
+//                 MSG_TYPE: MSG_OBJECT
 //             },
-//             "roots": {"items": {"$ref": "#/definitions/Root"}, "type": "array"}
+//             "roots": {MSG_ITEMS: {"$ref": "#/definitions/Root"}, MSG_TYPE: MSG_ARRAY}
 //         },
-//           "required" : ["roots"],
-//                        "type" : "object"
+//           MSG_REQUIRED : ["roots"],
+//                        MSG_TYPE : MSG_OBJECT
 // };
 
 /**

@@ -189,7 +189,7 @@ vector<URI_Template::Part> URI_Template::Parse(const string& templateStr) {
             string operatorChar = GetOperator(expr);
             bool exploded = expr.find('*') != string::npos;
             vector<string> names = GetNames(expr);
-            string name = names.empty() ? "" : names[0];
+            string name = names.empty() ? MSG_NULL : names[0];
 
             // Validate variable name length
             for (const auto& variableName : names) {
@@ -214,7 +214,7 @@ string URI_Template::GetOperator(const string& expr) const {
     for (const auto& op : operators) {
         if (expr.substr(0, op.length()) == op) { return op; }
     }
-    return "";
+    return MSG_NULL;
 }
 
 vector<string> URI_Template::GetNames(const string& expr) const {
@@ -260,7 +260,7 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
                 for (const auto& v : values) {
                     encodedValues.push_back(EncodeValue(v, part.operatorChar));
                 }
-                encoded = "";
+                encoded = MSG_NULL;
                 for (size_t i = 0; i < encodedValues.size(); i++) {
                     if (i > 0) encoded += ",";
                     encoded += encodedValues[i];
@@ -271,7 +271,7 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
             pairs.push_back(name + "=" + encoded);
         }
 
-        if (pairs.empty()) return "";
+        if (pairs.empty()) return MSG_NULL;
         string separator = part.operatorChar == "?" ? "?" : "&";
         string result = separator;
         for (size_t i = 0; i < pairs.size(); i++) {
@@ -294,7 +294,7 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
                 }
             }
         }
-        if (values.empty()) return "";
+        if (values.empty()) return MSG_NULL;
         string result;
         for (size_t i = 0; i < values.size(); i++) {
             if (i > 0) result += ",";
@@ -304,7 +304,7 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
     }
 
     auto it = variables.find(part.name);
-    if (it == variables.end()) return "";
+    if (it == variables.end()) return MSG_NULL;
 
     vector<string> values;
     if (holds_alternative<vector<string>>(it->second)) {
@@ -322,7 +322,7 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
         result += encoded[i];
     }
 
-    if (part.operatorChar == "") {
+    if (part.operatorChar == MSG_NULL) {
         return result;
     } else if (part.operatorChar == "+") {
         return result;
@@ -379,7 +379,7 @@ vector<pair<string, string>> URI_Template::PartToRegExp(const TemplatePart& part
     string pattern;
     const string& name = part.name;
 
-    if (part.operatorChar == "") {
+    if (part.operatorChar == MSG_NULL) {
         pattern = part.exploded ? "([^/]+(?:,[^/]+)*)" : "([^/,]+)";
     } else if (part.operatorChar == "+" || part.operatorChar == "#") {
         pattern = "(.+)";

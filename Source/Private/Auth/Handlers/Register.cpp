@@ -66,7 +66,7 @@ struct OAuthClientInformation {
 
     JSON ToJSON() const {
         JSON result;
-        result["client_id"] = ClientId;
+        result[MSG_CLIENT_ID] = ClientId;
         if (ClientSecret.has_value()) { result["client_secret"] = *ClientSecret; }
         result["client_id_issued_at"] = ClientIdIssuedAt;
         if (ClientSecretExpiresAt.has_value()) {
@@ -144,7 +144,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
         try {
             // Validate HTTP method
-            if (req.Method != "POST") { throw runtime_error("Method not allowed"); }
+            if (req.Method != MTHD_POST) { throw runtime_error("Method not allowed"); }
 
             // Apply rate limiting logic (simplified - actual implementation would need middleware)
             if (!rateLimitDisabled && rateLimitConfig.has_value()) {

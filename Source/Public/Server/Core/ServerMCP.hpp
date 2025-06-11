@@ -414,7 +414,7 @@ class MCPServer {
                     errorResult.IsError = true;
                     // Create error content
                     Content errorContent;
-                    errorContent.Type = "text";
+                    errorContent.Type = MSG_TEXT;
                     errorContent.Text = e.what();
                     errorResult.Content.push_back(errorContent);
                     return errorResult;
@@ -857,7 +857,7 @@ class MCPServer {
         auto outputIt = config.find("outputSchema");
         if (outputIt != config.end()) { outputSchema = outputIt->second; }
 
-        auto annotIt = config.find("annotations");
+        auto annotIt = config.find(MSG_ANNOTATIONS);
         if (annotIt != config.end()) {
             // TODO: Parse annotations from JSON
         }
@@ -997,7 +997,7 @@ class MCPServer {
 };
 
 // Static member definitions
-const JSON MCPServer::EmptyObjectJSONSchema_ = JSON{{MSG_TYPE, "object"}};
+const JSON MCPServer::EmptyObjectJSONSchema_ = JSON{{MSG_TYPE, MSG_OBJECT}};
 const CompleteResult MCPServer::EmptyCompletionResult_ =
     CompleteResult{/* TODO: Initialize empty completion result */};
 

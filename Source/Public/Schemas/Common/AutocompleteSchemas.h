@@ -13,18 +13,18 @@ struct AutocompleteReference {
 };
 
 // ResourceReference {
-//   "description" : "A reference to a resource or resource template definition.",
-//                   "properties"
+//   MSG_DESCRIPTION : "A reference to a resource or resource template definition.",
+//                   MSG_PROPERTIES
 //       : {
-//         "type" : {"const" : "ref/resource", "type" : "string"},
-//         "uri" : {
-//           "description" : "The URI or URI template of the resource.",
-//           "format" : "uri-template",
-//           "type" : "string"
+//         MSG_TYPE : {MSG_CONST : "ref/resource", MSG_TYPE : MSG_STRING},
+//         MSG_URI : {
+//           MSG_DESCRIPTION : "The URI or URI template of the resource.",
+//           MSG_FORMAT : "uri-template",
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "required" : [ "type", "uri" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_TYPE, MSG_URI ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -44,17 +44,17 @@ struct ResourceReference : public AutocompleteReference {
 };
 
 // PromptReference {
-//   "description" : "Identifies a prompt.",
-//                   "properties"
+//   MSG_DESCRIPTION : "Identifies a prompt.",
+//                   MSG_PROPERTIES
 //       : {
-//         "name" : {
-//           "description" : "The name of the prompt or prompt template",
-//           "type" : "string"
+//         MSG_NAME : {
+//           MSG_DESCRIPTION : "The name of the prompt or prompt template",
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "type" : {"const" : "ref/prompt", "type" : "string"}
+//         MSG_TYPE : {MSG_CONST : "ref/prompt", MSG_TYPE : MSG_STRING}
 //       },
-//         "required" : [ "name", "type" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_NAME, MSG_TYPE ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -91,28 +91,28 @@ struct CompleteRequestParams {
 };
 
 // CompleteRequest {
-//   "description" : "A request from the client to the server, to ask for "
+//   MSG_DESCRIPTION : "A request from the client to the server, to ask for "
 //                   "completion options.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "completion/complete", "type" : "string"},
-//         "params" : {
-//           "properties" : {
+//         MSG_METHOD : {MSG_CONST : "completion/complete", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
 //             "argument" : {
-//               "description" : "The argument's information",
-//               "properties" : {
-//                 "name" : {
-//                   "description" : "The name of the argument",
-//                   "type" : "string"
+//               MSG_DESCRIPTION : "The argument's information",
+//               MSG_PROPERTIES : {
+//                 MSG_NAME : {
+//                   MSG_DESCRIPTION : "The name of the argument",
+//                   MSG_TYPE : MSG_STRING
 //                 },
 //                 "value" : {
-//                   "description" : "The value of the argument to use for "
+//                   MSG_DESCRIPTION : "The value of the argument to use for "
 //                                   "completion matching.",
-//                   "type" : "string"
+//                   MSG_TYPE : MSG_STRING
 //                 }
 //               },
-//               "required" : [ "name", "value" ],
-//               "type" : "object"
+//               MSG_REQUIRED : [ MSG_NAME, "value" ],
+//               MSG_TYPE : MSG_OBJECT
 //             },
 //             "ref" : {
 //               "anyOf" : [
@@ -121,12 +121,12 @@ struct CompleteRequestParams {
 //               ]
 //             }
 //           },
-//           "required" : [ "argument", "ref" ],
-//           "type" : "object"
+//           MSG_REQUIRED : [ "argument", "ref" ],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -158,44 +158,44 @@ struct CompleteResultParams {
 };
 
 // CompleteResult {
-//   "description" : "The server's response to a completion/complete request",
-//                   "properties"
+//   MSG_DESCRIPTION : "The server's response to a completion/complete request",
+//                   MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol to "
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
 //         "completion" : {
-//           "properties" : {
+//           MSG_PROPERTIES : {
 //             "hasMore" : {
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "Indicates whether there are additional completion options "
 //                   "beyond those provided in the current response, even if the "
 //                   "exact total is unknown.",
-//               "type" : "boolean"
+//               MSG_TYPE : "boolean"
 //             },
 //             "total" : {
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "The total number of completion options available. This can "
 //                   "exceed the number of values actually sent in the response.",
-//               "type" : "integer"
+//               MSG_TYPE : "integer"
 //             },
 //             "values" : {
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "An array of completion values. Must not exceed 100 items.",
-//               "items" : {"type" : "string"},
-//               "type" : "array"
+//               MSG_ITEMS : {MSG_TYPE : MSG_STRING},
+//               MSG_TYPE : MSG_ARRAY
 //             }
 //           },
-//           "required" : ["values"],
-//           "type" : "object"
+//           MSG_REQUIRED : ["values"],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["completion"],
-//                      "type" : "object"
+//         MSG_REQUIRED : ["completion"],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**

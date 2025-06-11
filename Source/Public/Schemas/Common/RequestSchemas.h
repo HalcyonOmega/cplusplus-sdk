@@ -6,8 +6,8 @@
 MCP_NAMESPACE_BEGIN
 
 // RequestId {
-//   "description" : "A uniquely identifying ID for a request in JSON-RPC.",
-//                   "type" : [ "string", "integer" ]
+//   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
+//                   MSG_TYPE : [ MSG_STRING, "integer" ]
 // };
 
 /**
@@ -32,16 +32,16 @@ struct RequestParams {
 };
 
 // Request {
-//   "properties" : {
-//     "method" : {"type" : "string"},
-//     "params" : {
-//       "additionalProperties" : {},
-//       "properties" : {
-//         "_meta" : {
-//           "properties" : {
-//             "progressToken" : {
+//   MSG_PROPERTIES : {
+//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//     MSG_PARAMS : {
+//       MSG_ADDITIONAL_PROPERTIES : {},
+//       MSG_PROPERTIES : {
+//         MSG_META : {
+//           MSG_PROPERTIES : {
+//             MSG_PROGRESS_TOKEN : {
 //               "$ref" : "#/definitions/ProgressToken",
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "If specified, the caller is requesting out-of-band "
 //                   "progress notifications for this request (as represented "
 //                   "by notifications/progress). The value of this parameter "
@@ -50,14 +50,14 @@ struct RequestParams {
 //                   "to provide these notifications."
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//       "type" : "object"
+//       MSG_TYPE : MSG_OBJECT
 //     }
 //   },
-//                  "required" : ["method"],
-//                               "type" : "object"
+//                  MSG_REQUIRED : [MSG_METHOD],
+//                               MSG_TYPE : MSG_OBJECT
 // };
 
 struct Request {
@@ -66,20 +66,20 @@ struct Request {
 };
 
 // PingRequest {
-//   "description" : "A ping, issued by either the server or the client, to "
+//   MSG_DESCRIPTION : "A ping, issued by either the server or the client, to "
 //                   "check that the other party is still alive. The receiver "
 //                   "must promptly respond, or else may be disconnected.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "ping", "type" : "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "properties" : {
-//                 "progressToken" : {
+//         MSG_METHOD : {MSG_CONST : "ping", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_PROPERTIES : {
+//                 MSG_PROGRESS_TOKEN : {
 //                   "$ref" : "#/definitions/ProgressToken",
-//                   "description" :
+//                   MSG_DESCRIPTION :
 //                       "If specified, the caller is requesting out-of-band "
 //                       "progress notifications for this request (as
 //                       represented " "by notifications/progress). The value of
@@ -89,14 +89,14 @@ struct Request {
 //                       notifications."
 //                 }
 //               },
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /* Ping */
@@ -122,23 +122,23 @@ struct PaginatedRequestParams : public RequestParams {
 };
 
 // PaginatedRequest {
-//   "properties" : {
-//     "method" : {"type" : "string"},
-//     "params" : {
-//       "properties" : {
-//         "cursor" : {
-//           "description" :
+//   MSG_PROPERTIES : {
+//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//     MSG_PARAMS : {
+//       MSG_PROPERTIES : {
+//         MSG_CURSOR : {
+//           MSG_DESCRIPTION :
 //               "An opaque token representing the current pagination "
 //               "position.\nIf provided, the server should return results "
 //               "starting after this cursor.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//       "type" : "object"
+//       MSG_TYPE : MSG_OBJECT
 //     }
 //   },
-//                  "required" : ["method"],
-//                               "type" : "object"
+//                  MSG_REQUIRED : [MSG_METHOD],
+//                               MSG_TYPE : MSG_OBJECT
 // };
 
 struct PaginatedRequest : public Request {

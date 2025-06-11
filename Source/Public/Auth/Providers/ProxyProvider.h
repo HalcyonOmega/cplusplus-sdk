@@ -64,7 +64,7 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
 
                 map<string, string> Params;
                 Params["token"] = Request.Token;
-                Params["client_id"] = Client.Information.ClientID;
+                Params[MSG_CLIENT_ID] = Client.Information.ClientID;
                 if (Client.Information.ClientSecret.has_value()) {
                     Params["client_secret"] = Client.Information.ClientSecret.value();
                 }
@@ -76,8 +76,8 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
                 string Body = BuildFormEncodedBody(Params);
 
                 auto Response = co_await HTTP_Post(
-                    RevocationUrl.value(), {{"Content-Type", "application/x-www-form-urlencoded"}},
-                    Body);
+                    RevocationUrl.value(),
+                    {{TSPT_CONTENT_TYPE, "application/x-www-form-urlencoded"}}, Body);
 
                 if (!Response.IsOK()) {
                     throw ServerError("Token revocation failed: " + to_string(Response.StatusCode));
@@ -109,8 +109,8 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
     future<AuthInfo> VerifyAccessToken(const string& InToken) const;
 
   private:
-    static future<HTTP_Response> HTTP_Post(const string& InUrl, const map<string, string>& InHeaders,
-                                         const string& InBody);
+    static future<HTTP_Response>
+    HTTP_Post(const string& InUrl, const map<string, string>& InHeaders, const string& InBody);
 
     static string BuildFormEncodedBody(const map<string, string>& InParams);
 

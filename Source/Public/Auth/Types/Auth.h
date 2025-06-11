@@ -98,7 +98,7 @@ struct OAuthClientInformation {
 
     // JSON ToJSON() const {
     //     JSON result;
-    //     result["client_id"] = ClientId;
+    //     result[MSG_CLIENT_ID] = ClientId;
     //     if (ClientSecret.has_value()) { result["client_secret"] = *ClientSecret; }
     //     result["client_id_issued_at"] = ClientIdIssuedAt;
     //     if (ClientSecretExpiresAt.has_value()) {

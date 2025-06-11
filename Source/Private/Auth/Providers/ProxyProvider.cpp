@@ -17,7 +17,7 @@ OAuthRegisteredClientsStore ProxyOAuthServerProvider::GetClientsStore() const {
                 const OAuthClientInformationFull& Client) -> future<OAuthClientInformationFull> {
             // Convert client to JSON
             JSON ClientJson;
-            ClientJson["client_id"] = Client.Information.ClientID;
+            ClientJson[MSG_CLIENT_ID] = Client.Information.ClientID;
             if (Client.Information.ClientSecret.has_value()) {
                 ClientJson["client_secret"] = Client.Information.ClientSecret.value();
             }
@@ -29,7 +29,7 @@ OAuthRegisteredClientsStore ProxyOAuthServerProvider::GetClientsStore() const {
             // Add other metadata fields as needed
 
             auto Response = co_await HttpPost(
-                RegistrationUrl.value(), {{"Content-Type", "application/json"}}, ClientJson.dump());
+                RegistrationUrl.value(), {{TSPT_CONTENT_TYPE, TSPT_APP_JSON}}, ClientJson.dump());
 
             if (!Response.Ok) {
                 throw ServerError("Client registration failed: " + to_string(Response.Status));
@@ -48,21 +48,21 @@ future<void> ProxyOAuthServerProvider::Authorize(const OAuthClientInformationFul
                                                  Response& Res) const {
     string TargetUrl = _Endpoints.AuthorizationUrl;
 
-    map<string, string> SearchParams = {{"client_id", Client.Information.ClientID},
-                                        {"response_type", MSG_CODE},
-                                        {"redirect_uri", Params.RedirectUri},
-                                        {"code_challenge", Params.CodeChallenge},
-                                        {"code_challenge_method", "S256"}};
+    map<string, string> SearchParams = {{MSG_CLIENT_ID, Client.Information.ClientID},
+                                        {MSG_RESPONSE_TYPE, MSG_CODE},
+                                        {MSG_REDIRECT_URI, Params.RedirectUri},
+                                        {MSG_CODE_CHALLENGE, Params.CodeChallenge},
+                                        {MSG_CODE_CHALLENGE_METHOD, "S256"}};
 
     // Add optional standard OAuth parameters
-    if (Params.State.has_value()) { SearchParams["state"] = Params.State.value(); }
+    if (Params.State.has_value()) { SearchParams[MSG_STATE] = Params.State.value(); }
     if (!Params.Scopes.empty()) {
         string ScopeStr;
         for (size_t I = 0; I < Params.Scopes.size(); ++I) {
             if (I > 0) ScopeStr += " ";
             ScopeStr += Params.Scopes[I];
         }
-        SearchParams["scope"] = ScopeStr;
+        SearchParams[MSG_SCOPE] = ScopeStr;
     }
 
     string QueryString = BuildQueryString(SearchParams);
@@ -77,7 +77,7 @@ ProxyOAuthServerProvider::ChallengeForAuthorizationCode(const OAuthClientInforma
                                                         const string& AuthorizationCode) const {
     // In a proxy setup, we don't store the code challenge ourselves
     // Instead, we proxy the token request and let the upstream server validate it
-    co_return "";
+    co_return MSG_NULL;
 }
 
 future<OAuthTokens> ProxyOAuthServerProvider::ExchangeAuthorizationCode(
@@ -85,7 +85,7 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeAuthorizationCode(
     const optional<string>& CodeVerifier = nullopt,
     const optional<string>& RedirectUri = nullopt) const {
     map<string, string> Params = {{"grant_type", "authorization_code"},
-                                  {"client_id", Client.Information.ClientID},
+                                  {MSG_CLIENT_ID, Client.Information.ClientID},
                                   {MSG_CODE, AuthorizationCode}};
 
     if (Client.Information.ClientSecret.has_value()) {
@@ -94,12 +94,12 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeAuthorizationCode(
 
     if (CodeVerifier.has_value()) { Params["code_verifier"] = CodeVerifier.value(); }
 
-    if (RedirectUri.has_value()) { Params["redirect_uri"] = RedirectUri.value(); }
+    if (RedirectUri.has_value()) { Params[MSG_REDIRECT_URI] = RedirectUri.value(); }
 
     string Body = BuildFormEncodedBody(Params);
 
     auto Response = co_await HttpPost(
-        _Endpoints.TokenUrl, {{"Content-Type", "application/x-www-form-urlencoded"}}, Body);
+        _Endpoints.TokenUrl, {{TSPT_CONTENT_TYPE, "application/x-www-form-urlencoded"}}, Body);
 
     if (!Response.Ok) { throw ServerError("Token exchange failed: " + to_string(Response.Status)); }
 
@@ -111,7 +111,7 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeRefreshToken(
     const OAuthClientInformationFull& Client, const string& RefreshToken,
     const optional<vector<string>>& Scopes = nullopt) const {
     map<string, string> Params = {{"grant_type", "refresh_token"},
-                                  {"client_id", Client.Information.ClientID},
+                                  {MSG_CLIENT_ID, Client.Information.ClientID},
                                   {"refresh_token", RefreshToken}};
 
     if (Client.Information.ClientSecret.has_value()) {
@@ -124,13 +124,13 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeRefreshToken(
             if (I > 0) ScopeStr += " ";
             ScopeStr += Scopes.value()[I];
         }
-        Params["scope"] = ScopeStr;
+        Params[MSG_SCOPE] = ScopeStr;
     }
 
     string Body = BuildFormEncodedBody(Params);
 
     auto Response = co_await HttpPost(
-        _Endpoints.TokenUrl, {{"Content-Type", "application/x-www-form-urlencoded"}}, Body);
+        _Endpoints.TokenUrl, {{TSPT_CONTENT_TYPE, "application/x-www-form-urlencoded"}}, Body);
 
     if (!Response.Ok) { throw ServerError("Token refresh failed: " + to_string(Response.Status)); }
 
@@ -146,7 +146,7 @@ future<HttpResponse> ProxyOAuthServerProvider::HttpPost(const string& Url,
                                                         const map<string, string>& Headers,
                                                         const string& Body) {
     // TODO: Implement actual HTTP POST request
-    co_return HttpResponse{false, 500, ""};
+    co_return HttpResponse{false, 500, MSG_NULL};
 }
 
 string ProxyOAuthServerProvider::BuildFormEncodedBody(const map<string, string>& Params) {
@@ -174,7 +174,7 @@ ProxyOAuthServerProvider::ParseOAuthClientInformationFull(const JSON& Data) {
     OAuthClientInformationFull Result;
 
     // Parse client information
-    Result.Information.ClientID = Data.at("client_id").get<string>();
+    Result.Information.ClientID = Data.at(MSG_CLIENT_ID).get<string>();
     if (Data.contains("client_secret")) {
         Result.Information.ClientSecret = Data.at("client_secret").get<string>();
     }
@@ -197,7 +197,7 @@ OAuthTokens ProxyOAuthServerProvider::ParseOAuthTokens(const JSON& Data) {
     Result.TokenType = Data.at("token_type").get<string>();
 
     if (Data.contains("expires_in")) { Result.ExpiresIn = Data.at("expires_in").get<int>(); }
-    if (Data.contains("scope")) { Result.Scope = Data.at("scope").get<string>(); }
+    if (Data.contains(MSG_SCOPE)) { Result.Scope = Data.at(MSG_SCOPE).get<string>(); }
     if (Data.contains("refresh_token")) {
         Result.RefreshToken = Data.at("refresh_token").get<string>();
     }

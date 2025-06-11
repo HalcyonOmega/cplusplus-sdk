@@ -42,7 +42,7 @@ string URLHelper::addSessionParam(const string& endpoint, const string& session_
 ContentTypeResult parseContentType(const string& content_type_header) {
     // TODO: Implement content-type parsing equivalent to contentType.parse()
     ContentTypeResult result;
-    result.type = "application/json";       // Placeholder
+    result.type = TSPT_APP_JSON;            // Placeholder
     result.parameters["charset"] = "utf-8"; // Placeholder
     return result;
 }
@@ -59,10 +59,10 @@ void start() {
                             "that connect() calls start() automatically.");
     }
 
-    map<string, string> headers = {{"Content-Type", "text/event-stream"},
+    map<string, string> headers = {{TSPT_CONTENT_TYPE, "text/event-stream"},
                                    {"Cache-Control", "no-cache, no-transform"},
                                    {"Connection", "keep-alive"}};
-    res->writeHead(200, headers);
+    res->writeHead(HTTPStatus::Ok, headers);
 
     // Send the endpoint event
     // Use a dummy base URL because this._endpoint is relative.
@@ -93,12 +93,12 @@ void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
 
     JSON body;
     try {
-        string contentTypeHeader = "";
-        auto ctIt = req->headers.find("content-type");
+        string contentTypeHeader = MSG_NULL;
+        auto ctIt = req->headers.find(TSPT_CONTENT_TYPE);
         if (ctIt != req->headers.end()) { contentTypeHeader = ctIt->second; }
 
         ContentTypeResult ct = parseContentType(contentTypeHeader);
-        if (ct.type != "application/json") {
+        if (ct.type != TSPT_APP_JSON) {
             throw runtime_error("Unsupported content-type: " + ct.type);
         }
 
@@ -244,7 +244,7 @@ future<void> SSEClientTransport::_startOrAuth() {
         //                 RequestInit newInit = init;
         //                 HeadersInit mergedHeaders = headers;
         //                 mergedHeaders["Accept"] = "text/event-stream";
-        //                 newInit["headers"] = mergedHeaders;
+        //                 newInit[MSG_HEADERS] = mergedHeaders;
         //                 return fetch(url, newInit);
         //             });
         //         }
@@ -253,7 +253,7 @@ future<void> SSEClientTransport::_startOrAuth() {
         // _abortController = new AbortController();
 
         // _eventSource->onerror = [this](const ErrorEvent& event) {
-        //     if (event.code == 401 && _authProvider) {
+        //     if (event.code == HTTPStatus::Unauthorized && _authProvider) {
         //         return _authThenStart();
         //     }
         //
@@ -369,20 +369,20 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
                 }
             }
 
-            headers["content-type"] = "application/json";
+            headers[TSPT_CONTENT_TYPE] = TSPT_APP_JSON;
 
             RequestInit init;
             if (_requestInit.has_value()) { init = _requestInit.value(); }
-            init[MSG_METHOD] = string("POST");
-            init["headers"] = headers;
+            init[MSG_METHOD] = MTHD_POST;
+            init[MSG_HEADERS] = headers;
             // TODO: Fix External Ref: JSON.stringify(message)
-            init["body"] = string("{}"); // JSON::stringify(message);
+            init[MSG_BODY] = string("{}"); // JSON::stringify(message);
             // TODO: Fix External Ref: signal: _abortController?.signal
 
             HttpResponse response = fetch(_endpoint.value(), init).get();
 
             if (!response.ok) {
-                if (response.status == 401 && _authProvider) {
+                if (response.status == HTTPStatus::Unauthorized && _authProvider) {
                     _resourceMetadataUrl = extractResourceMetadataUrl(response);
 
                     map<string, variant<URL, string>> authParams;
@@ -402,7 +402,7 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
                 string text;
                 try {
                     text = response.text().get();
-                } catch (...) { text = ""; }
+                } catch (...) { text = MSG_NULL; }
 
                 throw runtime_error("Error POSTing to endpoint (HTTP " + to_string(response.status)
                                     + "): " + text);
@@ -427,7 +427,7 @@ future<HttpResponse> SSEClientTransport::fetch(const URL& url, const RequestInit
     return async(launch::async, [=]() -> HttpResponse {
         // TODO: Fix External Ref: Actual HTTP implementation
         HttpResponse response;
-        response.status = 200;
+        response.status = HTTPStatus::Ok;
         response.ok = true;
         return response;
     });

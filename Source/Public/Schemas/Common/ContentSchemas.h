@@ -20,20 +20,20 @@ struct Content {
 };
 
 // TextContent {
-//   "description" : "Text provided to or from an LLM.",
-//                   "properties" : {
-//                     "annotations" : {
+//   MSG_DESCRIPTION : "Text provided to or from an LLM.",
+//                   MSG_PROPERTIES : {
+//                     MSG_ANNOTATIONS : {
 //                       "$ref" : "#/definitions/Annotations",
-//                       "description" : "Optional annotations for the client."
+//                       MSG_DESCRIPTION : "Optional annotations for the client."
 //                     },
-//                     "text" : {
-//                       "description" : "The text content of the message.",
-//                       "type" : "string"
+//                     MSG_TEXT : {
+//                       MSG_DESCRIPTION : "The text content of the message.",
+//                       MSG_TYPE : MSG_STRING
 //                     },
-//                     "type" : {"const" : "text", "type" : "string"}
+//                     MSG_TYPE : {MSG_CONST : MSG_TEXT, MSG_TYPE : MSG_STRING}
 //                   },
-//                                  "required" : [ "text", "type" ],
-//                                               "type" : "object"
+//                                  MSG_REQUIRED : [ MSG_TEXT, MSG_TYPE ],
+//                                               MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -46,32 +46,32 @@ struct TextContent : public Content {
     string text;
 
     TextContent() {
-        type = CONST_TEXT;
+        type = MSG_TEXT;
     }
 };
 
 // ImageContent {
-//   "description" : "An image provided to or from an LLM.",
-//                   "properties"
+//   MSG_DESCRIPTION : "An image provided to or from an LLM.",
+//                   MSG_PROPERTIES
 //       : {
-//         "annotations" : {
+//         MSG_ANNOTATIONS : {
 //           "$ref" : "#/definitions/Annotations",
-//           "description" : "Optional annotations for the client."
+//           MSG_DESCRIPTION : "Optional annotations for the client."
 //         },
-//         "data" : {
-//           "description" : "The base64-encoded image data.",
-//           "format" : "byte",
-//           "type" : "string"
+//         MSG_DATA : {
+//           MSG_DESCRIPTION : "The base64-encoded image data.",
+//           MSG_FORMAT : MSG_BYTE,
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "mimeType" : {
-//           "description" : "The MIME type of the image. Different providers may "
+//         MSG_MIME_TYPE : {
+//           MSG_DESCRIPTION : "The MIME type of the image. Different providers may "
 //                           "support different image types.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "type" : {"const" : "image", "type" : "string"}
+//         MSG_TYPE : {MSG_CONST : "image", MSG_TYPE : MSG_STRING}
 //       },
-//         "required" : [ "data", "mimeType", "type" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_DATA, MSG_MIME_TYPE, MSG_TYPE ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -96,27 +96,27 @@ struct ImageContent : public Content {
 };
 
 // AudioContent {
-//   "description" : "Audio provided to or from an LLM.",
-//                   "properties"
+//   MSG_DESCRIPTION : "Audio provided to or from an LLM.",
+//                   MSG_PROPERTIES
 //       : {
-//         "annotations" : {
+//         MSG_ANNOTATIONS : {
 //           "$ref" : "#/definitions/Annotations",
-//           "description" : "Optional annotations for the client."
+//           MSG_DESCRIPTION : "Optional annotations for the client."
 //         },
-//         "data" : {
-//           "description" : "The base64-encoded audio data.",
-//           "format" : "byte",
-//           "type" : "string"
+//         MSG_DATA : {
+//           MSG_DESCRIPTION : "The base64-encoded audio data.",
+//           MSG_FORMAT : MSG_BYTE,
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "mimeType" : {
-//           "description" : "The MIME type of the audio. Different providers may "
+//         MSG_MIME_TYPE : {
+//           MSG_DESCRIPTION : "The MIME type of the audio. Different providers may "
 //                           "support different audio types.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "type" : {"const" : "audio", "type" : "string"}
+//         MSG_TYPE : {MSG_CONST : "audio", MSG_TYPE : MSG_STRING}
 //       },
-//         "required" : [ "data", "mimeType", "type" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_DATA, MSG_MIME_TYPE, MSG_TYPE ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -141,21 +141,21 @@ struct AudioContent : public Content {
 };
 
 // ResourceContents {
-//   "description" : "The contents of a specific resource or sub-resource.",
-//                   "properties"
+//   MSG_DESCRIPTION : "The contents of a specific resource or sub-resource.",
+//                   MSG_PROPERTIES
 //       : {
-//         "mimeType" : {
-//           "description" : "The MIME type of this resource, if known.",
-//           "type" : "string"
+//         MSG_MIME_TYPE : {
+//           MSG_DESCRIPTION : "The MIME type of this resource, if known.",
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "uri" : {
-//           "description" : "The URI of this resource.",
-//           "format" : "uri",
-//           "type" : "string"
+//         MSG_URI : {
+//           MSG_DESCRIPTION : "The URI of this resource.",
+//           MSG_FORMAT : MSG_URI,
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "required" : ["uri"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_URI],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -176,26 +176,26 @@ struct ResourceContents {
 };
 
 // TextResourceContents {
-//   "properties" : {
-//     "mimeType" : {
-//       "description" : "The MIME type of this resource, if known.",
-//       "type" : "string"
+//   MSG_PROPERTIES : {
+//     MSG_MIME_TYPE : {
+//       MSG_DESCRIPTION : "The MIME type of this resource, if known.",
+//       MSG_TYPE : MSG_STRING
 //     },
-//     "text" : {
-//       "description" : "The text of the item. This must only be set if the
+//     MSG_TEXT : {
+//       MSG_DESCRIPTION : "The text of the item. This must only be set if the
 //       item "
 //                       "can actually be represented as text (not binary
 //                       data).",
-//       "type" : "string"
+//       MSG_TYPE : MSG_STRING
 //     },
-//     "uri" : {
-//       "description" : "The URI of this resource.",
-//       "format" : "uri",
-//       "type" : "string"
+//     MSG_URI : {
+//       MSG_DESCRIPTION : "The URI of this resource.",
+//       MSG_FORMAT : MSG_URI,
+//       MSG_TYPE : MSG_STRING
 //     }
 //   },
-//                  "required" : [ "text", "uri" ],
-//                               "type" : "object"
+//                  MSG_REQUIRED : [ MSG_TEXT, MSG_URI ],
+//                               MSG_TYPE : MSG_OBJECT
 // };
 
 struct TextResourceContents : public ResourceContents {
@@ -207,26 +207,26 @@ struct TextResourceContents : public ResourceContents {
 };
 
 // BlobResourceContents {
-//   "properties" : {
-//     "blob" : {
-//       "description" :
+//   MSG_PROPERTIES : {
+//     MSG_BLOB : {
+//       MSG_DESCRIPTION :
 //           "A base64-encoded string representing the binary data of the
 //           item.",
-//       "format" : "byte",
-//       "type" : "string"
+//       MSG_FORMAT : MSG_BYTE,
+//       MSG_TYPE : MSG_STRING
 //     },
-//     "mimeType" : {
-//       "description" : "The MIME type of this resource, if known.",
-//       "type" : "string"
+//     MSG_MIME_TYPE : {
+//       MSG_DESCRIPTION : "The MIME type of this resource, if known.",
+//       MSG_TYPE : MSG_STRING
 //     },
-//     "uri" : {
-//       "description" : "The URI of this resource.",
-//       "format" : "uri",
-//       "type" : "string"
+//     MSG_URI : {
+//       MSG_DESCRIPTION : "The URI of this resource.",
+//       MSG_FORMAT : MSG_URI,
+//       MSG_TYPE : MSG_STRING
 //     }
 //   },
-//                  "required" : [ "blob", "uri" ],
-//                               "type" : "object"
+//                  MSG_REQUIRED : [ MSG_BLOB, MSG_URI ],
+//                               MSG_TYPE : MSG_OBJECT
 // };
 
 struct BlobResourceContents : public ResourceContents {
@@ -239,26 +239,26 @@ struct BlobResourceContents : public ResourceContents {
 };
 
 // EmbeddedResource {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The contents of a resource, embedded into a prompt or tool call "
 //         "result.\n\nIt is up to the client how best to render embedded "
 //         "resources "
 //         "for the benefit\nof the LLM and/or the user.",
-//         "properties" : {
-//           "annotations" : {
+//         MSG_PROPERTIES : {
+//           MSG_ANNOTATIONS : {
 //             "$ref" : "#/definitions/Annotations",
-//             "description" : "Optional annotations for the client."
+//             MSG_DESCRIPTION : "Optional annotations for the client."
 //           },
-//           "resource" : {
+//           MSG_RESOURCE : {
 //             "anyOf" : [
 //               {"$ref" : "#/definitions/TextResourceContents"},
 //               {"$ref" : "#/definitions/BlobResourceContents"}
 //             ]
 //           },
-//           "type" : {"const" : "resource", "type" : "string"}
+//           MSG_TYPE : {MSG_CONST : MSG_RESOURCE, MSG_TYPE : MSG_STRING}
 //         },
-//                        "required" : [ "resource", "type" ],
-//                                     "type" : "object"
+//                        MSG_REQUIRED : [ MSG_RESOURCE, MSG_TYPE ],
+//                                     MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -271,7 +271,7 @@ struct EmbeddedResource : public Content {
     variant<TextResourceContents, BlobResourceContents> resource;
 
     EmbeddedResource() {
-        type = CONST_RESOURCE;
+        type = MSG_RESOURCE;
     }
 };
 

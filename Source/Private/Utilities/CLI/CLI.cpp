@@ -159,7 +159,7 @@ inline bool CLI::IsValidUrl(const string& url) {
 inline string CLI::GetUrlProtocol(const string& url) {
     size_t pos = url.find("://");
     if (pos != string::npos) { return url.substr(0, pos + 1); }
-    return "";
+    return MSG_NULL;
 }
 
 inline void CLI::PrintUsage() {
@@ -214,7 +214,7 @@ inline void CLI::HandlePostMessage(HttpRequest& req, HttpResponse& res) {
     }
 
     if (!transport) {
-        res.SetStatus(404);
+        res.SetStatus(HTTPStatus::NotFound);
         res.Send("Session not found");
         return;
     }

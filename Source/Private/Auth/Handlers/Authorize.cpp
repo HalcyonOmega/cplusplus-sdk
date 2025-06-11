@@ -8,14 +8,14 @@ MCP_NAMESPACE_BEGIN
 
 bool ClientAuthorizationParams::Validate(const map<string, string>& Params,
                                          ClientAuthorizationParams& Output, string& ErrorMessage) {
-    auto ClientIdIt = Params.find("client_id");
+    auto ClientIdIt = Params.find(MSG_CLIENT_ID);
     if (ClientIdIt == Params.end() || ClientIdIt->second.empty()) {
         ErrorMessage = "client_id is required";
         return false;
     }
     Output.ClientId = ClientIdIt->second;
 
-    auto RedirectUriIt = Params.find("redirect_uri");
+    auto RedirectUriIt = Params.find(MSG_REDIRECT_URI);
     if (RedirectUriIt != Params.end() && !RedirectUriIt->second.empty()) {
         // Validate URL format
         regex URLPattern(R"(^https?://[^\s]+$)");
@@ -32,31 +32,31 @@ bool ClientAuthorizationParams::Validate(const map<string, string>& Params,
 bool RequestAuthorizationParams::Validate(const map<string, string>& Params,
                                           RequestAuthorizationParams& Output,
                                           string& ErrorMessage) {
-    auto ResponseTypeIt = Params.find("response_type");
+    auto ResponseTypeIt = Params.find(MSG_RESPONSE_TYPE);
     if (ResponseTypeIt == Params.end() || ResponseTypeIt->second != MSG_CODE) {
         ErrorMessage = "response_type must be 'code'";
         return false;
     }
     Output.ResponseType = ResponseTypeIt->second;
 
-    auto CodeChallengeIt = Params.find("code_challenge");
+    auto CodeChallengeIt = Params.find(MSG_CODE_CHALLENGE);
     if (CodeChallengeIt == Params.end() || CodeChallengeIt->second.empty()) {
         ErrorMessage = "code_challenge is required";
         return false;
     }
     Output.CodeChallenge = CodeChallengeIt->second;
 
-    auto CodeChallengeMethodIt = Params.find("code_challenge_method");
+    auto CodeChallengeMethodIt = Params.find(MSG_CODE_CHALLENGE_METHOD);
     if (CodeChallengeMethodIt == Params.end() || CodeChallengeMethodIt->second != "S256") {
         ErrorMessage = "code_challenge_method must be 'S256'";
         return false;
     }
     Output.CodeChallengeMethod = CodeChallengeMethodIt->second;
 
-    auto ScopeIt = Params.find("scope");
+    auto ScopeIt = Params.find(MSG_SCOPE);
     if (ScopeIt != Params.end() && !ScopeIt->second.empty()) { Output.Scope = ScopeIt->second; }
 
-    auto StateIt = Params.find("state");
+    auto StateIt = Params.find(MSG_STATE);
     if (StateIt != Params.end() && !StateIt->second.empty()) { Output.State = StateIt->second; }
 
     return true;
@@ -120,7 +120,7 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
     }
 
     // Get parameters based on request method
-    const auto& Params = (Request.Method == "POST") ? Request.Body : Request.Query;
+    const auto& Params = (Request.Method == MTHD_POST) ? Request.Body : Request.Query;
 
     // Phase 1: Validate client_id and redirect_uri
     string ClientId, RedirectUri;

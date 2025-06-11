@@ -4,6 +4,11 @@
 
 MCP_NAMESPACE_BEGIN
 
+// HTTP Methods
+static constexpr const char* MTHD_POST = "POST";
+static constexpr const char* MTHD_GET = "GET";
+
+// MCP Methods
 static constexpr const char* MTHD_INITIALIZE = "initialize";
 static constexpr const char* MTHD_PING = "ping";
 static constexpr const char* MTHD_NOTIFICATIONS_INITIALIZED = "notifications/initialized";

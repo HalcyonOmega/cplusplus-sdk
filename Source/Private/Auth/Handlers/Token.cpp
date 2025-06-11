@@ -44,8 +44,8 @@ bool AuthorizationCodeGrantSchema::Validate(const JSON& Body, AuthorizationCodeG
     Out.Code = Body[MSG_CODE];
     Out.CodeVerifier = Body["code_verifier"];
 
-    if (Body.contains("redirect_uri") && Body["redirect_uri"].is_string()) {
-        Out.RedirectURI = Body["redirect_uri"];
+    if (Body.contains(MSG_REDIRECT_URI) && Body[MSG_REDIRECT_URI].is_string()) {
+        Out.RedirectURI = Body[MSG_REDIRECT_URI];
     }
 
     return true;
@@ -60,7 +60,7 @@ bool RefreshTokenGrantSchema::Validate(const JSON& Body, RefreshTokenGrantSchema
 
     Out.RefreshToken = Body["refresh_token"];
 
-    if (Body.contains("scope") && Body["scope"].is_string()) { Out.Scope = Body["scope"]; }
+    if (Body.contains(MSG_SCOPE) && Body[MSG_SCOPE].is_string()) { Out.Scope = Body[MSG_SCOPE]; }
 
     return true;
 }
@@ -84,13 +84,13 @@ MiddlewareResult TokenHandler::ApplyMiddleware(const JSON& RequestBody, const JS
 
     // 1. CORS middleware equivalent
     result.Headers["Access-Control-Allow-Origin"] = "*";
-    result.Headers["Access-Control-Allow-Methods"] = "POST";
+    result.Headers["Access-Control-Allow-Methods"] = MTHD_POST;
     result.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
 
     // 2. Method restriction (allowedMethods equivalent)
-    if (Method != "POST") {
+    if (Method != MTHD_POST) {
         result.ShouldContinue = false;
-        result.StatusCode = 405;
+        result.StatusCode = HTTPStatus::MethodNotAllowed;
         result.ErrorResponse = "Method Not Allowed";
         return result;
     }

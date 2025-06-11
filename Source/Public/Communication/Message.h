@@ -221,20 +221,20 @@ bool IsErrorMessage(const JSON& value) {
 }
 
 // JSONRPCRequest {
-//   "description" : "A request that expects a response.",
-//                   "properties"
+//   MSG_DESCRIPTION : "A request that expects a response.",
+//                   MSG_PROPERTIES
 //       : {
-//         "id" : {"$ref" : "#/definitions/RequestId"},
-//         "jsonrpc" : {"const" : "2.0", "type" : "string"},
-//         "method" : {"type" : "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "properties" : {
-//                 "progressToken" : {
+//         MSG_ID : {"$ref" : "#/definitions/RequestId"},
+//         MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_PROPERTIES : {
+//                 MSG_PROGRESS_TOKEN : {
 //                   "$ref" : "#/definitions/ProgressToken",
-//                   "description" :
+//                   MSG_DESCRIPTION :
 //                       "If specified, the caller is requesting out-of-band "
 //                       "progress notifications for this request (as represented "
 //                       "by notifications/progress). The value of this parameter "
@@ -243,61 +243,61 @@ bool IsErrorMessage(const JSON& value) {
 //                       "to provide these notifications."
 //                 }
 //               },
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "id", "jsonrpc", "method" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_ID, MSG_JSON_RPC, MSG_METHOD ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 // JSONRPCResponse {
-//   "description" : "A successful (non-error) response to a request.",
-//                   "properties" : {
-//                     "id" : {"$ref" : "#/definitions/RequestId"},
-//                     "jsonrpc" : {"const" : "2.0", "type" : "string"},
-//                     "result" : {"$ref" : "#/definitions/Result"}
+//   MSG_DESCRIPTION : "A successful (non-error) response to a request.",
+//                   MSG_PROPERTIES : {
+//                     MSG_ID : {"$ref" : "#/definitions/RequestId"},
+//                     MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
+//                     MSG_RESULT : {"$ref" : "#/definitions/Result"}
 //                   },
-//                                  "required" : [ "id", "jsonrpc", "result" ],
-//                                               "type" : "object"
+//                                  MSG_REQUIRED : [ MSG_ID, MSG_JSON_RPC, MSG_RESULT ],
+//                                               MSG_TYPE : MSG_OBJECT
 // };
 
 // JSONRPCNotification {
-//   "description" : "A notification which does not expect a response.",
-//                   "properties"
+//   MSG_DESCRIPTION : "A notification which does not expect a response.",
+//                   MSG_PROPERTIES
 //       : {
-//         "jsonrpc" : {"const" : "2.0", "type" : "string"},
-//         "method" : {"type" : "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "additionalProperties" : {},
-//               "description" : "This parameter name is reserved by MCP to allow "
+//         MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to allow "
 //                               "clients and servers to attach additional "
 //                               "metadata to their notifications.",
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "jsonrpc", "method" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_JSON_RPC, MSG_METHOD ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 // JSONRPCBatchRequest {
-//   "description" : "A JSON-RPC batch request, as described in "
+//   MSG_DESCRIPTION : "A JSON-RPC batch request, as described in "
 //                   "https://www.jsonrpc.org/specification#batch.",
-//                   "items" : {
+//                   MSG_ITEMS : {
 //                     "anyOf" : [
 //                       {"$ref" : "#/definitions/JSONRPCRequest"},
 //                       {"$ref" : "#/definitions/JSONRPCNotification"}
 //                     ]
 //                   },
-//                             "type" : "array"
+//                             MSG_TYPE : MSG_ARRAY
 // };
 
 /**
@@ -307,15 +307,15 @@ bool IsErrorMessage(const JSON& value) {
 using BatchRequestMessage = vector<variant<RequestMessage, NotificationMessage>>;
 
 // JSONRPCBatchResponse {
-//   "description" : "A JSON-RPC batch response, as described in "
+//   MSG_DESCRIPTION : "A JSON-RPC batch response, as described in "
 //                   "https://www.jsonrpc.org/specification#batch.",
-//                   "items" : {
+//                   MSG_ITEMS : {
 //                     "anyOf" : [
 //                       {"$ref" : "#/definitions/JSONRPCResponse"},
 //                       {"$ref" : "#/definitions/JSONRPCError"}
 //                     ]
 //                   },
-//                             "type" : "array"
+//                             MSG_TYPE : MSG_ARRAY
 // };
 
 /**
@@ -328,30 +328,30 @@ using BatchResponseMessage = vector<variant<ResponseMessage, ErrorMessage>>;
 //   "anyOf" : [
 //     {"$ref" : "#/definitions/JSONRPCRequest"},
 //     {"$ref" : "#/definitions/JSONRPCNotification"}, {
-//       "description" : "A JSON-RPC batch request, as described in "
+//       MSG_DESCRIPTION : "A JSON-RPC batch request, as described in "
 //                       "https://www.jsonrpc.org/specification#batch.",
-//       "items" : {
+//       MSG_ITEMS : {
 //         "anyOf" : [
 //           {"$ref" : "#/definitions/JSONRPCRequest"},
 //           {"$ref" : "#/definitions/JSONRPCNotification"}
 //         ]
 //       },
-//       "type" : "array"
+//       MSG_TYPE : MSG_ARRAY
 //     },
 //     {"$ref" : "#/definitions/JSONRPCResponse"},
 //     {"$ref" : "#/definitions/JSONRPCError"}, {
-//       "description" : "A JSON-RPC batch response, as described in "
+//       MSG_DESCRIPTION : "A JSON-RPC batch response, as described in "
 //                       "https://www.jsonrpc.org/specification#batch.",
-//       "items" : {
+//       MSG_ITEMS : {
 //         "anyOf" : [
 //           {"$ref" : "#/definitions/JSONRPCResponse"},
 //           {"$ref" : "#/definitions/JSONRPCError"}
 //         ]
 //       },
-//       "type" : "array"
+//       MSG_TYPE : MSG_ARRAY
 //     }
 //   ],
-//   "description" : "Refers to any valid JSON-RPC object that can be "
+//   MSG_DESCRIPTION : "Refers to any valid JSON-RPC object that can be "
 //                   "decoded off the wire, or encoded to be sent."
 // };
 

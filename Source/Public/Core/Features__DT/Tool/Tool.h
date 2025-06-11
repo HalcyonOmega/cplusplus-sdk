@@ -20,14 +20,14 @@
 MCP_NAMESPACE_BEGIN
 
 struct ToolInput {
-    string Type = "object";
+    string Type = MSG_OBJECT;
     optional<Passthrough> Properties;
     optional<vector<string>> Required;
     Passthrough Additional;
 };
 
 struct ToolOutput {
-    string Type = "object";
+    string Type = MSG_OBJECT;
     optional<Passthrough> Properties;
     optional<vector<string>> Required;
     Passthrough Additional;

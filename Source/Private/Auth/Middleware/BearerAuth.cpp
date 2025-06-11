@@ -30,7 +30,7 @@ string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string
         transform(LowerKey.begin(), LowerKey.end(), LowerKey.begin(), ::tolower);
         if (LowerKey == LowerHeaderName) { return Value; }
     }
-    return "";
+    return MSG_NULL;
 }
 
 MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options) {
@@ -102,25 +102,29 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
         } catch (const InvalidTokenError& Error) {
             string WWW_AuthValue;
             if (Options.ResourceMetadataUrl.has_value()) {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
-                                + "\", error_description=\"" + Error.GetMessage()
-                                + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
+                WWW_AuthValue =
+                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
+                    + "\", error_description=\MSG_NULL + Error.GetMessage()
+                    + "\", resource_metadata=\MSG_NULL + *Options.ResourceMetadataUrl + "\MSG_NULL;
             } else {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
-                                + "\", error_description=\"" + Error.GetMessage() + "\"";
+                WWW_AuthValue =
+                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
+                    + "\", error_description=\MSG_NULL + Error.GetMessage() + "\MSG_NULL;
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
-            Response.SetStatus(401);
+            Response.SetStatus(HTTPStatus::Unauthorized);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const InsufficientScopeError& Error) {
             string WWW_AuthValue;
             if (Options.ResourceMetadataUrl.has_value()) {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
-                                + "\", error_description=\"" + Error.GetMessage()
-                                + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
+                WWW_AuthValue =
+                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
+                    + "\", error_description=\MSG_NULL + Error.GetMessage()
+                    + "\", resource_metadata=\MSG_NULL + *Options.ResourceMetadataUrl + "\MSG_NULL;
             } else {
-                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
-                                + "\", error_description=\"" + Error.GetMessage() + "\"";
+                WWW_AuthValue =
+                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
+                    + "\", error_description=\MSG_NULL + Error.GetMessage() + "\MSG_NULL;
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
             Response.SetStatus(403);

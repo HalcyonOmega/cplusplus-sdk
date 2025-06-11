@@ -1,6 +1,7 @@
 #include "Communication/Utilities/TransportUtilities.h"
 
 #include "Core.h"
+#include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/TransportConstants.h"
 #include "json.hpp"
 
@@ -11,10 +12,10 @@ bool IsValidJSONRPC(const std::string& message) {
         auto json = JSON::parse(message);
 
         // Check for required JSON-RPC fields
-        if (!json.contains("jsonrpc") || !json.contains("method")) { return false; }
+        if (!json.contains(MSG_JSON_RPC) || !json.contains(MSG_METHOD)) { return false; }
 
         // Validate jsonrpc version
-        if (json["jsonrpc"] != "2.0") { return false; }
+        if (json[MSG_JSON_RPC] != MSG_JSON_RPC_VERSION) { return false; }
 
         return true;
     } catch (const JSON::parse_error&) { return false; }

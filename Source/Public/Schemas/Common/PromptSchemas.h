@@ -12,22 +12,22 @@
 MCP_NAMESPACE_BEGIN
 
 // PromptArgument {
-//   "description" : "Describes an argument that a prompt can accept.",
-//                   "properties"
+//   MSG_DESCRIPTION : "Describes an argument that a prompt can accept.",
+//                   MSG_PROPERTIES
 //       : {
-//         "description" : {
-//           "description" : "A human-readable description of the argument.",
-//           "type" : "string"
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION : "A human-readable description of the argument.",
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "name" :
-//             {"description" : "The name of the argument.", "type" : "string"},
-//         "required" : {
-//           "description" : "Whether this argument must be provided.",
-//           "type" : "boolean"
+//         MSG_NAME :
+//             {MSG_DESCRIPTION : "The name of the argument.", MSG_TYPE : MSG_STRING},
+//         MSG_REQUIRED : {
+//           MSG_DESCRIPTION : "Whether this argument must be provided.",
+//           MSG_TYPE : "boolean"
 //         }
 //       },
-//         "required" : ["name"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_NAME],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -49,12 +49,12 @@ struct PromptArgument {
 };
 
 // PromptMessage {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Describes a message returned as part of a prompt.\n\nThis is "
 //         "similar to `SamplingMessage`, but also supports the embedding "
 //         "of\nresources from the MCP server.",
-//         "properties" : {
-//           "content" : {
+//         MSG_PROPERTIES : {
+//           MSG_CONTENT : {
 //             "anyOf" : [
 //               {"$ref" : "#/definitions/TextContent"},
 //               {"$ref" : "#/definitions/ImageContent"},
@@ -64,8 +64,8 @@ struct PromptArgument {
 //           },
 //           "role" : {"$ref" : "#/definitions/Role"}
 //         },
-//                        "required" : [ "content", "role" ],
-//                                     "type" : "object"
+//                        MSG_REQUIRED : [ MSG_CONTENT, "role" ],
+//                                     MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -80,27 +80,27 @@ struct PromptMessage {
 };
 
 // Prompt {
-//   "description" : "A prompt or prompt template that the server offers.",
-//                   "properties"
+//   MSG_DESCRIPTION : "A prompt or prompt template that the server offers.",
+//                   MSG_PROPERTIES
 //       : {
-//         "arguments" : {
-//           "description" :
+//         MSG_ARGUMENTS : {
+//           MSG_DESCRIPTION :
 //               "A list of arguments to use for templating the prompt.",
-//           "items" : {"$ref" : "#/definitions/PromptArgument"},
-//           "type" : "array"
+//           MSG_ITEMS : {"$ref" : "#/definitions/PromptArgument"},
+//           MSG_TYPE : MSG_ARRAY
 //         },
-//         "description" : {
-//           "description" :
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION :
 //               "An optional description of what this prompt provides",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "name" : {
-//           "description" : "The name of the prompt or prompt template.",
-//           "type" : "string"
+//         MSG_NAME : {
+//           MSG_DESCRIPTION : "The name of the prompt or prompt template.",
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "required" : ["name"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_NAME],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -122,26 +122,26 @@ struct Prompt {
 };
 
 // ListPromptsRequest {
-//   "description" : "Sent from the client to request a list of prompts and "
+//   MSG_DESCRIPTION : "Sent from the client to request a list of prompts and "
 //                   "prompt templates the server has.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "prompts/list", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "cursor" : {
-//               "description" :
+//         MSG_METHOD : {MSG_CONST : "prompts/list", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CURSOR : {
+//               MSG_DESCRIPTION :
 //                   "An opaque token representing the current pagination "
 //                   "position.\nIf provided, the server should return "
 //                   "results starting after this cursor.",
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -155,29 +155,29 @@ struct ListPromptsRequest : public PaginatedRequest {
 };
 
 // ListPromptsResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The server's response to a prompts/list request from the client.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "nextCursor" : {
-//           "description" : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "prompts" :
-//             {"items" : {"$ref" : "#/definitions/Prompt"}, "type" : "array"}
+//         MSG_PROMPTS :
+//             {MSG_ITEMS : {"$ref" : "#/definitions/Prompt"}, MSG_TYPE : MSG_ARRAY}
 //       },
-//         "required" : ["prompts"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_PROMPTS],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -199,29 +199,29 @@ struct GetPromptRequestParams {
 };
 
 // GetPromptRequest {
-//   "description" : "Used by the client to get a prompt provided by the
+//   MSG_DESCRIPTION : "Used by the client to get a prompt provided by the
 //   server.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "prompts/get", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "arguments" : {
-//               "additionalProperties" : {"type" : "string"},
-//               "description" : "Arguments to use for templating the prompt.",
-//               "type" : "object"
+//         MSG_METHOD : {MSG_CONST : "prompts/get", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_ARGUMENTS : {
+//               MSG_ADDITIONAL_PROPERTIES : {MSG_TYPE : MSG_STRING},
+//               MSG_DESCRIPTION : "Arguments to use for templating the prompt.",
+//               MSG_TYPE : MSG_OBJECT
 //             },
-//             "name" : {
-//               "description" : "The name of the prompt or prompt template.",
-//               "type" : "string"
+//             MSG_NAME : {
+//               MSG_DESCRIPTION : "The name of the prompt or prompt template.",
+//               MSG_TYPE : MSG_STRING
 //             }
 //           },
-//           "required" : ["name"],
-//           "type" : "object"
+//           MSG_REQUIRED : [MSG_NAME],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -236,29 +236,29 @@ struct GetPromptRequest : public Request {
 };
 
 // GetPromptResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The server's response to a prompts/get request from the client.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "description" : {
-//           "description" : "An optional description for the prompt.",
-//           "type" : "string"
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION : "An optional description for the prompt.",
+//           MSG_TYPE : MSG_STRING
 //         },
 //         "messages" : {
-//           "items" : {"$ref" : "#/definitions/PromptMessage"},
-//           "type" : "array"
+//           MSG_ITEMS : {"$ref" : "#/definitions/PromptMessage"},
+//           MSG_TYPE : MSG_ARRAY
 //         }
 //       },
-//         "required" : ["messages"],
-//                      "type" : "object"
+//         MSG_REQUIRED : ["messages"],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -273,32 +273,32 @@ struct GetPromptResult : public Result {
 };
 
 // PromptListChangedNotification {
-//   "description" : "An optional notification from the server to the client, "
+//   MSG_DESCRIPTION : "An optional notification from the server to the client, "
 //                   "informing it that the list of prompts it offers has "
 //                   "changed. This may be issued by servers without any "
 //                   "previous subscription from the client.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" :
-//             {"const" : "notifications/prompts/list_changed", "type" :
-//             "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "additionalProperties" : {},
-//               "description" : "This parameter name is reserved by MCP to
+//         MSG_METHOD :
+//             {MSG_CONST : "notifications/prompts/list_changed", MSG_TYPE :
+//             MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
 //               allow "
 //                               "clients and servers to attach additional "
 //                               "metadata to their notifications.",
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**

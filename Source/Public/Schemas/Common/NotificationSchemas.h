@@ -20,25 +20,25 @@ struct NotificationParams {
 };
 
 // Notification {
-//   "properties" : {
-//     "method" : {"type" : "string"},
-//     "params" : {
-//       "additionalProperties" : {},
-//       "properties" : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" :
+//   MSG_PROPERTIES : {
+//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//     MSG_PARAMS : {
+//       MSG_ADDITIONAL_PROPERTIES : {},
+//       MSG_PROPERTIES : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION :
 //               "This parameter name is reserved by MCP to allow clients and "
 //               "servers to attach additional metadata to their
 //               notifications.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//       "type" : "object"
+//       MSG_TYPE : MSG_OBJECT
 //     }
 //   },
-//                  "required" : ["method"],
-//                               "type" : "object"
+//                  MSG_REQUIRED : [MSG_METHOD],
+//                               MSG_TYPE : MSG_OBJECT
 // };
 
 struct Notification {
@@ -64,7 +64,7 @@ struct CancelledNotificationParams {
 };
 
 // CancelledNotification {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "This notification can be sent by either side to indicate that it is
 //       "
 //         "cancelling a previously-issued request.\n\nThe request SHOULD still
@@ -73,32 +73,32 @@ struct CancelledNotificationParams {
 //         "already finished.\n\nThis notification indicates that the result "
 //         "will be unused, so any associated processing SHOULD cease.\n\nA "
 //         "client MUST NOT attempt to cancel its `initialize` request.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "notifications/cancelled", "type" : "string"},
-//         "params" : {
-//           "properties" : {
+//         MSG_METHOD : {MSG_CONST : "notifications/cancelled", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
 //             "reason" : {
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "An optional string describing the reason for the "
 //                   "cancellation. This MAY be logged or presented to the
 //                   user.",
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             },
 //             "requestId" : {
 //               "$ref" : "#/definitions/RequestId",
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "The ID of the request to cancel.\n\nThis MUST correspond
 //                   to " "the ID of a request previously issued in the same
 //                   direction."
 //             }
 //           },
-//           "required" : ["requestId"],
-//           "type" : "object"
+//           MSG_REQUIRED : ["requestId"],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -124,9 +124,9 @@ struct CancelledNotification : public Notification {
 
 /* Progress notifications */
 // ProgressToken {
-//   "description" : "A progress token, used to associate progress "
+//   MSG_DESCRIPTION : "A progress token, used to associate progress "
 //                   "notifications with the original request.",
-//                   "type" : [ "string", "integer" ]
+//                   MSG_TYPE : [ MSG_STRING, "integer" ]
 // };
 
 /**
@@ -161,51 +161,51 @@ struct ProgressNotificationParams : public NotificationParams {
     optional<string> message;
 
     ProgressNotificationParams() {
-        additionalProperties = {{"progressToken", progressToken},
-                                {"progress", progress},
+        additionalProperties = {{MSG_PROGRESS_TOKEN, progressToken},
+                                {MSG_PROGRESS, progress},
                                 {"total", total},
-                                {"message", message}};
+                                {MSG_MESSAGE, message}};
     }
 };
 
 // ProgressNotification {
-//   "description" : "An out-of-band notification used to inform the receiver "
+//   MSG_DESCRIPTION : "An out-of-band notification used to inform the receiver "
 //                   "of a progress update for a long-running request.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "notifications/progress", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "message" : {
-//               "description" :
+//         MSG_METHOD : {MSG_CONST : "notifications/progress", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_MESSAGE : {
+//               MSG_DESCRIPTION :
 //                   "An optional message describing the current progress.",
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             },
-//             "progress" : {
-//               "description" :
+//             MSG_PROGRESS : {
+//               MSG_DESCRIPTION :
 //                   "The progress thus far. This should increase every time "
 //                   "progress is made, even if the total is unknown.",
-//               "type" : "number"
+//               MSG_TYPE : MSG_NUMBER
 //             },
-//             "progressToken" : {
+//             MSG_PROGRESS_TOKEN : {
 //               "$ref" : "#/definitions/ProgressToken",
-//               "description" :
+//               MSG_DESCRIPTION :
 //                   "The progress token which was given in the initial request,
 //                   " "used to associate this notification with the request
 //                   that " "is proceeding."
 //             },
 //             "total" : {
-//               "description" : "Total number of items to process (or total "
+//               MSG_DESCRIPTION : "Total number of items to process (or total "
 //                               "progress required), if known.",
-//               "type" : "number"
+//               MSG_TYPE : MSG_NUMBER
 //             }
 //           },
-//           "required" : [ "progress", "progressToken" ],
-//           "type" : "object"
+//           MSG_REQUIRED : [ MSG_PROGRESS, MSG_PROGRESS_TOKEN ],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**

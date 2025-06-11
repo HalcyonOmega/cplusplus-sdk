@@ -130,37 +130,34 @@ template <typename T> ProcessedCreateParams ProcessCreateParams(const CreatePara
 
     if (params.ErrorMap.has_value()) {
         result.ErrorMap = params.ErrorMap;
-        result.Description = params.Description.value_or("");
+        result.Description = params.Description.value_or(MSG_NULL);
         return result;
     }
 
     // Create custom error map like original
     auto CustomMap = [InParams](const string& IssueCode, const ParseContext& Context) -> string {
-        const string& Message = InParams.Message.value_or("");
+        const string& Message = InParams.Message.value_or(MSG_NULL);
 
         if (IssueCode == "invalid_enum_value") {
             return !Message.empty() ? Message : "Invalid enum value";
         }
         if (Context.Data.is_null()) {
-            return !Message.empty() ? Message : InParams.RequiredError.value_or("Required field missing");
+            return !Message.empty() ? Message
+                                    : InParams.RequiredError.value_or("Required field missing");
         }
-        if (IssueCode != "invalid_type") {
-            return "Validation error";
-        }
+        if (IssueCode != "invalid_type") { return "Validation error"; }
         return !Message.empty() ? Message : InParams.InvalidTypeError.value_or("Invalid type");
     };
 
     Result.ErrorMap = CustomMap;
-    Result.Description = InParams.Description.value_or("");
+    Result.Description = InParams.Description.value_or(MSG_NULL);
     return Result;
 }
 
 // Delegate parsing to the wrapped type (like original _parse method)
 template <typename T> ParseResult<T, T> Completable<T>::Parse(const ParseContext& InInput) {
     auto Context = this->ProcessInputParams(InInput);
-    if (this->Definition.Type) {
-        return this->Definition.Type->Parse(Context);
-    }
+    if (this->Definition.Type) { return this->Definition.Type->Parse(Context); }
 
     // Fallback if no wrapped type
     try {

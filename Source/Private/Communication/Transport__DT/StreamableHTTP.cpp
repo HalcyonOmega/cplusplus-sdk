@@ -22,9 +22,9 @@ future<void>
 StreamableHTTPServerTransport::handleRequest(const IncomingMessage& req,
                                              shared_ptr<ServerResponse> res,
                                              const optional<JSON>& parsedBody = nullopt) {
-    if (req.method == "POST") {
+    if (req.method == MTHD_POST) {
         return handlePostRequest(req, res, parsedBody);
-    } else if (req.method == "GET") {
+    } else if (req.method == MTHD_GET) {
         return handleGetRequest(req, res);
     } else if (req.method == "DELETE") {
         return handleDeleteRequest(req, res);
@@ -38,11 +38,11 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
     return async(launch::async, [this, req, res]() {
         // The client MUST include an Accept header, listing text/event-stream as a supported
         // content type.
-        auto acceptIt = req.headers.find("accept");
+        auto acceptIt = req.headers.find(TSPT_ACCEPT);
         if (acceptIt == req.headers.end()
             || acceptIt->second.find("text/event-stream") == string::npos) {
             JSON errorResponse = {
-                {MSG_JSON_RPC, "2.0"},
+                {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                 {MSG_ERROR,
                  {{MSG_CODE, Errors::CONNECTION_CLOSED},
                   {MSG_MESSAGE, "Not Acceptable: Client must accept text/event-stream"}}},
@@ -67,8 +67,8 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
         }
 
         // The server MUST either return Content-Type: text/event-stream in response to this
-        // HTTP GET, or else return HTTP 405 Method Not Allowed
-        unordered_map<string, string> headers = {{"Content-Type", "text/event-stream"},
+        // HTTP GET, or else return HTTP HTTPStatus::MethodNotAllowed Method Not Allowed
+        unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, "text/event-stream"},
                                                  {"Cache-Control", "no-cache, no-transform"},
                                                  {"Connection", "keep-alive"}};
 
@@ -79,7 +79,7 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
         if (_streamMapping.find(_standaloneSseStreamID) != _streamMapping.end()) {
             // Only one GET SSE stream is allowed per session
             JSON errorResponse = {
-                {MSG_JSON_RPC, "2.0"},
+                {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                 {MSG_ERROR,
                  {{MSG_CODE, Errors::ConnectionClosed},
                   {MSG_MESSAGE, "Conflict: Only one SSE stream is allowed per session"}}},
@@ -91,7 +91,7 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
 
         // We need to send headers immediately as messages will arrive much later,
         // otherwise the client will just wait for the first message
-        res->writeHead(200, headers);
+        res->writeHead(HTTPStatus::Ok, headers);
         res->flushHeaders();
 
         // Assign the response to the standalone SSE stream
@@ -106,12 +106,12 @@ future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEvent
     return async(launch::async, [this, lastEventID, res]() {
         if (!_eventStore) { return; }
         try {
-            unordered_map<string, string> headers = {{"Content-Type", "text/event-stream"},
+            unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, "text/event-stream"},
                                                      {"Cache-Control", "no-cache, no-transform"},
                                                      {"Connection", "keep-alive"}};
 
             if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
-            res->writeHead(200, headers);
+            res->writeHead(HTTPStatus::Ok, headers);
             res->flushHeaders();
 
             auto StreamIDFuture = _eventStore->replayEventsAfter(
@@ -120,7 +120,7 @@ future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEvent
                     return async(launch::async, [this, res, EventID, message]() {
                         if (!writeSSEEvent(res, message, EventID)) {
                             if (onerror) { onerror(runtime_error("Failed replay events")); }
-                            res->end("");
+                            res->end(MSG_NULL);
                         }
                     });
                 });
@@ -148,12 +148,12 @@ future<void>
 StreamableHTTPServerTransport::handleUnsupportedRequest(shared_ptr<ServerResponse> res) {
     return async(launch::async, [res]() {
         JSON errorResponse = {
-            {MSG_JSON_RPC, "2.0"},
+            {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
             {MSG_ERROR,
              {{MSG_CODE, Errors::ConnectionClosed}, {MSG_MESSAGE, "Method not allowed."}}},
             {MSG_ID, nullptr}};
         unordered_map<string, string> headers = {{"Allow", "GET, POST, DELETE"}};
-        res->writeHead(405, headers);
+        res->writeHead(HTTPStatus::MethodNotAllowed, headers);
         res->end(errorResponse.dump());
     });
 }
@@ -165,13 +165,13 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
     return async(launch::async, [this, req, res, parsedBody]() {
         try {
             // Validate the Accept header
-            auto acceptIt = req.headers.find("accept");
+            auto acceptIt = req.headers.find(TSPT_ACCEPT);
             // The client MUST include an Accept header, listing both application/json and
             // text/event-stream as supported content types.
             if (acceptIt == req.headers.end()
-                || acceptIt->second.find("application/json") == string::npos
+                || acceptIt->second.find(TSPT_APP_JSON) == string::npos
                 || acceptIt->second.find("text/event-stream") == string::npos) {
-                JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+                JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                                       {MSG_ERROR,
                                        {{MSG_CODE, Errors::ConnectionClosed},
                                         {MSG_MESSAGE, "Not Acceptable: Client must accept both "
@@ -182,11 +182,10 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 return;
             }
 
-            auto ctIt = req.headers.find("content-type");
-            if (ctIt == req.headers.end()
-                || ctIt->second.find("application/json") == string::npos) {
+            auto ctIt = req.headers.find(TSPT_CONTENT_TYPE);
+            if (ctIt == req.headers.end() || ctIt->second.find(TSPT_APP_JSON) == string::npos) {
                 JSON errorResponse = {
-                    {MSG_JSON_RPC, "2.0"},
+                    {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                     {MSG_ERROR,
                      {{MSG_CODE, Errors::ConnectionClosed},
                       {MSG_MESSAGE,
@@ -239,7 +238,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 // should reject the request to avoid re-initialization.
                 if (_initialized && SessionID.has_value()) {
                     JSON errorResponse = {
-                        {MSG_JSON_RPC, "2.0"},
+                        {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                         {MSG_ERROR,
                          {{MSG_CODE, Errors::InvalidRequest},
                           {MSG_MESSAGE, "Invalid Request: Server already initialized"}}},
@@ -250,7 +249,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 }
                 if (messages.size() > 1) {
                     JSON errorResponse = {
-                        {MSG_JSON_RPC, "2.0"},
+                        {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                         {MSG_ERROR,
                          {{MSG_CODE, Errors::InvalidRequest},
                           {MSG_MESSAGE,
@@ -288,7 +287,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             if (!hasRequests) {
                 // if it only contains notifications or responses, return 202
                 res->writeHead(202, {});
-                res->end("");
+                res->end(MSG_NULL);
 
                 // handle each message
                 for (const auto& message : messages) {
@@ -299,14 +298,15 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 // but in some cases server will return JSON responses
                 string StreamID = generateUUID();
                 if (!_enableJsonResponse) {
-                    unordered_map<string, string> headers = {{"Content-Type", "text/event-stream"},
-                                                             {"Cache-Control", "no-cache"},
-                                                             {"Connection", "keep-alive"}};
+                    unordered_map<string, string> headers = {
+                        {TSPT_CONTENT_TYPE, "text/event-stream"},
+                        {"Cache-Control", "no-cache"},
+                        {"Connection", "keep-alive"}};
 
                     // After initialization, always include the session ID if we have one
                     if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
 
-                    res->writeHead(200, headers);
+                    res->writeHead(HTTPStatus::Ok, headers);
                 }
                 // Store the response for this request to send messages back through this
                 // connection We need to track by request ID to maintain the connection
@@ -328,7 +328,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             }
         } catch (const exception& error) {
             // return JSON-RPC formatted error
-            JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+            JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                                   {MSG_ERROR,
                                    {{MSG_CODE, Errors::ParseError},
                                     {MSG_MESSAGE, "Parse error"},
@@ -346,8 +346,8 @@ future<void> StreamableHTTPServerTransport::handleDeleteRequest(const IncomingMe
     return async(launch::async, [this, req, res]() {
         if (!validateSession(req, res)) { return; }
         close().wait();
-        res->writeHead(200, {});
-        res->end("");
+        res->writeHead(HTTPStatus::Ok, {});
+        res->end(MSG_NULL);
     });
 }
 
@@ -360,7 +360,7 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
     }
     if (!_initialized) {
         // If the server has not been initialized yet, reject all requests
-        JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+        JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                               {MSG_ERROR,
                                {{MSG_CODE, Errors::ConnectionClosed},
                                 {MSG_MESSAGE, "Bad Request: Server not initialized"}}},
@@ -374,7 +374,7 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
 
     if (SessionIDIt == req.headers.end()) {
         // Non-initialization requests without a session ID should return 400 Bad Request
-        JSON errorResponse = {{MSG_JSON_RPC, "2.0"},
+        JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                               {MSG_ERROR,
                                {{MSG_CODE, Errors::ConnectionClosed},
                                 {MSG_MESSAGE, "Bad Request: Mcp-Session-Id header is required"}}},
@@ -382,13 +382,13 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
         res->writeHead(400, {});
         res->end(errorResponse.dump());
         return false;
-    } else if (SessionIDIt->second != SessionID.value_or("")) {
-        // Reject requests with invalid session ID with 404 Not Found
+    } else if (SessionIDIt->second != SessionID.value_or(MSG_NULL)) {
+        // Reject requests with invalid session ID with HTTPStatus::NotFound
         JSON errorResponse = {
-            {MSG_JSON_RPC, "2.0"},
+            {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
             {MSG_ERROR, {{MSG_CODE, Errors::RequestTimeout}, {MSG_MESSAGE, "Session not found"}}},
             {MSG_ID, nullptr}};
-        res->writeHead(404, {});
+        res->writeHead(HTTPStatus::NotFound, {});
         res->end(errorResponse.dump());
         return false;
     }
@@ -399,7 +399,7 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
 future<void> StreamableHTTPServerTransport::close() override {
     return async(launch::async, [this]() {
         // Close all SSE connections
-        for (auto& [id, response] : _streamMapping) { response->end(""); }
+        for (auto& [id, response] : _streamMapping) { response->end(MSG_NULL); }
         _streamMapping.clear();
 
         // Clear any pending responses
@@ -499,7 +499,7 @@ future<void> StreamableHTTPServerTransport::send(
                 }
                 if (_enableJsonResponse) {
                     // All responses ready, send as JSON
-                    unordered_map<string, string> headers = {{"Content-Type", "application/json"}};
+                    unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, TSPT_APP_JSON}};
                     if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
 
                     vector<JSON> responses;
@@ -507,7 +507,7 @@ future<void> StreamableHTTPServerTransport::send(
                         responses.push_back(_requestResponseMap[id].data);
                     }
 
-                    response->writeHead(200, headers);
+                    response->writeHead(HTTPStatus::Ok, headers);
                     if (responses.size() == 1) {
                         response->end(responses[0].dump());
                     } else {
@@ -516,7 +516,7 @@ future<void> StreamableHTTPServerTransport::send(
                     }
                 } else {
                     // End the SSE stream
-                    response->end("");
+                    response->end(MSG_NULL);
                 }
                 // Clean up
                 for (const auto& id : relatedIds) {
@@ -623,10 +623,10 @@ future<void> StreamableHTTPClientTransport::startOrAuthSse(const StartSSEOptions
             // auto response = httpGet(url_, headers, abort_requested_);
 
             // if (!response.ok) {
-            //     if (response.status == 401 && auth_provider_) {
+            //     if (response.status == HTTPStatus::Unauthorized && auth_provider_) {
             //         return authThenStart().get();
             //     }
-            //     if (response.status == 405) {
+            //     if (response.status == HTTPStatus::MethodNotAllowed) {
             //         return; // Server doesn't support SSE
             //     }
             //     throw StreamableHTTPError(response.status,
@@ -783,8 +783,8 @@ future<void> StreamableHTTPClientTransport::send(const MessageBase& message,
             }
 
             auto headers = commonHeaders().get();
-            headers["content-type"] = "application/json";
-            headers["accept"] = "application/json, text/event-stream";
+            headers[TSPT_CONTENT_TYPE] = TSPT_APP_JSON;
+            headers[TSPT_ACCEPT] = "application/json, text/event-stream";
 
             // TODO: Fix External Ref: HTTP POST implementation
             // string body = JSON::stringify(message);
@@ -796,7 +796,7 @@ future<void> StreamableHTTPClientTransport::send(const MessageBase& message,
             // }
 
             // if (!response.ok) {
-            //     if (response.status == 401 && auth_provider_) {
+            //     if (response.status == HTTPStatus::Unauthorized && auth_provider_) {
             //         resource_metadata_url_ = extractResourceMetadataUrl(response);
             //         auto result = auth(auth_provider_, {url_, resource_metadata_url_});
             //         if (result != "AUTHORIZED") {
@@ -855,8 +855,8 @@ future<void> StreamableHTTPClientTransport::terminateSession() {
             // TODO: Fix External Ref: HTTP DELETE implementation
             // auto response = httpDelete(url_, headers, abort_requested_);
 
-            // Handle 405 as valid response per spec
-            // if (!response.ok && response.status != 405) {
+            // Handle HTTPStatus::MethodNotAllowed as valid response per spec
+            // if (!response.ok && response.status != HTTPStatus::MethodNotAllowed) {
             //     throw StreamableHTTPError(response.status,
             //         "Failed to terminate session: " + response.statusText);
             // }

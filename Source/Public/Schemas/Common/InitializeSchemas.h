@@ -28,29 +28,29 @@ struct InitializeRequestParams {
 };
 
 // InitializeRequest {
-//   "description" : "This request is sent from the client to the server when it "
+//   MSG_DESCRIPTION : "This request is sent from the client to the server when it "
 //                   "first connects, asking it to begin initialization.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "initialize", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "capabilities" : {"$ref" : "#/definitions/ClientCapabilities"},
-//             "clientInfo" : {"$ref" : "#/definitions/Implementation"},
-//             "protocolVersion" : {
-//               "description" :
+//         MSG_METHOD : {MSG_CONST : "initialize", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CAPABILITIES : {"$ref" : "#/definitions/ClientCapabilities"},
+//             MSG_CLIENT_INFO : {"$ref" : "#/definitions/Implementation"},
+//             MSG_PROTOCOL_VERSION : {
+//               MSG_DESCRIPTION :
 //                   "The latest version of the Model Context Protocol "
 //                   "that the client supports. The client MAY decide to "
 //                   "support older versions as well.",
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             }
 //           },
-//           "required" : [ "capabilities", "clientInfo", "protocolVersion" ],
-//           "type" : "object"
+//           MSG_REQUIRED : [ MSG_CAPABILITIES, MSG_CLIENT_INFO, MSG_PROTOCOL_VERSION ],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -66,38 +66,38 @@ struct InitializeRequest : public Request {
 };
 
 // InitializeResult {
-//   "description" : "After receiving an initialize request from the client, "
+//   MSG_DESCRIPTION : "After receiving an initialize request from the client, "
 //                   "the server sends this response.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol to "
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "capabilities" : {"$ref" : "#/definitions/ServerCapabilities"},
+//         MSG_CAPABILITIES : {"$ref" : "#/definitions/ServerCapabilities"},
 //         "instructions" : {
-//           "description" :
+//           MSG_DESCRIPTION :
 //               "Instructions describing how to use the server and its "
 //               "features.\n\nThis can be used by clients to improve the LLM's "
 //               "understanding of available tools, resources, etc. It can be "
 //               "thought of like a \"hint\" to the model. For example, this "
 //               "information MAY be added to the system prompt.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "protocolVersion" : {
-//           "description" : "The version of the Model Context Protocol that the "
+//         MSG_PROTOCOL_VERSION : {
+//           MSG_DESCRIPTION : "The version of the Model Context Protocol that the "
 //                           "server wants to use. This may not match the version "
 //                           "that the client requested. If the client cannot "
 //                           "support this version, it MUST disconnect.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "serverInfo" : {"$ref" : "#/definitions/Implementation"}
+//         MSG_SERVER_INFO : {"$ref" : "#/definitions/Implementation"}
 //       },
-//         "required" : [ "capabilities", "protocolVersion", "serverInfo" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_CAPABILITIES, MSG_PROTOCOL_VERSION, MSG_SERVER_INFO ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -125,27 +125,27 @@ struct InitializeResult : public Result {
 };
 
 // InitializedNotification {
-//   "description" : "This notification is sent from the client to the "
+//   MSG_DESCRIPTION : "This notification is sent from the client to the "
 //                   "server after initialization has finished.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "notifications/initialized", "type" : "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "additionalProperties" : {},
-//               "description" : "This parameter name is reserved by MCP to "
+//         MSG_METHOD : {MSG_CONST : "notifications/initialized", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to "
 //                               "allow clients and servers to attach "
 //                               "additional metadata to their notifications.",
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**

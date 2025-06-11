@@ -85,8 +85,8 @@ void StdioTransport::SetOnStop(StopCallback callback) {
 }
 
 void StdioTransport::WriteSSEEvent(const std::string& event, const std::string& data) {
-    std::string sseMessage = "event: " + event + TRANSPORT_EVENT_DELIMITER
-                             + TRANSPORT_EVENT_DATA_PREFIX + data + TRANSPORT_EVENT_DELIMITER;
+    std::string sseMessage = "event: " + event + TSPT_EVENT_DELIMITER + TSPT_EVENT_DATA_PREFIX
+                             + data + TSPT_EVENT_DELIMITER;
     Send(sseMessage);
 }
 
@@ -143,8 +143,8 @@ void StdioTransport::ParseSSEData(const std::string& data) {
 
         if (line.substr(0, 6) == "event: ") {
             currentEvent = line.substr(6);
-        } else if (line.substr(0, TRANSPORT_EVENT_DATA_PREFIX_LEN) == TRANSPORT_EVENT_DATA_PREFIX) {
-            currentData = line.substr(TRANSPORT_EVENT_DATA_PREFIX_LEN);
+        } else if (line.substr(0, TSPT_EVENT_DATA_PREFIX_LEN) == TSPT_EVENT_DATA_PREFIX) {
+            currentData = line.substr(TSPT_EVENT_DATA_PREFIX_LEN);
         } else if (line.empty() && !currentData.empty()) {
             // End of event
             if (_onMessage) { _onMessage(currentData, nullptr); }

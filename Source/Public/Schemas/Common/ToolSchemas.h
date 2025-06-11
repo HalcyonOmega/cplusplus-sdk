@@ -11,51 +11,51 @@
 MCP_NAMESPACE_BEGIN
 
 // ToolAnnotations {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Additional properties describing a Tool to clients.\n\nNOTE: all "
 //         "properties in ToolAnnotations are **hints**.\nThey are not "
 //         "guaranteed to provide a faithful description of\ntool behavior "
 //         "(including descriptive properties like `title`).\n\nClients should "
 //         "never make tool use decisions based on ToolAnnotations\nreceived "
 //         "from untrusted servers.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
 //         "destructiveHint" : {
-//           "description" :
+//           MSG_DESCRIPTION :
 //               "If true, the tool may perform destructive updates to its "
 //               "environment.\nIf false, the tool performs only additive "
 //               "updates.\n\n(This property is meaningful only when "
 //               "`readOnlyHint == false`)\n\nDefault: true",
-//           "type" : "boolean"
+//           MSG_TYPE : "boolean"
 //         },
 //         "idempotentHint" : {
-//           "description" :
+//           MSG_DESCRIPTION :
 //               "If true, calling the tool repeatedly with the same "
 //               "arguments\nwill have no additional effect on the its "
 //               "environment.\n\n(This property is meaningful only when "
 //               "`readOnlyHint == false`)\n\nDefault: false",
-//           "type" : "boolean"
+//           MSG_TYPE : "boolean"
 //         },
 //         "openWorldHint" : {
-//           "description" :
+//           MSG_DESCRIPTION :
 //               "If true, this tool may interact with an \"open world\" of "
 //               "external\nentities. If false, the tool's domain of interaction
 //               " "is closed.\nFor example, the world of a web search tool is "
 //               "open, whereas that\nof a memory tool is not.\n\nDefault:
 //               true",
-//           "type" : "boolean"
+//           MSG_TYPE : "boolean"
 //         },
 //         "readOnlyHint" : {
-//           "description" : "If true, the tool does not modify its "
+//           MSG_DESCRIPTION : "If true, the tool does not modify its "
 //                           "environment.\n\nDefault: false",
-//           "type" : "boolean"
+//           MSG_TYPE : "boolean"
 //         },
 //         "title" : {
-//           "description" : "A human-readable title for the tool.",
-//           "type" : "string"
+//           MSG_DESCRIPTION : "A human-readable title for the tool.",
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "type" : "object"
+//         MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -113,50 +113,50 @@ struct ToolAnnotations {
 };
 
 struct ToolInputSchema {
-    string Type = "object";
+    string Type = MSG_OBJECT;
     optional<AdditionalObjects> Properties;
     optional<vector<string>> Required;
 };
 
 // Tool {
-//   "description" : "Definition for a tool the client can call.",
-//                   "properties"
+//   MSG_DESCRIPTION : "Definition for a tool the client can call.",
+//                   MSG_PROPERTIES
 //       : {
-//         "annotations" : {
+//         MSG_ANNOTATIONS : {
 //           "$ref" : "#/definitions/ToolAnnotations",
-//           "description" : "Optional additional tool information."
+//           MSG_DESCRIPTION : "Optional additional tool information."
 //         },
-//         "description" : {
-//           "description" : "A human-readable description of the tool.\n\nThis
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION : "A human-readable description of the tool.\n\nThis
 //           "
 //                           "can be used by "
 //                           "clients to improve the LLM's understanding of "
 //                           "available tools. It "
 //                           "can be thought of like a \"hint\" to the model.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "inputSchema" : {
-//           "description" : "A JSON Schema object defining the expected "
+//         MSG_INPUT_SCHEMA : {
+//           MSG_DESCRIPTION : "A JSON Schema object defining the expected "
 //                           "parameters for the tool.",
-//           "properties" : {
-//             "properties" : {
-//               "additionalProperties" : {
-//                 "additionalProperties" : true,
-//                 "properties" : {},
-//                 "type" : "object"
+//           MSG_PROPERTIES : {
+//             MSG_PROPERTIES : {
+//               MSG_ADDITIONAL_PROPERTIES : {
+//                 MSG_ADDITIONAL_PROPERTIES : true,
+//                 MSG_PROPERTIES : {},
+//                 MSG_TYPE : MSG_OBJECT
 //               },
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             },
-//             "required" : {"items" : {"type" : "string"}, "type" : "array"},
-//             "type" : {"const" : "object", "type" : "string"}
+//             MSG_REQUIRED : {MSG_ITEMS : {MSG_TYPE : MSG_STRING}, MSG_TYPE : MSG_ARRAY},
+//             MSG_TYPE : {MSG_CONST : MSG_OBJECT, MSG_TYPE : MSG_STRING}
 //           },
-//           "required" : ["type"],
-//           "type" : "object"
+//           MSG_REQUIRED : [MSG_TYPE],
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "name" : {"description" : "The name of the tool.", "type" : "string"}
+//         MSG_NAME : {MSG_DESCRIPTION : "The name of the tool.", MSG_TYPE : MSG_STRING}
 //       },
-//         "required" : [ "inputSchema", "name" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_INPUT_SCHEMA, MSG_NAME ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -188,25 +188,25 @@ struct Tool {
 };
 
 // ListToolsRequest {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Sent from the client to request a list of tools the server has.",
-//         "properties" : {
-//           "method" : {"const" : "tools/list", "type" : "string"},
-//           "params" : {
-//             "properties" : {
-//               "cursor" : {
-//                 "description" :
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : "tools/list", MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_CURSOR : {
+//                 MSG_DESCRIPTION :
 //                     "An opaque token representing the current pagination "
 //                     "position.\nIf provided, the server should return "
 //                     "results starting after this cursor.",
-//                 "type" : "string"
+//                 MSG_TYPE : MSG_STRING
 //               }
 //             },
-//             "type" : "object"
+//             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
-//                        "required" : ["method"],
-//                                     "type" : "object"
+//                        MSG_REQUIRED : [MSG_METHOD],
+//                                     MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -219,29 +219,29 @@ struct ListToolsRequest : public PaginatedRequest {
 };
 
 // ListToolsResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The server's response to a tools/list request from the client.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "nextCursor" : {
-//           "description" : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "tools" : {"items" : {"$ref" : "#/definitions/Tool"}, "type" :
-//         "array"}
+//         MSG_TOOLS : {MSG_ITEMS : {"$ref" : "#/definitions/Tool"}, MSG_TYPE :
+//         MSG_ARRAY}
 //       },
-//         "required" : ["tools"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_TOOLS],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -252,7 +252,7 @@ struct ListToolsResult : public PaginatedResult {
 };
 
 // CallToolResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The server's response to a tool call.\n\nAny errors that originate "
 //         "from the tool SHOULD be reported inside the result\nobject, with "
 //         "`isError` set to true, _not_ as an MCP protocol-level "
@@ -260,18 +260,18 @@ struct ListToolsResult : public PaginatedResult {
 //         "an error occurred\nand self-correct.\n\nHowever, any errors in "
 //         "_finding_ the tool, an error indicating that the\nserver does not "
 //         "support tool calls, or any other exceptional conditions,\nshould be
-//         " "reported as an MCP error response.", "properties"
+//         " "reported as an MCP error response.", MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "content" : {
-//           "items" : {
+//         MSG_CONTENT : {
+//           MSG_ITEMS : {
 //             "anyOf" : [
 //               {"$ref" : "#/definitions/TextContent"},
 //               {"$ref" : "#/definitions/ImageContent"},
@@ -279,17 +279,17 @@ struct ListToolsResult : public PaginatedResult {
 //               {"$ref" : "#/definitions/EmbeddedResource"}
 //             ]
 //           },
-//           "type" : "array"
+//           MSG_TYPE : MSG_ARRAY
 //         },
-//         "isError" : {
-//           "description" :
+//         MSG_IS_ERROR : {
+//           MSG_DESCRIPTION :
 //               "Whether the tool call ended in an error.\n\nIf not set, this
 //               is " "assumed to be false (the call was successful).",
-//           "type" : "boolean"
+//           MSG_TYPE : "boolean"
 //         }
 //       },
-//         "required" : ["content"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_CONTENT],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -321,22 +321,22 @@ struct CallToolRequestParams {
 };
 
 // CallToolRequest {
-//   "description" : "Used by the client to invoke a tool provided by the
+//   MSG_DESCRIPTION : "Used by the client to invoke a tool provided by the
 //   server.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "tools/call", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "arguments" : {"additionalProperties" : {}, "type" : "object"},
-//             "name" : {"type" : "string"}
+//         MSG_METHOD : {MSG_CONST : "tools/call", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_ARGUMENTS : {MSG_ADDITIONAL_PROPERTIES : {}, MSG_TYPE : MSG_OBJECT},
+//             MSG_NAME : {MSG_TYPE : MSG_STRING}
 //           },
-//           "required" : ["name"],
-//           "type" : "object"
+//           MSG_REQUIRED : [MSG_NAME],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -351,32 +351,32 @@ struct CallToolRequest : public Request {
 };
 
 // ToolListChangedNotification {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "An optional notification from the server to the client, informing "
 //         "it that the list of tools it offers has changed. This may be issued
 //         " "by servers without any previous subscription from the client.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "method" :
-//             {"const" : "notifications/tools/list_changed", "type" :
-//             "string"},
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "additionalProperties" : {},
-//               "description" : "This parameter name is reserved by MCP to
+//         MSG_METHOD :
+//             {MSG_CONST : "notifications/tools/list_changed", MSG_TYPE :
+//             MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
 //               allow "
 //                               "clients and servers to attach additional "
 //                               "metadata to their notifications.",
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**

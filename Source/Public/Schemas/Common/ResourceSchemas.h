@@ -10,48 +10,48 @@
 MCP_NAMESPACE_BEGIN
 
 // Resource {
-//   "description" : "A known resource that the server is capable of reading.",
-//                   "properties"
+//   MSG_DESCRIPTION : "A known resource that the server is capable of reading.",
+//                   MSG_PROPERTIES
 //       : {
-//         "annotations" : {
+//         MSG_ANNOTATIONS : {
 //           "$ref" : "#/definitions/Annotations",
-//           "description" : "Optional annotations for the client."
+//           MSG_DESCRIPTION : "Optional annotations for the client."
 //         },
-//         "description" : {
-//           "description" :
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION :
 //               "A description of what this resource represents.\n\nThis can be
 //               " "used " "by clients to improve the LLM's understanding of
 //               available " "resources. It can be thought of like a \"hint\" to
 //               the model.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "mimeType" : {
-//           "description" : "The MIME type of this resource, if known.",
-//           "type" : "string"
+//         MSG_MIME_TYPE : {
+//           MSG_DESCRIPTION : "The MIME type of this resource, if known.",
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "name" : {
-//           "description" :
+//         MSG_NAME : {
+//           MSG_DESCRIPTION :
 //               "A human-readable name for this resource.\n\nThis can be "
 //               "used by clients to populate UI elements.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
 //         "size" : {
-//           "description" :
+//           MSG_DESCRIPTION :
 //               "The size of the raw resource content, in bytes (i.e., before "
 //               "base64 "
 //               "encoding or any tokenization), if known.\n\nThis can be used
 //               by " "Hosts to display file sizes and estimate context window
 //               usage.",
-//           "type" : "integer"
+//           MSG_TYPE : "integer"
 //         },
-//         "uri" : {
-//           "description" : "The URI of this resource.",
-//           "format" : "uri",
-//           "type" : "string"
+//         MSG_URI : {
+//           MSG_DESCRIPTION : "The URI of this resource.",
+//           MSG_FORMAT : MSG_URI,
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "required" : [ "name", "uri" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_NAME, MSG_URI ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -101,46 +101,46 @@ struct Resource {
 };
 
 // ResourceTemplate {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "A template description for resources available on the server.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "annotations" : {
+//         MSG_ANNOTATIONS : {
 //           "$ref" : "#/definitions/Annotations",
-//           "description" : "Optional annotations for the client."
+//           MSG_DESCRIPTION : "Optional annotations for the client."
 //         },
-//         "description" : {
-//           "description" :
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION :
 //               "A description of what this template is for.\n\nThis can be
 //               used " "by clients to improve the LLM's understanding of
 //               available " "resources. It can be thought of like a \"hint\" to
 //               the model.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "mimeType" : {
-//           "description" :
+//         MSG_MIME_TYPE : {
+//           MSG_DESCRIPTION :
 //               "The MIME type for all resources that match this template. This
 //               " "should only be included if all resources matching this
 //               template " "have the same type.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "name" : {
-//           "description" : "A human-readable name for the type of resource
+//         MSG_NAME : {
+//           MSG_DESCRIPTION : "A human-readable name for the type of resource
 //           this "
 //                           "template refers to.\n\nThis can be used by clients
 //                           " "to populate UI elements.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "uriTemplate" : {
-//           "description" : "A URI template (according to RFC 6570) that can be
+//         MSG_URI_TEMPLATE : {
+//           MSG_DESCRIPTION : "A URI template (according to RFC 6570) that can be
 //           "
 //                           "used to construct resource URIs.",
-//           "format" : "uri-template",
-//           "type" : "string"
+//           MSG_FORMAT : "uri-template",
+//           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         "required" : [ "name", "uriTemplate" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_NAME, MSG_URI_TEMPLATE ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -183,26 +183,26 @@ struct ResourceTemplate {
 };
 
 // ListResourcesRequest {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Sent from the client to request a list of resources the server
 //       has.",
-//         "properties" : {
-//           "method" : {"const" : "resources/list", "type" : "string"},
-//           "params" : {
-//             "properties" : {
-//               "cursor" : {
-//                 "description" :
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : "resources/list", MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_CURSOR : {
+//                 MSG_DESCRIPTION :
 //                     "An opaque token representing the current pagination "
 //                     "position.\nIf provided, the server should return results
 //                     " "starting after this cursor.",
-//                 "type" : "string"
+//                 MSG_TYPE : MSG_STRING
 //               }
 //             },
-//             "type" : "object"
+//             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
-//                        "required" : ["method"],
-//                                     "type" : "object"
+//                        MSG_REQUIRED : [MSG_METHOD],
+//                                     MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -215,29 +215,29 @@ struct ListResourcesRequest : public PaginatedRequest {
 };
 
 // ListResourcesResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The server's response to a resources/list request from the client.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "nextCursor" : {
-//           "description" : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "resources" :
-//             {"items" : {"$ref" : "#/definitions/Resource"}, "type" : "array"}
+//         MSG_RESOURCES :
+//             {MSG_ITEMS : {"$ref" : "#/definitions/Resource"}, MSG_TYPE : MSG_ARRAY}
 //       },
-//         "required" : ["resources"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_RESOURCES],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -248,26 +248,26 @@ struct ListResourcesResult : public PaginatedResult {
 };
 
 // ListResourceTemplatesRequest {
-//   "description" : "Sent from the client to request a list of resource "
+//   MSG_DESCRIPTION : "Sent from the client to request a list of resource "
 //                   "templates the server has.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "resources/templates/list", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "cursor" : {
-//               "description" :
+//         MSG_METHOD : {MSG_CONST : "resources/templates/list", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CURSOR : {
+//               MSG_DESCRIPTION :
 //                   "An opaque token representing the current pagination "
 //                   "position.\nIf provided, the server should return "
 //                   "results starting after this cursor.",
-//               "type" : "string"
+//               MSG_TYPE : MSG_STRING
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -280,31 +280,31 @@ struct ListResourceTemplatesRequest : public PaginatedRequest {
 };
 
 // ListResourceTemplatesResult {
-//   "description" : "The server's response to a resources/templates/list "
+//   MSG_DESCRIPTION : "The server's response to a resources/templates/list "
 //                   "request from the client.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "nextCursor" : {
-//           "description" : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           "type" : "string"
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "resourceTemplates" : {
-//           "items" : {"$ref" : "#/definitions/ResourceTemplate"},
-//           "type" : "array"
+//         MSG_RESOURCE_TEMPLATES : {
+//           MSG_ITEMS : {"$ref" : "#/definitions/ResourceTemplate"},
+//           MSG_TYPE : MSG_ARRAY
 //         }
 //       },
-//         "required" : ["resourceTemplates"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_RESOURCE_TEMPLATES],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -325,30 +325,30 @@ struct ResourceUpdatedNotificationParams {
 };
 
 // ResourceUpdatedNotification {
-//   "description" : "A notification from the server to the client, "
+//   MSG_DESCRIPTION : "A notification from the server to the client, "
 //                   "informing it that a resource has changed and may need "
 //                   "to be read again. This should only be sent if the "
 //                   "client previously sent a resources/subscribe request.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" :
-//             {"const" : "notifications/resources/updated", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "uri" : {
-//               "description" : "The URI of the resource that has been "
+//         MSG_METHOD :
+//             {MSG_CONST : "notifications/resources/updated", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_URI : {
+//               MSG_DESCRIPTION : "The URI of the resource that has been "
 //                               "updated. This might be a sub-resource of the "
 //                               "one that the client actually subscribed to.",
-//               "format" : "uri",
-//               "type" : "string"
+//               MSG_FORMAT : MSG_URI,
+//               MSG_TYPE : MSG_STRING
 //             }
 //           },
-//           "required" : ["uri"],
-//           "type" : "object"
+//           MSG_REQUIRED : [MSG_URI],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -374,29 +374,29 @@ struct SubscribeRequestParams {
 };
 
 // SubscribeRequest {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Sent from the client to request resources/updated notifications from
 //       "
 //         "the server whenever a particular resource changes.",
-//         "properties" : {
-//           "method" : {"const" : "resources/subscribe", "type" : "string"},
-//           "params" : {
-//             "properties" : {
-//               "uri" : {
-//                 "description" :
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : "resources/subscribe", MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_URI : {
+//                 MSG_DESCRIPTION :
 //                     "The URI of the resource to subscribe to. The URI can use
 //                     " "any " "protocol; it is up to the server how to
 //                     interpret it.",
-//                 "format" : "uri",
-//                 "type" : "string"
+//                 MSG_FORMAT : MSG_URI,
+//                 MSG_TYPE : MSG_STRING
 //               }
 //             },
-//             "required" : ["uri"],
-//             "type" : "object"
+//             MSG_REQUIRED : [MSG_URI],
+//             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
-//                        "required" : [ "method", "params" ],
-//                                     "type" : "object"
+//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -420,26 +420,26 @@ struct UnsubscribeRequestParams {
 };
 
 // UnsubscribeRequest {
-//   "description" : "Sent from the client to request cancellation of "
+//   MSG_DESCRIPTION : "Sent from the client to request cancellation of "
 //                   "resources/updated notifications from the server. This "
 //                   "should follow a previous resources/subscribe request.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {"const" : "resources/unsubscribe", "type" : "string"},
-//         "params" : {
-//           "properties" : {
-//             "uri" : {
-//               "description" : "The URI of the resource to unsubscribe from.",
-//               "format" : "uri",
-//               "type" : "string"
+//         MSG_METHOD : {MSG_CONST : "resources/unsubscribe", MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_URI : {
+//               MSG_DESCRIPTION : "The URI of the resource to unsubscribe from.",
+//               MSG_FORMAT : MSG_URI,
+//               MSG_TYPE : MSG_STRING
 //             }
 //           },
-//           "required" : ["uri"],
-//           "type" : "object"
+//           MSG_REQUIRED : [MSG_URI],
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : [ "method", "params" ],
-//                      "type" : "object"
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -465,29 +465,29 @@ struct ReadResourceRequestParams {
 };
 
 // ReadResourceRequest {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "Sent from the client to the server, to read a specific resource
 //       URI.",
-//         "properties" : {
-//           "method" : {"const" : "resources/read", "type" : "string"},
-//           "params" : {
-//             "properties" : {
-//               "uri" : {
-//                 "description" : "The URI of the resource to read. The URI can
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : "resources/read", MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_URI : {
+//                 MSG_DESCRIPTION : "The URI of the resource to read. The URI can
 //                 "
 //                                 "use any protocol; "
 //                                 "it is up to the server how to interpret
 //                                 it.",
-//                 "format" : "uri",
-//                 "type" : "string"
+//                 MSG_FORMAT : MSG_URI,
+//                 MSG_TYPE : MSG_STRING
 //               }
 //             },
-//             "required" : ["uri"],
-//             "type" : "object"
+//             MSG_REQUIRED : [MSG_URI],
+//             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
-//                        "required" : [ "method", "params" ],
-//                                     "type" : "object"
+//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -501,30 +501,30 @@ struct ReadResourceRequest : public Request {
 };
 
 // ReadResourceResult {
-//   "description"
+//   MSG_DESCRIPTION
 //       : "The server's response to a resources/read request from the client.",
-//         "properties"
+//         MSG_PROPERTIES
 //       : {
-//         "_meta" : {
-//           "additionalProperties" : {},
-//           "description" : "This result property is reserved by the protocol
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         },
-//         "contents" : {
-//           "items" : {
+//         MSG_CONTENTS : {
+//           MSG_ITEMS : {
 //             "anyOf" : [
 //               {"$ref" : "#/definitions/TextResourceContents"},
 //               {"$ref" : "#/definitions/BlobResourceContents"}
 //             ]
 //           },
-//           "type" : "array"
+//           MSG_TYPE : MSG_ARRAY
 //         }
 //       },
-//         "required" : ["contents"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_CONTENTS],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**
@@ -535,33 +535,33 @@ struct ReadResourceResult : public Result {
 };
 
 // ResourceListChangedNotification {
-//   "description" : "An optional notification from the server to the client, "
+//   MSG_DESCRIPTION : "An optional notification from the server to the client, "
 //                   "informing it that the list of resources it can read "
 //                   "from has changed. This may be issued by servers without "
 //                   "any previous subscription from the client.",
-//                   "properties"
+//                   MSG_PROPERTIES
 //       : {
-//         "method" : {
-//           "const" : "notifications/resources/list_changed",
-//           "type" : "string"
+//         MSG_METHOD : {
+//           MSG_CONST : "notifications/resources/list_changed",
+//           MSG_TYPE : MSG_STRING
 //         },
-//         "params" : {
-//           "additionalProperties" : {},
-//           "properties" : {
-//             "_meta" : {
-//               "additionalProperties" : {},
-//               "description" : "This parameter name is reserved by MCP to
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
 //               allow "
 //                               "clients and servers to attach additional "
 //                               "metadata to their notifications.",
-//               "type" : "object"
+//               MSG_TYPE : MSG_OBJECT
 //             }
 //           },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 //         }
 //       },
-//         "required" : ["method"],
-//                      "type" : "object"
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
 // };
 
 /**

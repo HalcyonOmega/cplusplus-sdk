@@ -4,35 +4,30 @@
 
 MCP_NAMESPACE_BEGIN
 
+enum class HTTPStatus {
+    Ok = 200,
+    Unauthorized = 401,
+    NotFound = 404,
+    MethodNotAllowed = 405,
+};
+
 // Transport Types
-static constexpr const char* TRANSPORT_TYPE_STDIO = "stdio";
-static constexpr const char* TRANSPORT_TYPE_HTTP = "http";
+static constexpr const char* TSPT_STDIO = "stdio";
+static constexpr const char* TSPT_HTTP = "http";
 
 // Transport Headers
-static constexpr const char* TRANSPORT_HEADER_SESSION_ID = "X-Session-ID";
-static constexpr const char* TRANSPORT_HEADER_CONTENT_TYPE = "Content-Type";
-static constexpr const char* TRANSPORT_HEADER_ACCEPT = "Accept";
+static constexpr const char* TSPT_SESSION_ID = "x-session-id";
+static constexpr const char* TSPT_CONTENT_TYPE = "content-type";
+static constexpr const char* TSPT_ACCEPT = "accept";
 
 // Transport Content Types
-static constexpr const char* TRANSPORT_CONTENT_TYPE_JSON = "application/json";
-static constexpr const char* TRANSPORT_CONTENT_TYPE_EVENT_STREAM = "text/event-stream";
-static constexpr const char* TRANSPORT_CONTENT_TYPE_JSON_AND_EVENT_STREAM =
-    "application/json, text/event-stream";
-
-// Transport Methods
-static constexpr const char* TRANSPORT_METHOD_POST = "POST";
-static constexpr const char* TRANSPORT_METHOD_GET = "GET";
-
-// Transport Response Codes
-static constexpr int TRANSPORT_STATUS_OK = 200;
-static constexpr int TRANSPORT_STATUS_UNAUTHORIZED = 401;
-static constexpr int TRANSPORT_STATUS_NOT_FOUND = 404;
-static constexpr int TRANSPORT_STATUS_METHOD_NOT_ALLOWED = 405;
+static constexpr const char* TSPT_APP_JSON = "application/json";
+static constexpr const char* TSPT_TEXT_EVENT_STREAM = "text/event-stream";
+static constexpr const char* TSPT_APP_JSON_AND_EVENT_STREAM = "application/json, text/event-stream";
 
 // Transport Event Stream Constants
-static constexpr const char* TRANSPORT_EVENT_DELIMITER = "\n\n";
-static constexpr const char* TRANSPORT_EVENT_DATA_PREFIX = "data: ";
-static constexpr size_t TRANSPORT_EVENT_DATA_PREFIX_LEN = 6;
+static constexpr const char* TSPT_EVENT_DELIMITER = "\n\n";
+static constexpr const char* TSPT_EVENT_DATA_PREFIX = "data: ";
 
 // Transport Error Messages
 static constexpr const char* TRANSPORT_ERR_INVALID_UTF8 = "Invalid UTF-8 encoding in message";

@@ -81,11 +81,11 @@ void StreamableHTTPTransport::Send(const std::string& message,
 
         // Add session ID to headers if available
         httplib::Headers headers;
-        if (_sessionId) { headers.emplace(TRANSPORT_HEADER_SESSION_ID, *_sessionId); }
+        if (_sessionId) { headers.emplace(TSPT_SESSION_ID, *_sessionId); }
 
         // Send message via POST request
-        auto res = _client->Post(_path, headers, message, TRANSPORT_CONTENT_TYPE_JSON);
-        if (!res || res->status != TRANSPORT_STATUS_OK) {
+        auto res = _client->Post(_path, headers, message, TSPT_APP_JSON);
+        if (!res || res->status != HTTPStatus::Ok) {
             if (_onError) {
                 _onError(TRANSPORT_ERR_HTTP_REQUEST_FAILED
                          + (res ? std::to_string(res->status) : "Unknown error"));
@@ -94,7 +94,7 @@ void StreamableHTTPTransport::Send(const std::string& message,
         }
 
         // Check for session ID in response headers
-        auto sessionHeader = res->get_header_value(TRANSPORT_HEADER_SESSION_ID);
+        auto sessionHeader = res->get_header_value(TSPT_SESSION_ID);
         if (!sessionHeader.empty() && !_sessionId) { _sessionId = sessionHeader; }
     } catch (const std::exception& e) {
         if (_onError) { _onError(std::string("Error sending message: ") + e.what()); }
@@ -122,8 +122,8 @@ void StreamableHTTPTransport::SetOnStop(StopCallback callback) {
 }
 
 void StreamableHTTPTransport::WriteSSEEvent(const std::string& event, const std::string& data) {
-    std::string sseMessage = "event: " + event + TRANSPORT_EVENT_DELIMITER
-                             + TRANSPORT_EVENT_DATA_PREFIX + data + TRANSPORT_EVENT_DELIMITER;
+    std::string sseMessage = "event: " + event + TSPT_EVENT_DELIMITER + TSPT_EVENT_DATA_PREFIX
+                             + data + TSPT_EVENT_DELIMITER;
     Send(sseMessage);
 }
 
@@ -148,7 +148,7 @@ void StreamableHTTPTransport::ReadLoop() {
         try {
             // Add session ID to headers if available
             httplib::Headers headers;
-            if (_sessionId) { headers.emplace(TRANSPORT_HEADER_SESSION_ID, *_sessionId); }
+            if (_sessionId) { headers.emplace(TSPT_SESSION_ID, *_sessionId); }
 
             auto res = _client->Get(_path, headers, [this](const char* data, size_t len) {
                 std::string chunk(data, len);
@@ -156,7 +156,7 @@ void StreamableHTTPTransport::ReadLoop() {
                 return true;
             });
 
-            if (!res || res->status != TRANSPORT_STATUS_OK) {
+            if (!res || res->status != HTTPStatus::Ok) {
                 if (_onError) {
                     _onError(TRANSPORT_ERR_HTTP_REQUEST_FAILED
                              + (res ? std::to_string(res->status) : "Unknown error"));
@@ -165,7 +165,7 @@ void StreamableHTTPTransport::ReadLoop() {
             }
 
             // Check for session ID in response headers
-            auto sessionHeader = res->get_header_value(TRANSPORT_HEADER_SESSION_ID);
+            auto sessionHeader = res->get_header_value(TSPT_SESSION_ID);
             if (!sessionHeader.empty() && !_sessionId) { _sessionId = sessionHeader; }
         } catch (const std::exception& e) {
             if (_onError) { _onError(std::string("Error in read loop: ") + e.what()); }
@@ -192,8 +192,8 @@ void StreamableHTTPTransport::ParseSSEData(const std::string& data) {
 
         if (line.substr(0, 6) == "event: ") {
             currentEvent = line.substr(6);
-        } else if (line.substr(0, TRANSPORT_EVENT_DATA_PREFIX_LEN) == TRANSPORT_EVENT_DATA_PREFIX) {
-            currentData = line.substr(TRANSPORT_EVENT_DATA_PREFIX_LEN);
+        } else if (line.substr(0, TSPT_EVENT_DATA_PREFIX_LEN) == TSPT_EVENT_DATA_PREFIX) {
+            currentData = line.substr(TSPT_EVENT_DATA_PREFIX_LEN);
         } else if (line.empty() && !currentData.empty()) {
             // End of event
             if (_onMessage) { _onMessage(currentData, nullptr); }

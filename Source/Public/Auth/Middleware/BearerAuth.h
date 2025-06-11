@@ -2,6 +2,7 @@
 
 #include "Auth/Types/Auth.h"
 #include "Core.h"
+#include "Core/Constants/TransportConstants.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -51,7 +52,7 @@ struct AuthenticatedRequest {
  * Response context for middleware
  */
 struct MiddlewareResponse {
-    int StatusCode = 200;
+    HTTPStatus StatusCode = HTTPStatus::Ok;
     map<string, string> Headers;
     JSON Body;
 
@@ -80,7 +81,7 @@ string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string
  * request object.
  *
  * If ResourceMetadataUrl is provided, it will be included in the WWW-Authenticate header
- * for 401 responses as per the OAuth 2.0 Protected Resource Metadata spec.
+ * for HTTPStatus::Unauthorized responses as per the OAuth 2.0 Protected Resource Metadata spec.
  */
 MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options);
 

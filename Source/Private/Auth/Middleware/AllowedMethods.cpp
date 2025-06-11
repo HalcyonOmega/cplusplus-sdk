@@ -28,15 +28,15 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
             MethodNotAllowedError("The method " + Req.Method + " is not allowed for this endpoint");
 
         // Create Allow header with comma-separated methods (matching allowedMethods.join(', '))
-        string AllowHeader = "";
+        string AllowHeader = MSG_NULL;
         for (size_t i = 0; i < AllowedMethods.size(); ++i) {
             if (i > 0) { AllowHeader += ", "; }
             AllowHeader += AllowedMethods[i];
         }
 
-        // Set response exactly like original: res.status(405).set('Allow',
+        // Set response exactly like original: res.status(HTTPStatus::MethodNotAllowed).set('Allow',
         // ...).json(error.toResponseObject())
-        Res.SetStatus(405);
+        Res.SetStatus(HTTPStatus::MethodNotAllowed);
         Res.SetHeader("Allow", AllowHeader);
         Res.SetJSON(Error.ToResponseObject());
     };

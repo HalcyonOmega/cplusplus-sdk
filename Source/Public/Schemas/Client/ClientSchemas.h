@@ -7,33 +7,33 @@
 MCP_NAMESPACE_BEGIN
 
 // Annotations {
-//     "description" : "Optional annotations for the client. The client can use
+//     MSG_DESCRIPTION : "Optional annotations for the client. The client can use
 //     annotations to inform "
 //                     "how objects are used or displayed",
-//                     "properties"
+//                     MSG_PROPERTIES
 //         : {
-//             "audience": {
-//                 "description":
+//             MSG_AUDIENCE: {
+//                 MSG_DESCRIPTION:
 //                     "Describes who the intended customer of this object or
 //                     data is.\n\nIt " "can include multiple entries to
 //                     indicate content useful for multiple " "audiences (e.g.,
 //                     `[\"user\", \"assistant\"]`).",
-//                 "items": {"$ref": "#/definitions/Role"},
-//                 "type": "array"
+//                 MSG_ITEMS: {"$ref": "#/definitions/Role"},
+//                 MSG_TYPE: MSG_ARRAY
 //             },
-//             "priority": {
-//                 "description":
+//             MSG_PRIORITY: {
+//                 MSG_DESCRIPTION:
 //                     "Describes how important this data is for operating the
 //                     server.\n\nA " "value of 1 means \"most important,\" and
 //                     indicates that the data " "is\neffectively required,
 //                     while 0 means \"least important,\" and " "indicates
 //                     that\nthe data is entirely optional.",
-//                 "maximum": 1,
-//                 "minimum": 0,
-//                 "type": "number"
+//                 MSG_MAXIMUM: 1,
+//                 MSG_MINIMUM: 0,
+//                 MSG_TYPE: MSG_NUMBER
 //             }
 //         },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 // };
 
 /**

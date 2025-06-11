@@ -93,7 +93,7 @@ struct StreamableHTTPServerTransportOptions {
  * In stateful mode:
  * - Session ID is generated and included in response headers
  * - Session ID is always included in initialization responses
- * - Requests with invalid session IDs are rejected with 404 Not Found
+ * - Requests with invalid session IDs are rejected with HTTPStatus::NotFound Not Found
  * - Non-initialization requests without a session ID are rejected with 400 Bad Request
  * - State is maintained in-memory (connections, message history)
  *

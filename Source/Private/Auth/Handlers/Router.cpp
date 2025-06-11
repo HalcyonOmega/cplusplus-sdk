@@ -30,7 +30,7 @@ void URLHelper::ParseURL(const string& URLString) {
         PathQueryFragment = Remaining.substr(PathStart);
     } else {
         HostAndPort = Remaining;
-        PathQueryFragment = "";
+        PathQueryFragment = MSG_NULL;
     }
 
     // Parse host and port
@@ -40,7 +40,7 @@ void URLHelper::ParseURL(const string& URLString) {
         Port = HostAndPort.substr(PortStart + 1);
     } else {
         Hostname = HostAndPort;
-        Port = "";
+        Port = MSG_NULL;
     }
 
     // Parse path, query, and fragment
@@ -58,23 +58,23 @@ void URLHelper::ParseURL(const string& URLString) {
                 Hash = PathQueryFragment.substr(FragmentStart);
             } else {
                 Search = PathQueryFragment.substr(QueryStart);
-                Hash = "";
+                Hash = MSG_NULL;
             }
         } else if (FragmentStart != string::npos) {
             // Has fragment but no query
             Pathname = PathQueryFragment.substr(0, FragmentStart);
-            Search = "";
+            Search = MSG_NULL;
             Hash = PathQueryFragment.substr(FragmentStart);
         } else {
             // Only path
             Pathname = PathQueryFragment;
-            Search = "";
-            Hash = "";
+            Search = MSG_NULL;
+            Hash = MSG_NULL;
         }
     } else {
-        Pathname = "";
-        Search = "";
-        Hash = "";
+        Pathname = MSG_NULL;
+        Search = MSG_NULL;
+        Hash = MSG_NULL;
     }
 
     // Ensure pathname starts with /
@@ -185,7 +185,7 @@ RequestHandler ExpressRouter::CreateHandler() {
         for (const auto& MiddlewareHandler : Middleware) { MiddlewareHandler(Request, Response); }
 
         // Route to specific handler
-        string Path = Request.value("path", "");
+        string Path = Request.value("path", MSG_NULL);
         auto It = Routes.find(Path);
         if (It != Routes.end()) { It->second(Request, Response); }
     };
@@ -256,18 +256,18 @@ RequestHandler MetadataHandler(const JSON& Metadata) {
         // TODO: Configure CORS to allow any origin, to make accessible to web-based MCP clients
         // TODO: Use allowedMethods(['GET'])
 
-        string Method = Request.value(MSG_METHOD, "GET");
-        if (Method != "GET") {
+        string Method = Request.value(MSG_METHOD, MTHD_GET);
+        if (Method != MTHD_GET) {
             Response[MSG_ERROR] = "method_not_allowed";
             Response["error_description"] =
                 "The method " + Method + " is not allowed for this endpoint";
-            Response["status"] = 405;
-            Response["headers"] = JSON{{"Allow", "GET"}};
+            Response[MSG_STATUS] = HTTPStatus::MethodNotAllowed;
+            Response[MSG_HEADERS] = JSON{{"Allow", MTHD_GET}};
             return;
         }
 
         Response = Metadata;
-        Response["status"] = 200;
+        Response[MSG_STATUS] = HTTPStatus::Ok;
     };
 }
 

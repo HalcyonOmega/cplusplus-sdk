@@ -8,7 +8,7 @@
 MCP_NAMESPACE_BEGIN
 
 variant<string, future<string>> OAuthClientProvider::GetState() {
-    return string(""); // Default empty state
+    return string(MSG_NULL); // Default empty state
 }
 
 variant<void, future<void>>

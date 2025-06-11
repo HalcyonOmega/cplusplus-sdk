@@ -435,7 +435,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         if (!Handler) {
             // Send method not found error
             JSON_RPC_Error ErrorResponse;
-            ErrorResponse.JSON_RPC = "2.0";
+            ErrorResponse.JSON_RPC = MSG_JSON_RPC_VERSION;
             ErrorResponse.ID = InRequest.ID;
             ErrorResponse.Error.Code = static_cast<int32_t>(ErrorCode::MethodNotFound);
             ErrorResponse.Error.Message = "Method not found";
@@ -487,7 +487,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 if (!Extra.Signal.IsAborted()) {
                     if (m_Transport) {
                         JSON_RPC_Response Response;
-                        Response.JSON_RPC = "2.0";
+                        Response.JSON_RPC = MSG_JSON_RPC_VERSION;
                         Response.ID = InRequest.ID;
                         Response.Result = JSON{}; // Convert SendResultT to JSON
 
@@ -500,7 +500,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 if (!Extra.Signal.IsAborted()) {
                     // Send error response
                     JSON_RPC_Error ErrorResponse;
-                    ErrorResponse.JSON_RPC = "2.0";
+                    ErrorResponse.JSON_RPC = MSG_JSON_RPC_VERSION;
                     ErrorResponse.ID = InRequest.ID;
                     ErrorResponse.Error.Code = static_cast<int32_t>(ErrorCode::InternalError);
                     ErrorResponse.Error.Message = InError.what();
@@ -688,7 +688,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         int64_t MessageID = m_RequestMessageID++;
 
         JSON_RPC_Request Request;
-        Request.JSON_RPC = "2.0";
+        Request.JSON_RPC = MSG_JSON_RPC_VERSION;
         Request.ID = MessageID;
         Request.Method = InRequest.Method;
         Request.Params = InRequest.Params;
@@ -718,7 +718,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             // Send cancellation notification
             if (m_Transport) {
                 JSON_RPC_Notification CancelNotification;
-                CancelNotification.JSON_RPC = "2.0";
+                CancelNotification.JSON_RPC = MSG_JSON_RPC_VERSION;
                 CancelNotification.Method = MTHD_NOTIFICATION_CANCELLED;
                 CancelNotification.Params = JSON::object();
                 (*CancelNotification.Params)[MSG_REQUEST_ID] = MessageID;
@@ -810,7 +810,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         AssertNotificationCapability(InNotification.Method);
 
         JSON_RPC_Notification Notification;
-        Notification.JSON_RPC = "2.0";
+        Notification.JSON_RPC = MSG_JSON_RPC_VERSION;
         Notification.Method = InNotification.Method;
         Notification.Params = InNotification.Params;
 

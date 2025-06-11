@@ -47,38 +47,38 @@ struct RootsCapabilities {
 };
 
 // JSON Schema - ClientCapabilities {
-//     "description"
+//     MSG_DESCRIPTION
 //         : "Capabilities a client may support. Known capabilities are defined
 //         here, in this schema, "
 //           "but this is not a closed set: any client can define its own,
-//           additional capabilities.", "properties"
+//           additional capabilities.", MSG_PROPERTIES
 //         : {
 //             "experimental": {
-//                 "additionalProperties":
-//                     {"additionalProperties": true, "properties": {}, "type":
-//                     "object"},
-//                 "description": "Experimental, non-standard capabilities that
-//                 the client supports.", "type": "object"
+//                 MSG_ADDITIONAL_PROPERTIES:
+//                     {MSG_ADDITIONAL_PROPERTIES: true, MSG_PROPERTIES: {}, MSG_TYPE:
+//                     MSG_OBJECT},
+//                 MSG_DESCRIPTION: "Experimental, non-standard capabilities that
+//                 the client supports.", MSG_TYPE: MSG_OBJECT
 //             },
 //             "roots": {
-//                 "description": "Present if the client supports listing
-//                 roots.", "properties": {
-//                     "listChanged": {
-//                         "description": "Whether the client supports
+//                 MSG_DESCRIPTION: "Present if the client supports listing
+//                 roots.", MSG_PROPERTIES: {
+//                     MSG_LIST_CHANGED: {
+//                         MSG_DESCRIPTION: "Whether the client supports
 //                         notifications for changes to "
 //                                        "the roots list.",
-//                         "type": "boolean"
+//                         MSG_TYPE: "boolean"
 //                     }
 //                 },
-//                 "type": "object"
+//                 MSG_TYPE: MSG_OBJECT
 //             },
 //             "sampling": {
-//                 "additionalProperties": true,
-//                 "description": "Present if the client supports sampling from
-//                 an LLM.", "properties": {}, "type": "object"
+//                 MSG_ADDITIONAL_PROPERTIES: true,
+//                 MSG_DESCRIPTION: "Present if the client supports sampling from
+//                 an LLM.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
 //             }
 //         },
-//           "type" : "object"
+//           MSG_TYPE : MSG_OBJECT
 // };
 
 // Capabilities a client may support. Known capabilities are defined here, in this schema, but this
@@ -91,73 +91,73 @@ struct ClientCapabilities {
 };
 
 // JSON Schema - ServerCapabilities {
-//     "description": "Capabilities that a server may support. Known
+//     MSG_DESCRIPTION: "Capabilities that a server may support. Known
 //     capabilities are defined here,
 //     "
 //                    "in this schema, but this is not a closed set: any server
 //                    can define its own, " "additional capabilities.",
-//     "properties": {
+//     MSG_PROPERTIES: {
 //         "completions": {
-//             "additionalProperties": true,
-//             "description": "Present if the server supports argument
-//             autocompletion suggestions.", "properties": {}, "type": "object"
+//             MSG_ADDITIONAL_PROPERTIES: true,
+//             MSG_DESCRIPTION: "Present if the server supports argument
+//             autocompletion suggestions.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
 //         },
 //         "experimental": {
-//             "additionalProperties":
-//                 {"additionalProperties": true, "properties": {}, "type":
-//                 "object"},
-//             "description": "Experimental, non-standard capabilities that the
-//             server supports.", "type": "object"
+//             MSG_ADDITIONAL_PROPERTIES:
+//                 {MSG_ADDITIONAL_PROPERTIES: true, MSG_PROPERTIES: {}, MSG_TYPE:
+//                 MSG_OBJECT},
+//             MSG_DESCRIPTION: "Experimental, non-standard capabilities that the
+//             server supports.", MSG_TYPE: MSG_OBJECT
 //         },
 //         "logging": {
-//             "additionalProperties": true,
-//             "description": "Present if the server supports sending log
-//             messages to the client.", "properties": {}, "type": "object"
+//             MSG_ADDITIONAL_PROPERTIES: true,
+//             MSG_DESCRIPTION: "Present if the server supports sending log
+//             messages to the client.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
 //         },
-//         "prompts": {
-//             "description": "Present if the server offers any prompt
-//             templates.", "properties": {
-//                 "listChanged": {
-//                     "description": "Whether this server supports
+//         MSG_PROMPTS: {
+//             MSG_DESCRIPTION: "Present if the server offers any prompt
+//             templates.", MSG_PROPERTIES: {
+//                 MSG_LIST_CHANGED: {
+//                     MSG_DESCRIPTION: "Whether this server supports
 //                     notifications for changes to the
 //                     "
 //                                    "prompt list.",
-//                     "type": "boolean"
+//                     MSG_TYPE: "boolean"
 //                 }
 //             },
-//             "type": "object"
+//             MSG_TYPE: MSG_OBJECT
 //         },
-//         "resources": {
-//             "description": "Present if the server offers any resources to
-//             read.", "properties": {
-//                 "listChanged": {
-//                     "description": "Whether this server supports
+//         MSG_RESOURCES: {
+//             MSG_DESCRIPTION: "Present if the server offers any resources to
+//             read.", MSG_PROPERTIES: {
+//                 MSG_LIST_CHANGED: {
+//                     MSG_DESCRIPTION: "Whether this server supports
 //                     notifications for changes to the
 //                     "
 //                                    "resource list.",
-//                     "type": "boolean"
+//                     MSG_TYPE: "boolean"
 //                 },
-//                 "subscribe": {
-//                     "description": "Whether this server supports subscribing
-//                     to resource updates.", "type": "boolean"
+//                 MSG_SUBSCRIBE: {
+//                     MSG_DESCRIPTION: "Whether this server supports subscribing
+//                     to resource updates.", MSG_TYPE: "boolean"
 //                 }
 //             },
-//             "type": "object"
+//             MSG_TYPE: MSG_OBJECT
 //         },
-//         "tools": {
-//             "description": "Present if the server offers any tools to call.",
-//             "properties": {
-//                 "listChanged": {
-//                     "description": "Whether this server supports
+//         MSG_TOOLS: {
+//             MSG_DESCRIPTION: "Present if the server offers any tools to call.",
+//             MSG_PROPERTIES: {
+//                 MSG_LIST_CHANGED: {
+//                     MSG_DESCRIPTION: "Whether this server supports
 //                     notifications for changes to "
 //                                    "the tool list.",
-//                     "type": "boolean"
+//                     MSG_TYPE: "boolean"
 //                 }
 //             },
-//             "type": "object"
+//             MSG_TYPE: MSG_OBJECT
 //         }
 //     },
-//     "type": "object"
+//     MSG_TYPE: MSG_OBJECT
 // };
 
 // Capabilities that a server may support. Known capabilities are defined here, in this schema, but
