@@ -61,7 +61,7 @@ bool URI_Template::IsTemplate(const string& Str) {
 
 vector<string> URI_Template::GetVariableNames() const {
     vector<string> Names;
-    for (const auto& Part : parts_) {
+    for (const auto& Part : m_Parts) {
         if (holds_alternative<TemplatePart>(Part)) {
             const auto& TemplatePart = get<TemplatePart>(Part);
             Names.insert(Names.end(), TemplatePart.Names.begin(), TemplatePart.Names.end());
@@ -70,20 +70,20 @@ vector<string> URI_Template::GetVariableNames() const {
     return Names;
 }
 
-URI_Template::URI_Template(const string& TemplateStr) : template_(TemplateStr) {
+URI_Template::URI_Template(const string& TemplateStr) : m_Template(TemplateStr) {
     ValidateLength(TemplateStr, MAX_TEMPLATE_LENGTH, "Template");
-    parts_ = Parse(TemplateStr);
+    m_Parts = Parse(TemplateStr);
 }
 
 string URI_Template::ToString() const {
-    return template_;
+    return m_Template;
 }
 
 string URI_Template::Expand(const Variables& Variables) const {
     string Result;
     bool HasQueryParam = false;
 
-    for (const auto& Part : parts_) {
+    for (const auto& Part : m_Parts) {
         if (holds_alternative<string>(Part)) {
             Result += get<string>(Part);
             continue;
@@ -115,11 +115,11 @@ Variables URI_Template::Match(const string& Uri) const {
     string Pattern = "^";
     vector<pair<string, bool>> Names; // name, exploded
 
-    for (const auto& part : parts_) {
-        if (holds_alternative<string>(part)) {
-            Pattern += EscapeRegExp(get<string>(part));
+    for (const auto& Part : m_Parts) {
+        if (holds_alternative<string>(Part)) {
+            Pattern += EscapeRegExp(get<string>(Part));
         } else {
-            const auto& TemplatePart = get<TemplatePart>(part);
+            const auto& TemplatePart = get<TemplatePart>(Part);
             auto Patterns = PartToRegExp(TemplatePart);
             for (const auto& [PartPattern, Name] : Patterns) {
                 Pattern += PartPattern;

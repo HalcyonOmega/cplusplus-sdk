@@ -62,12 +62,12 @@ std::string GenerateRequestID() {
     return std::to_string(s_NextRequestID++);
 }
 
-void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> callback) {
+void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)> callback) {
     if (m_State != SessionState::Uninitialized) {
         if (callback) {
             // TODO: Define proper error codes/messages in ErrorConstants.h or similar
-            callback(MCP_Error(Errors::ConnectionClosed,
-                               "Session already initialized or initializing.", std::nullopt));
+            callback(ErrorMessage(Errors::ConnectionClosed,
+                                  "Session already initialized or initializing.", std::nullopt));
         }
         return;
     }
@@ -136,7 +136,7 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
         if (m_InitializeCallback) {
             m_State = SessionState::Error;
             // TODO: Define proper error codes/messages
-            m_InitializeCallback(MCP_Error(Errors::RequestTimeout, "Transport not available."));
+            m_InitializeCallback(ErrorMessage(Errors::RequestTimeout, "Transport not available."));
         }
     }
 }

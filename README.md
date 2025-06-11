@@ -20,6 +20,13 @@ A C++ implementation of the MCP (Message Control Protocol) SDK.
 - **Purpose**: JSON parsing and serialization
 - **Location**: `Source/Public/Utilities/ThirdParty/json.hpp`
 
+#### UUID
+- **Version**: Latest (from master branch)
+- **License**: MIT
+- **Source**: https://github.com/mariusbancila/cpp-uuid
+- **Purpose**: UUID generation
+- **Location**: `Source/Public/Utilities/ThirdParty/uuid.hpp`
+
 ## Building
 
 ### Prerequisites

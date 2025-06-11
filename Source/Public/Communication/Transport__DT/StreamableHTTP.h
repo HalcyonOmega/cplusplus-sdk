@@ -5,7 +5,7 @@
 // TODO: Fix External Ref: JSON-RPC message types and validation
 // TODO: Fix External Ref: AuthInfo type
 
-#include "Communication/Message.h"
+#include "Communication/Messages.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN

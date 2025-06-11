@@ -1,10 +1,10 @@
 #include "Communication/Transport__DT/StreamableHTTP.h"
 
+#include "Communication/Messages.h"
 #include "Core/Constants/ErrorConstants.h"
 #include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/MethodConstants.h"
 #include "Core/Constants/TransportConstants.h"
-#include "MCP_Error.h"
 
 // TODO: Fix External Ref: HTTP server implementation (IncomingMessage, ServerResponse equivalents)
 // TODO: Fix External Ref: Transport base class
@@ -18,28 +18,28 @@ MCP_NAMESPACE_BEGIN
  * Interface for resumability support via event storage
  */
 
-future<void> StreamableHTTPServerTransport::start() {
+future<void> StreamableHTTPServerTransport::Start() {
     if (_started) { throw runtime_error("Transport already started"); }
     _started = true;
     return async(launch::deferred, []() {});
 }
 
 future<void>
-StreamableHTTPServerTransport::handleRequest(const IncomingMessage& req,
+StreamableHTTPServerTransport::HandleRequest(const IncomingMessage& req,
                                              shared_ptr<ServerResponse> res,
                                              const optional<JSON>& parsedBody = nullopt) {
     if (req.method == MTHD_POST) {
         return handlePostRequest(req, res, parsedBody);
     } else if (req.method == MTHD_GET) {
         return handleGetRequest(req, res);
-    } else if (req.method == "DELETE") {
+    } else if (req.method == MTHD_DELETE) {
         return handleDeleteRequest(req, res);
     } else {
         return handleUnsupportedRequest(res);
     }
 }
 
-future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessage& req,
+future<void> StreamableHTTPServerTransport::HandleGetRequest(const RequestMessage& req,
                                                              shared_ptr<ResponseMessage> res) {
     return async(launch::async, [this, req, res]() {
         // The client MUST include an Accept header, listing text/event-stream as a supported
@@ -107,7 +107,7 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
     });
 }
 
-future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEventID,
+future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEventID,
                                                          shared_ptr<ServerResponse> res) {
     return async(launch::async, [this, lastEventID, res]() {
         if (!_eventStore) { return; }
@@ -139,7 +139,7 @@ future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEvent
     });
 }
 
-bool StreamableHTTPServerTransport::writeSSEEvent(shared_ptr<ServerResponse> res,
+bool StreamableHTTPServerTransport::WriteSSEEvent(shared_ptr<ServerResponse> res,
                                                   const MessageBase& message,
                                                   const optional<string>& EventID = nullopt) {
     string eventData = "event: message\n";
@@ -151,7 +151,7 @@ bool StreamableHTTPServerTransport::writeSSEEvent(shared_ptr<ServerResponse> res
 }
 
 future<void>
-StreamableHTTPServerTransport::handleUnsupportedRequest(shared_ptr<ServerResponse> res) {
+StreamableHTTPServerTransport::HandleUnsupportedRequest(shared_ptr<ServerResponse> res) {
     return async(launch::async, [res]() {
         JSON errorResponse = {
             {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
@@ -165,7 +165,7 @@ StreamableHTTPServerTransport::handleUnsupportedRequest(shared_ptr<ServerRespons
 }
 
 future<void>
-StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
+StreamableHTTPServerTransport::HandlePostRequest(const IncomingMessage& req,
                                                  shared_ptr<ServerResponse> res,
                                                  const optional<JSON>& parsedBody = nullopt) {
     return async(launch::async, [this, req, res, parsedBody]() {
@@ -350,7 +350,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
     });
 }
 
-future<void> StreamableHTTPServerTransport::handleDeleteRequest(const IncomingMessage& req,
+future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const IncomingMessage& req,
                                                                 shared_ptr<ServerResponse> res) {
     return async(launch::async, [this, req, res]() {
         if (!validateSession(req, res)) { return; }
@@ -360,7 +360,7 @@ future<void> StreamableHTTPServerTransport::handleDeleteRequest(const IncomingMe
     });
 }
 
-bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
+bool StreamableHTTPServerTransport::ValidateSession(const IncomingMessage& req,
                                                     shared_ptr<ServerResponse> res) {
     if (!SessionIDGenerator.has_value()) {
         // If the SessionIDGenerator ID is not set, the session management is disabled
@@ -406,7 +406,7 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
     return true;
 }
 
-future<void> StreamableHTTPServerTransport::close() override {
+future<void> StreamableHTTPServerTransport::Close() override {
     return async(launch::async, [this]() {
         // Close all SSE connections
         for (auto& [id, response] : _streamMapping) { response->end(MSG_NULL); }
@@ -418,7 +418,7 @@ future<void> StreamableHTTPServerTransport::close() override {
     });
 }
 
-future<void> StreamableHTTPServerTransport::send(
+future<void> StreamableHTTPServerTransport::Send(
     const MessageBase& message, const optional<RequestID>& relatedRequestID = nullopt) override {
     return async(launch::async, [this, message, relatedRequestID]() {
         optional<RequestID> RequestID = relatedRequestID;

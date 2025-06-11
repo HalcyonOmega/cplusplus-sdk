@@ -51,7 +51,7 @@ bool IsValidUTF8(const std::string& message) {
 }
 
 bool IsValidProtocolVersion(const std::string& version) {
-    return version == TRANSPORT_PROTOCOL_VERSION;
+    return version == MSG_PROTOCOL_VERSION;
 }
 
 bool IsValidState(bool isRunning, bool isConnected) {

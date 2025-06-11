@@ -1,5 +1,7 @@
 #include "Auth/Middleware/AllowedMethods.h"
 
+#include "Core.h"
+
 // TODO: Fix External Ref: MethodNotAllowedError
 
 MCP_NAMESPACE_BEGIN

@@ -1,9 +1,9 @@
 #pragma once
 
 // MCP Core and Schema Includes
+#include "Communication/Messages.h"            // Provides ErrorMessage
 #include "Communication/Transport/Transport.h" // Actual Transport base class
-#include "Core.h"      // Provides standard types, MCP_NAMESPACE macros, JSON, etc.
-#include "MCP_Error.h" // Provides Error
+#include "Core.h" // Provides standard types, MCP_NAMESPACE macros, JSON, etc.
 #include "Schemas/Client/ClientSchemas.h"     // Provides ClientCapabilities
 #include "Schemas/Common/CommonSchemas.h"     // Provides Implementation
 #include "Schemas/Common/InitializeSchemas.h" // Provides InitializeResult
@@ -20,7 +20,7 @@ class Session {
             const Implementation& ClientInfo);
     ~Session();
 
-    void Initialize(std::function<void(const std::optional<MCP_Error>&)> Callback);
+    void Initialize(std::function<void(const std::optional<ErrorMessage>&)> Callback);
     void Shutdown();
 
     SessionState GetState() const;
@@ -44,7 +44,7 @@ class Session {
     std::optional<std::string> m_NegotiatedProtocolVersion;
 
     SessionState m_State;
-    std::function<void(const std::optional<MCP_Error>&)> m_InitializeCallback;
+    std::function<void(const std::optional<ErrorMessage>&)> m_InitializeCallback;
     // TODO: Add request ID management
     // TODO: Add JSON serialization/deserialization (using JSON alias from Core.h)
     // TODO: Add methods for sending requests and handling responses/notifications

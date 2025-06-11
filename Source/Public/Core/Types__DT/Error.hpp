@@ -7,7 +7,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-class MCP_Error {
+class ErrorMessage {
   private:
     Errors m_Code;
     string m_Message;

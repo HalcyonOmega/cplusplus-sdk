@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "Communication/Message.h"
+#include "Communication/Messages.h"
 #include "Core.h"
 #include "Core/Constants/MessageConstants.h"
 

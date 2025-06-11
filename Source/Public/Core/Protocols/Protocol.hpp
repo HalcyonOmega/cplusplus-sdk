@@ -180,7 +180,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     unordered_map<RequestID, AbortSignal> m_RequestHandlerAbortControllers;
     unordered_map<string, function<future<void>(const JSON_RPC_Notification&)>>
         m_NotificationHandlers;
-    unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, MCP_Error>&)>>
+    unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, ErrorMessage>&)>>
         m_ResponseHandlers;
     unordered_map<int64_t, ProgressCallback> m_ProgressHandlers;
     unordered_map<int64_t, TimeoutInfo> m_TimeoutInfo;
@@ -286,7 +286,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             && TimeoutIt->second.ResetTimeoutOnProgress) {
             try {
                 ResetTimeout(ProgressToken);
-            } catch (const MCP_Error& InError) {
+            } catch (const ErrorMessage& InError) {
                 ResponseHandler->second(InError);
                 return;
             }
@@ -333,7 +333,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         if (Info.MaxTotalTimeout && TotalElapsed >= *Info.MaxTotalTimeout) {
             m_TimeoutInfo.erase(It);
-            throw MCP_Error(
+            throw ErrorMessage(
                 ErrorCode::RequestTimeout, "Maximum total timeout exceeded",
                 JSON{{"maxTotalTimeout", *Info.MaxTotalTimeout}, {"totalElapsed", TotalElapsed}});
         }
@@ -352,7 +352,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     }
 
     void OnCloseInternal() {
-        unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, MCP_Error>&)>>
+        unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, ErrorMessage>&)>>
             ResponseHandlers;
 
         {
@@ -366,7 +366,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         if (m_OnClose) { m_OnClose(); }
 
-        MCP_Error Error(ErrorCode::ConnectionClosed, "Connection closed");
+        ErrorMessage Error(ErrorCode::ConnectionClosed, "Connection closed");
         for (const auto& [ID, Handler] : ResponseHandlers) { Handler(Error); }
     }
 

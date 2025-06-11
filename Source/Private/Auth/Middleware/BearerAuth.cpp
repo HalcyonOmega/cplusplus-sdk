@@ -9,7 +9,7 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: OAuthTokenVerifier
 // TODO: Fix External Ref: AuthInfo
 
-void MiddlewareResponse::SetStatus(int Status) {
+void MiddlewareResponse::SetStatus(HTTPStatus Status) {
     StatusCode = Status;
 }
 

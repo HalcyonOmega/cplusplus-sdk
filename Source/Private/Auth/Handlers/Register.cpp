@@ -1,4 +1,6 @@
-#pragma once
+#include "Auth/Handlers/Register.h"
+
+#include <coroutine>
 
 #include "Core.h"
 
