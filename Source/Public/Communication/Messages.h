@@ -1,6 +1,10 @@
 #pragma once
 
+#include <any>
+#include <memory>
+#include <optional>
 #include <utility>
+#include <variant>
 
 #include "Core.h"
 #include "Core/Constants/ErrorConstants.h"
@@ -40,9 +44,9 @@ class MessageBase {
 
     // Interface Methods
     [[nodiscard]] virtual JSON ToJSON() const = 0;
-    [[nodiscard]] virtual MessageBase FromJSON(JSON InJSON) = 0;
+    [[nodiscard]] virtual unique_ptr<MessageBase> FromJSON(const JSON& InJSON) = 0;
     [[nodiscard]] virtual string Serialize() const;
-    [[nodiscard]] virtual MessageBase Deserialize(string InString) = 0;
+    [[nodiscard]] virtual unique_ptr<MessageBase> Deserialize(string InString) = 0;
 };
 
 // A request that expects a response.
@@ -55,18 +59,18 @@ class RequestMessage : public MessageBase {
   public:
     // Constructors
     RequestMessage(string Method, optional<unique_ptr<MessageParams>> Params = nullopt)
-        : m_Method(std::move(Method)), m_Params(std::move(Params)) {}
+        : m_ID(0), m_Method(std::move(Method)), m_Params(std::move(Params)) {}
 
     // Direct Getters
     [[nodiscard]] MessageID GetMessageID() const;
     [[nodiscard]] string_view GetMethod() const;
-    [[nodiscard]] optional<MessageParams> GetParams() const;
+    [[nodiscard]] optional<const MessageParams*> GetParams() const;
 
     // MessageBase Overrides
     [[nodiscard]] JSON ToJSON() const override;
-    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] unique_ptr<MessageBase> FromJSON(const JSON& InJSON) override;
     [[nodiscard]] string Serialize() const override;
-    [[nodiscard]] MessageBase Deserialize(string InString) override;
+    [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
 // A successful (non-error) response to a request.
@@ -77,18 +81,18 @@ class ResponseMessage : public MessageBase {
 
   public:
     // Constructors
-    ResponseMessage(MessageID MessageID, MessageParams Result)
+    ResponseMessage(MessageID MessageID, unique_ptr<MessageParams> Result)
         : m_ID(std::move(MessageID)), m_Result(std::move(Result)) {}
 
     // Direct Getters
     [[nodiscard]] MessageID GetMessageID() const;
-    [[nodiscard]] MessageParams GetResult() const;
+    [[nodiscard]] const MessageParams* GetResult() const;
 
     // MessageBase Overrides
     [[nodiscard]] JSON ToJSON() const override;
-    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] unique_ptr<MessageBase> FromJSON(const JSON& InJSON) override;
     [[nodiscard]] string Serialize() const override;
-    [[nodiscard]] MessageBase Deserialize(string InString) override;
+    [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
 // A notification which does not expect a response.
@@ -104,13 +108,13 @@ class NotificationMessage : public MessageBase {
 
     // Direct Getters
     [[nodiscard]] string_view GetMethod() const;
-    [[nodiscard]] optional<MessageParams> GetParams() const;
+    [[nodiscard]] optional<const MessageParams*> GetParams() const;
 
     // MessageBase Overrides
     [[nodiscard]] JSON ToJSON() const override;
-    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] unique_ptr<MessageBase> FromJSON(const JSON& InJSON) override;
     [[nodiscard]] string Serialize() const override;
-    [[nodiscard]] MessageBase Deserialize(string InString) override;
+    [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
 struct ErrorParams {
@@ -150,9 +154,9 @@ class ErrorMessage : public MessageBase {
 
     // MessageBase Overrides
     [[nodiscard]] JSON ToJSON() const override;
-    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] unique_ptr<MessageBase> FromJSON(const JSON& InJSON) override;
     [[nodiscard]] string Serialize() const override;
-    [[nodiscard]] MessageBase Deserialize(string InString) override;
+    [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
 bool IsRequestMessage(const JSON& value) {
