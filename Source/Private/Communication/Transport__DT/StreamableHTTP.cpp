@@ -5,8 +5,9 @@
 #include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/MethodConstants.h"
 #include "Core/Constants/TransportConstants.h"
+#include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
-// TODO: Fix External Ref: HTTP server implementation (IncomingMessage, ServerResponse equivalents)
+// TODO: Fix External Ref: HTTP server implementation (HTTP_Request, HTTP_Response equivalents)
 // TODO: Fix External Ref: Transport base class
 // TODO: Fix External Ref: JSON-RPC message types and validation
 // TODO: Fix External Ref: AuthInfo type
@@ -25,8 +26,7 @@ future<void> StreamableHTTPServerTransport::Start() {
 }
 
 future<void>
-StreamableHTTPServerTransport::HandleRequest(const IncomingMessage& req,
-                                             shared_ptr<ServerResponse> res,
+StreamableHTTPServerTransport::HandleRequest(const HTTP_Request& req, shared_ptr<HTTP_Response> res,
                                              const optional<JSON>& parsedBody = nullopt) {
     if (req.method == MTHD_POST) {
         return handlePostRequest(req, res, parsedBody);
@@ -108,7 +108,7 @@ future<void> StreamableHTTPServerTransport::HandleGetRequest(const RequestMessag
 }
 
 future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEventID,
-                                                         shared_ptr<ServerResponse> res) {
+                                                         shared_ptr<HTTP_Response> res) {
     return async(launch::async, [this, lastEventID, res]() {
         if (!_eventStore) { return; }
         try {
@@ -139,7 +139,7 @@ future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEvent
     });
 }
 
-bool StreamableHTTPServerTransport::WriteSSEEvent(shared_ptr<ServerResponse> res,
+bool StreamableHTTPServerTransport::WriteSSEEvent(shared_ptr<HTTP_Response> res,
                                                   const MessageBase& message,
                                                   const optional<string>& EventID = nullopt) {
     string eventData = "event: message\n";
@@ -151,7 +151,7 @@ bool StreamableHTTPServerTransport::WriteSSEEvent(shared_ptr<ServerResponse> res
 }
 
 future<void>
-StreamableHTTPServerTransport::HandleUnsupportedRequest(shared_ptr<ServerResponse> res) {
+StreamableHTTPServerTransport::HandleUnsupportedRequest(shared_ptr<HTTP_Response> res) {
     return async(launch::async, [res]() {
         JSON errorResponse = {
             {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
@@ -165,8 +165,8 @@ StreamableHTTPServerTransport::HandleUnsupportedRequest(shared_ptr<ServerRespons
 }
 
 future<void>
-StreamableHTTPServerTransport::HandlePostRequest(const IncomingMessage& req,
-                                                 shared_ptr<ServerResponse> res,
+StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
+                                                 shared_ptr<HTTP_Response> res,
                                                  const optional<JSON>& parsedBody = nullopt) {
     return async(launch::async, [this, req, res, parsedBody]() {
         try {
@@ -305,7 +305,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const IncomingMessage& req,
             } else if (hasRequests) {
                 // The default behavior is to use SSE streaming
                 // but in some cases server will return JSON responses
-                string StreamID = generateUUID();
+                string StreamID = GenerateUUID();
                 if (!_enableJsonResponse) {
                     unordered_map<string, string> headers = {
                         {TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
@@ -350,8 +350,8 @@ StreamableHTTPServerTransport::HandlePostRequest(const IncomingMessage& req,
     });
 }
 
-future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const IncomingMessage& req,
-                                                                shared_ptr<ServerResponse> res) {
+future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const HTTP_Request& req,
+                                                                shared_ptr<HTTP_Response> res) {
     return async(launch::async, [this, req, res]() {
         if (!validateSession(req, res)) { return; }
         close().wait();
@@ -360,8 +360,8 @@ future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const IncomingMe
     });
 }
 
-bool StreamableHTTPServerTransport::ValidateSession(const IncomingMessage& req,
-                                                    shared_ptr<ServerResponse> res) {
+bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& req,
+                                                    shared_ptr<HTTP_Response> res) {
     if (!SessionIDGenerator.has_value()) {
         // If the SessionIDGenerator ID is not set, the session management is disabled
         // and we don't need to validate the session ID
@@ -536,27 +536,6 @@ future<void> StreamableHTTPServerTransport::Send(
             }
         }
     });
-}
-
-string StreamableHTTPServerTransport::generateUUID() {
-    static random_device rd;
-    static mt19937 gen(rd());
-    static uniform_int_distribution<> dis(0, 15);
-    static uniform_int_distribution<> dis2(8, 11);
-
-    stringstream ss;
-    ss << hex;
-    for (int i = 0; i < 8; i++) { ss << dis(gen); }
-    ss << "-";
-    for (int i = 0; i < 4; i++) { ss << dis(gen); }
-    ss << "-4";
-    for (int i = 0; i < 3; i++) { ss << dis(gen); }
-    ss << "-";
-    ss << dis2(gen);
-    for (int i = 0; i < 3; i++) { ss << dis(gen); }
-    ss << "-";
-    for (int i = 0; i < 12; i++) { ss << dis(gen); }
-    return ss.str();
 }
 
 // ##########################################################

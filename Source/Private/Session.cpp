@@ -1,6 +1,7 @@
 #include "Session.h" // Only direct include needed for public headers from this .cpp file
 
 #include "Core/Constants/ErrorConstants.h"
+#include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -54,14 +55,6 @@ void Session::SendInitializedNotification() {
     // if (m_Transport) { m_Transport->Send(json_notification.dump()); }
 }
 
-// TODO: Implement a more robust request ID generation mechanism (e.g., UUID)
-// For now, a simple atomic counter will suffice for basic unique ID generation within a session.
-static std::atomic<int> s_NextRequestID = 1;
-
-std::string GenerateRequestID() {
-    return std::to_string(s_NextRequestID++);
-}
-
 void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)> callback) {
     if (m_State != SessionState::Uninitialized) {
         if (callback) {
@@ -84,7 +77,7 @@ void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)>
     // or manage it externally for JSON-RPC packaging.
     // The InitializeRequest struct in InitializeSchemas.h inherits from Request, which has an 'id'
     // member.
-    request.id = GenerateRequestID();
+    request.id = GenerateUUID();
 
     // Store this request ID to match with the response
     // TODO: Implement a proper pending requests map:
@@ -141,6 +134,6 @@ void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)>
     }
 }
 
-// Implementations for Session::Initialize, Session::Shutdown, and other methods will follow.
+// TODO: Implement Session::Initialize, Session::Shutdown, and other methods
 
 MCP_NAMESPACE_END

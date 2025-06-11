@@ -1,18 +1,13 @@
 #pragma once
 
 #include "Core.h"
+#include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Server-Sent Events implementation
 // TODO: Fix External Ref: Raw body parsing
 // TODO: Fix External Ref: Content-Type parsing
-
-using IncomingMessage = HTTP_Request;
-using ServerResponse = HTTP_Response;
-
-// TODO: Fix External Ref: UUID generation
-string GenerateRandomUUID();
 
 // TODO: Fix External Ref: URL parsing and manipulation
 // TODO: Consider making a class since it has logic
@@ -29,7 +24,7 @@ struct ContentTypeResult {
 ContentTypeResult ParseContentType(const string& InContentTypeHeader);
 
 // TODO: Fix External Ref: Raw body parsing
-string GetRawBodyEquivalent(IncomingMessage* InRequest, const string& InLimit,
+string GetRawBodyEquivalent(HTTP_Request* InRequest, const string& InLimit,
                             const string& InEncoding);
 
 const string MAXIMUM_MESSAGE_SIZE = "4mb";
@@ -42,10 +37,10 @@ const string MAXIMUM_MESSAGE_SIZE = "4mb";
  */
 class SSEServerTransport {
   private:
-    optional<ServerResponse*> m_SSEResponse;
+    optional<HTTP_Response*> m_SSEResponse;
     string m_SessionID;
     string m_Endpoint;
-    ServerResponse* m_Res;
+    HTTP_Response* m_Res;
 
   public:
     optional<function<void()>> OnClose;
@@ -58,9 +53,9 @@ class SSEServerTransport {
      * Creates a new SSE server transport, which will direct the client to POST messages to the
      * relative or absolute URL identified by _endpoint.
      */
-    SSEServerTransport(const string& InEndpoint, ServerResponse* InResParam)
+    SSEServerTransport(const string& InEndpoint, HTTP_Response* InResParam)
         : m_Endpoint(InEndpoint), m_Res(InResParam), m_SSEResponse(nullopt) {
-        m_SessionID = generateRandomUUID();
+        m_SessionID = GenerateUUID();
     }
 
     /**
@@ -75,7 +70,7 @@ class SSEServerTransport {
      *
      * This should be called when a POST request is made to send a message to the server.
      */
-    void HandlePostMessage(IncomingMessage* InRequest, ServerResponse* InResponse,
+    void HandlePostMessage(HTTP_Request* InRequest, HTTP_Response* InResponse,
                            const optional<JSON>& InParsedBody = nullopt);
 
     /**

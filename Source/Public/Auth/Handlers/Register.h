@@ -34,11 +34,6 @@ struct ClientRegistrationHandlerOptions {
 // Constants
 constexpr int DEFAULT_CLIENT_SECRET_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
-// Utility functions
-string GenerateUUID();
-string GenerateRandomBytes(int length);
-int GetCurrentTimestamp();
-
 // Main client registration handler function
 RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions& options);
 

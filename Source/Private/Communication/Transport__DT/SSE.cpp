@@ -10,29 +10,22 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: Raw body parsing
 // TODO: Fix External Ref: Content-Type parsing
 
-void ServerResponse::writeHead(int status_code,
-                               const optional<map<string, string>>& headers = nullopt) {
+void HTTP_Response::writeHead(int status_code,
+                              const optional<map<string, string>>& headers = nullopt) {
     // TODO: Implement HTTP response header writing
 }
 
-void ServerResponse::write(const string& data) {
+void HTTP_Response::write(const string& data) {
     // TODO: Implement HTTP response writing
 }
 
-void ServerResponse::end(const optional<string>& data = nullopt) {
+void HTTP_Response::end(const optional<string>& data = nullopt) {
     // TODO: Implement HTTP response ending
     is_ended = true;
 }
 
-void ServerResponse::on(const string& event, optional<function<void()>> callback) {
+void HTTP_Response::on(const string& event, optional<function<void()>> callback) {
     // TODO: Implement event handling
-}
-
-// TODO: Fix External Ref: UUID generation
-string generateRandomUUID() {
-    // TODO: Implement proper UUID generation
-    // For now, return a placeholder
-    return "placeholder-uuid-" + to_string(rand());
 }
 
 string URLHelper::addSessionParam(const string& endpoint, const string& session_id) {
@@ -50,7 +43,7 @@ ContentTypeResult parseContentType(const string& content_type_header) {
 }
 
 // TODO: Fix External Ref: Raw body parsing
-string getRawBodyEquivalent(IncomingMessage* req, const string& limit, const string& encoding) {
+string getRawBodyEquivalent(HTTP_Request* req, const string& limit, const string& encoding) {
     // TODO: Implement raw body parsing with size limit
     throw runtime_error("Raw body parsing not implemented");
 }
@@ -82,7 +75,7 @@ void start() {
     });
 }
 
-void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
+void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
                        const optional<JSON>& parsedBody = nullopt) {
     if (!_sseResponse.has_value()) {
         string message = "SSE connection not established";

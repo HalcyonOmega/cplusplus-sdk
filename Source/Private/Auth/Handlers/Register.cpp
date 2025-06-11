@@ -88,46 +88,6 @@ class OAuthRegisteredClientsStore {
     virtual bool SupportsRegistration() const = 0;
 };
 
-// Utility functions
-string GenerateUUID() {
-    // Simple UUID v4 generation using random numbers
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(0, 15);
-    uniform_int_distribution<> dis2(8, 11);
-
-    stringstream ss;
-    ss << hex;
-    for (int i = 0; i < 8; i++) { ss << dis(gen); }
-    ss << "-";
-    for (int i = 0; i < 4; i++) { ss << dis(gen); }
-    ss << "-4";
-    for (int i = 0; i < 3; i++) { ss << dis(gen); }
-    ss << "-";
-    ss << dis2(gen);
-    for (int i = 0; i < 3; i++) { ss << dis(gen); }
-    ss << "-";
-    for (int i = 0; i < 12; i++) { ss << dis(gen); }
-    return ss.str();
-}
-
-string GenerateRandomBytes(int length) {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(0, 255);
-
-    stringstream ss;
-    ss << hex;
-    for (int i = 0; i < length; i++) { ss << setw(2) << setfill('0') << dis(gen); }
-    return ss.str();
-}
-
-int GetCurrentTimestamp() {
-    return static_cast<int>(
-        chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch())
-            .count());
-}
-
 // Main client registration handler function
 RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions& options) {
     if (!options.ClientsStore || !options.ClientsStore->SupportsRegistration()) {

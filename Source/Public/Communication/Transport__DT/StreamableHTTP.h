@@ -1,6 +1,6 @@
 #pragma once
 
-// TODO: Fix External Ref: HTTP server implementation (IncomingMessage, ServerResponse equivalents)
+// TODO: Fix External Ref: HTTP server implementation (HTTP_Request, HTTP_Response equivalents)
 // TODO: Fix External Ref: Transport base class
 // TODO: Fix External Ref: JSON-RPC message types and validation
 // TODO: Fix External Ref: AuthInfo type
@@ -9,9 +9,6 @@
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
-
-using IncomingMessage = HTTP_Request;
-using ServerResponse = HTTP_Response;
 
 const string MAXIMUM_MESSAGE_SIZE = "4mb";
 
@@ -81,7 +78,7 @@ struct StreamableHTTPServerTransportOptions {
  * ```cpp
  * // Stateful mode - server sets the session ID
  * StreamableHTTPServerTransportOptions statefulOptions;
- * statefulOptions.SessionIDGenerator = []() { return generateUUID(); };
+ * statefulOptions.SessionIDGenerator = []() { return GenerateUUID(); };
  * auto statefulTransport = make_unique<StreamableHTTPServerTransport>(statefulOptions);
  *
  * // Stateless mode - explicitly set session ID generator to nullopt
@@ -107,7 +104,7 @@ class StreamableHTTPServerTransport : public Transport {
     // when SessionID is not set (nullopt), it means the transport is in stateless mode
     optional<function<string()>> m_SessionIDGenerator;
     bool m_Started = false;
-    unordered_map<string, shared_ptr<ServerResponse>> m_StreamMapping;
+    unordered_map<string, shared_ptr<HTTP_Response>> m_StreamMapping;
     unordered_map<RequestID, string> m_RequestToStreamMapping;
     unordered_map<RequestID, MessageBase> m_RequestResponseMap;
     bool m_Initialized = false;
@@ -133,52 +130,51 @@ class StreamableHTTPServerTransport : public Transport {
     /**
      * Handles an incoming HTTP request, whether GET or POST
      */
-    future<void> HandleRequest(const IncomingMessage& InRequest,
-                               shared_ptr<ServerResponse> InResponse,
+    future<void> HandleRequest(const HTTP_Request& InRequest, shared_ptr<HTTP_Response> InResponse,
                                const optional<JSON>& InParsedBody = nullopt);
 
   private:
     /**
      * Handles GET requests for SSE stream
      */
-    future<void> HandleGetRequest(const IncomingMessage& InRequest,
-                                  shared_ptr<ServerResponse> InResponse);
+    future<void> HandleGetRequest(const HTTP_Request& InRequest,
+                                  shared_ptr<HTTP_Response> InResponse);
 
     /**
      * Replays events that would have been sent after the specified event ID
      * Only used when resumability is enabled
      */
-    future<void> ReplayEvents(const string& InLastEventID, shared_ptr<ServerResponse> InResponse);
+    future<void> ReplayEvents(const string& InLastEventID, shared_ptr<HTTP_Response> InResponse);
 
     /**
      * Writes an event to the SSE stream with proper formatting
      */
-    bool WriteSSEEvent(shared_ptr<ServerResponse> InResponse, const MessageBase& InMessage,
+    bool WriteSSEEvent(shared_ptr<HTTP_Response> InResponse, const MessageBase& InMessage,
                        const optional<string>& InEventID = nullopt);
 
     /**
      * Handles unsupported requests (PUT, PATCH, etc.)
      */
-    future<void> HandleUnsupportedRequest(shared_ptr<ServerResponse> InResponse);
+    future<void> HandleUnsupportedRequest(shared_ptr<HTTP_Response> InResponse);
 
     /**
      * Handles POST requests containing JSON-RPC messages
      */
-    future<void> HandlePostRequest(const IncomingMessage& InRequest,
-                                   shared_ptr<ServerResponse> InResponse,
+    future<void> HandlePostRequest(const HTTP_Request& InRequest,
+                                   shared_ptr<HTTP_Response> InResponse,
                                    const optional<JSON>& InParsedBody = nullopt);
 
     /**
      * Handles DELETE requests to terminate sessions
      */
-    future<void> HandleDeleteRequest(const IncomingMessage& InRequest,
-                                     shared_ptr<ServerResponse> InResponse);
+    future<void> HandleDeleteRequest(const HTTP_Request& InRequest,
+                                     shared_ptr<HTTP_Response> InResponse);
 
     /**
      * Validates session ID for non-initialization requests
      * Returns true if the session is valid, false otherwise
      */
-    bool ValidateSession(const IncomingMessage& InRequest, shared_ptr<ServerResponse> InResponse);
+    bool ValidateSession(const HTTP_Request& InRequest, shared_ptr<HTTP_Response> InResponse);
 
   public:
     future<void> Close() override;
@@ -187,10 +183,6 @@ class StreamableHTTPServerTransport : public Transport {
                       const optional<RequestID>& InRelatedRequestID = nullopt) override;
 
   private:
-    /**
-     * Generates a UUID-like string for request/stream IDs
-     */
-    string GenerateUUID();
 };
 
 // ##########################################################
