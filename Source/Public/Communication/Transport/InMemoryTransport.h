@@ -16,13 +16,13 @@ class InMemoryEventStore : public EventStore {
     InMemoryEventStore() = default;
     ~InMemoryEventStore() override = default;
 
-    void StoreEvent(const std::string& event) override;
-    std::vector<std::string> ReplayEventsAfter(const std::string& lastEventId) override;
+    void StoreEvent(const std::string& InEvent) override;
+    std::vector<std::string> ReplayEventsAfter(const std::string& InLastEventID) override;
 
   private:
-    std::string GenerateEventId();
-    std::map<std::string, std::string> _events;
-    std::mutex _mutex;
+    std::string GenerateEventID();
+    std::map<std::string, std::string> m_Events;
+    std::mutex m_Mutex;
 };
 
 /**
@@ -37,16 +37,16 @@ class InMemoryTransport : public Transport {
     // Transport interface implementation
     void Start() override;
     void Stop() override;
-    void Send(const std::string& message, const TransportSendOptions& options = {}) override;
-    void SetOnMessage(MessageCallback callback) override;
-    void SetOnError(ErrorCallback callback) override;
-    void SetOnClose(CloseCallback callback) override;
-    void SetOnStart(StartCallback callback) override;
-    void SetOnStop(StopCallback callback) override;
-    void WriteSSEEvent(const std::string& event, const std::string& data) override;
+    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override;
+    void SetOnMessage(MessageCallback InCallback) override;
+    void SetOnError(ErrorCallback InCallback) override;
+    void SetOnClose(CloseCallback InCallback) override;
+    void SetOnStart(StartCallback InCallback) override;
+    void SetOnStop(StopCallback InCallback) override;
+    void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override;
 
     // New method for resumability support
-    bool Resume(const std::string& resumptionToken) override;
+    bool Resume(const std::string& InResumptionToken) override;
 
     /**
      * Creates a pair of linked in-memory transports that can communicate with each other.
@@ -57,21 +57,21 @@ class InMemoryTransport : public Transport {
 
   private:
     struct QueuedMessage {
-        std::string message;
-        std::optional<AuthInfo> authInfo;
+        std::string Message;
+        std::optional<AuthInfo> AuthInfo;
     };
 
-    std::weak_ptr<InMemoryTransport> _otherTransport;
-    std::queue<QueuedMessage> _messageQueue;
-    std::mutex _queueMutex;
-    std::string _sessionId;
+    std::weak_ptr<InMemoryTransport> m_OtherTransport;
+    std::queue<QueuedMessage> m_MessageQueue;
+    std::mutex m_QueueMutex;
+    std::string m_SessionID;
 
     // Callbacks
-    MessageCallback _onMessage;
-    ErrorCallback _onError;
-    CloseCallback _onClose;
-    StartCallback _onStart;
-    StopCallback _onStop;
+    MessageCallback m_OnMessage;
+    ErrorCallback m_OnError;
+    CloseCallback m_OnClose;
+    StartCallback m_OnStart;
+    StopCallback m_OnStop;
 };
 
 MCP_NAMESPACE_END

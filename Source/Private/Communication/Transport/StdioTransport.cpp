@@ -97,7 +97,7 @@ bool StdioTransport::Resume(const std::string& resumptionToken) {
     return false;
 }
 
-std::optional<std::string> StdioTransport::GetSessionId() const {
+std::optional<std::string> StdioTransport::GetSessionID() const {
     return _sessionId;
 }
 

@@ -134,7 +134,7 @@ bool StreamableHTTPTransport::Resume(const std::string& resumptionToken) {
     return false;
 }
 
-std::optional<std::string> StreamableHTTPTransport::GetSessionId() const {
+std::optional<std::string> StreamableHTTPTransport::GetSessionID() const {
     return _sessionId;
 }
 

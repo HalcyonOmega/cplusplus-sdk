@@ -10,22 +10,22 @@ class EventStore;
 
 // AuthInfo definition
 struct AuthInfo {
-    std::string token; // Example member, adjust if different fields are needed
+    std::string Token; // Example member, adjust if different fields are needed
     // Add other relevant authentication information here if necessary
 };
 
 // Transport options
 struct TransportOptions {
-    std::optional<std::string> resumptionToken;
-    std::optional<std::string> lastEventId;
-    std::shared_ptr<EventStore> eventStore;
+    std::optional<std::string> ResumptionToken;
+    std::optional<std::string> LastEventID;
+    std::shared_ptr<EventStore> EventStore;
 };
 
 // Transport send options
 struct TransportSendOptions {
-    std::optional<std::string> relatedRequestId;
-    std::optional<std::string> resumptionToken;
-    std::function<void(const std::string&)> onResumptionToken;
+    std::optional<std::string> RelatedRequestID;
+    std::optional<std::string> ResumptionToken;
+    std::function<void(const std::string&)> OnResumptionToken;
 };
 
 // Transport callbacks
@@ -43,21 +43,21 @@ class Transport {
     // Core transport methods
     virtual void Start() = 0;
     virtual void Stop() = 0;
-    virtual void Send(const std::string& message, const TransportSendOptions& options = {}) = 0;
+    virtual void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) = 0;
 
     // Callback setters
-    virtual void SetOnMessage(MessageCallback callback) = 0;
-    virtual void SetOnError(ErrorCallback callback) = 0;
-    virtual void SetOnClose(CloseCallback callback) = 0;
-    virtual void SetOnStart(StartCallback callback) = 0;
-    virtual void SetOnStop(StopCallback callback) = 0;
+    virtual void SetOnMessage(MessageCallback InCallback) = 0;
+    virtual void SetOnError(ErrorCallback InCallback) = 0;
+    virtual void SetOnClose(CloseCallback InCallback) = 0;
+    virtual void SetOnStart(StartCallback InCallback) = 0;
+    virtual void SetOnStop(StopCallback InCallback) = 0;
 
     // SSE event writing
-    virtual void WriteSSEEvent(const std::string& event, const std::string& data) = 0;
+    virtual void WriteSSEEvent(const std::string& InEvent, const std::string& InData) = 0;
 
     // Note: Resumability is not yet supported by any transport implementation.
     [[deprecated("Not yet implemented - will be supported in a future version")]]
-    virtual bool Resume(const std::string& resumptionToken) = 0;
+    virtual bool Resume(const std::string& InResumptionToken) = 0;
 };
 
 MCP_NAMESPACE_END

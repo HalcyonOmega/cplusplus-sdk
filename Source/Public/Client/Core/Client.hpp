@@ -165,7 +165,7 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
 
     // When transport sessionId is already set this means we are trying to reconnect.
     // In this case we don't need to initialize again.
-    if (TransportPtr->GetSessionId()) { co_return; }
+    if (TransportPtr->GetSessionID()) { co_return; }
 
     try {
         JSON InitializeRequest =

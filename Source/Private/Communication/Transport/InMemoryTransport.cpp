@@ -5,42 +5,39 @@
 
 #include "Constants.h"
 #include "Core.h"
+#include "UUID/UUIDLayer.h"
 
-namespace MCP {
+MCP_NAMESPACE_BEGIN
 
 // InMemoryEventStore implementation
 void InMemoryEventStore::StoreEvent(const std::string& event) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    std::string eventId = GenerateEventId();
-    _events[eventId] = event;
+    std::lock_guard<std::mutex> Lock(m_Mutex);
+    std::string EventID = GenerateEventID();
+    m_Events[EventID] = event;
 }
 
-std::vector<std::string> InMemoryEventStore::ReplayEventsAfter(const std::string& lastEventId) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    std::vector<std::string> events;
-    bool foundLastEvent = lastEventId.empty();
+std::vector<std::string> InMemoryEventStore::ReplayEventsAfter(const std::string& LastEventID) {
+    std::lock_guard<std::mutex> Lock(m_Mutex);
+    std::vector<std::string> Events;
+    bool FoundLastEvent = LastEventID.empty();
 
-    for (const auto& [id, event] : _events) {
-        if (foundLastEvent) {
-            events.push_back(event);
-        } else if (id == lastEventId) {
-            foundLastEvent = true;
+    for (const auto& [ID, Event] : m_Events) {
+        if (FoundLastEvent) {
+            Events.push_back(Event);
+        } else if (ID == LastEventID) {
+            FoundLastEvent = true;
         }
     }
 
-    return events;
+    return Events;
 }
 
-std::string InMemoryEventStore::GenerateEventId() {
+std::string InMemoryEventStore::GenerateEventID() {
     return std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
 }
 
 InMemoryTransport::InMemoryTransport() {
-    // Generate a unique session ID
-    std::random_device rd;
-    std::stringstream ss;
-    ss << std::hex << rd();
-    _sessionId = ss.str();
+    m_SessionID = GenerateUUID();
 }
 
 InMemoryTransport::~InMemoryTransport() {
@@ -49,83 +46,84 @@ InMemoryTransport::~InMemoryTransport() {
 
 void InMemoryTransport::Start() {
     // Process any messages that were queued before start was called
-    std::lock_guard<std::mutex> lock(_queueMutex);
-    while (!_messageQueue.empty()) {
-        const auto& queuedMessage = _messageQueue.front();
-        if (_onMessage) {
-            _onMessage(queuedMessage.message,
-                       queuedMessage.authInfo ? &*queuedMessage.authInfo : nullptr);
+    std::lock_guard<std::mutex> Lock(m_QueueMutex);
+    while (!m_MessageQueue.empty()) {
+        const auto& QueuedMessage = m_MessageQueue.front();
+        if (m_OnMessage) {
+            m_OnMessage(QueuedMessage.Message,
+                        QueuedMessage.AuthInfo ? &*QueuedMessage.AuthInfo : nullptr);
         }
-        _messageQueue.pop();
+        m_MessageQueue.pop();
     }
-    if (_onStart) { _onStart(); }
+    if (m_OnStart) { m_OnStart(); }
 }
 
 void InMemoryTransport::Stop() {
-    if (auto other = _otherTransport.lock()) { other->_otherTransport.reset(); }
-    _otherTransport.reset();
-    if (_onStop) { _onStop(); }
-    if (_onClose) { _onClose(); }
+    if (auto Other = m_OtherTransport.lock()) { Other->m_OtherTransport.reset(); }
+    m_OtherTransport.reset();
+    if (m_OnStop) { m_OnStop(); }
+    if (m_OnClose) { m_OnClose(); }
 }
 
-void InMemoryTransport::Send(const std::string& message, const TransportSendOptions& options) {
-    if (auto other = _otherTransport.lock()) {
-        if (other->_onMessage) {
-            other->_onMessage(message, nullptr);
+void InMemoryTransport::Send(const std::string& InMessage, const TransportSendOptions& InOptions) {
+    if (auto Other = m_OtherTransport.lock()) {
+        if (Other->m_OnMessage) {
+            Other->m_OnMessage(InMessage, nullptr);
         } else {
-            std::lock_guard<std::mutex> lock(other->_queueMutex);
-            other->_messageQueue.push({message, std::nullopt});
+            std::lock_guard<std::mutex> Lock(Other->m_QueueMutex);
+            Other->m_MessageQueue.push({InMessage, std::nullopt});
         }
 
         // Handle resumption token if provided
-        if (options.onResumptionToken && options.resumptionToken) {
-            options.onResumptionToken(*options.resumptionToken);
+        if (InOptions.OnResumptionToken && InOptions.ResumptionToken) {
+            InOptions.OnResumptionToken(*InOptions.ResumptionToken);
         }
     } else {
-        if (_onError) { _onError("Not connected"); }
+        if (m_OnError) { m_OnError("Not connected"); }
     }
 }
 
-void InMemoryTransport::SetOnMessage(MessageCallback callback) {
-    _onMessage = std::move(callback);
+void InMemoryTransport::SetOnMessage(MessageCallback InCallback) {
+    m_OnMessage = std::move(InCallback);
 }
 
-void InMemoryTransport::SetOnError(ErrorCallback callback) {
-    _onError = std::move(callback);
+void InMemoryTransport::SetOnError(ErrorCallback InCallback) {
+    m_OnError = std::move(InCallback);
 }
 
-void InMemoryTransport::SetOnClose(CloseCallback callback) {
-    _onClose = std::move(callback);
+void InMemoryTransport::SetOnClose(CloseCallback InCallback) {
+    m_OnClose = std::move(InCallback);
 }
 
-void InMemoryTransport::SetOnStart(StartCallback callback) {
-    _onStart = std::move(callback);
+void InMemoryTransport::SetOnStart(StartCallback InCallback) {
+    m_OnStart = std::move(InCallback);
 }
 
-void InMemoryTransport::SetOnStop(StopCallback callback) {
-    _onStop = std::move(callback);
+void InMemoryTransport::SetOnStop(StopCallback InCallback) {
+    m_OnStop = std::move(InCallback);
 }
 
-void InMemoryTransport::WriteSSEEvent(const std::string& event, const std::string& data) {
-    std::string sseMessage = "event: " + event + "\ndata: " + data + "\n\n";
-    Send(sseMessage);
+void InMemoryTransport::WriteSSEEvent(const std::string& InEvent, const std::string& InData) {
+    std::string SSEMessage = "event: " + InEvent + "\ndata: " + InData + "\n\n";
+    Send(SSEMessage);
 }
 
 // Note: Resumability is not yet supported by any transport implementation.
 [[deprecated("Not yet implemented - will be supported in a future version")]]
-bool InMemoryTransport::Resume(const std::string& resumptionToken) {
+bool InMemoryTransport::Resume(const std::string& InResumptionToken) {
+    (void)InResumptionToken;
     // In-memory transport does not support resumption
-    if (_onError) { _onError("Resumption not supported by InMemoryTransport"); }
+    if (m_OnError) { m_OnError("Resumption not supported by InMemoryTransport"); }
     return false;
 }
 
 std::pair<std::shared_ptr<InMemoryTransport>, std::shared_ptr<InMemoryTransport>>
 InMemoryTransport::CreateLinkedPair() {
-    auto clientTransport = std::make_shared<InMemoryTransport>();
-    auto serverTransport = std::make_shared<InMemoryTransport>();
-    clientTransport->_otherTransport = serverTransport;
-    serverTransport->_otherTransport = clientTransport;
-    return {clientTransport, serverTransport};
+    auto ClientTransport = std::make_shared<InMemoryTransport>();
+    auto ServerTransport = std::make_shared<InMemoryTransport>();
+    ClientTransport->m_OtherTransport = ServerTransport;
+    ServerTransport->m_OtherTransport = ClientTransport;
+    return {ClientTransport, ServerTransport};
 }
 
-} // namespace MCP
+MCP_NAMESPACE_END
