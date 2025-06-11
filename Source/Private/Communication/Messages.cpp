@@ -4,6 +4,8 @@
 
 #include "Core.h"
 
+// TODO: @HalcyonOmega Split & or implement messagebase methods & other methods as appropriate
+
 MCP_NAMESPACE_BEGIN
 
 /* MessageID */
@@ -64,8 +66,8 @@ MessageID ResponseMessage::GetMessageID() const {
     return m_ID;
 };
 
-MessageParams& ResponseMessage::GetResult() const {
-    return *m_Result;
+MessageParams ResponseMessage::GetResult() const {
+    return m_Result;
 };
 
 JSON ResponseMessage::ToJSON() const {
@@ -95,7 +97,6 @@ JSON NotificationMessage::ToJSON() const {
 }
 
 /* ErrorMessage */
-
 MessageID ErrorMessage::GetID() const {
     return m_ID;
 };
@@ -113,7 +114,7 @@ JSON ErrorMessage::ToJSON() const {
     return JSON_Object;
 }
 
-ErrorMessage ErrorMessage::FromJSON(const JSON& json) {
+MessageBase ErrorMessage::FromJSON(const JSON& json) {
     if (!json.contains(MSG_CODE) || !json.contains(MSG_MESSAGE)) {
         throw std::invalid_argument("Invalid error JSON: missing required fields");
     }

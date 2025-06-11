@@ -14,11 +14,13 @@ struct MessageID {
     variant<string, int, long long> m_MessageID;
 
   public:
-    [[nodiscard]] string_view ToString() const;
-
+    // Constructors
     MessageID(string StringID) : m_MessageID(std::move(StringID)) {}
     MessageID(int IntID) : m_MessageID(IntID) {}
     MessageID(long long LongLongID) : m_MessageID(LongLongID) {}
+
+    // Direct Getters
+    [[nodiscard]] string_view ToString() const;
 };
 
 struct MessageParams {
@@ -31,11 +33,12 @@ class MessageBase {
     string m_JSONRPC = MSG_JSON_RPC_VERSION;
 
   public:
+    // Direct Getters
     [[nodiscard]] string_view GetJSONRPCVersion() const;
 
     virtual ~MessageBase() = default;
 
-    // Helpers
+    // Interface Methods
     [[nodiscard]] virtual JSON ToJSON() const = 0;
     [[nodiscard]] virtual MessageBase FromJSON(JSON InJSON) = 0;
     [[nodiscard]] virtual string Serialize() const;
@@ -49,7 +52,12 @@ class RequestMessage : public MessageBase {
     string m_Method;
     optional<unique_ptr<MessageParams>> m_Params = nullopt;
 
-  public: // Direct Getters
+  public:
+    // Constructors
+    RequestMessage(string Method, optional<unique_ptr<MessageParams>> Params = nullopt)
+        : m_Method(std::move(Method)), m_Params(std::move(Params)) {}
+
+    // Direct Getters
     [[nodiscard]] MessageID GetMessageID() const;
     [[nodiscard]] string_view GetMethod() const;
     [[nodiscard]] optional<MessageParams> GetParams() const;
@@ -68,8 +76,13 @@ class ResponseMessage : public MessageBase {
     unique_ptr<MessageParams> m_Result;
 
   public:
+    // Constructors
+    ResponseMessage(MessageID MessageID, MessageParams Result)
+        : m_ID(std::move(MessageID)), m_Result(std::move(Result)) {}
+
+    // Direct Getters
     [[nodiscard]] MessageID GetMessageID() const;
-    [[nodiscard]] MessageParams& GetResult() const;
+    [[nodiscard]] MessageParams GetResult() const;
 
     // MessageBase Overrides
     [[nodiscard]] JSON ToJSON() const override;
@@ -85,6 +98,11 @@ class NotificationMessage : public MessageBase {
     optional<unique_ptr<MessageParams>> m_Params = nullopt;
 
   public:
+    // Constructors
+    NotificationMessage(string Method, optional<unique_ptr<MessageParams>> Params = nullopt)
+        : m_Method(std::move(Method)), m_Params(std::move(Params)) {}
+
+    // Direct Getters
     [[nodiscard]] string_view GetMethod() const;
     [[nodiscard]] optional<MessageParams> GetParams() const;
 
@@ -111,16 +129,7 @@ class ErrorMessage : public MessageBase {
     ErrorParams m_Error;
 
   public:
-    // Direct Getters
-    [[nodiscard]] MessageID GetID() const;
-    [[nodiscard]] ErrorParams GetError() const;
-
-    // MessageBase Overrides
-    [[nodiscard]] JSON ToJSON() const override;
-    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
-    [[nodiscard]] string Serialize() const override;
-    [[nodiscard]] MessageBase Deserialize(string InString) override;
-
+    // Constructors
     // TODO: Check MessageID default IntID = 0 - should this be another default?
     ErrorMessage(Errors Code, string Message, optional<any> Data = nullopt)
         : m_ID(0), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
@@ -134,6 +143,16 @@ class ErrorMessage : public MessageBase {
 
     ErrorMessage(MessageID MessageID, ErrorParams Error)
         : m_ID(std::move(MessageID)), m_Error(std::move(Error)) {}
+
+    // Direct Getters
+    [[nodiscard]] MessageID GetID() const;
+    [[nodiscard]] ErrorParams GetError() const;
+
+    // MessageBase Overrides
+    [[nodiscard]] JSON ToJSON() const override;
+    [[nodiscard]] MessageBase FromJSON(JSON InJSON) override;
+    [[nodiscard]] string Serialize() const override;
+    [[nodiscard]] MessageBase Deserialize(string InString) override;
 };
 
 bool IsRequestMessage(const JSON& value) {
