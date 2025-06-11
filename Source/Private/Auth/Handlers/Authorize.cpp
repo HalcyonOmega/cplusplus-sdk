@@ -157,7 +157,7 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
         }
 
     } catch (const OAuthError& Error) {
-        int Status = (typeid(Error) == typeid(ServerError)) ? 500 : 400;
+        int Status = (typeid(Error) == typeid(ServerError)) ? 500 : HTTPStatus::BadRequest;
         Response.Status(Status);
         Response.JsonResponse(Error.ToResponseObject());
         co_return;

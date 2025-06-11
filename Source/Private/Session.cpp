@@ -136,8 +136,7 @@ void Session::Initialize(std::function<void(const std::optional<MCP_Error>&)> ca
         if (m_InitializeCallback) {
             m_State = SessionState::Error;
             // TODO: Define proper error codes/messages
-            m_InitializeCallback(
-                MCP_Error(Errors::RequestTimeout, "Transport not available.", std::nullopt));
+            m_InitializeCallback(MCP_Error(Errors::RequestTimeout, "Transport not available."));
         }
     }
 }

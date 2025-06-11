@@ -1,5 +1,11 @@
 #include "Communication/Transport__DT/StreamableHTTP.h"
 
+#include "Core/Constants/ErrorConstants.h"
+#include "Core/Constants/MessageConstants.h"
+#include "Core/Constants/MethodConstants.h"
+#include "Core/Constants/TransportConstants.h"
+#include "MCP_Error.h"
+
 // TODO: Fix External Ref: HTTP server implementation (IncomingMessage, ServerResponse equivalents)
 // TODO: Fix External Ref: Transport base class
 // TODO: Fix External Ref: JSON-RPC message types and validation
@@ -40,7 +46,7 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
         // content type.
         auto acceptIt = req.headers.find(TSPT_ACCEPT);
         if (acceptIt == req.headers.end()
-            || acceptIt->second.find("text/event-stream") == string::npos) {
+            || acceptIt->second.find(TSPT_TEXT_EVENT_STREAM) == string::npos) {
             JSON errorResponse = {
                 {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                 {MSG_ERROR,
@@ -68,7 +74,7 @@ future<void> StreamableHTTPServerTransport::handleGetRequest(const RequestMessag
 
         // The server MUST either return Content-Type: text/event-stream in response to this
         // HTTP GET, or else return HTTP HTTPStatus::MethodNotAllowed Method Not Allowed
-        unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, "text/event-stream"},
+        unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
                                                  {"Cache-Control", "no-cache, no-transform"},
                                                  {"Connection", "keep-alive"}};
 
@@ -106,7 +112,7 @@ future<void> StreamableHTTPServerTransport::replayEvents(const string& lastEvent
     return async(launch::async, [this, lastEventID, res]() {
         if (!_eventStore) { return; }
         try {
-            unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, "text/event-stream"},
+            unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
                                                      {"Cache-Control", "no-cache, no-transform"},
                                                      {"Connection", "keep-alive"}};
 
@@ -170,7 +176,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
             // text/event-stream as supported content types.
             if (acceptIt == req.headers.end()
                 || acceptIt->second.find(TSPT_APP_JSON) == string::npos
-                || acceptIt->second.find("text/event-stream") == string::npos) {
+                || acceptIt->second.find(TSPT_TEXT_EVENT_STREAM) == string::npos) {
                 JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                                       {MSG_ERROR,
                                        {{MSG_CODE, Errors::ConnectionClosed},
@@ -243,7 +249,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                          {{MSG_CODE, Errors::InvalidRequest},
                           {MSG_MESSAGE, "Invalid Request: Server already initialized"}}},
                         {MSG_ID, nullptr}};
-                    res->writeHead(400, {});
+                    res->writeHead(HTTPStatus::BadRequestPStatus::BadRequest, {});
                     res->end(errorResponse.dump());
                     return;
                 }
@@ -255,8 +261,11 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                           {MSG_MESSAGE,
                            "Invalid Request: Only one initialization request is allowed"}}},
                         {MSG_ID, nullptr}};
-                    res->writeHead(400, {});
-                    res->end(errorResponse.dump());
+                    ErrorMessage Response = ErrorMessage(
+                        MessageID = nullptr, Code = Errors::InvalidRequest,
+                        Message = "Invalid Request: Only one initialization request is allowed");
+                    res->writeHead(HTTPStatus::BadRequest, {});
+                    res->end(Response.Serialize());
                     return;
                 }
                 if (SessionIDGenerator.has_value()) { SessionID = SessionIDGenerator.value()(); }
@@ -299,7 +308,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                 string StreamID = generateUUID();
                 if (!_enableJsonResponse) {
                     unordered_map<string, string> headers = {
-                        {TSPT_CONTENT_TYPE, "text/event-stream"},
+                        {TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
                         {"Cache-Control", "no-cache"},
                         {"Connection", "keep-alive"}};
 
@@ -334,7 +343,7 @@ StreamableHTTPServerTransport::handlePostRequest(const IncomingMessage& req,
                                     {MSG_MESSAGE, "Parse error"},
                                     {MSG_DATA, error.what()}}},
                                   {MSG_ID, nullptr}};
-            res->writeHead(400, {});
+            res->writeHead(HTTPStatus::BadRequest, {});
             res->end(errorResponse.dump());
             if (onerror) { onerror(error); }
         }
@@ -365,7 +374,7 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
                                {{MSG_CODE, Errors::ConnectionClosed},
                                 {MSG_MESSAGE, "Bad Request: Server not initialized"}}},
                               {MSG_ID, nullptr}};
-        res->writeHead(400, {});
+        res->writeHead(HTTPStatus::BadRequest, {});
         res->end(errorResponse.dump());
         return false;
     }
@@ -373,13 +382,14 @@ bool StreamableHTTPServerTransport::validateSession(const IncomingMessage& req,
     auto SessionIDIt = req.headers.find("mcp-session-id");
 
     if (SessionIDIt == req.headers.end()) {
-        // Non-initialization requests without a session ID should return 400 Bad Request
+        // Non-initialization requests without a session ID should return HTTPStatus::BadRequest Bad
+        // Request
         JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                               {MSG_ERROR,
                                {{MSG_CODE, Errors::ConnectionClosed},
                                 {MSG_MESSAGE, "Bad Request: Mcp-Session-Id header is required"}}},
                               {MSG_ID, nullptr}};
-        res->writeHead(400, {});
+        res->writeHead(HTTPStatus::BadRequest, {});
         res->end(errorResponse.dump());
         return false;
     } else if (SessionIDIt->second != SessionID.value_or(MSG_NULL)) {
@@ -615,7 +625,7 @@ future<void> StreamableHTTPClientTransport::startOrAuthSse(const StartSSEOptions
     return async(launch::async, [this, options]() {
         try {
             auto headers = commonHeaders().get();
-            headers["Accept"] = "text/event-stream";
+            headers[TSPT_ACCEPT] = TSPT_TEXT_EVENT_STREAM;
 
             if (options.resumptionToken) { headers["last-event-id"] = *options.resumptionToken; }
 
@@ -784,7 +794,7 @@ future<void> StreamableHTTPClientTransport::send(const MessageBase& message,
 
             auto headers = commonHeaders().get();
             headers[TSPT_CONTENT_TYPE] = TSPT_APP_JSON;
-            headers[TSPT_ACCEPT] = "application/json, text/event-stream";
+            headers[TSPT_ACCEPT] = TSPT_APP_JSON_AND_EVENT_STREAM;
 
             // TODO: Fix External Ref: HTTP POST implementation
             // string body = JSON::stringify(message);

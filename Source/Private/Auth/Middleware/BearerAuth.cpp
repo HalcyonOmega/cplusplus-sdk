@@ -133,7 +133,7 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
             Response.SetStatus(500);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const OAuthError& Error) {
-            Response.SetStatus(400);
+            Response.SetStatus(HTTPStatus::BadRequest);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const exception& Error) {
             // Log unexpected error

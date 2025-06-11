@@ -4,7 +4,7 @@ MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: OAuthServerProvider
 // TODO: Fix External Ref: HttpRouter (Express equivalent)
-// TODO: Fix External Ref: HttpRequest/HttpResponse
+// TODO: Fix External Ref: HTTP_Request/HTTP_Response
 // TODO: Fix External Ref: CorsMiddleware
 // TODO: Fix External Ref: RateLimitMiddleware
 // TODO: Fix External Ref: ClientAuthMiddleware
@@ -38,8 +38,8 @@ RequestHandler RevocationHandler(const RevocationHandlerOptions& options) {
         throw runtime_error("Auth provider does not support revoking tokens");
     }
 
-    return [options](shared_ptr<HttpRequest> req,
-                     shared_ptr<HttpResponse> res) -> AsyncRequestHandler {
+    return [options](shared_ptr<HTTP_Request> req,
+                     shared_ptr<HTTP_Response> res) -> AsyncRequestHandler {
         try {
             // Set cache control header
             res->set_header("Cache-Control", "no-store");
@@ -71,7 +71,7 @@ RequestHandler RevocationHandler(const RevocationHandlerOptions& options) {
             res->send_json(JSON{});
 
         } catch (const OAuthError& error) {
-            int status = dynamic_cast<const ServerError*>(&error) ? 500 : 400;
+            int status = dynamic_cast<const ServerError*>(&error) ? 500 : HTTPStatus::BadRequest;
             res->set_status(status);
             res->send_json(error.to_response_object());
         } catch (const exception& error) {

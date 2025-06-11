@@ -142,11 +142,11 @@ future<AuthInfo> ProxyOAuthServerProvider::VerifyAccessToken(const string& Token
     co_return co_await _VerifyAccessToken(Token);
 }
 
-future<HttpResponse> ProxyOAuthServerProvider::HttpPost(const string& Url,
-                                                        const map<string, string>& Headers,
-                                                        const string& Body) {
+future<HTTP_Response> ProxyOAuthServerProvider::HttpPost(const string& Url,
+                                                         const map<string, string>& Headers,
+                                                         const string& Body) {
     // TODO: Implement actual HTTP POST request
-    co_return HttpResponse{false, 500, MSG_NULL};
+    co_return HTTP_Response{false, 500, MSG_NULL};
 }
 
 string ProxyOAuthServerProvider::BuildFormEncodedBody(const map<string, string>& Params) {

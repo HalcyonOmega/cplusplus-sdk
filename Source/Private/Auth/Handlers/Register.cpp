@@ -189,7 +189,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
         } catch (const OAuthError& error) {
             auto serverError = dynamic_cast<const ServerError*>(&error);
-            int status = serverError ? 500 : 400;
+            int status = serverError ? 500 : HTTPStatus::BadRequest;
             res.Status(status);
             res.SendJSON(error.ToResponseObject());
         } catch (const exception& error) {

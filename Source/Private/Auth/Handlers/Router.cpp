@@ -1,5 +1,9 @@
 #include "Auth/Handlers/Router.h"
 
+#include "Core/Constants/MessageConstants.h"
+#include "Core/Constants/TransportConstants.h"
+
+
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express Router functionality

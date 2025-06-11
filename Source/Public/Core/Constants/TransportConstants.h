@@ -6,6 +6,7 @@ MCP_NAMESPACE_BEGIN
 
 enum class HTTPStatus {
     Ok = 200,
+    BadRequest = 400,
     Unauthorized = 401,
     NotFound = 404,
     MethodNotAllowed = 405,

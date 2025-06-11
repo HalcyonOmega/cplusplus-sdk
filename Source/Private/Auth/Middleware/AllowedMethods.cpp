@@ -5,9 +5,9 @@
 MCP_NAMESPACE_BEGIN
 
 RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
-    return [AllowedMethods](HTTPRequest& Req, HTTPResponse& Res, NextFunction Next) {
-        // Note: Assuming HTTPRequest has Method property - needs to be defined in shared header
-        // TODO: Add HTTPRequest::Method property definition in shared middleware types
+    return [AllowedMethods](HTTP_Request& Req, HTTP_Response& Res, NextFunction Next) {
+        // Note: Assuming HTTP_Request has Method property - needs to be defined in shared header
+        // TODO: Add HTTP_Request::Method property definition in shared middleware types
 
         // Check if the request method is in the allowed methods list
         bool IsMethodAllowed = false;

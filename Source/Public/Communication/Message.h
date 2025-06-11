@@ -1,6 +1,9 @@
 #pragma once
 
+#include <utility>
+
 #include "Core.h"
+#include "Core/Constants/ErrorConstants.h"
 #include "Core/Constants/MessageConstants.h"
 
 MCP_NAMESPACE_BEGIN
@@ -31,8 +34,10 @@ struct MessageID {
 };
 
 struct MessageParams {
-    virtual string Serialize() const = 0;
-    virtual MessageParams Deserialize(string) = 0;
+    [[nodiscard]] virtual string Serialize() const {
+        return "";
+    }
+    virtual MessageParams Deserialize(string InString) = 0;
 };
 
 class MessageBase {
@@ -45,7 +50,17 @@ class MessageBase {
     };
 
     virtual ~MessageBase() = default;
-    virtual JSON ToJSON() const = 0;
+
+    // Helpers
+    // JSON
+    [[nodiscard]] virtual JSON ToJSON() const = 0;
+    virtual MessageBase Deserialize(JSON InJSON) = 0;
+
+    // String
+    [[nodiscard]] virtual string Serialize() const {
+        return ToJSON().dump();
+    };
+    virtual MessageBase Deserialize(string InString) = 0;
 };
 
 // A request that expects a response.
@@ -160,7 +175,7 @@ class NotificationMessage : public MessageBase {
 };
 
 struct ErrorParams {
-    int Code;           // The error type that occurred.
+    Errors Code;        // The error type that occurred.
     string Message;     // A short description of the error. The message SHOULD be limited to a
                         // concise single sentence.
     optional<any> Data; // Additional information about the error. The value of this member is
@@ -197,6 +212,20 @@ class ErrorMessage : public MessageBase {
         JSON_Object[MSG_ERROR] = GetError().Message;
         return JSON_Object;
     }
+
+    // TODO: Check MessageID default IntID = 0 - should this be another default?
+    ErrorMessage(Errors Code, string Message, optional<any> Data = nullopt)
+        : m_ID(0), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
+
+    ErrorMessage(MessageID MessageID, Errors Code, string Message)
+        : m_ID(std::move(MessageID)), m_Error({.Code = Code, .Message = Message, .Data = nullopt}) {
+    }
+
+    ErrorMessage(MessageID MessageID, Errors Code, string Message, optional<any> Data = nullopt)
+        : m_ID(std::move(MessageID)), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
+
+    ErrorMessage(MessageID MessageID, ErrorParams Error)
+        : m_ID(std::move(MessageID)), m_Error(std::move(Error)) {}
 };
 
 bool IsRequestMessage(const JSON& value) {

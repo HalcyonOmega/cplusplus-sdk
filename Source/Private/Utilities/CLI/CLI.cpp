@@ -64,12 +64,12 @@ future<void> CLI::RunServer(int port) {
                 CLI::http_server_ = make_shared<HttpServer>();
 
                 // Setup SSE endpoint
-                CLI::http_server_->Get("/sse", [](HttpRequest& req, HttpResponse& res) {
+                CLI::http_server_->Get("/sse", [](HTTP_Request& req, HTTP_Response& res) {
                     CLI::HandleSSEConnection(req, res);
                 });
 
                 // Setup message endpoint
-                CLI::http_server_->Post("/message", [](HttpRequest& req, HttpResponse& res) {
+                CLI::http_server_->Post("/message", [](HTTP_Request& req, HTTP_Response& res) {
                     CLI::HandlePostMessage(req, res);
                 });
 
@@ -177,7 +177,7 @@ inline void CLI::LogError(const string& error) {
     cerr << error << endl;
 }
 
-inline void CLI::HandleSSEConnection(HttpRequest& req, HttpResponse& res) {
+inline void CLI::HandleSSEConnection(HTTP_Request& req, HTTP_Response& res) {
     LogMessage("Got new SSE connection");
 
     auto transport = make_shared<MCP::SSEServerTransport>("/message", res);
@@ -198,7 +198,7 @@ inline void CLI::HandleSSEConnection(HttpRequest& req, HttpResponse& res) {
     server->Connect(*transport);
 }
 
-inline void CLI::HandlePostMessage(HttpRequest& req, HttpResponse& res) {
+inline void CLI::HandlePostMessage(HTTP_Request& req, HTTP_Response& res) {
     LogMessage("Received message");
 
     string session_id = req.GetQueryParameter("SessionID");

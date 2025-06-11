@@ -1,5 +1,7 @@
 #include "Communication/Transport__DT/SSE.h"
 
+#include "Core/Constants/TransportConstants.h"
+
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: HTTP Server Response functionality
@@ -59,7 +61,7 @@ void start() {
                             "that connect() calls start() automatically.");
     }
 
-    map<string, string> headers = {{TSPT_CONTENT_TYPE, "text/event-stream"},
+    map<string, string> headers = {{TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
                                    {"Cache-Control", "no-cache, no-transform"},
                                    {"Connection", "keep-alive"}};
     res->writeHead(HTTPStatus::Ok, headers);
@@ -113,7 +115,7 @@ void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
             body = JSON::parse(rawBody);
         }
     } catch (const exception& error) {
-        res_param->writeHead(400);
+        res_param->writeHead(HTTPStatus::BadRequest);
         res_param->end(error.what());
         if (onerror.has_value()) { onerror.value()(Error(error.what())); }
         return;
@@ -124,7 +126,7 @@ void handlePostMessage(IncomingMessage* req, ServerResponse* res_param,
         if (authInfo.has_value()) { extra = map<string, AuthInfo>{{"authInfo", authInfo.value()}}; }
         handleMessage(body, extra);
     } catch (const exception&) {
-        res_param->writeHead(400);
+        res_param->writeHead(HTTPStatus::BadRequest);
         res_param->end("Invalid message: " + body.dump());
         return;
     }
@@ -178,7 +180,7 @@ string sessionId() const {
 // ##########################################################
 // ##########################################################
 
-future<string> HttpResponse::text() const {
+future<string> HTTP_Response::text() const {
     return async(launch::async, [this]() { return body; });
 }
 
@@ -243,7 +245,7 @@ future<void> SSEClientTransport::_startOrAuth() {
         //             return _commonHeaders().then([=](const HeadersInit& headers) {
         //                 RequestInit newInit = init;
         //                 HeadersInit mergedHeaders = headers;
-        //                 mergedHeaders["Accept"] = "text/event-stream";
+        //                 mergedHeaders[TSPT_ACCEPT] = TSPT_TEXT_EVENT_STREAM;
         //                 newInit[MSG_HEADERS] = mergedHeaders;
         //                 return fetch(url, newInit);
         //             });
@@ -379,7 +381,7 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
             init[MSG_BODY] = string("{}"); // JSON::stringify(message);
             // TODO: Fix External Ref: signal: _abortController?.signal
 
-            HttpResponse response = fetch(_endpoint.value(), init).get();
+            HTTP_Response response = fetch(_endpoint.value(), init).get();
 
             if (!response.ok) {
                 if (response.status == HTTPStatus::Unauthorized && _authProvider) {
@@ -423,17 +425,17 @@ future<AuthResult> SSEClientTransport::auth(shared_ptr<OAuthClientProvider> auth
     });
 }
 
-future<HttpResponse> SSEClientTransport::fetch(const URL& url, const RequestInit& init) {
-    return async(launch::async, [=]() -> HttpResponse {
+future<HTTP_Response> SSEClientTransport::fetch(const URL& url, const RequestInit& init) {
+    return async(launch::async, [=]() -> HTTP_Response {
         // TODO: Fix External Ref: Actual HTTP implementation
-        HttpResponse response;
+        HTTP_Response response;
         response.status = HTTPStatus::Ok;
         response.ok = true;
         return response;
     });
 }
 
-optional<URL> SSEClientTransport::extractResourceMetadataUrl(const HttpResponse& response) {
+optional<URL> SSEClientTransport::extractResourceMetadataUrl(const HTTP_Response& response) {
     // TODO: Fix External Ref: Extract from response headers
     return nullopt;
 }

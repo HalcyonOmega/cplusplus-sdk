@@ -170,7 +170,7 @@ Task<JSON> TokenHandler::HandleRequestAsync(const JSON& RequestBody, const JSON&
                 "The grant type is not supported by this authorization server.");
         }
     } catch (const OAuthError& Error) {
-        ResponseStatus = (Error.GetType() == "ServerError") ? "500" : "400";
+        ResponseStatus = (Error.GetType() == "ServerError") ? "500" : "HTTPStatus::BadRequest";
         co_return Error.ToResponseObject();
     } catch (const exception& Error) {
         // Log unexpected error (equivalent to console.error)
