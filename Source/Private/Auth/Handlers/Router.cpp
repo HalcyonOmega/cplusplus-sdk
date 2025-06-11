@@ -3,7 +3,6 @@
 #include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/TransportConstants.h"
 
-
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express Router functionality
@@ -108,7 +107,7 @@ bool HasClientRegistrationSupport(const shared_ptr<OAuthServerProvider>& Provide
         auto Future = Provider->GetClientsStore().RegisterClient(DummyClient);
         auto Result = Future.get();
         // If it returns nullopt immediately, it's not implemented
-        return Result.has_value();
+        return Result();
     } catch (...) {
         // If it throws or fails, assume it's not implemented
         return false;

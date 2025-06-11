@@ -53,7 +53,7 @@ string_view RequestMessage::GetMethod() const {
 };
 
 optional<const MessageParams*> RequestMessage::GetParams() const {
-    if (m_Params.has_value()) { return m_Params.value().get(); }
+    if (m_Params()) { return m_Params.value().get(); }
     return std::nullopt;
 };
 
@@ -62,7 +62,7 @@ JSON RequestMessage::ToJSON() const {
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
     JSON_Object[MSG_ID] = GetMessageID().ToString();
     JSON_Object[MSG_METHOD] = GetMethod();
-    if (m_Params.has_value() && m_Params.value() != nullptr) {
+    if (m_Params() && m_Params.value() != nullptr) {
         JSON_Object[MSG_PARAMS] = m_Params.value()->Serialize();
     }
     return JSON_Object;
@@ -151,7 +151,7 @@ string_view NotificationMessage::GetMethod() const {
 };
 
 optional<const MessageParams*> NotificationMessage::GetParams() const {
-    if (m_Params.has_value()) { return m_Params.value().get(); }
+    if (m_Params()) { return m_Params.value().get(); }
     return std::nullopt;
 };
 
@@ -159,7 +159,7 @@ JSON NotificationMessage::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
     JSON_Object[MSG_METHOD] = GetMethod();
-    if (m_Params.has_value() && m_Params.value() != nullptr) {
+    if (m_Params() && m_Params.value() != nullptr) {
         JSON_Object[MSG_PARAMS] = m_Params.value()->Serialize();
     }
     return JSON_Object;

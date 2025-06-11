@@ -49,7 +49,7 @@ string getRawBodyEquivalent(HTTP_Request* req, const string& limit, const string
 }
 
 void start() {
-    if (_sseResponse.has_value()) {
+    if (_sseResponse()) {
         throw runtime_error("SSEServerTransport already started! If using Server class, note "
                             "that connect() calls start() automatically.");
     }
@@ -71,13 +71,13 @@ void start() {
     _sseResponse = res;
     res->on("close", [this]() {
         _sseResponse = nullopt;
-        if (onclose.has_value()) { onclose.value()(); }
+        if (onclose()) { onclose.value()(); }
     });
 }
 
 void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
                        const optional<JSON>& parsedBody = nullopt) {
-    if (!_sseResponse.has_value()) {
+    if (!_sseResponse()) {
         string message = "SSE connection not established";
         res_param->writeHead(500);
         res_param->end(message);
@@ -97,7 +97,7 @@ void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
             throw runtime_error("Unsupported content-type: " + ct.type);
         }
 
-        if (parsedBody.has_value()) {
+        if (parsedBody()) {
             body = parsedBody.value();
         } else {
             string encoding = "utf-8";
@@ -110,13 +110,13 @@ void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
     } catch (const exception& error) {
         res_param->writeHead(HTTPStatus::BadRequest);
         res_param->end(error.what());
-        if (onerror.has_value()) { onerror.value()(Error(error.what())); }
+        if (onerror()) { onerror.value()(Error(error.what())); }
         return;
     }
 
     try {
         optional<map<string, AuthInfo>> extra = nullopt;
-        if (authInfo.has_value()) { extra = map<string, AuthInfo>{{"authInfo", authInfo.value()}}; }
+        if (authInfo()) { extra = map<string, AuthInfo>{{"authInfo", authInfo.value()}}; }
         handleMessage(body, extra);
     } catch (const exception&) {
         res_param->writeHead(HTTPStatus::BadRequest);
@@ -133,31 +133,31 @@ void handleMessage(const JSON& message, const optional<map<string, AuthInfo>>& e
     try {
         parsedMessage = MessageBaseSchema::parse(message);
     } catch (const exception& error) {
-        if (onerror.has_value()) { onerror.value()(Error(error.what())); }
+        if (onerror()) { onerror.value()(Error(error.what())); }
         throw;
     }
 
-    if (onmessage.has_value()) { onmessage.value()(parsedMessage, extra); }
+    if (onmessage()) { onmessage.value()(parsedMessage, extra); }
 }
 
 void close() {
-    if (_sseResponse.has_value()) { _sseResponse.value()->end(); }
+    if (_sseResponse()) { _sseResponse.value()->end(); }
     _sseResponse = nullopt;
-    if (onclose.has_value()) { onclose.value()(); }
+    if (onclose()) { onclose.value()(); }
 }
 
 void send(const MessageBase& message) {
-    if (!_sseResponse.has_value()) { throw runtime_error("Not connected"); }
+    if (!_sseResponse()) { throw runtime_error("Not connected"); }
 
     // Convert MessageBase to JSON
 
     JSON jsonMessage;
     jsonMessage[MSG_JSON_RPC] = message.jsonrpc;
-    if (message.id.has_value()) { jsonMessage[MSG_ID] = message.id.value(); }
-    if (message.method.has_value()) { jsonMessage[MSG_METHOD] = message.method.value(); }
-    if (message.params.has_value()) { jsonMessage[MSG_PARAMS] = message.params.value(); }
-    if (message.result.has_value()) { jsonMessage[MSG_RESULT] = message.result.value(); }
-    if (message.error.has_value()) { jsonMessage[MSG_ERROR] = message.error.value(); }
+    if (message.id()) { jsonMessage[MSG_ID] = message.id.value(); }
+    if (message.method()) { jsonMessage[MSG_METHOD] = message.method.value(); }
+    if (message.params()) { jsonMessage[MSG_PARAMS] = message.params.value(); }
+    if (message.result()) { jsonMessage[MSG_RESULT] = message.result.value(); }
+    if (message.error()) { jsonMessage[MSG_ERROR] = message.error.value(); }
 
     string eventData = "event: message\ndata: " + jsonMessage.dump() + "\n\n";
     _sseResponse.value()->write(eventData);
@@ -196,7 +196,7 @@ future<void> SSEClientTransport::_authThenStart() {
         try {
             map<string, variant<URL, string>> authParams;
             authParams["serverUrl"] = _url;
-            if (_resourceMetadataUrl.has_value()) {
+            if (_resourceMetadataUrl()) {
                 authParams["resourceMetadataUrl"] = _resourceMetadataUrl.value();
             }
 
@@ -218,7 +218,7 @@ future<HeadersInit> SSEClientTransport::_commonHeaders() {
         if (_authProvider) {
             // TODO: Fix External Ref: Get tokens from auth provider
             // auto tokens = _authProvider->tokens().get();
-            // if (tokens.has_value()) {
+            // if (tokens()) {
             //     headers["Authorization"] = "Bearer " + tokens.value().access_token;
             // }
         }
@@ -321,7 +321,7 @@ future<void> SSEClientTransport::finishAuth(const string& authorizationCode) {
         map<string, variant<URL, string>> authParams;
         authParams["serverUrl"] = _url;
         authParams["authorizationCode"] = authorizationCode;
-        if (_resourceMetadataUrl.has_value()) {
+        if (_resourceMetadataUrl()) {
             authParams["resourceMetadataUrl"] = _resourceMetadataUrl.value();
         }
 
@@ -344,14 +344,14 @@ future<void> SSEClientTransport::close() {
 future<void> SSEClientTransport::send(const MessageBase& message) {
     // Fix: Copy message to avoid reference issues
     return async(launch::async, [this, message]() -> void {
-        if (!_endpoint.has_value()) { throw runtime_error("Not connected"); }
+        if (!_endpoint()) { throw runtime_error("Not connected"); }
 
         try {
             HeadersInit commonHeaders = _commonHeaders().get();
             HeadersInit headers = commonHeaders;
 
             // Merge _requestInit headers if they exist
-            if (_requestInit.has_value()) {
+            if (_requestInit()) {
                 for (const auto& [key, value] : _requestInit.value()) {
                     if (holds_alternative<string>(value)) {
                         headers[key] = get<string>(value);
@@ -367,7 +367,7 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
             headers[TSPT_CONTENT_TYPE] = TSPT_APP_JSON;
 
             RequestInit init;
-            if (_requestInit.has_value()) { init = _requestInit.value(); }
+            if (_requestInit()) { init = _requestInit.value(); }
             init[MSG_METHOD] = MTHD_POST;
             init[MSG_HEADERS] = headers;
             // TODO: Fix External Ref: JSON.stringify(message)
@@ -382,7 +382,7 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
 
                     map<string, variant<URL, string>> authParams;
                     authParams["serverUrl"] = _url;
-                    if (_resourceMetadataUrl.has_value()) {
+                    if (_resourceMetadataUrl()) {
                         authParams["resourceMetadataUrl"] = _resourceMetadataUrl.value();
                     }
 

@@ -50,7 +50,7 @@ JSON WebSocket_Client_Transport::MessageToJSON(const MessageBase& message) const
 }
 
 future<void> WebSocket_Client_Transport::Start() {
-    if (Socket_.has_value()) {
+    if (Socket_()) {
         throw runtime_error("WebSocket_Client_Transport already started! If using Client "
                             "class, note that Connect() calls Start() automatically.");
     }
@@ -71,7 +71,7 @@ future<void> WebSocket_Client_Transport::Start() {
             // socket.onerror = [this, promise_ptr](event) {
             //     auto error = /* extract error from event */;
             //     promise_ptr->set_exception(make_exception_ptr(error));
-            //     if (OnError.has_value()) OnError.value()(error);
+            //     if (OnError()) OnError.value()(error);
             // };
 
             // Setup open handler
@@ -83,7 +83,7 @@ future<void> WebSocket_Client_Transport::Start() {
             // Setup close handler
             // TODO: Fix External Ref: WebSocket close event handling
             // socket.onclose = [this]() {
-            //     if (OnClose.has_value()) OnClose.value()();
+            //     if (OnClose()) OnClose.value()();
             // };
 
             // Setup message handler with proper JSON validation
@@ -94,7 +94,7 @@ future<void> WebSocket_Client_Transport::Start() {
             //
             //         // Validate JSON-RPC message structure (equivalent to
             //         MessageBaseSchema.parse) if (!ValidateMessageBase(parsed)) {
-            //             if (OnError.has_value()) {
+            //             if (OnError()) {
             //                 OnError.value()(runtime_error("Invalid JSON-RPC message
             //                 format"));
             //             }
@@ -103,8 +103,8 @@ future<void> WebSocket_Client_Transport::Start() {
             //
             //         // Convert to MessageBase
             //         auto message = JSONToMessage(parsed);
-            //         if (!message.has_value()) {
-            //             if (OnError.has_value()) {
+            //         if (!message()) {
+            //             if (OnError()) {
             //                 OnError.value()(runtime_error("Failed to convert JSON to
             //                 MessageBase"));
             //             }
@@ -112,17 +112,17 @@ future<void> WebSocket_Client_Transport::Start() {
             //         }
             //
             //         // Call message handler with message and optional auth info
-            //         if (OnMessage.has_value()) {
+            //         if (OnMessage()) {
             //             OnMessage.value()(message.value(), nullopt); // No auth info for
             //             basic WebSocket
             //         }
             //     } catch (const JSON::parse_error& error) {
-            //         if (OnError.has_value()) {
+            //         if (OnError()) {
             //             OnError.value()(runtime_error("JSON parse error: " +
             //             string(error.what())));
             //         }
             //     } catch (const exception& error) {
-            //         if (OnError.has_value()) {
+            //         if (OnError()) {
             //             OnError.value()(error);
             //         }
             //     }
@@ -139,7 +139,7 @@ future<void> WebSocket_Client_Transport::Start() {
 future<void> WebSocket_Client_Transport::Close() {
     return async(launch::async, [this]() {
         // TODO: Fix External Ref: WebSocket - close the socket
-        if (Socket_.has_value()) {
+        if (Socket_()) {
             // Socket_.value()->close();
             Socket_ = nullopt;
         }
@@ -157,7 +157,7 @@ WebSocket_Client_Transport::Send(const MessageBase& Message,
     // Run async to match TypeScript Promise behavior
     async(launch::async, [this, Message, Options, promise_ptr]() {
         try {
-            if (!Socket_.has_value()) { throw runtime_error("Not connected"); }
+            if (!Socket_()) { throw runtime_error("Not connected"); }
 
             // Convert MessageBase to JSON string
             JSON serialized_message = MessageToJSON(Message);

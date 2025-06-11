@@ -53,22 +53,20 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
     explicit ProxyOAuthServerProvider(const ProxyOptions& InOptions)
         : m_Endpoints(InOptions.Endpoints), m_VerifyAccessToken(InOptions.VerifyAccessToken),
           m_GetClient(InOptions.GetClient) {
-        if (InOptions.Endpoints.RevocationUrl.has_value()) {
+        if (InOptions.Endpoints.RevocationUrl()) {
             RevokeToken = [this](const OAuthClientInformationFull& InClient,
                                  const OAuthTokenRevocationRequest& InRequest) -> future<void> {
                 const auto& RevocationUrl = this->m_Endpoints.RevocationUrl;
 
-                if (!RevocationUrl.has_value()) {
-                    throw runtime_error("No revocation endpoint configured");
-                }
+                if (!RevocationUrl()) { throw runtime_error("No revocation endpoint configured"); }
 
                 map<string, string> Params;
                 Params["token"] = Request.Token;
                 Params[MSG_CLIENT_ID] = Client.Information.ClientID;
-                if (Client.Information.ClientSecret.has_value()) {
+                if (Client.Information.ClientSecret()) {
                     Params["client_secret"] = Client.Information.ClientSecret.value();
                 }
-                if (Request.TokenTypeHint.has_value()) {
+                if (Request.TokenTypeHint()) {
                     Params["token_type_hint"] = Request.TokenTypeHint.value();
                 }
 

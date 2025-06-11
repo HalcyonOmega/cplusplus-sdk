@@ -89,7 +89,7 @@ string AuthorizationHandler::CreateErrorRedirect(const string& RedirectUri, cons
 
     if (!Error.GetErrorUri().empty()) { ErrorUrl += "&error_uri=" + Error.GetErrorUri(); }
 
-    if (State.has_value()) { ErrorUrl += "&state=" + State.value(); }
+    if (State) { ErrorUrl += "&state=" + State.value(); }
 
     return ErrorUrl;
 }
@@ -143,7 +143,7 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
 
         if (!Client) { throw InvalidClientError("Invalid client_id"); }
 
-        if (ClientParams.RedirectUri.has_value()) {
+        if (ClientParams.RedirectUri()) {
             RedirectUri = ClientParams.RedirectUri.value();
             auto& RedirectUris = Client->RedirectUris;
             if (find(RedirectUris.begin(), RedirectUris.end(), RedirectUri) == RedirectUris.end()) {
@@ -186,11 +186,11 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
 
         // Validate scopes
         vector<string> RequestedScopes;
-        if (Scope.has_value()) {
+        if (Scope()) {
             RequestedScopes = SplitString(Scope.value(), ' ');
 
             unordered_set<string> AllowedScopes;
-            if (Client->Scope.has_value()) {
+            if (Client->Scope()) {
                 auto ClientScopes = SplitString(Client->Scope.value(), ' ');
                 AllowedScopes.insert(ClientScopes.begin(), ClientScopes.end());
             }

@@ -79,7 +79,7 @@ future<void> StreamableHTTPServerTransport::HandleGetRequest(const RequestMessag
                                                  {"Connection", "keep-alive"}};
 
         // After initialization, always include the session ID if we have one
-        if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
+        if (SessionID()) { headers["mcp-session-id"] = SessionID.value(); }
 
         // Check if there's already an active standalone SSE stream for this session
         if (_streamMapping.find(_standaloneSseStreamID) != _streamMapping.end()) {
@@ -116,7 +116,7 @@ future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEvent
                                                      {"Cache-Control", "no-cache, no-transform"},
                                                      {"Connection", "keep-alive"}};
 
-            if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
+            if (SessionID()) { headers["mcp-session-id"] = SessionID.value(); }
             res->writeHead(HTTPStatus::Ok, headers);
             res->flushHeaders();
 
@@ -144,7 +144,7 @@ bool StreamableHTTPServerTransport::WriteSSEEvent(shared_ptr<HTTP_Response> res,
                                                   const optional<string>& EventID = nullopt) {
     string eventData = "event: message\n";
     // Include event ID if provided - this is important for resumability
-    if (EventID.has_value()) { eventData += "id: " + EventID.value() + "\n"; }
+    if (EventID()) { eventData += "id: " + EventID.value() + "\n"; }
     eventData += "data: " + message.data.dump() + "\n\n";
 
     return res->write(eventData);
@@ -205,7 +205,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
             optional<AuthInfo> authInfo = req.auth;
 
             JSON rawMessage;
-            if (parsedBody.has_value()) {
+            if (parsedBody()) {
                 rawMessage = parsedBody.value();
             } else {
                 try {
@@ -242,7 +242,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
             if (isInitializationRequest) {
                 // If it's a server with session management and the session ID is already set we
                 // should reject the request to avoid re-initialization.
-                if (_initialized && SessionID.has_value()) {
+                if (_initialized && SessionID()) {
                     JSON errorResponse = {
                         {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
                         {MSG_ERROR,
@@ -268,13 +268,13 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                     res->end(Response.Serialize());
                     return;
                 }
-                if (SessionIDGenerator.has_value()) { SessionID = SessionIDGenerator.value()(); }
+                if (SessionIDGenerator()) { SessionID = SessionIDGenerator.value()(); }
                 _initialized = true;
 
                 // If we have a session ID and an onsessioninitialized handler, call it
                 // immediately This is needed in cases where the server needs to keep track of
                 // multiple sessions
-                if (SessionID.has_value() && _onsessioninitialized.has_value()) {
+                if (SessionID() && _onsessioninitialized()) {
                     _onsessioninitialized.value()(SessionID.value());
                 }
             }
@@ -313,7 +313,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                         {"Connection", "keep-alive"}};
 
                     // After initialization, always include the session ID if we have one
-                    if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
+                    if (SessionID()) { headers["mcp-session-id"] = SessionID.value(); }
 
                     res->writeHead(HTTPStatus::Ok, headers);
                 }
@@ -362,7 +362,7 @@ future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const HTTP_Reque
 
 bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& req,
                                                     shared_ptr<HTTP_Response> res) {
-    if (!SessionIDGenerator.has_value()) {
+    if (!SessionIDGenerator()) {
         // If the SessionIDGenerator ID is not set, the session management is disabled
         // and we don't need to validate the session ID
         return true;
@@ -432,7 +432,7 @@ future<void> StreamableHTTPServerTransport::Send(
         // Check if this message should be sent on the standalone SSE stream (no request ID)
         // Ignore notifications from tools (which have relatedRequestID set)
         // Those will be sent via dedicated response SSE streams
-        if (!RequestID.has_value()) {
+        if (!RequestID()) {
             // For standalone SSE streams, we can only send requests and notifications
             if (isResponse) {
                 throw runtime_error("Cannot send a response on a standalone SSE stream unless "
@@ -510,7 +510,7 @@ future<void> StreamableHTTPServerTransport::Send(
                 if (_enableJsonResponse) {
                     // All responses ready, send as JSON
                     unordered_map<string, string> headers = {{TSPT_CONTENT_TYPE, TSPT_APP_JSON}};
-                    if (SessionID.has_value()) { headers["mcp-session-id"] = SessionID.value(); }
+                    if (SessionID()) { headers["mcp-session-id"] = SessionID.value(); }
 
                     vector<JSON> responses;
                     for (const auto& id : relatedIds) {

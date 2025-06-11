@@ -203,9 +203,9 @@ class SSEClientTransport : public Transport {
     SSEClientTransport(const URL& InURL, const optional<SSEClientTransportOptions>& InOpts)
         : _eventSource(nullptr), _endpoint(nullopt), _abortController(nullptr), _url(InURL),
           _resourceMetadataUrl(nullopt),
-          _eventSourceInit(InOpts.has_value() ? InOpts.value().EventSourceInit : nullopt),
-          _requestInit(InOpts.has_value() ? InOpts.value().RequestInit : nullopt),
-          _authProvider(InOpts.has_value() ? InOpts.value().AuthProvider : nullptr) {}
+          _eventSourceInit(InOpts() ? InOpts.value().EventSourceInit : nullopt),
+          _requestInit(InOpts() ? InOpts.value().RequestInit : nullopt),
+          _authProvider(InOpts() ? InOpts.value().AuthProvider : nullptr) {}
 
     // TODO: Identify proper constructor signature
     SSEClientTransport(const URL& InURL,

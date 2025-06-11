@@ -45,7 +45,7 @@ class OAuthError : public exception {
         response.Error = errorCode_;
         response.ErrorDescription = message_;
 
-        if (errorURI_.has_value()) { response.ErrorURI = errorURI_.value(); }
+        if (errorURI_()) { response.ErrorURI = errorURI_.value(); }
 
         return response;
     }

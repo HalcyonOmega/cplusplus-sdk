@@ -69,9 +69,9 @@ struct OAuthClientInformation {
     JSON ToJSON() const {
         JSON result;
         result[MSG_CLIENT_ID] = ClientId;
-        if (ClientSecret.has_value()) { result["client_secret"] = *ClientSecret; }
+        if (ClientSecret()) { result["client_secret"] = *ClientSecret; }
         result["client_id_issued_at"] = ClientIdIssuedAt;
-        if (ClientSecretExpiresAt.has_value()) {
+        if (ClientSecretExpiresAt()) {
             result["client_secret_expires_at"] = *ClientSecretExpiresAt;
         }
         result["token_endpoint_auth_method"] = TokenEndpointAuthMethod;
@@ -109,14 +109,14 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
             if (req.Method != MTHD_POST) { throw runtime_error("Method not allowed"); }
 
             // Apply rate limiting logic (simplified - actual implementation would need middleware)
-            if (!rateLimitDisabled && rateLimitConfig.has_value()) {
+            if (!rateLimitDisabled && rateLimitConfig()) {
                 // TODO: Implement actual rate limiting logic
                 // This would typically be handled by middleware in a real HTTP framework
             }
 
             // Parse and validate client metadata
             auto parseResult = OAuthClientMetadata::SafeParse(req.Body);
-            if (!parseResult.has_value()) { throw InvalidClientMetadataError(parseResult.error()); }
+            if (!parseResult()) { throw InvalidClientMetadataError(parseResult.error()); }
 
             auto clientMetadata = parseResult.value();
             bool isPublicClient = clientMetadata.TokenEndpointAuthMethod == "none";

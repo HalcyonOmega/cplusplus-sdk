@@ -1,5 +1,7 @@
 #include "Auth/Middleware/ClientAuth_MW.h"
 
+#include "Core/Constants/MessageConstants.h"
+
 MCP_NAMESPACE_BEGIN
 
 void HTTP_Response::SetStatus(int Status) {
@@ -38,7 +40,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
 
         try {
             auto ValidationResult = ClientAuthenticatedRequestValidation::Validate(Request.Body);
-            if (!ValidationResult.has_value()) {
+            if (!ValidationResult()) {
                 InvalidRequestError Error("Invalid request format");
                 Response.SetStatus(HTTPStatus::BadRequest);
                 Response.SetJSON(Error.ToResponseObject());
@@ -66,7 +68,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
                         // If client has a secret, validate it
                         if (!Client->ClientSecret.empty()) {
                             // Check if client_secret is required but not provided
-                            if (!ClientSecret.has_value()) {
+                            if (!ClientSecret()) {
                                 InvalidClientError Error("Client secret is required");
                                 Response.SetStatus(HTTPStatus::BadRequest);
                                 Response.SetJSON(Error.ToResponseObject());
@@ -84,7 +86,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
                             }
 
                             // Check if client_secret has expired (C++20 chrono)
-                            if (Client->ClientSecretExpiresAt.has_value()
+                            if (Client->ClientSecretExpiresAt()
                                 && Client->ClientSecretExpiresAt.value()
                                        < chrono::duration_cast<chrono::seconds>(
                                              chrono::system_clock::now().time_since_epoch())

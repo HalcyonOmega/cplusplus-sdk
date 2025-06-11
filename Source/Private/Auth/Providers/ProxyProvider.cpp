@@ -11,19 +11,19 @@ OAuthRegisteredClientsStore ProxyOAuthServerProvider::GetClientsStore() const {
     OAuthRegisteredClientsStore Store;
     Store.GetClient = _GetClient;
 
-    if (RegistrationUrl.has_value()) {
+    if (RegistrationUrl()) {
         Store.RegisterClient =
             [RegistrationUrl](
                 const OAuthClientInformationFull& Client) -> future<OAuthClientInformationFull> {
             // Convert client to JSON
             JSON ClientJson;
             ClientJson[MSG_CLIENT_ID] = Client.Information.ClientID;
-            if (Client.Information.ClientSecret.has_value()) {
+            if (Client.Information.ClientSecret()) {
                 ClientJson["client_secret"] = Client.Information.ClientSecret.value();
             }
             // Add metadata fields
             ClientJson["redirect_uris"] = Client.Metadata.RedirectURIs;
-            if (Client.Metadata.ClientName.has_value()) {
+            if (Client.Metadata.ClientName()) {
                 ClientJson["client_name"] = Client.Metadata.ClientName.value();
             }
             // Add other metadata fields as needed
@@ -55,7 +55,7 @@ future<void> ProxyOAuthServerProvider::Authorize(const OAuthClientInformationFul
                                         {MSG_CODE_CHALLENGE_METHOD, "S256"}};
 
     // Add optional standard OAuth parameters
-    if (Params.State.has_value()) { SearchParams[MSG_STATE] = Params.State.value(); }
+    if (Params.State()) { SearchParams[MSG_STATE] = Params.State.value(); }
     if (!Params.Scopes.empty()) {
         string ScopeStr;
         for (size_t I = 0; I < Params.Scopes.size(); ++I) {
@@ -88,13 +88,13 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeAuthorizationCode(
                                   {MSG_CLIENT_ID, Client.Information.ClientID},
                                   {MSG_CODE, AuthorizationCode}};
 
-    if (Client.Information.ClientSecret.has_value()) {
+    if (Client.Information.ClientSecret()) {
         Params["client_secret"] = Client.Information.ClientSecret.value();
     }
 
-    if (CodeVerifier.has_value()) { Params["code_verifier"] = CodeVerifier.value(); }
+    if (CodeVerifier()) { Params["code_verifier"] = CodeVerifier.value(); }
 
-    if (RedirectUri.has_value()) { Params[MSG_REDIRECT_URI] = RedirectUri.value(); }
+    if (RedirectUri()) { Params[MSG_REDIRECT_URI] = RedirectUri.value(); }
 
     string Body = BuildFormEncodedBody(Params);
 
@@ -114,11 +114,11 @@ future<OAuthTokens> ProxyOAuthServerProvider::ExchangeRefreshToken(
                                   {MSG_CLIENT_ID, Client.Information.ClientID},
                                   {"refresh_token", RefreshToken}};
 
-    if (Client.Information.ClientSecret.has_value()) {
+    if (Client.Information.ClientSecret()) {
         Params["client_secret"] = Client.Information.ClientSecret.value();
     }
 
-    if (Scopes.has_value() && !Scopes.value().empty()) {
+    if (Scopes() && !Scopes.value().empty()) {
         string ScopeStr;
         for (size_t I = 0; I < Scopes.value().size(); ++I) {
             if (I > 0) ScopeStr += " ";

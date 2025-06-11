@@ -27,7 +27,7 @@ struct ParseContext {
 };
 
 // Error map function type (like original ZodErrorMap)
-using ErrorMapFunction = function<string(const string& issueCode, const ParseContext& ctx)>;
+using ErrorMapFunction = function<string(const string& IssueCode, const ParseContext& Context)>;
 
 // Unified callback type that can return either sync or async results (like original)
 template <typename T>
@@ -122,16 +122,15 @@ shared_ptr<Completable<T>> CreateCompletable(shared_ptr<MCP_Type<T, TypeDef, T>>
 template <typename T> ProcessedCreateParams ProcessCreateParams(const CreateParams<T>& InParams) {
     ProcessedCreateParams Result;
 
-    if (InParams.ErrorMap.has_value()
-        && (params.InvalidTypeError.has_value() || params.RequiredError.has_value())) {
+    if (InParams.ErrorMap() && (InParams.InvalidTypeError() || InParams.RequiredError())) {
         throw runtime_error("Can't use \"InvalidTypeError\" or \"RequiredError\" in conjunction "
                             "with custom error map.");
     }
 
-    if (params.ErrorMap.has_value()) {
-        result.ErrorMap = params.ErrorMap;
-        result.Description = params.Description.value_or(MSG_NULL);
-        return result;
+    if (InParams.ErrorMap()) {
+        Result.ErrorMap = InParams.ErrorMap;
+        Result.Description = InParams.Description.value_or(MSG_NULL);
+        return Result;
     }
 
     // Create custom error map like original
@@ -195,13 +194,13 @@ template <typename T> future<vector<T>> Completable<T>::GetAsyncCompletions(cons
 
         if (std::holds_alternative<future<vector<T>>>(Result)) {
             return std::get<future<vector<T>>>(Result);
-        } else {
-            // Wrap synchronous result in future
-            promise<vector<T>> Promise;
-            future<vector<T>> FutureResult = Promise.get_future();
-            Promise.set_value(std::get<vector<T>>(Result));
-            return FutureResult;
         }
+
+        // Wrap synchronous result in future
+        promise<vector<T>> Promise;
+        future<vector<T>> FutureResult = Promise.get_future();
+        Promise.set_value(std::get<vector<T>>(Result));
+        return FutureResult;
     }
 
     promise<vector<T>> Promise;

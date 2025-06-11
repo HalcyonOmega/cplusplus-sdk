@@ -1,5 +1,8 @@
 #include "Auth/Handlers/Token.h"
 
+#include "Core/Constants/MessageConstants.h"
+#include "Core/Constants/MethodConstants.h"
+
 // TODO: Fix External Ref: express framework integration
 // TODO: Fix External Ref: cors library integration
 
@@ -96,7 +99,7 @@ MiddlewareResult TokenHandler::ApplyMiddleware(const JSON& RequestBody, const JS
     }
 
     // 3. Rate limiting
-    if (Options.RateLimit.has_value()) {
+    if (Options.RateLimit()) {
         const auto& rateLimitConfig = Options.RateLimit.value();
         if (!RateLimitState_->CheckRateLimit(ClientIP, rateLimitConfig.Max,
                                              rateLimitConfig.WindowMs)) {
@@ -227,7 +230,7 @@ Task<JSON> TokenHandler::HandleRefreshTokenGrantAsync(const JSON& RequestBody,
     const optional<string>& Scope = Grant.Scope;
 
     optional<vector<string>> Scopes;
-    if (Scope.has_value()) { Scopes = SplitStringWithRanges(Scope.value(), " "); }
+    if (Scope()) { Scopes = SplitStringWithRanges(Scope.value(), " "); }
 
     JSON Tokens =
         co_await Options.Provider->ExchangeRefreshTokenAsync(client, RefreshToken, Scopes);

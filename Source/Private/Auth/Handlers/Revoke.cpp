@@ -99,7 +99,7 @@ shared_ptr<HttpRouter> create_revocation_router(const RevocationHandlerOptions& 
     router->use_url_encoded_parser(false); // extended: false
 
     // Apply rate limiting unless explicitly disabled
-    if (options.rate_limit.has_value()) {
+    if (options.rate_limit()) {
         RateLimitOptions rate_limit_config = options.rate_limit.value();
 
         // Set default rate limit message if not provided

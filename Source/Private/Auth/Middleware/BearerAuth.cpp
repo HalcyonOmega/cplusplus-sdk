@@ -1,5 +1,7 @@
 #include "Auth/Middleware/BearerAuth.h"
 
+#include "Core/Constants/MessageConstants.h"
+
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: RequestHandler (Express equivalent)
@@ -88,7 +90,7 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
             }
 
             // Check if the token is expired
-            if (TokenAuthInfo.ExpiresAt.has_value()
+            if (TokenAuthInfo.ExpiresAt()
                 && *TokenAuthInfo.ExpiresAt < chrono::duration_cast<chrono::seconds>(
                                                   chrono::system_clock::now().time_since_epoch())
                                                   .count()) {
@@ -101,30 +103,26 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
 
         } catch (const InvalidTokenError& Error) {
             string WWW_AuthValue;
-            if (Options.ResourceMetadataUrl.has_value()) {
-                WWW_AuthValue =
-                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
-                    + "\", error_description=\MSG_NULL + Error.GetMessage()
-                    + "\", resource_metadata=\MSG_NULL + *Options.ResourceMetadataUrl + "\MSG_NULL;
+            if (Options.ResourceMetadataUrl()) {
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage()
+                                + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
             } else {
-                WWW_AuthValue =
-                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
-                    + "\", error_description=\MSG_NULL + Error.GetMessage() + "\MSG_NULL;
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage() + "\"";
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
             Response.SetStatus(HTTPStatus::Unauthorized);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const InsufficientScopeError& Error) {
             string WWW_AuthValue;
-            if (Options.ResourceMetadataUrl.has_value()) {
-                WWW_AuthValue =
-                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
-                    + "\", error_description=\MSG_NULL + Error.GetMessage()
-                    + "\", resource_metadata=\MSG_NULL + *Options.ResourceMetadataUrl + "\MSG_NULL;
+            if (Options.ResourceMetadataUrl()) {
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage()
+                                + "\", resource_metadata=\"" + *Options.ResourceMetadataUrl + "\"";
             } else {
-                WWW_AuthValue =
-                    "Bearer error=\MSG_NULL + Error.GetErrorCode()
-                    + "\", error_description=\MSG_NULL + Error.GetMessage() + "\MSG_NULL;
+                WWW_AuthValue = "Bearer error=\"" + Error.GetErrorCode()
+                                + "\", error_description=\"" + Error.GetMessage() + "\"";
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
             Response.SetStatus(403);

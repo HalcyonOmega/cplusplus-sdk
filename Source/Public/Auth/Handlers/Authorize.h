@@ -130,9 +130,7 @@ class AuthorizationHandler {
 
   public:
     AuthorizationHandler(const AuthorizationHandlerOptions& Options) : Provider(Options.Provider) {
-        if (Options.RateLimit.has_value()) {
-            Limiter = make_unique<RateLimiter>(Options.RateLimit.value());
-        }
+        if (Options.RateLimit()) { Limiter = make_unique<RateLimiter>(Options.RateLimit.value()); }
     }
 
     Task<void> HandleRequest(const HTTP_Request& Request, HTTP_Response& Response,

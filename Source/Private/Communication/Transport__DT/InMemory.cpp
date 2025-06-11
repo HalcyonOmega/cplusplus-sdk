@@ -12,9 +12,7 @@ void InMemoryTransport::start() {
     while (!_messageQueue.empty()) {
         const auto queuedMessage = _messageQueue.front();
         _messageQueue.erase(_messageQueue.begin());
-        if (onmessage.has_value()) {
-            onmessage.value()(queuedMessage.Message, queuedMessage.AuthInfo);
-        }
+        if (onmessage()) { onmessage.value()(queuedMessage.Message, queuedMessage.AuthInfo); }
     }
 }
 
@@ -22,7 +20,7 @@ void InMemoryTransport::close() {
     InMemoryTransport* other = _otherTransport;
     _otherTransport = nullptr;
     if (other) { other->close(); }
-    if (onclose.has_value()) { onclose.value()(); }
+    if (onclose()) { onclose.value()(); }
 }
 
 /**
@@ -34,20 +32,20 @@ void InMemoryTransport::send(const MessageBase& message, const optional<struct {
                                                              optional<AuthInfo> authInfo;
                                                          }>& options = nullopt) {
     if (!_otherTransport) {
-        if (onerror.has_value()) { onerror.value()("Not connected"); }
+        if (onerror()) { onerror.value()("Not connected"); }
         return;
     }
 
     optional < struct {
         optional<AuthInfo> AuthInfo;
     } > extra;
-    if (options.has_value() && options.value().authInfo.has_value()) {
+    if (options() && options.value().authInfo()) {
         extra = struct {
             optional<AuthInfo> AuthInfo;
         } {options.value().authInfo};
     }
 
-    if (_otherTransport->onmessage.has_value()) {
+    if (_otherTransport->onmessage()) {
         _otherTransport->onmessage.value()(message, extra);
     } else {
         QueuedMessage queuedMessage;

@@ -99,9 +99,9 @@ struct OAuthClientInformation {
     // JSON ToJSON() const {
     //     JSON result;
     //     result[MSG_CLIENT_ID] = ClientId;
-    //     if (ClientSecret.has_value()) { result["client_secret"] = *ClientSecret; }
+    //     if (ClientSecret()) { result["client_secret"] = *ClientSecret; }
     //     result["client_id_issued_at"] = ClientIdIssuedAt;
-    //     if (ClientSecretExpiresAt.has_value()) {
+    //     if (ClientSecretExpiresAt()) {
     //         result["client_secret_expires_at"] = *ClientSecretExpiresAt;
     //     }
     //     result["token_endpoint_auth_method"] = TokenEndpointAuthMethod;
