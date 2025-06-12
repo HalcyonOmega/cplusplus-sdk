@@ -2,7 +2,7 @@
 
 #include "Core.h"
 #include "Core/Constants/MessageConstants.h"
-#include "Core/Messages/Messages.h"
+#include "Core/Messages/MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
 

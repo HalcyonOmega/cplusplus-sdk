@@ -2,9 +2,11 @@
 
 #include "Core.h"
 #include "Core/Constants/ErrorConstants.h"
-#include "Core/Messages/Messages.h"
+#include "Core/Messages/MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
+
+// TODO: @HalcyonOmega Consider subclassing ErrorMessage from ResponseMessage
 
 struct ErrorParams {
     Errors Code;        // The error type that occurred.

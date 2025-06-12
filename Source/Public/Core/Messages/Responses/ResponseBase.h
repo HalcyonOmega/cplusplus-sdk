@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Messages/Messages.h"
+#include "Core/Messages/MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
 
