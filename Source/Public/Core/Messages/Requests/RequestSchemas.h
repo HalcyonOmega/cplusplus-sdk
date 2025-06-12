@@ -1,33 +1,34 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Constants/MessageConstants.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
 // NOTE: @HalcyonOmega NON-JSON-RPC Types
 
-// RequestId {
+// RequestID {
 //   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
 //                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
 // };
 
 // A uniquely identifying ID for a request in JSON-RPC.
-using RequestId = variant<string, number>;
+using RequestID = variant<string, int>;
+
+using ProgressToken = variant<string, int>;
 
 struct RequestParamsMeta {
-    using ProgressToken = std::variant<std::string, int>;
-    /**
-     * If specified, the caller is requesting out-of-band progress
-     * notifications for this request (as represented by
-     * notifications/progress). The value of this parameter is an opaque
-     * token that will be attached to any subsequent notifications. The
-     * receiver is not obligated to provide these notifications.
-     */
-    optional<ProgressToken> progressToken;
+    // If specified, the caller is requesting out-of-band progress notifications for this request
+    // (as represented by notifications/progress). The value of this parameter is an opaque token
+    // that will be attached to any subsequent notifications. The receiver is not obligated to
+    // provide these notifications.
+    optional<ProgressToken> ProgressToken;
 };
 
 struct RequestParams {
-    optional<RequestParamsMeta> _meta;
+    optional<RequestParamsMeta> Meta;
+    DEFINE_TYPE_JSON(RequestParams, JKEY(Meta, MSG_META))
 };
 
 // Request {

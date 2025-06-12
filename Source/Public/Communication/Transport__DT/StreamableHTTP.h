@@ -201,7 +201,7 @@ class StreamableHTTPError : public exception {
 struct StartSSEOptions {
     optional<string> ResumptionToken;
     function<void(const string&)> OnResumptionToken;
-    optional<string> ReplayMessageID; // Can be string or number
+    optional<MessageID> ReplayMessageID;
 };
 
 /**

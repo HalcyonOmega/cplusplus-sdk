@@ -9,7 +9,7 @@ MCP_NAMESPACE_BEGIN
 //   MSG_DESCRIPTION : "A request that expects a response.",
 //                   MSG_PROPERTIES
 //       : {
-//         MSG_ID : {"$ref" : "#/definitions/RequestId"},
+//         MSG_ID : {"$ref" : "#/definitions/RequestID"},
 //         MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
 //         MSG_METHOD : {MSG_TYPE : MSG_STRING},
 //         MSG_PARAMS : {

@@ -54,7 +54,7 @@ struct CancelledNotificationParams {
      * This MUST correspond to the ID of a request previously issued in the same
      * direction.
      */
-    RequestId requestId;
+    RequestID RequestId;
 
     /**
      * An optional string describing the reason for the cancellation. This MAY
@@ -85,15 +85,15 @@ struct CancelledNotificationParams {
 //                   user.",
 //               MSG_TYPE : MSG_STRING
 //             },
-//             "requestId" : {
-//               "$ref" : "#/definitions/RequestId",
+//             MSG_REQUEST_ID : {
+//               "$ref" : "#/definitions/RequestID",
 //               MSG_DESCRIPTION :
 //                   "The ID of the request to cancel.\n\nThis MUST correspond
 //                   to " "the ID of a request previously issued in the same
 //                   direction."
 //             }
 //           },
-//           MSG_REQUIRED : ["requestId"],
+//           MSG_REQUIRED : [MSG_REQUEST_ID],
 //           MSG_TYPE : MSG_OBJECT
 //         }
 //       },

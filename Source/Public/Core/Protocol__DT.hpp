@@ -8,8 +8,6 @@ MCP_NAMESPACE_BEGIN
 // The default request timeout, in milliseconds.
 static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
 
-// TODO: Fix External Ref: ZodType, ZodObject, ZodLiteral - Schema validation library
-
 /**
  * Callback for progress notifications.
  */
@@ -145,9 +143,7 @@ template <typename SendRequestT, typename SendNotificationT> struct RequestHandl
         SendRequest;
 };
 
-/**
- * Information about a request's timeout state
- */
+// Information about a request's timeout state
 struct TimeoutInfo {
     // TODO: Fix External Ref: Timer/Timeout mechanism
     uint64_t TimeoutId;
@@ -158,23 +154,21 @@ struct TimeoutInfo {
     function<void()> OnTimeout;
 };
 
-/**
- * Implements MCP protocol framing on top of a pluggable transport, including
- * features like request/response linking, notifications, and progress.
- */
+// Implements MCP protocol framing on top of a pluggable transport, including features like
+// request/response linking, notifications, and progress.
 template <typename SendRequestT, typename SendNotificationT, typename SendResultT> class Protocol {
   private:
     shared_ptr<Transport> m_Transport;
-    atomic<int64_t> m_RequestMessageID{0};
+    MessageID m_RequestMessageID{0};
 
     unordered_map<string, function<future<SendResultT>(
-                              const JSON_RPC_Request&,
+                              const RequestMessage&,
                               const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>>
         m_RequestHandlers;
     unordered_map<RequestID, AbortSignal> m_RequestHandlerAbortControllers;
-    unordered_map<string, function<future<void>(const JSON_RPC_Notification&)>>
+    unordered_map<string, function<future<void>(const NotificationMessage&)>>
         m_NotificationHandlers;
-    unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, ErrorMessage>&)>>
+    unordered_map<int64_t, function<void(const variant<ResponseMessage, ErrorMessage>&)>>
         m_ResponseHandlers;
     unordered_map<int64_t, ProgressCallback> m_ProgressHandlers;
     unordered_map<int64_t, TimeoutInfo> m_TimeoutInfo;
@@ -511,13 +505,13 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         });
     }
 
-    void OnResponse(const variant<JSON_RPC_Response, JSON_RPC_Error>& InResponse) {
+    void OnResponse(const variant<ResponseMessage, ErrorMessage>& InResponse) {
         RequestID ResponseID;
 
-        if (holds_alternative<JSON_RPC_Response>(InResponse)) {
-            ResponseID = get<JSON_RPC_Response>(InResponse).ID;
+        if (holds_alternative<ResponseMessage>(InResponse)) {
+            ResponseID = get<ResponseMessage>(InResponse).ID;
         } else {
-            ResponseID = get<JSON_RPC_Error>(InResponse).ID;
+            ResponseID = get<ErrorMessage>(InResponse).ID;
         }
 
         // Convert RequestID to int64_t for message correlation
@@ -681,7 +675,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         int64_t MessageID = m_RequestMessageID++;
 
-        JSON_RPC_Request Request;
+        RequestMessage Request;
         Request.JSON_RPC = MSG_JSON_RPC_VERSION;
         Request.ID = MessageID;
         Request.Method = InRequest.Method;

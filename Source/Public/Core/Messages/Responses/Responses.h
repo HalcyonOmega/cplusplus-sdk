@@ -8,7 +8,7 @@ MCP_NAMESPACE_BEGIN
 // ResponseMessage {
 //   MSG_DESCRIPTION : "A successful (non-error) response to a request.",
 //                   MSG_PROPERTIES : {
-//                     MSG_ID : {"$ref" : "#/definitions/RequestId"},
+//                     MSG_ID : {"$ref" : "#/definitions/RequestID"},
 //                     MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
 //                     MSG_RESULT : {"$ref" : "#/definitions/Result"}
 //                   },
