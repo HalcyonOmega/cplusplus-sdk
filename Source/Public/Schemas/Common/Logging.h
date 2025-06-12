@@ -1,10 +1,20 @@
 #pragma once
 
-#include "Constants.h"
 #include "Core.h"
-#include "NotificationSchemas.h"
+#include "Core/Constants/MethodConstants.h"
+#include "Core/Messages/Messages.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
+
+static constexpr const char* LOG_DEBUG = "debug";
+static constexpr const char* LOG_INFO = "info";
+static constexpr const char* LOG_NOTICE = "notice";
+static constexpr const char* LOG_WARNING = "warning";
+static constexpr const char* LOG_ERROR = "error";
+static constexpr const char* LOG_CRITICAL = "critical";
+static constexpr const char* LOG_ALERT = "alert";
+static constexpr const char* LOG_EMERGENCY = "emergency";
 
 // LoggingLevel {
 //   MSG_DESCRIPTION :
@@ -26,14 +36,14 @@ MCP_NAMESPACE_BEGIN
  */
 enum class LoggingLevel { Debug, Info, Notice, Warning, Error, Critical, Alert, Emergency };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(LoggingLevel, {{LoggingLevel::Debug, "debug"},
-                                            {LoggingLevel::Info, "info"},
-                                            {LoggingLevel::Notice, "notice"},
-                                            {LoggingLevel::Warning, "warning"},
-                                            {LoggingLevel::Error, "error"},
-                                            {LoggingLevel::Critical, "critical"},
-                                            {LoggingLevel::Alert, "alert"},
-                                            {LoggingLevel::Emergency, "emergency"}});
+DEFINE_ENUM_JSON(LoggingLevel, {{LoggingLevel::Debug, LOG_DEBUG},
+                                {LoggingLevel::Info, LOG_INFO},
+                                {LoggingLevel::Notice, LOG_NOTICE},
+                                {LoggingLevel::Warning, LOG_WARNING},
+                                {LoggingLevel::Error, LOG_ERROR},
+                                {LoggingLevel::Critical, LOG_CRITICAL},
+                                {LoggingLevel::Alert, LOG_ALERT},
+                                {LoggingLevel::Emergency, LOG_EMERGENCY}});
 
 struct SetLevelRequestParams {
     /**
@@ -67,33 +77,21 @@ struct SetLevelRequestParams {
 //                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
 //                                     MSG_TYPE : MSG_OBJECT
 // };
-/* Logging */
+
 /**
  * A request from the client to the server, to enable or adjust logging.
  */
+struct SetLevelRequest : public RequestMessage {
+    SetLevelRequestParams Params;
 
-struct SetLevelRequest : public Request {
-    SetLevelRequestParams params;
-
-    SetLevelRequest() {
-        method = MTHD_LOGGING_SET_LEVEL;
-    }
+    SetLevelRequest() : RequestMessage(MTHD_LOGGING_SET_LEVEL) {}
 };
 
 struct LoggingMessageNotificationParams {
-    /**
-     * The severity of this log message.
-     */
-    LoggingLevel Level;
-    /**
-     * An optional name of the logger issuing this message.
-     */
-    optional<string> Logger;
-    /**
-     * The data to be logged, such as a string message or an object. Any JSON
-     * serializable type is allowed here.
-     */
-    any Data;
+    LoggingLevel Level;      // The severity of this log message.
+    optional<string> Logger; // An optional name of the logger issuing this message.
+    any Data;                // The data to be logged, such as a string message or an object. Any
+                             // JSON serializable type is allowed here.
 };
 
 // LoggingMessageNotification {
@@ -133,12 +131,10 @@ struct LoggingMessageNotificationParams {
  * logging/setLevel request has been sent from the client, the server MAY decide
  * which messages to send automatically.
  */
-struct LoggingMessageNotification : public Notification {
+struct LoggingMessageNotification : public NotificationMessage {
     LoggingMessageNotificationParams Params;
 
-    LoggingMessageNotification() {
-        Method = MTHD_NOTIFICATIONS_MESSAGE;
-    }
+    LoggingMessageNotification() : NotificationMessage(MTHD_NOTIFICATIONS_MESSAGE) {}
 };
 
 MCP_NAMESPACE_END

@@ -5,8 +5,8 @@
 
 MCP_NAMESPACE_BEGIN
 
-static constexpr const char* MSG_USER = "user";
-static constexpr const char* MSG_ASSISTANT = "assistant";
+static constexpr const char* ROLE_USER = "user";
+static constexpr const char* ROLE_ASSISTANT = "assistant";
 
 // Role {
 //   MSG_DESCRIPTION
@@ -20,6 +20,6 @@ static constexpr const char* MSG_ASSISTANT = "assistant";
  */
 enum class Role { User, Assistant };
 
-DEFINE_ENUM_JSON(Role, {{Role::User, MSG_USER}, {Role::Assistant, MSG_ASSISTANT}})
+DEFINE_ENUM_JSON(Role, {{Role::User, ROLE_USER}, {Role::Assistant, ROLE_ASSISTANT}})
 
 MCP_NAMESPACE_END
