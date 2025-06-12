@@ -2,6 +2,7 @@
 
 #include "Constants.h"
 #include "Core.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -19,6 +20,8 @@ MCP_NAMESPACE_BEGIN
 struct Implementation {
     string Name;
     string Version;
+
+    DEFINE_STRUCT_JSON(Implementation, Name, Version);
 };
 
 MCP_NAMESPACE_END
