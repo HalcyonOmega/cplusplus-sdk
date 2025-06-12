@@ -8,6 +8,13 @@ MCP_NAMESPACE_BEGIN
 std::string REGEXSearch; // Just this part => "[^\\"]*"
 
 static constexpr const char* MSG_URITEMPLATE = "uri-template"; // TODO: Check duplicates with above
+static constexpr const char* MSG_VALUE = "value";
+static constexpr const char* MSG_VALUES = "values";
+static constexpr const char* MSG_REF = "ref";
+static constexpr const char* MSG_COMPLETION = "completion";
+static constexpr const char* MSG_HAS_MORE = "hasMore";
+static constexpr const char* MSG_BOOLEAN = "boolean";
+static constexpr const char* MSG_INTEGER = "integer";
 
 // Message Keys
 static constexpr const char* MSG_NULL = "";
@@ -77,6 +84,7 @@ static constexpr const char* MSG_SUBSCRIBE = "subscribe";
 static constexpr const char* MSG_CURSOR = "cursor";
 static constexpr const char* MSG_NEXT_CURSOR = "nextCursor";
 static constexpr const char* MSG_INPUT_SCHEMA = "inputSchema";
+static constexpr const char* MSG_ARGUMENT = "argument";
 static constexpr const char* MSG_ARGUMENTS = "arguments";
 static constexpr const char* MSG_IS_ERROR = "isError";
 static constexpr const char* MSG_CONTENT = "content";

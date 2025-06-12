@@ -135,7 +135,7 @@ struct Resource {
 //           MSG_DESCRIPTION : "A URI template (according to RFC 6570) that can be
 //           "
 //                           "used to construct resource URIs.",
-//           MSG_FORMAT : "uri-template",
+//           MSG_FORMAT : MSG_URITEMPLATE,
 //           MSG_TYPE : MSG_STRING
 //         }
 //       },

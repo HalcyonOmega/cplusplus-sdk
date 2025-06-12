@@ -1,13 +1,11 @@
 #pragma once
 
-#include "CommonSchemas.h"
-#include "Constants.h"
-#include "ContentSchemas.h"
 #include "Core.h"
-#include "NotificationSchemas.h"
-#include "RequestSchemas.h"
-#include "ResultSchemas.h"
-#include "Schemas/Client/ClientSchemas.h"
+#include "Core/Features/Notification/NotificationSchemas.h"
+#include "Core/Features/Request/RequestSchemas.h"
+#include "Core/Features/Result/ResultSchemas.h"
+#include "Core/Features/Roles/RolesSchemas.h"
+#include "Core/Types/Roles.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -30,22 +28,12 @@ MCP_NAMESPACE_BEGIN
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Describes an argument that a prompt can accept.
- */
+// Describes an argument that a prompt can accept.
 struct PromptArgument {
-    /**
-     * The name of the argument.
-     */
-    string name;
-    /**
-     * A human-readable description of the argument.
-     */
-    optional<string> description;
-    /**
-     * Whether this argument must be provided.
-     */
-    optional<bool> required;
+    string Name;                  // The name of the argument.
+    optional<string> Description; // A human-readable description of the argument.
+    optional<bool> Required;      // Whether this argument must be provided.
+    Passthrough Additional;       // Additional properties.
 };
 
 // PromptMessage {
@@ -68,15 +56,10 @@ struct PromptArgument {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Describes a message returned as part of a prompt.
- *
- * This is similar to `SamplingMessage`, but also supports the embedding of
- * resources from the MCP server.
- */
+// Describes a message returned as part of a prompt.
 struct PromptMessage {
-    Role role;
-    variant<TextContent, ImageContent, AudioContent, EmbeddedResource> content;
+    Role Role;
+    variant<TextContent, ImageContent, AudioContent, EmbeddedResource> Content;
 };
 
 // Prompt {
@@ -103,22 +86,12 @@ struct PromptMessage {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * A prompt or prompt template that the server offers.
- */
+// A prompt or prompt template that the server offers.
 struct Prompt {
-    /**
-     * The name of the prompt or prompt template.
-     */
-    string name;
-    /**
-     * An optional description of what this prompt provides
-     */
-    optional<string> description;
-    /**
-     * A list of arguments to use for templating the prompt.
-     */
-    optional<vector<PromptArgument>> arguments;
+    string Name;                  // The name of the prompt or prompt template.
+    optional<string> Description; // An optional description of what this prompt provides.
+    optional<vector<PromptArgument>>
+        Arguments; // A list of arguments to use for templating the prompt.
 };
 
 // ListPromptsRequest {
