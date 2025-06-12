@@ -15,6 +15,7 @@ static constexpr const char* MSG_COMPLETION = "completion";
 static constexpr const char* MSG_HAS_MORE = "hasMore";
 static constexpr const char* MSG_BOOLEAN = "boolean";
 static constexpr const char* MSG_INTEGER = "integer";
+static constexpr const char* MSG_SIZE = "size";
 
 // Message Keys
 static constexpr const char* MSG_NULL = "";

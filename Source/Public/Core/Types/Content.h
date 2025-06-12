@@ -62,18 +62,12 @@ struct TextContent : public Content {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * An image provided to or from an LLM.
- */
+// An image provided to or from an LLM.
 struct ImageContent : public Content {
-    /* The base64-encoded image data.
-     * @format byte */
-    string Data;
-
-    /**
-     * The MIME type of the image. Different providers may support different image types.
-     */
-    string MIME_Type;
+    // TODO: @HalcyonOmega @format byte (base64)
+    string Data;      // The base64-encoded image data.
+    string MIME_Type; // The MIME type of the image. Different providers may support different image
+                      // types.
 
     ImageContent() {
         Type = MSG_IMAGE;
@@ -104,21 +98,12 @@ struct ImageContent : public Content {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Audio provided to or from an LLM.
- */
+// Audio provided to or from an LLM.
 struct AudioContent : public Content {
-    /**
-     * The base64-encoded audio data.
-     *
-     * @format byte
-     */
-    string Data;
-
-    /**
-     * The MIME type of the audio. Different providers may support different audio types.
-     */
-    string MIME_Type;
+    // TODO: @HalcyonOmega @format byte (base64)
+    string Data;      // The base64-encoded audio data.
+    string MIME_Type; // The MIME type of the audio. Different providers may support different audio
+                      // types.
 
     AudioContent() {
         Type = MSG_AUDIO;
@@ -143,21 +128,11 @@ struct AudioContent : public Content {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The contents of a specific resource or sub-resource.
- */
+// The contents of a specific resource or sub-resource.
 struct ResourceContents {
-    /**
-     * The URI of this resource.
-     *
-     * @format uri
-     */
-    string URI;
-
-    /**
-     * The MIME type of this resource, if known.
-     */
-    optional<string> MIME_Type;
+    // TODO: @HalcyonOmega @format URI
+    string URI;                // The URI of this resource.
+    optional<string> MIMEType; // The MIME type of this resource, if known.
 };
 
 // TextResourceContents {
@@ -184,11 +159,8 @@ struct ResourceContents {
 // };
 
 struct TextResourceContents : public ResourceContents {
-    /**
-     * The text of the item. This must only be set if the item can actually be
-     * represented as text (not binary data).
-     */
-    string Text;
+    string Text; // The text of the item. This must only be set if the item can actually be
+                 // represented as text (not binary data).
 };
 
 // BlobResourceContents {
@@ -215,12 +187,8 @@ struct TextResourceContents : public ResourceContents {
 // };
 
 struct BlobResourceContents : public ResourceContents {
-    /**
-     * A base64-encoded string representing the binary data of the item.
-     *
-     * @format byte
-     */
-    string Blob;
+    // TODO: @HalcyonOmega @format byte (base64)
+    string Blob; // A base64-encoded string representing the binary data of the item.
 };
 
 // EmbeddedResource {
@@ -246,12 +214,7 @@ struct BlobResourceContents : public ResourceContents {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The contents of a resource, embedded into a prompt or tool call result.
- *
- * It is up to the client how best to render embedded resources for the benefit
- * of the LLM and/or the user.
- */
+// The contents of a resource, embedded into a prompt or tool call result.
 struct EmbeddedResource : public Content {
     variant<TextResourceContents, BlobResourceContents> Resource;
 
