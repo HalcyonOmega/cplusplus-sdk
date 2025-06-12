@@ -21,7 +21,4 @@ static constexpr const size_t MAX_REGEX_LENGTH = 1000000; // 1MB
 // The default request timeout, in milliseconds.
 static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
 
-static constexpr const char* CONST_IMAGE = "image";
-static constexpr const char* CONST_AUDIO = "audio";
-
 MCP_NAMESPACE_END

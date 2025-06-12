@@ -177,17 +177,6 @@ future<string> HTTP_Response::text() const {
     return async(launch::async, [this]() { return body; });
 }
 
-const char* SseError::what() const noexcept {
-    return message_.c_str();
-}
-
-optional<int> SseError::GetCode() const {
-    return code_;
-}
-const ErrorEvent& SseError::GetEvent() const {
-    return event_;
-}
-
 future<void> SSEClientTransport::_authThenStart() {
     return async(launch::async, [this]() -> void {
         if (!_authProvider) { throw UnauthorizedError("No auth provider"); }
@@ -247,7 +236,7 @@ future<void> SSEClientTransport::_startOrAuth() {
         // );
         // _abortController = new AbortController();
 
-        // _eventSource->onerror = [this](const ErrorEvent& event) {
+        // _eventSource->onerror = [this](const ErrorMessage& event) {
         //     if (event.code == HTTPStatus::Unauthorized && _authProvider) {
         //         return _authThenStart();
         //     }

@@ -7,7 +7,6 @@ struct ProtocolOptions;
 struct RequestOptions;
 struct ClientCapabilities;
 struct ServerCapabilities;
-struct Implementation;
 struct Request;
 struct Notification;
 struct Result;

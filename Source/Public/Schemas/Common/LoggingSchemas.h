@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
 #include "NotificationSchemas.h"
@@ -52,7 +51,7 @@ struct SetLevelRequestParams {
 //           MSG_METHOD : {MSG_CONST : MTHD_LOGGING_SET_LEVEL, MSG_TYPE : MSG_STRING},
 //           MSG_PARAMS : {
 //             MSG_PROPERTIES : {
-//               "level" : {
+//               MSG_LEVEL : {
 //                 "$ref" : "#/definitions/LoggingLevel",
 //                 MSG_DESCRIPTION :
 //                     "The level of logging that the client wants to "
@@ -61,7 +60,7 @@ struct SetLevelRequestParams {
 //                     "to the client as notifications/message."
 //               }
 //             },
-//             MSG_REQUIRED : ["level"],
+//             MSG_REQUIRED : [MSG_LEVEL],
 //             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
@@ -85,16 +84,16 @@ struct LoggingMessageNotificationParams {
     /**
      * The severity of this log message.
      */
-    LoggingLevel level;
+    LoggingLevel Level;
     /**
      * An optional name of the logger issuing this message.
      */
-    optional<string> logger;
+    optional<string> Logger;
     /**
      * The data to be logged, such as a string message or an object. Any JSON
      * serializable type is allowed here.
      */
-    any data;
+    any Data;
 };
 
 // LoggingMessageNotification {
@@ -111,17 +110,17 @@ struct LoggingMessageNotificationParams {
 //                     "The data to be logged, such as a string message or an "
 //                     "object. Any JSON serializable type is allowed here."
 //               },
-//               "level" : {
+//               MSG_LEVEL : {
 //                 "$ref" : "#/definitions/LoggingLevel",
 //                 MSG_DESCRIPTION : "The severity of this log message."
 //               },
-//               "logger" : {
+//               MSG_LOGGER : {
 //                 MSG_DESCRIPTION :
 //                     "An optional name of the logger issuing this message.",
 //                 MSG_TYPE : MSG_STRING
 //               }
 //             },
-//             MSG_REQUIRED : [ MSG_DATA, "level" ],
+//             MSG_REQUIRED : [ MSG_DATA, MSG_LEVEL ],
 //             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
@@ -135,10 +134,10 @@ struct LoggingMessageNotificationParams {
  * which messages to send automatically.
  */
 struct LoggingMessageNotification : public Notification {
-    LoggingMessageNotificationParams params;
+    LoggingMessageNotificationParams Params;
 
     LoggingMessageNotification() {
-        method = MTHD_NOTIFICATIONS_MESSAGE;
+        Method = MTHD_NOTIFICATIONS_MESSAGE;
     }
 };
 

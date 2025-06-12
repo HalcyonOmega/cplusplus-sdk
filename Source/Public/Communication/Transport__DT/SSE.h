@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Communication/Messages.h"
 #include "Core.h"
 #include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
@@ -124,31 +125,7 @@ using EventSourceInit = map<string, string>;
 // RequestInit equivalent - using variant to handle different value types
 using RequestInit = map<string, variant<string, HeadersInit, bool>>;
 
-// ErrorEvent equivalent
-// TODO: Fix External Ref: Implement proper ErrorEvent
-struct ErrorEvent {
-    optional<int> Code;
-    string Message;
-};
-
-class SSEError : public exception {
-  public:
-    SSEError(optional<int> InCode, const string& InMessage, const ErrorEvent& InEvent)
-        : Code_(InCode), Event_(InEvent) {
-        Message_ = "SSE error: " + InMessage;
-    }
-
-    const char* what() const noexcept;
-
-    optional<int> GetCode() const;
-
-    const ErrorEvent& GetEvent() const;
-
-  private:
-    optional<int> code_;
-    string message_;
-    ErrorEvent event_;
-};
+class SSEError : public ErrorMessage {};
 
 /**
  * Configuration options for the SSEClientTransport.

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CommonSchemas.h"
 #include "Constants.h"
 #include "Core.h"
 #include "Core/Constants/MessageConstants.h"
@@ -77,7 +76,7 @@ struct ImageContent : public Content {
     string MIME_Type;
 
     ImageContent() {
-        Type = CONST_IMAGE;
+        Type = MSG_IMAGE;
     }
 };
 
@@ -122,7 +121,7 @@ struct AudioContent : public Content {
     string MIME_Type;
 
     AudioContent() {
-        Type = CONST_AUDIO;
+        Type = MSG_AUDIO;
     }
 };
 
@@ -254,7 +253,7 @@ struct BlobResourceContents : public ResourceContents {
  * of the LLM and/or the user.
  */
 struct EmbeddedResource : public Content {
-    variant<TextResourceContents, BlobResourceContents> resource;
+    variant<TextResourceContents, BlobResourceContents> Resource;
 
     EmbeddedResource() {
         Type = MSG_RESOURCE;

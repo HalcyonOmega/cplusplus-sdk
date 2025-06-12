@@ -315,7 +315,7 @@ async<JSON>
 Client<RequestT, NotificationT, ResultT>::SetLoggingLevel(LoggingLevel Level,
                                                           const optional<RequestOptions>& Options) {
     JSON SetLevelRequest = JSON{{MSG_METHOD, MTHD_LOGGING_SET_LEVEL},
-                                {MSG_PARAMS, JSON{{"level", static_cast<int>(Level)}}}};
+                                {MSG_PARAMS, JSON{{MSG_LEVEL, static_cast<int>(Level)}}}};
     return co_await Request(SetLevelRequest, "EmptyResultSchema", Options);
 }
 

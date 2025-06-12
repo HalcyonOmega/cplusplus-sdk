@@ -1,4 +1,3 @@
-// Common/shared schemas for Model Context Protocol
 #pragma once
 
 #include "Constants.h"
@@ -18,20 +17,8 @@ MCP_NAMESPACE_BEGIN
  * Describes the name and version of an MCP implementation.
  */
 struct Implementation {
-    string name;
-    string version;
+    string Name;
+    string Version;
 };
-
-// Role {
-//   MSG_DESCRIPTION
-//       : "The sender or recipient of messages and data in a conversation.",
-//         "enum" : [ "assistant", "user" ],
-//                  MSG_TYPE : MSG_STRING
-// };
-
-/**
- * The sender or recipient of messages and data in a conversation.
- */
-enum class Role { user, assistant };
 
 MCP_NAMESPACE_END
