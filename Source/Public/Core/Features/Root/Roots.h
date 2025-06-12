@@ -1,13 +1,12 @@
 #pragma once
 
-#include "CommonSchemas.h"
-#include "Constants.h"
 #include "Core.h"
-#include "NotificationSchemas.h"
-#include "RequestSchemas.h"
-#include "ResultSchemas.h"
 
 MCP_NAMESPACE_BEGIN
+
+// Forward Declarations
+// TODO: @HalcyonOmega create URI class
+class URIFile; // This *must* start with "file://" for now.
 
 // Root {
 //     MSG_DESCRIPTION : "Represents a root directory or file that the server can operate on.",
@@ -34,31 +33,16 @@ MCP_NAMESPACE_BEGIN
 //                        MSG_TYPE : MSG_OBJECT
 // };
 
-// RootsListChangedNotification {
-//     MSG_DESCRIPTION : "A notification from the client to the server, informing it that the "
-//                     "list of roots has changed.\nThis notification should be sent whenever "
-//                     "the client adds, removes, or modifies any root.\nThe server should "
-//                     "then request an updated list of roots using the ListRootsRequest.",
-//                     MSG_PROPERTIES
-//         : {
-//             MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED, MSG_TYPE: MSG_STRING},
-//             MSG_PARAMS: {
-//                 MSG_ADDITIONAL_PROPERTIES: {},
-//                 MSG_PROPERTIES: {
-//                     MSG_META: {
-//                         MSG_ADDITIONAL_PROPERTIES: {},
-//                         MSG_DESCRIPTION:
-//                             "This parameter name is reserved by MCP to allow clients and "
-//                             "servers to attach additional metadata to their notifications.",
-//                         MSG_TYPE: MSG_OBJECT
-//                     }
-//                 },
-//                 MSG_TYPE: MSG_OBJECT
-//             }
-//         },
-//           MSG_REQUIRED : [MSG_METHOD],
-//                        MSG_TYPE : MSG_OBJECT
-// };
+// Represents a root directory or file that the server can operate on.
+struct Root {
+    URIFile URI; // The URI identifying the root. This *must* start with file:// for now. This
+                 // restriction may be relaxed in future versions of the protocol to allow other URI
+                 // schemes.
+    optional<string>
+        Name; // An optional name for the root. This can be used to provide a human-readable
+              // identifier for the root, which may be useful for display purposes or for
+              // referencing the root in other parts of the application.
+};
 
 // ListRootsRequest {
 //     MSG_DESCRIPTION
@@ -97,6 +81,21 @@ MCP_NAMESPACE_BEGIN
 //                                       MSG_TYPE : MSG_OBJECT
 // };
 
+/**
+ * Sent from the server to request a list of root URIs from the client. Roots allow
+ * servers to ask for specific directories or files to operate on. A common example
+ * for roots is providing a set of repositories or directories a server should operate
+ * on.
+ *
+ * This request is typically used when the server needs to understand the file system
+ * structure or access specific locations that the client has permission to read from.
+ */
+struct ListRootsRequest : public RequestMessage {
+    ListRootsRequest() {
+        method = MTHD_ROOTS_LIST;
+    }
+};
+
 // ListRootsResult {
 //     MSG_DESCRIPTION : "The client's response to a roots/list request from the server.\nThis
 //     result
@@ -120,55 +119,46 @@ MCP_NAMESPACE_BEGIN
 // };
 
 /**
- * Represents a root directory or file that the server can operate on.
- */
-struct Root {
-    /**
-     * The URI identifying the root. This *must* start with file:// for now.
-     * This restriction may be relaxed in future versions of the protocol to allow
-     * other URI schemes.
-     *
-     * @format uri
-     */
-    string uri;
-    /**
-     * An optional name for the root. This can be used to provide a human-readable
-     * identifier for the root, which may be useful for display purposes or for
-     * referencing the root in other parts of the application.
-     */
-    optional<string> name;
-};
-
-/**
- * Sent from the server to request a list of root URIs from the client. Roots allow
- * servers to ask for specific directories or files to operate on. A common example
- * for roots is providing a set of repositories or directories a server should operate
- * on.
- *
- * This request is typically used when the server needs to understand the file system
- * structure or access specific locations that the client has permission to read from.
- */
-struct ListRootsRequest : public Request {
-    ListRootsRequest() {
-        method = MTHD_ROOTS_LIST;
-    }
-};
-
-/**
  * The client's response to a roots/list request from the server.
  * This result contains an array of Root objects, each representing a root directory
  * or file that the server can operate on.
  */
-struct ListRootsResult : public Result {
+struct ListRootsResult : public ResultMessage {
     vector<Root> roots;
 };
+
+// RootsListChangedNotification {
+//     MSG_DESCRIPTION : "A notification from the client to the server, informing it that the "
+//                     "list of roots has changed.\nThis notification should be sent whenever "
+//                     "the client adds, removes, or modifies any root.\nThe server should "
+//                     "then request an updated list of roots using the ListRootsRequest.",
+//                     MSG_PROPERTIES
+//         : {
+//             MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED, MSG_TYPE: MSG_STRING},
+//             MSG_PARAMS: {
+//                 MSG_ADDITIONAL_PROPERTIES: {},
+//                 MSG_PROPERTIES: {
+//                     MSG_META: {
+//                         MSG_ADDITIONAL_PROPERTIES: {},
+//                         MSG_DESCRIPTION:
+//                             "This parameter name is reserved by MCP to allow clients and "
+//                             "servers to attach additional metadata to their notifications.",
+//                         MSG_TYPE: MSG_OBJECT
+//                     }
+//                 },
+//                 MSG_TYPE: MSG_OBJECT
+//             }
+//         },
+//           MSG_REQUIRED : [MSG_METHOD],
+//                        MSG_TYPE : MSG_OBJECT
+// };
 
 /**
  * A notification from the client to the server, informing it that the list of roots has changed.
  * This notification should be sent whenever the client adds, removes, or modifies any root.
  * The server should then request an updated list of roots using the ListRootsRequest.
  */
-struct RootsListChangedNotification : public Notification {
+struct RootsListChangedNotification : public NotificationMessage {
     RootsListChangedNotification() {
         method = MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED;
     }

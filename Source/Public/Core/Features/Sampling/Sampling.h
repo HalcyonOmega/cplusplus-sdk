@@ -1,11 +1,8 @@
 #pragma once
 
-#include "CommonSchemas.h"
-#include "Constants.h"
-#include "ContentSchemas.h"
 #include "Core.h"
-#include "RequestSchemas.h"
-#include "ResultSchemas.h"
+#include "Core/Types/Content.h"
+#include "Core/Types/Roles.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -19,18 +16,16 @@ MCP_NAMESPACE_BEGIN
 //                         {"$ref" : "#/definitions/AudioContent"}
 //                       ]
 //                     },
-//                     "role" : {"$ref" : "#/definitions/Role"}
+//                     MSG_ROLE : {"$ref" : "#/definitions/Role"}
 //                   },
-//                                  MSG_REQUIRED : [ MSG_CONTENT, "role" ],
+//                                  MSG_REQUIRED : [ MSG_CONTENT, MSG_ROLE ],
 //                                               MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Describes a message issued to or received from an LLM API.
- */
+// Describes a message issued to or received from an LLM API.
 struct SamplingMessage {
     Role Role;
-    variant<TextContent, ImageContent, AudioContent> Content;
+    variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
 };
 
 // ModelHint {
@@ -161,49 +156,24 @@ struct ModelHint {
  * balance them against other considerations.
  */
 struct ModelPreferences {
-    /**
-     * Optional hints to use for model selection.
-     *
-     * If multiple hints are specified, the client MUST evaluate them in order
-     * (such that the first match is taken).
-     *
-     * The client SHOULD prioritize these hints over the numeric priorities, but
-     * MAY still use the priorities to select from ambiguous matches.
-     */
-    optional<vector<ModelHint>> Hints;
-
-    /**
-     * How much to prioritize cost when selecting a model. A value of 0 means cost
-     * is not important, while a value of 1 means cost is the most important
-     * factor.
-     *
-     * @TJS-type number
-     * @minimum 0
-     * @maximum 1
-     */
-    optional<number> CostPriority;
-
-    /**
-     * How much to prioritize sampling speed (latency) when selecting a model. A
-     * value of 0 means speed is not important, while a value of 1 means speed is
-     * the most important factor.
-     *
-     * @TJS-type number
-     * @minimum 0
-     * @maximum 1
-     */
-    optional<number> SpeedPriority;
-
-    /**
-     * How much to prioritize intelligence and capabilities when selecting a
-     * model. A value of 0 means intelligence is not important, while a value of 1
-     * means intelligence is the most important factor.
-     *
-     * @TJS-type number
-     * @minimum 0
-     * @maximum 1
-     */
-    optional<number> IntelligencePriority;
+    optional<vector<ModelHint>>
+        Hints; // Optional hints to use for model selection. If multiple hints are specified, the
+               // client MUST evaluate them in order (such that the first match is taken). The
+               // client SHOULD prioritize these hints over the numeric priorities, but MAY still
+               // use the priorities to select from ambiguous matches.
+    // TODO: @HalcyonOmega Enforce min = 0, max = 1
+    optional<double> CostPriority; // How much to prioritize cost when selecting a model. A
+                                   // value of 0 means cost is not important, while a value of 1
+                                   // means cost is the most important factor.
+    // TODO: @HalcyonOmega Enforce min = 0, max = 1
+    optional<double> SpeedPriority; // How much to prioritize sampling speed (latency) when
+                                    // selecting a model. A value of 0 means speed is not important,
+                                    // while a value of 1 means speed is the most important factor.
+    // TODO: @HalcyonOmega Enforce min = 0, max = 1
+    optional<double> IntelligencePriority; // How much to prioritize intelligence and capabilities
+                                           // when selecting a model. A value of 0 means
+                                           // intelligence is not important, while a value of 1
+                                           // means intelligence is the most important factor.
 };
 
 enum class IncludeContext { none, thisServer, allServers };
@@ -310,7 +280,7 @@ struct CreateMessageRequestParams {
  * which model to select. The client should also inform the user before beginning sampling, to allow
  * them to inspect the request (human in the loop) and decide whether to approve it.
  */
-struct CreateMessageRequest : public Request {
+struct CreateMessageRequest : public RequestMessage {
     CreateMessageRequestParams Params;
 
     CreateMessageRequest() {
@@ -362,15 +332,9 @@ enum class StopReason { endTurn, stopSequence, maxTokens };
  * inform the user before returning the sampled message, to allow them to inspect the response
  * (human in the loop) and decide whether to allow the server to see it.
  */
-struct CreateMessageResult : public Result, SamplingMessage {
-    /**
-     * The name of the model that generated the message.
-     */
-    string Model;
-    /**
-     * The reason why sampling stopped, if known.
-     */
-    optional<variant<StopReason, string>> StopReason;
+struct CreateMessageResult : public ResultMessage, SamplingMessage {
+    string Model; // The name of the model that generated the message.
+    optional<variant<StopReason, string>> StopReason; // The reason why sampling stopped, if known.
 };
 
 MCP_NAMESPACE_END

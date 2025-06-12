@@ -1,14 +1,15 @@
 #pragma once
 
-#include "CommonSchemas.h"
-#include "Constants.h"
-#include "ContentSchemas.h"
 #include "Core.h"
-#include "NotificationSchemas.h"
-#include "RequestSchemas.h"
-#include "ResultSchemas.h"
+#include "Core/Constants/MessageConstants.h"
+#include "Core/Constants/MethodConstants.h"
 
 MCP_NAMESPACE_BEGIN
+
+// Forward Declarations
+// TODO: @HalcyonOmega create JSONSchema class. Needed to define ToolInputSchema and
+// ToolOutputSchema.
+class JSONSchema;
 
 // ToolAnnotations {
 //   MSG_DESCRIPTION
@@ -58,64 +59,28 @@ MCP_NAMESPACE_BEGIN
 //         MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Additional properties describing a Tool to clients.
- *
- * NOTE: all properties in ToolAnnotations are **hints**.
- * They are not guaranteed to provide a faithful description of
- * tool behavior (including descriptive properties like `title`).
- *
- * Clients should never make tool use decisions based on ToolAnnotations
- * received from untrusted servers.
- */
+// Additional properties describing a Tool to clients.
+// NOTE: all properties in ToolAnnotations are **hints**.
+// They are not guaranteed to provide a faithful description of
+// tool behavior (including descriptive properties like `title`).
+// Clients should never make tool use decisions based on ToolAnnotations
+// received from untrusted servers.
 struct ToolAnnotations {
-    /**
-     * A human-readable title for the tool.
-     */
-    optional<string> Title;
-
-    /**
-     * If true, the tool does not modify its environment.
-     *
-     * Default: false
-     */
-    optional<bool> ReadOnlyHint;
-
-    /**
-     * If true, the tool may perform destructive updates to its environment.
-     * If false, the tool performs only additive updates.
-     *
-     * (This property is meaningful only when `readOnlyHint == false`)
-     *
-     * Default: true
-     */
-    optional<bool> DestructiveHint;
-
-    /**
-     * If true, calling the tool repeatedly with the same arguments
-     * will have no additional effect on the its environment.
-     *
-     * (This property is meaningful only when `readOnlyHint == false`)
-     *
-     * Default: false
-     */
-    optional<bool> IdempotentHint;
-
-    /**
-     * If true, this tool may interact with an "open world" of external
-     * entities. If false, the tool's domain of interaction is closed.
-     * For example, the world of a web search tool is open, whereas that
-     * of a memory tool is not.
-     *
-     * Default: true
-     */
-    optional<bool> OpenWorldHint;
-};
-
-struct ToolInputSchema {
-    string Type = MSG_OBJECT;
-    optional<AdditionalObjects> Properties;
-    optional<vector<string>> Required;
+    optional<string> Title; // A human-readable title for the tool.
+    optional<bool>
+        ReadOnlyHint; // If true, the tool does not modify its environment. Default: false
+    optional<bool>
+        DestructiveHint; // If true, the tool may perform destructive updates to its environment. If
+                         // false, the tool performs only additive updates. (This property is
+                         // meaningful only when `readOnlyHint == false`) Default: true
+    optional<bool>
+        IdempotentHint; // If true, calling the tool repeatedly with the same arguments will have no
+                        // additional effect on the its environment. (This property is meaningful
+                        // only when `readOnlyHint == false`) Default: false
+    optional<bool> OpenWorldHint; // If true, this tool may interact with an "open world" of
+                                  // external entities. If false, the tool's domain of interaction
+                                  // is closed. For example, the world of a web search tool is open,
+                                  // whereas that of a memory tool is not. Default: true
 };
 
 // Tool {
@@ -159,32 +124,17 @@ struct ToolInputSchema {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Definition for a tool the client can call.
- */
+// Definition for a tool the client can call.
 struct Tool {
-    /**
-     * The name of the tool.
-     */
-    string Name;
-
-    /**
-     * A human-readable description of the tool.
-     *
-     * This can be used by clients to improve the LLM's understanding of available
-     * tools. It can be thought of like a "hint" to the model.
-     */
-    optional<string> Description;
-
-    /**
-     * A JSON Schema object defining the expected parameters for the tool.
-     */
-    ToolInputSchema InputSchema;
-
-    /**
-     * Optional additional tool information.
-     */
-    optional<ToolAnnotations> Annotations;
+    string Name;                  // The name of the tool.
+    optional<string> Description; // A human-readable description of the tool. This can be used by
+                                  // clients to improve the LLM's understanding of available tools.
+                                  // It can be thought of like a "hint" to the model.
+    JSONSchema InputSchema; // A JSON Schema object defining the expected parameters for the tool.
+    optional<JSONSchema>
+        OutputSchema; // An optional JSON object defining the structure of the tool's output
+                      // returned in the StructuredContent field of a CallToolResult.
+    optional<ToolAnnotations> Annotations; // Optional additional tool information.
 };
 
 // ListToolsRequest {
@@ -209,12 +159,10 @@ struct Tool {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to request a list of tools the server has.
- */
+// Sent from the client to request a list of tools the server has.
 struct ListToolsRequest : public PaginatedRequest {
     ListToolsRequest() {
-        method = MTHD_TOOLS_LIST;
+        Method = MTHD_TOOLS_LIST;
     }
 };
 
@@ -244,9 +192,7 @@ struct ListToolsRequest : public PaginatedRequest {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a tools/list request from the client.
- */
+// The server's response to a tools/list request from the client.
 struct ListToolsResult : public PaginatedResult {
     vector<Tool> Tools;
 };
@@ -292,27 +238,18 @@ struct ListToolsResult : public PaginatedResult {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a tool call.
- *
- * Any errors that originate from the tool SHOULD be reported inside the result
- * object, with `isError` set to true, _not_ as an MCP protocol-level error
- * response. Otherwise, the LLM would not be able to see that an error occurred
- * and self-correct.
- *
- * However, any errors in _finding_ the tool, an error indicating that the
- * server does not support tool calls, or any other exceptional conditions,
- * should be reported as an MCP error response.
- */
-struct CallToolResult : public Result {
+// The server's response to a tool call.
+// Any errors that originate from the tool SHOULD be reported inside the result
+// object, with `isError` set to true, _not_ as an MCP protocol-level error
+// response. Otherwise, the LLM would not be able to see that an error occurred
+// and self-correct.
+// However, any errors in _finding_ the tool, an error indicating that the
+// server does not support tool calls, or any other exceptional conditions,
+// should be reported as an MCP error response.
+struct CallToolResult : public ResultMessage {
     vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>> Content;
-
-    /**
-     * Whether the tool call ended in an error.
-     *
-     * If not set, this is assumed to be false (the call was successful).
-     */
-    optional<bool> IsError;
+    optional<bool> IsError; // Whether the tool call ended in an error. If not set, this is assumed
+                            // to be false (the call was successful).
 };
 
 struct CallToolRequestParams {
@@ -339,14 +276,12 @@ struct CallToolRequestParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Used by the client to invoke a tool provided by the server.
- */
-struct CallToolRequest : public Request {
+// Used by the client to invoke a tool provided by the server.
+struct CallToolRequest : public RequestMessage {
     CallToolRequestParams Params;
 
     CallToolRequest() {
-        method = MTHD_TOOLS_CALL;
+        Method = MTHD_TOOLS_CALL;
     }
 };
 
@@ -379,14 +314,12 @@ struct CallToolRequest : public Request {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * An optional notification from the server to the client, informing it that the
- * list of tools it offers has changed. This may be issued by servers without
- * any previous subscription from the client.
- */
-struct ToolListChangedNotification : public Notification {
+// An optional notification from the server to the client, informing it that the
+// list of tools it offers has changed. This may be issued by servers without
+// any previous subscription from the client.
+struct ToolListChangedNotification : public NotificationMessage {
     ToolListChangedNotification() {
-        method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
+        Method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
     }
 };
 
