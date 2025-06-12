@@ -2,8 +2,13 @@
 
 #include "Core.h"
 #include "Core/Messages/Messages.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
+
+// Forward Declarations
+// TODO: @HalcyonOmega Fix External Ref: ProgressToken
+struct ProgressToken;
 
 // RequestID {
 //   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
@@ -28,8 +33,7 @@ struct RequestID {
 
 // RequestMessage {
 //   MSG_DESCRIPTION : "A request that expects a response.",
-//                   MSG_PROPERTIES
-//       : {
+//   MSG_PROPERTIES  : {
 //         MSG_ID : {"$ref" : "#/definitions/RequestID"},
 //         MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
 //         MSG_METHOD : {MSG_TYPE : MSG_STRING},
@@ -58,6 +62,20 @@ struct RequestID {
 //         MSG_REQUIRED : [ MSG_ID, MSG_JSON_RPC, MSG_METHOD ],
 //                      MSG_TYPE : MSG_OBJECT
 // };
+
+struct RequestParamsMeta {
+    optional<ProgressToken>
+        ProgressToken; // If specified, the caller is requesting out-of-band
+                       // progress notifications for this request (as represented by
+                       // notifications/progress). The value of this parameter is an opaque token
+                       // that will be attached to any subsequent notifications. The receiver is not
+                       // obligated to provide these notifications.
+};
+
+struct RequestParams {
+    optional<RequestParamsMeta> Meta;
+    DEFINE_TYPE_JSON(RequestParams, JKEY(Meta, MSG_META))
+};
 
 // A request that expects a response. Supports JSON-RPC 2.0.
 class RequestMessage : public MessageBase {

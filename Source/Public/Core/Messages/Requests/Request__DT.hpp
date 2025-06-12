@@ -1,22 +1,13 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Messages/Requests/Requests.h"
 
 MCP_NAMESPACE_BEGIN
 
-struct BaseRequestParams {
-    optional<RequestMeta> _meta;
-    Passthrough Additional;
-};
-
-struct Request {
-    string Method;
-    optional<BaseRequestParams> Params;
-};
-
 // This request is sent from the client to the server when it first connects, asking it to begin
 // initialization.
-struct InitializeRequest : public Request {
+struct InitializeRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         string
@@ -34,25 +25,6 @@ struct InitializeRequest : public Request {
 const isInitializeRequest =
     (value : unknown) : value is InitializeRequest = > InitializeRequest.safeParse(value).success;
 
-/* Ping */
-// A ping, issued by either the server or the client, to check that the other party is still alive.
-// The receiver must promptly respond, or else may be disconnected.
-struct PingRequest : public Request {
-    PingRequest() {
-        Method = MTHD_PING;
-    }
-};
-
-/* Pagination */
-struct PaginatedRequest : public Request {
-    optional < struct {
-        BaseRequestParams;
-        optional<Cursor>
-            Cursor; // An opaque token representing the current pagination position. If provided,
-                    // the server should return results starting after this cursor.
-    } > Params;
-};
-
 // Sent from the client to request a list of resources the server has.
 struct ListResourcesRequest : public PaginatedRequest {
     ListResourcesRequest() {
@@ -68,7 +40,7 @@ struct ListResourceTemplatesRequest : public PaginatedRequest {
 };
 
 // Sent from the client to the server, to read a specific resource URI.
-struct ReadResourceRequest : public Request {
+struct ReadResourceRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         string URI; // The URI of the resource to read. The URI can use any protocol; it is up to
@@ -82,7 +54,7 @@ struct ReadResourceRequest : public Request {
 
 // Sent from the client to request resources/updated notifications from the server whenever a
 // particular resource changes.
-struct SubscribeRequest : public Request {
+struct SubscribeRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         string URI; // The URI of the resource to subscribe to. The URI can use any protocol; it is
@@ -96,7 +68,7 @@ struct SubscribeRequest : public Request {
 
 // Sent from the client to request cancellation of resources/updated notifications from the server.
 // This should follow a previous resources/subscribe request.
-struct UnsubscribeRequest : public Request {
+struct UnsubscribeRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         string URI; // The URI of the resource to unsubscribe from.
@@ -115,7 +87,7 @@ struct ListPromptsRequest : public PaginatedRequest {
 };
 
 // Used by the client to get a prompt provided by the server.
-struct GetPromptRequest : public Request {
+struct GetPromptRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         string Name; // The name of the prompt or prompt template.
@@ -136,7 +108,7 @@ struct ListToolsRequest : public PaginatedRequest {
 };
 
 // Used by the client to invoke a tool provided by the server.
-struct CallToolRequest : public Request {
+struct CallToolRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         string Name;
@@ -149,7 +121,7 @@ struct CallToolRequest : public Request {
 };
 
 // A request from the client to the server, to enable or adjust logging.
-struct SetLevelRequest : public Request {
+struct SetLevelRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         LoggingLevel Level; // The level of logging that the client wants to receive from the
@@ -165,7 +137,7 @@ struct SetLevelRequest : public Request {
 // A request from the server to sample an LLM via the client. The client has full discretion over
 // which model to select. The client should also inform the user before beginning sampling, to allow
 // them to inspect the request (human in the loop) and decide whether to approve it.
-struct CreateMessageRequest : public Request {
+struct CreateMessageRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         vector<SamplingMessage> Messages;
@@ -192,7 +164,7 @@ struct CreateMessageRequest : public Request {
 };
 
 // A request from the client to the server, to ask for completion options.
-struct CompleteRequest : public Request {
+struct CompleteRequest : public RequestMessage {
     struct {
         BaseRequestParams;
         variant<PromptReference, ResourceReference> Ref;
@@ -209,7 +181,7 @@ struct CompleteRequest : public Request {
 };
 
 // Sent from the server to request a list of root URIs from the client.
-struct ListRootsRequest : public Request {
+struct ListRootsRequest : public RequestMessage {
     ListRootsRequest() {
         Method = MTHD_ROOTS_LIST;
     }

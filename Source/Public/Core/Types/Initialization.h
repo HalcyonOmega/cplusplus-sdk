@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "Core/Constants/MethodConstants.h"
 #include "Core/Messages/MessagesIncludes.h"
-#include "Core/Types/Capabilities__DT.h"
+#include "Core/Types/Capabilities.h"
 #include "Core/Types/Implementation.h"
 
 MCP_NAMESPACE_BEGIN
