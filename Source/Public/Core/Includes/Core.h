@@ -61,7 +61,7 @@ static constexpr const array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
 // using std::string_view;
 // using std::unique_ptr;
 // using std::unordered_map;
-using std::variant;
+// using std::variant;
 // using std::vector;
 
 // JSON type alias
@@ -70,8 +70,7 @@ using JSON = nlohmann::json;
 // Common type aliases used across MCP
 using StreamID = string;
 using EventID = string;
-using RequestID = variant<string, int>; // A uniquely identifying ID for a
-                                        // request in JSON-RPC.
+// request in JSON-RPC.
 using SessionID = string;
 using Cursor = string; // An opaque token used to represent a cursor for pagination.
 

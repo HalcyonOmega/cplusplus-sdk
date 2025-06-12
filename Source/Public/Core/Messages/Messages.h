@@ -8,21 +8,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct MessageID {
-  private:
-    // TODO: Is LongLong the right type or should it be double?
-    variant<string, int, long long> m_MessageID;
-
-  public:
-    // Constructors
-    MessageID(string StringID) : m_MessageID(std::move(StringID)) {}
-    MessageID(int IntID) : m_MessageID(IntID) {}
-    MessageID(long long LongLongID) : m_MessageID(LongLongID) {}
-
-    // Direct Getters
-    [[nodiscard]] string_view ToString() const;
-};
-
 struct MessageParams {
     [[nodiscard]] virtual string Serialize() const;
     virtual MessageParams Deserialize(string InString) = 0;

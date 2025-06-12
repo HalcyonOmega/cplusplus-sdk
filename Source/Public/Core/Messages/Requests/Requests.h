@@ -5,6 +5,27 @@
 
 MCP_NAMESPACE_BEGIN
 
+// RequestID {
+//   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
+//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
+// };
+
+// A uniquely identifying ID for a request in JSON-RPC.
+struct RequestID {
+  private:
+    // TODO: Is LongLong the right type or should it be double?
+    variant<string, int, long long> m_RequestID;
+
+  public:
+    // Constructors
+    RequestID(string StringID) : m_RequestID(std::move(StringID)) {}
+    RequestID(int IntID) : m_RequestID(IntID) {}
+    RequestID(long long LongLongID) : m_RequestID(LongLongID) {}
+
+    // Direct Getters
+    [[nodiscard]] string_view ToString() const;
+};
+
 // RequestMessage {
 //   MSG_DESCRIPTION : "A request that expects a response.",
 //                   MSG_PROPERTIES
@@ -41,7 +62,7 @@ MCP_NAMESPACE_BEGIN
 // A request that expects a response. Supports JSON-RPC 2.0.
 class RequestMessage : public MessageBase {
   private:
-    MessageID m_ID;
+    RequestID m_ID;
     string m_Method;
     optional<unique_ptr<MessageParams>> m_Params = nullopt;
 
@@ -51,7 +72,7 @@ class RequestMessage : public MessageBase {
         : m_ID(0), m_Method(std::move(Method)), m_Params(std::move(Params)) {}
 
     // Direct Getters
-    [[nodiscard]] MessageID GetMessageID() const;
+    [[nodiscard]] RequestID GetRequestID() const;
     [[nodiscard]] string_view GetMethod() const;
     [[nodiscard]] optional<const MessageParams*> GetParams() const;
 

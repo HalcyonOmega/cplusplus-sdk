@@ -259,7 +259,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                            "Invalid Request: Only one initialization request is allowed"}}},
                         {MSG_ID, nullptr}};
                     ErrorMessage Response = ErrorMessage(
-                        MessageID = nullptr, Code = Errors::InvalidRequest,
+                        RequestID = nullptr, Code = Errors::InvalidRequest,
                         Message = "Invalid Request: Only one initialization request is allowed");
                     res->writeHead(HTTPStatus::BadRequest, {});
                     res->end(Response.Serialize());
@@ -688,8 +688,8 @@ void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
         //         try {
         //             // TODO: Fix External Ref: MessageBaseSchema validation
         //             auto message = JSON::parse(event.data);
-        //             if (options.replayMessageId && IsResponseMessage(message)) {
-        //                 message[MSG_ID] = *options.replayMessageId;
+        //             if (options.replayRequestID && IsResponseMessage(message)) {
+        //                 message[MSG_ID] = *options.replayRequestID;
         //             }
         //             if (onmessage) onmessage(message);
         //         } catch (const exception& error) {
@@ -706,7 +706,7 @@ void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
         if (!abort_requested_ && lastEventID) {
             try {
                 StartSSEOptions reconnectOptions = {*lastEventID, options.onresumptiontoken,
-                                                    options.replayMessageId};
+                                                    options.replayRequestID};
                 scheduleReconnection(reconnectOptions, 0);
             } catch (const exception& reconnectError) {
                 if (onerror) {

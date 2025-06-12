@@ -159,7 +159,7 @@ struct TimeoutInfo {
 template <typename SendRequestT, typename SendNotificationT, typename SendResultT> class Protocol {
   private:
     shared_ptr<Transport> m_Transport;
-    MessageID m_RequestMessageID{0};
+    RequestID m_RequestRequestID{0};
 
     unordered_map<string, function<future<SendResultT>(
                               const RequestMessage&,
@@ -292,10 +292,10 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         Handler(ProgressData);
     }
 
-    void SetupTimeout(int64_t InMessageID, int64_t InTimeout,
+    void SetupTimeout(int64_t InRequestID, int64_t InTimeout,
                       const optional<int64_t>& InMaxTotalTimeout, function<void()> InOnTimeout,
                       bool InResetTimeoutOnProgress = false) {
-        TimeoutInfo Info{.TimeoutID = static_cast<uint64_t>(InMessageID),
+        TimeoutInfo Info{.TimeoutID = static_cast<uint64_t>(InRequestID),
                          .StartTime = chrono::steady_clock::now(),
                          .Timeout = InTimeout,
                          .MaxTotalTimeout = InMaxTotalTimeout,
@@ -303,15 +303,15 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                          .OnTimeout = move(InOnTimeout)};
 
         lock_guard<mutex> Lock(m_HandlersMutex);
-        m_TimeoutInfo[InMessageID] = move(Info);
+        m_TimeoutInfo[InRequestID] = move(Info);
 
         // TODO: Fix External Ref: Timer/Timeout mechanism - Set up actual timer that calls
         // onTimeout after timeout milliseconds
     }
 
-    bool ResetTimeout(int64_t InMessageID) {
+    bool ResetTimeout(int64_t InRequestID) {
         lock_guard<mutex> Lock(m_HandlersMutex);
-        auto It = m_TimeoutInfo.find(InMessageID);
+        auto It = m_TimeoutInfo.find(InRequestID);
         if (It == m_TimeoutInfo.end()) return false;
 
         auto& Info = It->second;
@@ -330,9 +330,9 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         return true;
     }
 
-    void CleanupTimeout(int64_t InMessageID) {
+    void CleanupTimeout(int64_t InRequestID) {
         lock_guard<mutex> Lock(m_HandlersMutex);
-        auto It = m_TimeoutInfo.find(InMessageID);
+        auto It = m_TimeoutInfo.find(InRequestID);
         if (It != m_TimeoutInfo.end()) {
             // TODO: Fix External Ref: Timer/Timeout mechanism - Cancel actual timer
             m_TimeoutInfo.erase(It);
@@ -515,13 +515,13 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         }
 
         // Convert RequestID to int64_t for message correlation
-        int64_t MessageID = 0;
+        int64_t RequestID = 0;
         if (holds_alternative<int64_t>(ResponseID)) {
-            MessageID = get<int64_t>(ResponseID);
+            RequestID = get<int64_t>(ResponseID);
         } else if (holds_alternative<string>(ResponseID)) {
             // Handle string IDs by parsing to int
             try {
-                MessageID = stoll(get<string>(ResponseID));
+                RequestID = stoll(get<string>(ResponseID));
             } catch (const exception&) {
                 OnErrorInternal(runtime_error("Cannot correlate response with string ID: "
                                               + get<string>(ResponseID)));
@@ -533,11 +533,11 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         {
             lock_guard<mutex> Lock(m_HandlersMutex);
-            auto It = m_ResponseHandlers.find(MessageID);
+            auto It = m_ResponseHandlers.find(RequestID);
             if (It != m_ResponseHandlers.end()) {
                 Handler = It->second;
                 m_ResponseHandlers.erase(It);
-                m_ProgressHandlers.erase(MessageID);
+                m_ProgressHandlers.erase(RequestID);
             }
         }
 
@@ -546,7 +546,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             return;
         }
 
-        CleanupTimeout(MessageID);
+        CleanupTimeout(RequestID);
 
         if (holds_alternative<JSON_RPC_Response>(InResponse)) {
             Handler(get<JSON_RPC_Response>(InResponse));
@@ -673,11 +673,11 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             throw runtime_error("Request was aborted");
         }
 
-        int64_t MessageID = m_RequestMessageID++;
+        int64_t RequestID = m_RequestRequestID++;
 
         RequestMessage Request;
         Request.JSON_RPC = MSG_JSON_RPC_VERSION;
-        Request.ID = MessageID;
+        Request.ID = RequestID;
         Request.Method = InRequest.Method;
         Request.Params = InRequest.Params;
 
@@ -686,22 +686,22 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         if (InOptions && InOptions->OnProgress) {
             lock_guard<mutex> Lock(m_HandlersMutex);
-            m_ProgressHandlers[MessageID] = *InOptions->OnProgress;
+            m_ProgressHandlers[RequestID] = *InOptions->OnProgress;
 
             if (!Request.Params) { Request.Params = JSON::object(); }
             if (!Request.Params->contains(MSG_META)) {
                 (*Request.Params)[MSG_META] = JSON::object();
             }
-            (*Request.Params)[MSG_META][MSG_PROGRESS_TOKEN] = MessageID;
+            (*Request.Params)[MSG_META][MSG_PROGRESS_TOKEN] = RequestID;
         }
 
-        auto Cancel = [this, MessageID](const string& InReason) {
+        auto Cancel = [this, RequestID](const string& InReason) {
             {
                 lock_guard<mutex> Lock(m_HandlersMutex);
-                m_ResponseHandlers.erase(MessageID);
-                m_ProgressHandlers.erase(MessageID);
+                m_ResponseHandlers.erase(RequestID);
+                m_ProgressHandlers.erase(RequestID);
             }
-            CleanupTimeout(MessageID);
+            CleanupTimeout(RequestID);
 
             // Send cancellation notification
             if (m_Transport) {
@@ -709,7 +709,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 CancelNotification.JSON_RPC = MSG_JSON_RPC_VERSION;
                 CancelNotification.Method = MTHD_NOTIFICATION_CANCELLED;
                 CancelNotification.Params = JSON::object();
-                (*CancelNotification.Params)[MSG_REQUEST_ID] = MessageID;
+                (*CancelNotification.Params)[MSG_REQUEST_ID] = RequestID;
                 (*CancelNotification.Params)["reason"] = InReason;
 
                 m_Transport->Send(CancelNotification);
@@ -718,7 +718,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         {
             lock_guard<mutex> Lock(m_HandlersMutex);
-            m_ResponseHandlers[MessageID] =
+            m_ResponseHandlers[RequestID] =
                 [ResultPromise = move(ResultPromise), Cancel,
                  InOptions](const variant<JSON_RPC_Response, McpError>& InResponse) mutable {
                     // TODO: Fix External Ref: AbortSignal - Check if request was aborted
@@ -756,7 +756,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             InOptions && InOptions->Timeout ? *InOptions->Timeout : DEFAULT_REQUEST_TIMEOUT_MSEC;
         auto TimeoutHandler = [Cancel]() { Cancel("Request timed out"); };
 
-        SetupTimeout(MessageID, Timeout,
+        SetupTimeout(RequestID, Timeout,
                      InOptions && InOptions->MaxTotalTimeout ? *InOptions->MaxTotalTimeout
                                                              : nullopt,
                      TimeoutHandler,
@@ -781,7 +781,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
             m_Transport->Send(RequestJSON, TransportOptions);
         } catch (const exception& InException) {
-            CleanupTimeout(MessageID);
+            CleanupTimeout(RequestID);
             throw;
         }
 

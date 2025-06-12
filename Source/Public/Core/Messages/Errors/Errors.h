@@ -18,27 +18,27 @@ struct ErrorParams {
 // A response to a request that indicates an error occurred.
 class ErrorMessage : public MessageBase {
   private:
-    MessageID m_ID;
+    RequestID m_ID;
     ErrorParams m_Error;
 
   public:
     // Constructors
-    // TODO: Check MessageID default IntID = 0 - should this be another default?
+    // TODO: Check RequestID default IntID = 0 - should this be another default?
     ErrorMessage(Errors Code, string Message, optional<any> Data = nullopt)
         : m_ID(0), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
 
-    ErrorMessage(MessageID MessageID, Errors Code, string Message)
-        : m_ID(std::move(MessageID)), m_Error({.Code = Code, .Message = Message, .Data = nullopt}) {
+    ErrorMessage(RequestID RequestID, Errors Code, string Message)
+        : m_ID(std::move(RequestID)), m_Error({.Code = Code, .Message = Message, .Data = nullopt}) {
     }
 
-    ErrorMessage(MessageID MessageID, Errors Code, string Message, optional<any> Data = nullopt)
-        : m_ID(std::move(MessageID)), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
+    ErrorMessage(RequestID RequestID, Errors Code, string Message, optional<any> Data = nullopt)
+        : m_ID(std::move(RequestID)), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
 
-    ErrorMessage(MessageID MessageID, ErrorParams Error)
-        : m_ID(std::move(MessageID)), m_Error(std::move(Error)) {}
+    ErrorMessage(RequestID RequestID, ErrorParams Error)
+        : m_ID(std::move(RequestID)), m_Error(std::move(Error)) {}
 
     // Direct Getters
-    [[nodiscard]] MessageID GetID() const;
+    [[nodiscard]] RequestID GetID() const;
     [[nodiscard]] ErrorParams GetError() const;
 
     // MessageBase Overrides

@@ -12,8 +12,8 @@
 
 MCP_NAMESPACE_BEGIN
 
-/* MessageID */
-string_view MessageID::ToString() const {
+/* RequestID */
+string_view RequestID::ToString() const {
     return visit(
         [](const auto& VisitID) -> string_view {
             if constexpr (is_same_v<decay_t<decltype(VisitID)>, string>) {
@@ -24,7 +24,7 @@ string_view MessageID::ToString() const {
                 return Buffer;
             }
         },
-        m_MessageID);
+        m_RequestID);
 }
 
 /* MessageParams */
@@ -44,7 +44,7 @@ string MessageBase::Serialize() const {
 }
 
 /* Request Message */
-MessageID RequestMessage::GetMessageID() const {
+RequestID RequestMessage::GetRequestID() const {
     return m_ID;
 };
 
@@ -60,7 +60,7 @@ optional<const MessageParams*> RequestMessage::GetParams() const {
 JSON RequestMessage::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
-    JSON_Object[MSG_ID] = GetMessageID().ToString();
+    JSON_Object[MSG_ID] = GetRequestID().ToString();
     JSON_Object[MSG_METHOD] = GetMethod();
     if (m_Params() && m_Params.value() != nullptr) {
         JSON_Object[MSG_PARAMS] = m_Params.value()->Serialize();
@@ -75,10 +75,10 @@ unique_ptr<MessageBase> RequestMessage::FromJSON(const JSON& InJSON) {
     }
 
     // Parse ID
-    MessageID ParsedID = [&]() -> MessageID {
+    RequestID ParsedID = [&]() -> RequestID {
         const auto& JSON_ID = InJSON.at(MSG_ID);
-        if (JSON_ID.is_string()) { return MessageID(JSON_ID.get<string>()); }
-        if (JSON_ID.is_number_integer()) { return MessageID(JSON_ID.get<long long>()); }
+        if (JSON_ID.is_string()) { return RequestID(JSON_ID.get<string>()); }
+        if (JSON_ID.is_number_integer()) { return RequestID(JSON_ID.get<long long>()); }
         throw std::invalid_argument("Unsupported id type for RequestMessage");
     }();
 
@@ -100,7 +100,7 @@ unique_ptr<MessageBase> RequestMessage::Deserialize(string InString) {
 }
 
 /* Response Message */
-MessageID ResponseMessage::GetMessageID() const {
+RequestID ResponseMessage::GetRequestID() const {
     return m_ID;
 };
 
@@ -112,7 +112,7 @@ const MessageParams* ResponseMessage::GetResult() const {
 JSON ResponseMessage::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
-    JSON_Object[MSG_ID] = GetMessageID().ToString();
+    JSON_Object[MSG_ID] = GetRequestID().ToString();
     if (const MessageParams* ResultOpt = GetResult(); ResultOpt != nullptr) {
         JSON_Object[MSG_RESULT] = ResultOpt->Serialize();
     }
@@ -124,10 +124,10 @@ unique_ptr<MessageBase> ResponseMessage::FromJSON(const JSON& InJSON) {
         throw std::invalid_argument("JSON does not represent a ResponseMessage");
     }
 
-    MessageID ParsedID = [&]() -> MessageID {
+    RequestID ParsedID = [&]() -> RequestID {
         const auto& JSON_ID = InJSON.at(MSG_ID);
-        if (JSON_ID.is_string()) { return MessageID(JSON_ID.get<string>()); }
-        if (JSON_ID.is_number_integer()) { return MessageID(JSON_ID.get<long long>()); }
+        if (JSON_ID.is_string()) { return RequestID(JSON_ID.get<string>()); }
+        if (JSON_ID.is_number_integer()) { return RequestID(JSON_ID.get<long long>()); }
         throw std::invalid_argument("Unsupported id type for ResponseMessage");
     }();
 
@@ -185,7 +185,7 @@ unique_ptr<MessageBase> NotificationMessage::Deserialize(string InString) {
 }
 
 /* ErrorMessage */
-MessageID ErrorMessage::GetID() const {
+RequestID ErrorMessage::GetID() const {
     return m_ID;
 };
 
@@ -207,10 +207,10 @@ unique_ptr<MessageBase> ErrorMessage::FromJSON(const JSON& InJSON) {
         throw std::invalid_argument("JSON does not represent an ErrorMessage");
     }
 
-    MessageID ParsedID = [&]() -> MessageID {
+    RequestID ParsedID = [&]() -> RequestID {
         const auto& JSON_ID = InJSON.at(MSG_ID);
-        if (JSON_ID.is_string()) { return MessageID(JSON_ID.get<string>()); }
-        if (JSON_ID.is_number_integer()) { return MessageID(JSON_ID.get<long long>()); }
+        if (JSON_ID.is_string()) { return RequestID(JSON_ID.get<string>()); }
+        if (JSON_ID.is_number_integer()) { return RequestID(JSON_ID.get<long long>()); }
         throw std::invalid_argument("Unsupported id type for ErrorMessage");
     }();
 

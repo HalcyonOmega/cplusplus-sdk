@@ -8,14 +8,6 @@ MCP_NAMESPACE_BEGIN
 
 // NOTE: @HalcyonOmega NON-JSON-RPC Types
 
-// RequestID {
-//   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
-//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
-// };
-
-// A uniquely identifying ID for a request in JSON-RPC.
-using RequestID = variant<string, int>;
-
 using ProgressToken = variant<string, int>;
 
 struct RequestParamsMeta {

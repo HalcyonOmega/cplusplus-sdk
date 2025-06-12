@@ -19,16 +19,16 @@ MCP_NAMESPACE_BEGIN
 // A successful (non-error) response to a request. Supports JSON-RPC 2.0.
 class ResponseMessage : public MessageBase {
   private:
-    MessageID m_ID;
+    RequestID m_ID;
     unique_ptr<MessageParams> m_Result;
 
   public:
     // Constructors
-    ResponseMessage(MessageID MessageID, unique_ptr<MessageParams> Result)
-        : m_ID(std::move(MessageID)), m_Result(std::move(Result)) {}
+    ResponseMessage(RequestID RequestID, unique_ptr<MessageParams> Result)
+        : m_ID(std::move(RequestID)), m_Result(std::move(Result)) {}
 
     // Direct Getters
-    [[nodiscard]] MessageID GetMessageID() const;
+    [[nodiscard]] RequestID GetRequestID() const;
     [[nodiscard]] const MessageParams* GetResult() const;
 
     // MessageBase Overrides
