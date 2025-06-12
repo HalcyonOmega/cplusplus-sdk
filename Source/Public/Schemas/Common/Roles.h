@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Macros.h"
-#include "json.hpp"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -20,6 +20,6 @@ static constexpr const char* MSG_ASSISTANT = "assistant";
  */
 enum class Role { User, Assistant };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(Role, {{Role::User, MSG_USER}, {Role::Assistant, MSG_ASSISTANT}})
+DEFINE_ENUM_JSON(Role, {{Role::User, MSG_USER}, {Role::Assistant, MSG_ASSISTANT}})
 
 MCP_NAMESPACE_END

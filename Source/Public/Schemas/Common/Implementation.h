@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Constants.h"
 #include "Core.h"
+#include "Core/Constants/MessageConstants.h"
 #include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
@@ -21,7 +21,7 @@ struct Implementation {
     string Name;
     string Version;
 
-    DEFINE_STRUCT_JSON(Implementation, Name, Version);
+    DEFINE_TYPE_JSON(Implementation, JKEY(Name, MSG_NAME) JKEY(Version, MSG_VERSION))
 };
 
 MCP_NAMESPACE_END

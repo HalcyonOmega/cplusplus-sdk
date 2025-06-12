@@ -9657,7 +9657,7 @@ class binary_reader {
                     exception_message(
                         input_format_t::bson,
                         concat("string length must be at least 1, is ", std::to_string(len)),
-                        MSG_STRING),
+                        "string"),
                     nullptr));
         }
 
@@ -10349,7 +10349,7 @@ class binary_reader {
     @return whether string creation completed
     */
     bool get_cbor_string(string_t& result) {
-        if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(input_format_t::cbor, MSG_STRING))) { return false; }
+        if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(input_format_t::cbor, "string"))) { return false; }
 
         switch (current) {
             // UTF-8 string (0x00..0x17 bytes follow)
@@ -10429,7 +10429,7 @@ class binary_reader {
                                           concat("expected length specification (0x60-0x7B) or "
                                                  "indefinite string type (0x7F); last byte: 0x",
                                                  last_token),
-                                          MSG_STRING),
+                                          "string"),
                         nullptr));
             }
         }
@@ -10996,7 +10996,7 @@ class binary_reader {
     @return whether string creation completed
     */
     bool get_msgpack_string(string_t& result) {
-        if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(input_format_t::msgpack, MSG_STRING))) {
+        if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(input_format_t::msgpack, "string"))) {
             return false;
         }
 
@@ -11069,7 +11069,7 @@ class binary_reader {
                                           concat("expected length specification (0xA0-0xBF, "
                                                  "0xD9-0xDB); last byte: 0x",
                                                  last_token),
-                                          MSG_STRING),
+                                          "string"
                         nullptr));
             }
         }
@@ -11317,7 +11317,7 @@ class binary_reader {
         return sax->parse_error(
             chars_read, last_token,
             parse_error::create(113, chars_read,
-                                exception_message(input_format, message, MSG_STRING), nullptr));
+                                exception_message(input_format, message, "string"), nullptr));
     }
 
     /*!
@@ -11626,7 +11626,7 @@ class binary_reader {
                         exception_message(input_format,
                                           concat("marker 0x", last_token,
                                                  " is not a permitted optimized array type"),
-                                          MSG_TYPE),
+                                          "type"),
                         nullptr));
             }
 
@@ -12177,7 +12177,7 @@ class binary_reader {
         bool success = true;
         for (NumberType i = 0; i < len; i++) {
             get();
-            if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(format, MSG_STRING))) {
+            if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(format, "string"))) {
                 success = false;
                 break;
             }
@@ -18914,7 +18914,7 @@ class
         result["copyright"] = "(C) 2013-2025 Niels Lohmann";
         result["name"] = "JSON for Modern C++";
         result["url"] = "https://github.com/nlohmann/json";
-        result["version"][MSG_STRING] =
+        result["version"]["string"] =
             detail::concat(std::to_string(NLOHMANN_JSON_VERSION_MAJOR), '.',
                            std::to_string(NLOHMANN_JSON_VERSION_MINOR), '.',
                            std::to_string(NLOHMANN_JSON_VERSION_PATCH));
@@ -22548,9 +22548,9 @@ class
     const char* type_name() const noexcept {
         switch (m_data.m_type) {
             case value_t::null: return "null";
-            case value_t::object: return MSG_OBJECT;
-            case value_t::array: return MSG_ARRAY;
-            case value_t::string: return MSG_STRING;
+            case value_t::object: return "object";
+            case value_t::array: return "array";
+            case value_t::string: return "string";
             case value_t::boolean: return "boolean";
             case value_t::binary: return "binary";
             case value_t::discarded: return "discarded";
