@@ -1,5 +1,6 @@
 #include "Session.h" // Only direct include needed for public headers from this .cpp file
 
+#include "Auth/Types/Auth.h"
 #include "Core/Constants/ErrorConstants.h"
 #include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
@@ -11,7 +12,6 @@ Session::Session(std::shared_ptr<Transport> transport, const ClientCapabilities&
       m_State(SessionState::Uninitialized) {
     if (m_Transport) {
         m_Transport->SetOnMessage([this](const std::string& message, const AuthInfo* authInfo) {
-            // AuthInfo is defined in Transport.h, which is included by Session.h
             (void)authInfo;
             this->HandleTransportMessage(message);
         });

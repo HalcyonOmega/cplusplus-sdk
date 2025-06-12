@@ -1,20 +1,11 @@
 #pragma once
 
+#include "Auth/Types/Auth.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: ZodType, ZodObject, ZodLiteral - Schema validation library
-// TODO: Fix External Ref: AuthInfo - Authentication information types
-// TODO: Fix External Ref: Various MCP types (Request, Notification, Result, etc.)
-
-// Forward declarations for external types that need proper implementation
-struct AuthInfo;
-struct Request;
-struct Notification;
-struct Result;
-struct Progress;
-struct RequestMeta;
 
 /**
  * Callback for progress notifications.

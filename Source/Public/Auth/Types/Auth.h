@@ -127,35 +127,16 @@ struct OAuthTokenRevocationRequest {
     optional<string> TokenTypeHint;
 };
 
-/**
- * Information about a validated access token, provided to request handlers.
- */
+// Information about a validated access token, provided to request handlers.
 struct AuthInfo {
-    /**
-     * The access token.
-     */
-    string token;
+    string Token;               // The access token.
+    string ClientID;            // The client ID associated with this token.
+    vector<string> Scopes;      // The scopes associated with this token.
+    optional<double> ExpiresAt; // When the token expires (in seconds since epoch).
 
-    /**
-     * The client ID associated with this token.
-     */
-    string clientId;
-
-    /**
-     * Scopes associated with this token.
-     */
-    vector<string> scopes;
-
-    /**
-     * When the token expires (in seconds since epoch).
-     */
-    optional<double> expiresAt;
-
-    /**
-     * Additional data associated with the token.
-     * This field should be used for any additional data that needs to be attached to the auth info.
-     */
-    optional<unordered_map<string, any>> extra;
+    // Additional data associated with the token.
+    // This field should be used for any additional data that needs to be attached to the auth info.
+    optional<unordered_map<string, any>> Extra;
 };
 
 MCP_NAMESPACE_END

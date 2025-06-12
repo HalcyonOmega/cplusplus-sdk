@@ -11,7 +11,6 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: InvalidTokenError
 // TODO: Fix External Ref: ServerError
 // TODO: Fix External Ref: OAuthTokenVerifier
-// TODO: Fix External Ref: AuthInfo
 
 /**
  * Configuration options for Bearer authentication middleware
@@ -36,6 +35,7 @@ struct BearerAuthMiddlewareOptions {
 /**
  * Request context that includes authentication information
  */
+// TODO: Consider child class of RequestMessage
 struct AuthenticatedRequest {
     /**
      * Information about the validated access token, if the RequireBearerAuth middleware was used.

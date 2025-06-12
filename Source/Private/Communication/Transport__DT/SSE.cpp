@@ -104,7 +104,7 @@ void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
             auto charsetIt = ct.parameters.find("charset");
             if (charsetIt != ct.parameters.end()) { encoding = charsetIt->second; }
 
-            string rawBody = getRawBodyEquivalent(req, MAXIMUM_MESSAGE_SIZE, encoding);
+            string rawBody = getRawBodyEquivalent(req, MSG_MAXIMUM_SIZE, encoding);
             body = JSON::parse(rawBody);
         }
     } catch (const exception& error) {

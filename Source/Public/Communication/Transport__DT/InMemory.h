@@ -1,13 +1,14 @@
 #pragma once
 
+#include "Auth/Types/Auth.h"
 #include "Communication/Messages.h"
 #include "Core.h"
+
 
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Transport interface
 // TODO: Fix External Ref: RequestID type
-// TODO: Fix External Ref: AuthInfo type
 
 struct QueuedMessage {
     MessageBase Message;

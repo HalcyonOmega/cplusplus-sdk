@@ -8,6 +8,7 @@ MCP_NAMESPACE_BEGIN
 std::string REGEXSearch; // Just this part => "[^\\"]*"
 
 static constexpr const char* MSG_URITEMPLATE = "uri-template"; // TODO: Check duplicates with above
+static constexpr const char* MSG_MAXIMUM_SIZE = "4mb";
 
 // Message Keys
 static constexpr const char* MSG_NULL = "";

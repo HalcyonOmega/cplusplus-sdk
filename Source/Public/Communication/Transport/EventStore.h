@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Communication/Messages.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -10,8 +11,17 @@ MCP_NAMESPACE_BEGIN
 class EventStore {
   public:
     virtual ~EventStore() = default;
-    virtual void StoreEvent(const std::string& event) = 0;
-    virtual std::vector<std::string> ReplayEventsAfter(const std::string& lastEventId) = 0;
+    /**
+     * Stores an event for later retrieval
+     * @param InStreamID ID of the stream the event belongs to
+     * @param InMessage The JSON-RPC message to store
+     * @returns The generated event ID for the stored event
+     */
+    virtual future<EventID> StoreEvent(const StreamID& InStreamID,
+                                       const MessageBase& InMessage) = 0;
+    virtual future<StreamID>
+    ReplayEventsAfter(const EventID& InLastEventID,
+                      function<future<void>(const EventID&, const MessageBase&)> InSend) = 0;
 };
 
 MCP_NAMESPACE_END

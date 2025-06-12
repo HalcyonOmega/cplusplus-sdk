@@ -179,11 +179,9 @@ template <typename T> vector<T> Completable<T>::GetCompletions(const T& InValue)
         // Handle variant return type
         if (std::holds_alternative<vector<T>>(Result)) {
             return std::get<vector<T>>(Result);
-        } else {
-            // If it's a future, wait for it
-            auto FutureResult = std::get<future<vector<T>>>(Result);
-            return FutureResult.get();
-        }
+        } // If it's a future, wait for it
+        auto FutureResult = std::get<future<vector<T>>>(Result);
+        return FutureResult.get();
     }
     return vector<T>{};
 }

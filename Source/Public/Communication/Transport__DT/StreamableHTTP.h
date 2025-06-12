@@ -3,35 +3,11 @@
 // TODO: Fix External Ref: HTTP server implementation (HTTP_Request, HTTP_Response equivalents)
 // TODO: Fix External Ref: Transport base class
 // TODO: Fix External Ref: JSON-RPC message types and validation
-// TODO: Fix External Ref: AuthInfo type
 
 #include "Communication/Messages.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
-
-const string MAXIMUM_MESSAGE_SIZE = "4mb";
-
-/**
- * Interface for resumability support via event storage
- */
-class EventStore {
-  public:
-    virtual ~EventStore() = default;
-
-    /**
-     * Stores an event for later retrieval
-     * @param InStreamID ID of the stream the event belongs to
-     * @param InMessage The JSON-RPC message to store
-     * @returns The generated event ID for the stored event
-     */
-    virtual future<EventID> StoreEvent(const StreamID& InStreamID,
-                                       const MessageBase& InMessage) = 0;
-
-    virtual future<StreamID>
-    ReplayEventsAfter(const EventID& InLastEventID,
-                      function<future<void>(const EventID&, const MessageBase&)> InSend) = 0;
-};
 
 /**
  * Configuration options for StreamableHTTPServerTransport
@@ -60,7 +36,7 @@ struct StreamableHTTPServerTransportOptions {
      * This can be useful for simple request/response scenarios without streaming.
      * Default is false (SSE streams are preferred).
      */
-    bool EnableJsonResponse = false;
+    bool EnableJSONResponse = false;
 
     /**
      * Event store for resumability support

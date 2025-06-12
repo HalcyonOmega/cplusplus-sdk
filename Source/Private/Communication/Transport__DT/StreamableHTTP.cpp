@@ -8,9 +8,6 @@
 #include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
 // TODO: Fix External Ref: HTTP server implementation (HTTP_Request, HTTP_Response equivalents)
-// TODO: Fix External Ref: Transport base class
-// TODO: Fix External Ref: JSON-RPC message types and validation
-// TODO: Fix External Ref: AuthInfo type
 
 MCP_NAMESPACE_BEGIN
 

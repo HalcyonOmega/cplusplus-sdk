@@ -5,7 +5,6 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: Transport interface
 // TODO: Fix External Ref: MessageBase type
 // TODO: Fix External Ref: RequestID type
-// TODO: Fix External Ref: AuthInfo type
 
 void InMemoryTransport::start() {
     // Process any messages that were queued before start was called

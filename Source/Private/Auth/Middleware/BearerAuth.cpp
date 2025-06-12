@@ -9,7 +9,6 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: InvalidTokenError
 // TODO: Fix External Ref: ServerError
 // TODO: Fix External Ref: OAuthTokenVerifier
-// TODO: Fix External Ref: AuthInfo
 
 void MiddlewareResponse::SetStatus(HTTPStatus Status) {
     StatusCode = Status;

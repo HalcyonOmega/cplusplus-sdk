@@ -1,18 +1,11 @@
 #pragma once
 
-#include "../Message.h"
+#include "Auth/Types/Auth.h"
+#include "Communication/Messages.h"
+#include "Communication/Transport/EventStore.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward declarations
-class EventStore;
-
-// AuthInfo definition
-struct AuthInfo {
-    std::string Token; // Example member, adjust if different fields are needed
-    // Add other relevant authentication information here if necessary
-};
 
 // Transport options
 struct TransportOptions {

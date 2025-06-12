@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Auth/Types/Auth.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
@@ -7,9 +8,6 @@ MCP_NAMESPACE_BEGIN
 /* Needed Classes/Structs */
 struct HTTP_Client;
 struct HTTP_Server;
-
-using NextFunction = function<void()>;
-using RequestHandler = function<future<void>(HTTP_Request&, HTTP_Response&, NextFunction)>;
 
 class HTTP_Response {
   private:
@@ -36,9 +34,12 @@ class HTTP_Request {
   private:
     JSON Body;
     shared_ptr<OAuthClientInformationFull> Client = nullptr;
-    optional<AuthInfo> Auth; // Optional auth info
+    optional<AuthInfo> Auth;
     string Method;
     unordered_map<string, string> Headers;
 };
+
+using NextFunction = function<void()>;
+using RequestHandler = function<future<void>(HTTP_Request&, HTTP_Response&, NextFunction)>;
 
 MCP_NAMESPACE_END

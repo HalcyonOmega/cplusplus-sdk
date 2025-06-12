@@ -27,8 +27,6 @@ ContentTypeResult ParseContentType(const string& InContentTypeHeader);
 string GetRawBodyEquivalent(HTTP_Request* InRequest, const string& InLimit,
                             const string& InEncoding);
 
-const string MAXIMUM_MESSAGE_SIZE = "4mb";
-
 /**
  * Server transport for SSE: this will send messages over an SSE connection and receive messages
  * from HTTP POST requests.
