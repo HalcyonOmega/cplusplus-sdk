@@ -2,8 +2,13 @@
 
 #include "Core.h"
 #include "Core/Constants/MessageConstants.h"
+#include "Core/Types/Annotations.h"
 
 MCP_NAMESPACE_BEGIN
+
+// Forward Declarations
+// TODO: @HalcyonOmega create URI class. Needed to define URI.
+class URI;
 
 struct Content {
     string Type;                       // The type of content.
@@ -128,8 +133,7 @@ struct AudioContent : public Content {
 
 // The contents of a specific resource or sub-resource.
 struct ResourceContents {
-    // TODO: @HalcyonOmega @format URI
-    string URI;                // The URI of this resource.
+    URI URI;                   // The URI of this resource.
     optional<string> MIMEType; // The MIME type of this resource, if known.
 };
 

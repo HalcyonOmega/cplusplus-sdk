@@ -230,7 +230,7 @@ struct CreateMessageRequestParams {
 //                   "A request to include context from one or more MCP "
 //                   "servers (including the caller), to be attached to "
 //                   "the prompt. The client MAY ignore this request.",
-//               "enum" : [ "allServers", "none", "thisServer" ],
+//               MSG_ENUM : [ "allServers", "none", "thisServer" ],
 //               MSG_TYPE : MSG_STRING
 //             },
 //             "maxTokens" : {
@@ -238,7 +238,7 @@ struct CreateMessageRequestParams {
 //                   "The maximum number of tokens to sample, as "
 //                   "requested by the server. The client MAY choose to "
 //                   "sample fewer tokens than requested.",
-//               MSG_TYPE : "integer"
+//               MSG_TYPE : MSG_INTEGER
 //             },
 //             "messages" : {
 //               MSG_ITEMS : {"$ref" : "#/definitions/SamplingMessage"},
@@ -312,17 +312,17 @@ enum class StopReason { endTurn, stopSequence, maxTokens };
 //             {"$ref" : "#/definitions/AudioContent"}
 //           ]
 //         },
-//         "model" : {
+//         MSG_MODEL : {
 //           MSG_DESCRIPTION : "The name of the model that generated the message.",
 //           MSG_TYPE : MSG_STRING
 //         },
-//         "role" : {"$ref" : "#/definitions/Role"},
+//         MSG_ROLE : {"$ref" : "#/definitions/Role"},
 //         "stopReason" : {
 //           MSG_DESCRIPTION : "The reason why sampling stopped, if known.",
 //           MSG_TYPE : MSG_STRING
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_CONTENT, "model", "role" ],
+//         MSG_REQUIRED : [ MSG_CONTENT, MSG_MODEL, MSG_ROLE ],
 //                      MSG_TYPE : MSG_OBJECT
 // };
 

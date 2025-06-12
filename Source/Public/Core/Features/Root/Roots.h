@@ -112,9 +112,9 @@ struct ListRootsRequest : public RequestMessage {
 //                                "and servers to attach additional metadata to their responses.",
 //                 MSG_TYPE: MSG_OBJECT
 //             },
-//             "roots": {MSG_ITEMS: {"$ref": "#/definitions/Root"}, MSG_TYPE: MSG_ARRAY}
+//             MSG_ROOTS: {MSG_ITEMS: {"$ref": "#/definitions/Root"}, MSG_TYPE: MSG_ARRAY}
 //         },
-//           MSG_REQUIRED : ["roots"],
+//           MSG_REQUIRED : [MSG_ROOTS],
 //                        MSG_TYPE : MSG_OBJECT
 // };
 

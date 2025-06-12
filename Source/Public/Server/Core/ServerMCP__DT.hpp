@@ -435,7 +435,7 @@ class MCPServer {
             [this](const JSON& request,
                    const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
                 -> CompleteResult {
-                auto refType = request[MSG_PARAMS]["ref"][MSG_TYPE].get<string>();
+                auto refType = request[MSG_PARAMS][MSG_REF][MSG_TYPE].get<string>();
 
                 if (refType == "ref/prompt") {
                     return HandlePromptCompletion(request, extra);
@@ -453,7 +453,7 @@ class MCPServer {
     CompleteResult
     HandlePromptCompletion(const JSON& request,
                            const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-        auto promptName = request[MSG_PARAMS]["ref"][MSG_NAME].get<string>();
+        auto promptName = request[MSG_PARAMS][MSG_REF][MSG_NAME].get<string>();
 
         auto it = RegisteredPrompts_.find(promptName);
         if (it == RegisteredPrompts_.end()) {
@@ -474,7 +474,7 @@ class MCPServer {
     CompleteResult
     HandleResourceCompletion(const JSON& request,
                              const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-        auto uri = request[MSG_PARAMS]["ref"][MSG_URI].get<string>();
+        auto uri = request[MSG_PARAMS][MSG_REF][MSG_URI].get<string>();
 
         // Find matching template
         for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
@@ -483,7 +483,7 @@ class MCPServer {
                 auto argName = request[MSG_PARAMS]["argument"][MSG_NAME].get<string>();
                 auto completer = templateEntry.Template.GetCompleteCallback(argName);
                 if (completer) {
-                    auto argValue = request[MSG_PARAMS]["argument"]["value"].get<string>();
+                    auto argValue = request[MSG_PARAMS]["argument"][MSG_VALUE].get<string>();
                     auto suggestions = (*completer)(argValue);
                     return CreateCompletionResult(suggestions);
                 }

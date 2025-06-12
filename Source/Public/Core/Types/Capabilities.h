@@ -4,75 +4,64 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct ExperimentalCapabilities {
-    Passthrough Additional; // For passthrough properties
-};
+// TODO: @HalcyonOmega Indicate all of these can be extended with additional properties
+
+struct ExperimentalCapabilities {};
 
 struct ToolsCapabilities {
     optional<bool>
         ListChanged; // Whether this server supports notifications for changes to the tool list.
-    Passthrough Additional; // For passthrough properties
 };
 
 struct ResourcesCapabilities {
     optional<bool> Subscribe; // Whether this server supports subscribing to resource updates.
     optional<bool>
         ListChanged; // Whether this server supports notifications for changes to the resource list.
-    Passthrough Additional; // For passthrough properties
 };
 
 struct PromptsCapabilities {
     optional<bool>
         ListChanged; // Whether this server supports notifications for changes to the prompt list.
-    Passthrough Additional; // For passthrough properties
 };
 
-struct LoggingCapabilities {
-    Passthrough Additional; // For passthrough properties
-};
+struct LoggingCapabilities {};
 
-struct CompletionCapabilities {
-    Passthrough Additional; // For passthrough properties
-};
+struct CompletionCapabilities {};
 
-struct SamplingCapabilities {
-    Passthrough Additional; // For passthrough properties
-};
+struct SamplingCapabilities {};
 
 struct RootsCapabilities {
-    /**
-     * Whether the client supports notifications for changes to the roots list.
-     */
-    optional<bool> ListChanged;
+    optional<bool>
+        ListChanged; // Whether the client supports notifications for changes to the roots list.
 };
 
-// JSON Schema - ClientCapabilities {
+// ClientCapabilities {
 //     MSG_DESCRIPTION
 //         : "Capabilities a client may support. Known capabilities are defined
 //         here, in this schema, "
 //           "but this is not a closed set: any client can define its own,
 //           additional capabilities.", MSG_PROPERTIES
 //         : {
-//             "experimental": {
+//             MSG_EXPERIMENTAL: {
 //                 MSG_ADDITIONAL_PROPERTIES:
 //                     {MSG_ADDITIONAL_PROPERTIES: true, MSG_PROPERTIES: {}, MSG_TYPE:
 //                     MSG_OBJECT},
 //                 MSG_DESCRIPTION: "Experimental, non-standard capabilities that
 //                 the client supports.", MSG_TYPE: MSG_OBJECT
 //             },
-//             "roots": {
+//             MSG_ROOTS: {
 //                 MSG_DESCRIPTION: "Present if the client supports listing
 //                 roots.", MSG_PROPERTIES: {
 //                     MSG_LIST_CHANGED: {
 //                         MSG_DESCRIPTION: "Whether the client supports
 //                         notifications for changes to "
 //                                        "the roots list.",
-//                         MSG_TYPE: "boolean"
+//                         MSG_TYPE: MSG_BOOLEAN
 //                     }
 //                 },
 //                 MSG_TYPE: MSG_OBJECT
 //             },
-//             "sampling": {
+//             MSG_SAMPLING: {
 //                 MSG_ADDITIONAL_PROPERTIES: true,
 //                 MSG_DESCRIPTION: "Present if the client supports sampling from
 //                 an LLM.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
@@ -90,26 +79,26 @@ struct ClientCapabilities {
     optional<RootsCapabilities> Roots;       // Present if the client supports listing roots.
 };
 
-// JSON Schema - ServerCapabilities {
+// ServerCapabilities {
 //     MSG_DESCRIPTION: "Capabilities that a server may support. Known
 //     capabilities are defined here,
 //     "
 //                    "in this schema, but this is not a closed set: any server
 //                    can define its own, " "additional capabilities.",
 //     MSG_PROPERTIES: {
-//         "completions": {
+//         MSG_COMPLETIONS: {
 //             MSG_ADDITIONAL_PROPERTIES: true,
 //             MSG_DESCRIPTION: "Present if the server supports argument
 //             autocompletion suggestions.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
 //         },
-//         "experimental": {
+//         MSG_EXPERIMENTAL: {
 //             MSG_ADDITIONAL_PROPERTIES:
 //                 {MSG_ADDITIONAL_PROPERTIES: true, MSG_PROPERTIES: {}, MSG_TYPE:
 //                 MSG_OBJECT},
 //             MSG_DESCRIPTION: "Experimental, non-standard capabilities that the
 //             server supports.", MSG_TYPE: MSG_OBJECT
 //         },
-//         "logging": {
+//         MSG_LOGGING: {
 //             MSG_ADDITIONAL_PROPERTIES: true,
 //             MSG_DESCRIPTION: "Present if the server supports sending log
 //             messages to the client.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
@@ -122,7 +111,7 @@ struct ClientCapabilities {
 //                     notifications for changes to the
 //                     "
 //                                    "prompt list.",
-//                     MSG_TYPE: "boolean"
+//                     MSG_TYPE: MSG_BOOLEAN
 //                 }
 //             },
 //             MSG_TYPE: MSG_OBJECT
@@ -135,11 +124,11 @@ struct ClientCapabilities {
 //                     notifications for changes to the
 //                     "
 //                                    "resource list.",
-//                     MSG_TYPE: "boolean"
+//                     MSG_TYPE: MSG_BOOLEAN
 //                 },
 //                 MSG_SUBSCRIBE: {
 //                     MSG_DESCRIPTION: "Whether this server supports subscribing
-//                     to resource updates.", MSG_TYPE: "boolean"
+//                     to resource updates.", MSG_TYPE: MSG_BOOLEAN
 //                 }
 //             },
 //             MSG_TYPE: MSG_OBJECT
@@ -151,7 +140,7 @@ struct ClientCapabilities {
 //                     MSG_DESCRIPTION: "Whether this server supports
 //                     notifications for changes to "
 //                                    "the tool list.",
-//                     MSG_TYPE: "boolean"
+//                     MSG_TYPE: MSG_BOOLEAN
 //                 }
 //             },
 //             MSG_TYPE: MSG_OBJECT

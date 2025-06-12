@@ -35,33 +35,18 @@ MCP_NAMESPACE_BEGIN
 //           MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Optional annotations for the client. The client can use annotations to inform
- * how objects are used or displayed
- */
+// Optional annotations for the client. The client can use annotations to inform how objects are
+// used or displayed
 struct Annotations {
-    /**
-     * Describes who the intended customer of this object or data is.
-     *
-     * It can include multiple entries to indicate content useful for multiple
-     * audiences (e.g.,
-     * `["user", "assistant"]`).
-     */
-    optional<vector<Role>> Audience;
-
-    /**
-     * Describes how important this data is for operating the server.
-     *
-     * A value of 1 means "most important," and indicates that the data is
-     * effectively required, while 0 means "least important," and indicates that
-     * the data is entirely optional.
-
-     * TODO: Fix External Ref: @TJS-type number
-     * @TJS-type number
-     * @minimum 0
-     * @maximum 1
-     */
-    optional<number> Priority;
+    optional<vector<Role>>
+        Audience; // Describes who the intended customer of this object or data is. It can include
+                  // multiple entries to indicate content useful for multiple audiences (e.g.,
+                  // `["user", "assistant"]`).
+    // TODO: @HalcyonOmega Enforce min = 0, max = 1
+    optional<double> Priority; // Describes how important this data is for operating the server. A
+                               // value of 1 means "most important," and indicates that the data is
+                               // effectively required, while 0 means "least important," and
+                               // indicates that the data is entirely optional.
 };
 
 MCP_NAMESPACE_END

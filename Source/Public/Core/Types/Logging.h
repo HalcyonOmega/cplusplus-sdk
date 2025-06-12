@@ -21,19 +21,15 @@ static constexpr const char* LOG_EMERGENCY = "emergency";
 //       "The severity of a log message.\n\nThese map to syslog message "
 //       "severities, as specified in "
 //       "RFC-5424:\nhttps://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1",
-//   "enum" : [
-//     "alert", "critical", "debug", "emergency", "error", "info", "notice",
-//     "warning"
+//   MSG_ENUM : [
+//     LOG_ALERT, LOG_CRITICAL, LOG_DEBUG, LOG_EMERGENCY, LOG_ERROR, LOG_INFO, LOG_NOTICE,
+//     LOG_WARNING
 //   ],
 //   MSG_TYPE : MSG_STRING
 // };
 
-/**
- * The severity of a log message.
- *
- * These map to syslog message severities, as specified in RFC-5424:
- * https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1
- */
+// The severity of a log message. These map to syslog message severities, as specified in RFC-5424:
+// https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1
 enum class LoggingLevel { Debug, Info, Notice, Warning, Error, Critical, Alert, Emergency };
 
 DEFINE_ENUM_JSON(LoggingLevel, {{LoggingLevel::Debug, LOG_DEBUG},
@@ -78,9 +74,7 @@ struct SetLevelRequestParams {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * A request from the client to the server, to enable or adjust logging.
- */
+// A request from the client to the server, to enable or adjust logging.
 struct SetLevelRequest : public RequestMessage {
     SetLevelRequestParams Params;
 
@@ -90,7 +84,7 @@ struct SetLevelRequest : public RequestMessage {
 struct LoggingMessageNotificationParams {
     LoggingLevel Level;      // The severity of this log message.
     optional<string> Logger; // An optional name of the logger issuing this message.
-    any Data;                // The data to be logged, such as a string message or an object. Any
+    JSON Data;               // The data to be logged, such as a string message or an object. Any
                              // JSON serializable type is allowed here.
 };
 
@@ -126,11 +120,8 @@ struct LoggingMessageNotificationParams {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Notification of a log message passed from server to client. If no
- * logging/setLevel request has been sent from the client, the server MAY decide
- * which messages to send automatically.
- */
+// Notification of a log message passed from server to client. If no logging/setLevel request has
+// been sent from the client, the server MAY decide which messages to send automatically.
 struct LoggingMessageNotification : public NotificationMessage {
     LoggingMessageNotificationParams Params;
 

@@ -27,7 +27,7 @@ class JSONSchema;
 //               "environment.\nIf false, the tool performs only additive "
 //               "updates.\n\n(This property is meaningful only when "
 //               "`readOnlyHint == false`)\n\nDefault: true",
-//           MSG_TYPE : "boolean"
+//           MSG_TYPE : MSG_BOOLEAN
 //         },
 //         "idempotentHint" : {
 //           MSG_DESCRIPTION :
@@ -35,7 +35,7 @@ class JSONSchema;
 //               "arguments\nwill have no additional effect on the its "
 //               "environment.\n\n(This property is meaningful only when "
 //               "`readOnlyHint == false`)\n\nDefault: false",
-//           MSG_TYPE : "boolean"
+//           MSG_TYPE : MSG_BOOLEAN
 //         },
 //         "openWorldHint" : {
 //           MSG_DESCRIPTION :
@@ -44,12 +44,12 @@ class JSONSchema;
 //               " "is closed.\nFor example, the world of a web search tool is "
 //               "open, whereas that\nof a memory tool is not.\n\nDefault:
 //               true",
-//           MSG_TYPE : "boolean"
+//           MSG_TYPE : MSG_BOOLEAN
 //         },
 //         "readOnlyHint" : {
 //           MSG_DESCRIPTION : "If true, the tool does not modify its "
 //                           "environment.\n\nDefault: false",
-//           MSG_TYPE : "boolean"
+//           MSG_TYPE : MSG_BOOLEAN
 //         },
 //         "title" : {
 //           MSG_DESCRIPTION : "A human-readable title for the tool.",
@@ -231,7 +231,7 @@ struct ListToolsResult : public PaginatedResult {
 //           MSG_DESCRIPTION :
 //               "Whether the tool call ended in an error.\n\nIf not set, this
 //               is " "assumed to be false (the call was successful).",
-//           MSG_TYPE : "boolean"
+//           MSG_TYPE : MSG_BOOLEAN
 //         }
 //       },
 //         MSG_REQUIRED : [MSG_CONTENT],

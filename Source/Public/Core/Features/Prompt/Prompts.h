@@ -21,7 +21,7 @@ MCP_NAMESPACE_BEGIN
 //             {MSG_DESCRIPTION : "The name of the argument.", MSG_TYPE : MSG_STRING},
 //         MSG_REQUIRED : {
 //           MSG_DESCRIPTION : "Whether this argument must be provided.",
-//           MSG_TYPE : "boolean"
+//           MSG_TYPE : MSG_BOOLEAN
 //         }
 //       },
 //         MSG_REQUIRED : [MSG_NAME],
@@ -50,9 +50,9 @@ struct PromptArgument {
 //               {"$ref" : "#/definitions/EmbeddedResource"}
 //             ]
 //           },
-//           "role" : {"$ref" : "#/definitions/Role"}
+//           MSG_ROLE : {"$ref" : "#/definitions/Role"}
 //         },
-//                        MSG_REQUIRED : [ MSG_CONTENT, "role" ],
+//                        MSG_REQUIRED : [ MSG_CONTENT, MSG_ROLE ],
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 

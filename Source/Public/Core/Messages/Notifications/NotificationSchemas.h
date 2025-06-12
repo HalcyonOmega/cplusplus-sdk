@@ -126,7 +126,7 @@ struct CancelledNotification : public Notification {
 // ProgressToken {
 //   MSG_DESCRIPTION : "A progress token, used to associate progress "
 //                   "notifications with the original request.",
-//                   MSG_TYPE : [ MSG_STRING, "integer" ]
+//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
 // };
 
 /**

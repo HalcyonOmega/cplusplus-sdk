@@ -3,28 +3,16 @@
 #include "Core.h"
 #include "Core/Constants/MethodConstants.h"
 #include "Core/Messages/MessagesIncludes.h"
-#include "Core/Types/Capabilities.hpp"
+#include "Core/Types/Capabilities__DT.h"
 #include "Core/Types/Implementation.h"
-#include "NotificationSchemas.h"
-#include "RequestSchemas.h"
-#include "ResultSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
 struct InitializeRequestParams {
-    /**
-     * The latest version of the Model Context Protocol that the client supports.
-     * The client MAY decide to support older versions as well.
-     */
-    string ProtocolVersion;
-    /**
-     * The capabilities of the client.
-     */
-    ClientCapabilities Capabilities;
-    /**
-     * Information about the client.
-     */
-    Implementation ClientInfo;
+    string ProtocolVersion; // The latest version of the Model Context Protocol that the client
+                            // supports. The client MAY decide to support older versions as well.
+    ClientCapabilities Capabilities; // The capabilities of the client.
+    Implementation ClientInfo;       // Information about the client.
 };
 
 // InitializeRequest {
@@ -53,10 +41,8 @@ struct InitializeRequestParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * This request is sent from the client to the server when it first connects,
- * asking it to begin initialization.
- */
+// This request is sent from the client to the server when it first connects, asking it to begin
+// initialization.
 struct InitializeRequest : public RequestMessage {
     InitializeRequestParams Params;
 
@@ -76,7 +62,7 @@ struct InitializeRequest : public RequestMessage {
 //           MSG_TYPE : MSG_OBJECT
 //         },
 //         MSG_CAPABILITIES : {"$ref" : "#/definitions/ServerCapabilities"},
-//         "instructions" : {
+//         MSG_INSTRUCTIONS : {
 //           MSG_DESCRIPTION :
 //               "Instructions describing how to use the server and its "
 //               "features.\n\nThis can be used by clients to improve the LLM's "
@@ -98,28 +84,18 @@ struct InitializeRequest : public RequestMessage {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * After receiving an initialize request from the client, the server sends this
- * response.
- */
+// After receiving an initialize request from the client, the server sends this response.
 struct InitializeResult : public ResultMessage {
-    /**
-     * The version of the Model Context Protocol that the server wants to use. This
-     * may not match the version that the client requested. If the client cannot
-     * support this version, it MUST disconnect.
-     */
-    string ProtocolVersion;
-    ServerCapabilities Capabilities;
-    Implementation ServerInfo;
-
-    /**
-     * Instructions describing how to use the server and its features.
-     *
-     * This can be used by clients to improve the LLM's understanding of available
-     * tools, resources, etc. It can be thought of like a "hint" to the model. For
-     * example, this information MAY be added to the system prompt.
-     */
-    optional<string> Instructions;
+    string ProtocolVersion; // The version of the Model Context Protocol that the server wants to
+                            // use. This may not match the version that the client requested. If the
+                            // client cannot support this version, it MUST disconnect.
+    ServerCapabilities Capabilities; // The capabilities of the server.
+    Implementation ServerInfo;       // Information about the server.
+    optional<string> Instructions;   // Instructions describing how to use the server and its
+                                     // features. This can be used by clients to improve the LLM's
+                                     // understanding of available tools, resources, etc. It can be
+                                     // thought of like a "hint" to the model. For example, this
+                                     // information MAY be added to the system prompt.
 };
 
 // InitializedNotification {
@@ -146,10 +122,7 @@ struct InitializeResult : public ResultMessage {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * This notification is sent from the client to the server after initialization
- * has finished.
- */
+// This notification is sent from the client to the server after initialization has finished.
 struct InitializedNotification : public NotificationMessage {
     InitializedNotification() : NotificationMessage(MTHD_NOTIFICATIONS_INITIALIZED) {}
 };

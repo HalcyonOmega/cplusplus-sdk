@@ -192,8 +192,8 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
         // TODO: Parse and set ServerCapabilities_, ServerVersion_, Instructions_ from Result
         // ServerCapabilities_ = ParseServerCapabilities(Result[MSG_CAPABILITIES]);
         // ServerVersion_ = ParseImplementation(Result[MSG_SERVER_INFO]);
-        // if (Result.contains("instructions")) {
-        //     Instructions_ = Result["instructions"].get<string>();
+        // if (Result.contains(MSG_INSTRUCTIONS)) {
+        //     Instructions_ = Result[MSG_INSTRUCTIONS].get<string>();
         // }
 
         JSON InitializedNotification = JSON{{MSG_METHOD, MTHD_NOTIFICATION_INITIALIZED}};

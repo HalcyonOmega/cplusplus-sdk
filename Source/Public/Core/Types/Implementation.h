@@ -14,9 +14,7 @@ MCP_NAMESPACE_BEGIN
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Describes the name and version of an MCP implementation.
- */
+// Describes the name and version of an MCP implementation.
 struct Implementation {
     string Name;
     string Version;

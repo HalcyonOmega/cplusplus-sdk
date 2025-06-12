@@ -7,17 +7,6 @@
 MCP_NAMESPACE_BEGIN
 std::string REGEXSearch; // Just this part => "[^\\"]*"
 
-static constexpr const char* MSG_URITEMPLATE = "uri-template"; // TODO: Check duplicates with above
-static constexpr const char* MSG_VALUE = "value";
-static constexpr const char* MSG_VALUES = "values";
-static constexpr const char* MSG_REF = "ref";
-static constexpr const char* MSG_COMPLETION = "completion";
-static constexpr const char* MSG_HAS_MORE = "hasMore";
-static constexpr const char* MSG_BOOLEAN = "boolean";
-static constexpr const char* MSG_INTEGER = "integer";
-static constexpr const char* MSG_SIZE = "size";
-static constexpr const char* MSG_ROLE = "role";
-
 // Message Keys
 static constexpr const char* MSG_NULL = "";
 static constexpr const char* MSG_ID = "id";
@@ -78,9 +67,6 @@ static constexpr const char* MSG_PROTOCOL_VERSION = "protocolVersion";
 static constexpr const char* MSG_CLIENT_INFO = "clientInfo";
 static constexpr const char* MSG_SERVER_INFO = "serverInfo";
 static constexpr const char* MSG_CAPABILITIES = "capabilities";
-static constexpr const char* MSG_PROMPTS = "prompts";
-static constexpr const char* MSG_RESOURCES = "resources";
-static constexpr const char* MSG_TOOLS = "tools";
 static constexpr const char* MSG_LIST_CHANGED = "listChanged";
 static constexpr const char* MSG_SUBSCRIBE = "subscribe";
 static constexpr const char* MSG_CURSOR = "cursor";
@@ -100,5 +86,26 @@ static constexpr const char* MSG_REQUEST_ID = "requestId";
 static constexpr const char* MSG_REF_RESOURCE = "ref/resource";
 static constexpr const char* MSG_REF_PROMPT = "ref/prompt";
 static constexpr const char* MSG_MAXIMUM_SIZE = "4mb";
+static constexpr const char* MSG_URITEMPLATE = "uri-template";
+static constexpr const char* MSG_VALUE = "value";
+static constexpr const char* MSG_VALUES = "values";
+static constexpr const char* MSG_REF = "ref";
+static constexpr const char* MSG_COMPLETION = "completion";
+static constexpr const char* MSG_HAS_MORE = "hasMore";
+static constexpr const char* MSG_BOOLEAN = "boolean";
+static constexpr const char* MSG_INTEGER = "integer";
+static constexpr const char* MSG_SIZE = "size";
+static constexpr const char* MSG_ROLE = "role";
+static constexpr const char* MSG_INSTRUCTIONS = "instructions";
+static constexpr const char* MSG_ENUM = "enum";
+static constexpr const char* MSG_ROOTS = "roots";
+static constexpr const char* MSG_EXPERIMENTAL = "experimental";
+static constexpr const char* MSG_SAMPLING = "sampling";
+static constexpr const char* MSG_LOGGING = "logging";
+static constexpr const char* MSG_COMPLETIONS = "completions";
+static constexpr const char* MSG_PROMPTS = "prompts";
+static constexpr const char* MSG_RESOURCES = "resources";
+static constexpr const char* MSG_TOOLS = "tools";
+static constexpr const char* MSG_MODEL = "model";
 
 MCP_NAMESPACE_END

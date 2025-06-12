@@ -1,18 +1,17 @@
 #pragma once
 
-#include "Constants.h"
 #include "Core.h"
 
 MCP_NAMESPACE_BEGIN
 
+// NOTE: @HalcyonOmega NON-JSON-RPC Types
+
 // RequestId {
 //   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
-//                   MSG_TYPE : [ MSG_STRING, "integer" ]
+//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
 // };
 
-/**
- * A uniquely identifying ID for a request in JSON-RPC.
- */
+// A uniquely identifying ID for a request in JSON-RPC.
 using RequestId = variant<string, number>;
 
 struct RequestParamsMeta {
