@@ -1,9 +1,10 @@
 #pragma once
 
 #include <random> // Required for std::mt19937
+#include <string>
 
-#include "Core.h"
-#include "UUID.h"
+#include "Macros.h"
+#include "Utilities/ThirdParty/UUID/UUID.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -14,8 +15,7 @@ static std::mt19937& GetRandomEngine() {
     return Engine;
 }
 
-string GenerateUUID() {
-    // Pass the engine to the constructor
+std::string GenerateUUID() {
     uuids::uuid_random_generator Generator(GetRandomEngine());
     return uuids::to_string(Generator());
 }

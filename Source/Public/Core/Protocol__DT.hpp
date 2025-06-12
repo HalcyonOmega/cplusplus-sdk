@@ -5,6 +5,9 @@
 
 MCP_NAMESPACE_BEGIN
 
+// The default request timeout, in milliseconds.
+static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
+
 // TODO: Fix External Ref: ZodType, ZodObject, ZodLiteral - Schema validation library
 
 /**

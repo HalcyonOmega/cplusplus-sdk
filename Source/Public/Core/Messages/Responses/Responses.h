@@ -5,7 +5,18 @@
 
 MCP_NAMESPACE_BEGIN
 
-// A successful (non-error) response to a request.
+// ResponseMessage {
+//   MSG_DESCRIPTION : "A successful (non-error) response to a request.",
+//                   MSG_PROPERTIES : {
+//                     MSG_ID : {"$ref" : "#/definitions/RequestId"},
+//                     MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
+//                     MSG_RESULT : {"$ref" : "#/definitions/Result"}
+//                   },
+//                                  MSG_REQUIRED : [ MSG_ID, MSG_JSON_RPC, MSG_RESULT ],
+//                                               MSG_TYPE : MSG_OBJECT
+// };
+
+// A successful (non-error) response to a request. Supports JSON-RPC 2.0.
 class ResponseMessage : public MessageBase {
   private:
     MessageID m_ID;

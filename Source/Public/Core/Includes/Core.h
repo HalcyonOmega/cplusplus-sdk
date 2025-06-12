@@ -34,6 +34,14 @@ MCP_NAMESPACE_BEGIN
 
 using namespace std;
 
+// MCP Constants
+static constexpr const char* LATEST_PROTOCOL_VERSION = "2025-03-26";
+static constexpr const array<const char*, 3> SUPPORTED_PROTOCOL_VERSIONS = {
+    LATEST_PROTOCOL_VERSION,
+    "2024-11-05",
+    "2024-10-07",
+};
+
 // Common using declarations
 // using std::array;
 // using std::async;

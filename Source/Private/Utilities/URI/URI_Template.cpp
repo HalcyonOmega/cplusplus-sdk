@@ -4,6 +4,12 @@
 
 MCP_NAMESPACE_BEGIN
 
+// URI Template Constants
+static constexpr const size_t MAX_TEMPLATE_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_VARIABLE_LENGTH = 1000000; // 1MB
+static constexpr const size_t MAX_TEMPLATE_EXPRESSIONS = 10000;
+static constexpr const size_t MAX_REGEX_LENGTH = 1000000; // 1MB
+
 // Proper RFC 3986 percent-encoding implementation
 string EncodeURI(const string& Value) {
     // RFC 3986: Encode everything except unreserved and reserved characters

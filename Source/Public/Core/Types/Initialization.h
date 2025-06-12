@@ -1,15 +1,13 @@
 #pragma once
 
-#include "CommonSchemas.h"
-#include "Constants.h"
 #include "Core.h"
 #include "Core/Constants/MethodConstants.h"
-#include "Core/Messages/Messages.h"
+#include "Core/Messages/MessagesIncludes.h"
+#include "Core/Types/Capabilities.hpp"
+#include "Core/Types/Implementation.h"
 #include "NotificationSchemas.h"
 #include "RequestSchemas.h"
 #include "ResultSchemas.h"
-#include "Schemas/Client/ClientSchemas.h"
-#include "Schemas/Server/ServerSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 

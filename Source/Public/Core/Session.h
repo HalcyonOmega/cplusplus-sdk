@@ -1,13 +1,12 @@
 #pragma once
 
-// MCP Core and Schema Includes
-#include "Communication/Messages.h"            // Provides ErrorMessage
-#include "Communication/Transport/Transport.h" // Actual Transport base class
-#include "Core.h" // Provides standard types, MCP_NAMESPACE macros, JSON, etc.
-#include "Schemas/Client/ClientSchemas.h"     // Provides ClientCapabilities
-#include "Schemas/Common/CommonSchemas.h"     // Provides Implementation
-#include "Schemas/Common/InitializeSchemas.h" // Provides InitializeResult
-#include "Schemas/Server/ServerSchemas.h"     // Provides ServerCapabilities
+#include "Communication/Transport/Transport.h"
+#include "Core.h"
+#include "Core/Messages/MessagesIncludes.h"
+#include "Schemas/Client/ClientSchemas.h"
+#include "Schemas/Common/CommonSchemas.h"
+#include "Schemas/Common/InitializeSchemas.h"
+#include "Schemas/Server/ServerSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 

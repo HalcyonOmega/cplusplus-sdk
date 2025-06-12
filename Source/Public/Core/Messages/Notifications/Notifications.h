@@ -6,7 +6,31 @@
 
 MCP_NAMESPACE_BEGIN
 
-// A notification which does not expect a response.
+// NotificationMessage {
+//   MSG_DESCRIPTION : "A notification which does not expect a response.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to allow "
+//                               "clients and servers to attach additional "
+//                               "metadata to their notifications.",
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_JSON_RPC, MSG_METHOD ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// A notification which does not expect a response. Supports JSON-RPC 2.0.
 class NotificationMessage : public MessageBase {
   private:
     string m_Method;
