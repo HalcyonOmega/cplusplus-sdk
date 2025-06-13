@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Protocol__DT.hpp"
+#include "SchemaAliases.h"
+
 
 MCP_NAMESPACE_BEGIN
 
@@ -19,14 +22,7 @@ struct ServerOptions : public ProtocolOptions {
  * To use with custom types, extend the base Request/Notification/Result types and pass them as type
  * parameters.
  */
-template <typename RequestT = Request, typename NotificationT = Notification,
-          typename ResultT = Result>
-class Server
-    : public Protocol<ServerRequest,      // TODO: Should be ServerRequest | RequestT in TypeScript
-                      ServerNotification, // TODO: Should be ServerNotification | NotificationT in
-                                          // TypeScript
-                      ServerResult        // TODO: Should be ServerResult | ResultT in TypeScript
-                      > {
+class Server : public Protocol<ServerRequest, ServerNotification, ServerResult> {
   private:
     optional<ClientCapabilities> m_ClientCapabilities;
     optional<Implementation> m_ClientVersion;
@@ -43,8 +39,7 @@ class Server
 
     // Initializes this server with the given name and version information.
     Server(const Implementation& InServerInfo, const optional<ServerOptions>& InOptions = nullopt)
-        : Protocol<ServerRequest, ServerNotification, ServerResult>(InOptions),
-          m_ServerInfo(InServerInfo) {
+        : Protocol<ServerRequest, ServerNotification, ServerResult>(), m_ServerInfo(InServerInfo) {
         if (InOptions) {
             m_Capabilities = InOptions->Capabilities.value_or(ServerCapabilities{});
             m_Instructions = InOptions->Instructions;

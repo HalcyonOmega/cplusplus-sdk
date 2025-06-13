@@ -3,6 +3,8 @@
 #include <future>
 
 #include "Core.h"
+#include "Core/Protocol__DT.hpp"
+#include "SchemaAliases.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -31,8 +33,6 @@ struct ClientOptions {
  * To use with custom types, extend the base Request/Notification/Result types and pass them as type
  * parameters.
  */
-template <typename RequestT = Request, typename NotificationT = Notification,
-          typename ResultT = Result>
 class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> {
   private:
     optional<ServerCapabilities> m_ServerCapabilities;
@@ -126,17 +126,13 @@ class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> 
 };
 
 // Template implementation
-template <typename RequestT, typename NotificationT, typename ResultT>
-Client<RequestT, NotificationT, ResultT>::Client(const Implementation& ClientInfo,
-                                                 const optional<ClientOptions>& Options)
+Client::Client(const Implementation& ClientInfo, const optional<ClientOptions>& Options)
     : Protocol<ClientRequest, ClientNotification, ClientResult>(Options), m_ClientInfo(ClientInfo),
       m_Capabilities(Options ? Options->Capabilities.value_or(ClientCapabilities{})
                              : ClientCapabilities{}),
       m_Ajv() {}
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-void Client<RequestT, NotificationT, ResultT>::RegisterCapabilities(
-    const ClientCapabilities& Capabilities) {
+void Client::RegisterCapabilities(const ClientCapabilities& Capabilities) {
     if (GetTransport()) {
         throw runtime_error("Cannot register capabilities after connecting to transport");
     }
@@ -147,9 +143,7 @@ void Client<RequestT, NotificationT, ResultT>::RegisterCapabilities(
     // Capabilities_ = MergeCapabilities(Capabilities_, Capabilities);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-void Client<RequestT, NotificationT, ResultT>::AssertCapability(const string& Capability,
-                                                                const string& Method) {
+void Client::AssertCapability(const string& Capability, const string& Method) {
     // TODO: Implement capability checking logic based on ServerCapabilities_
     if (!m_ServerCapabilities) {
         throw runtime_error("Server does not support " + Capability + " (required for " + Method
@@ -157,10 +151,8 @@ void Client<RequestT, NotificationT, ResultT>::AssertCapability(const string& Ca
     }
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<void>
-Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> TransportPtr,
-                                                  const optional<RequestOptions>& Options) {
+async<void> Client::Connect(shared_ptr<Transport> TransportPtr,
+                            const optional<RequestOptions>& Options) {
     co_await Protocol<ClientRequest, ClientNotification, ClientResult>::Connect(TransportPtr);
 
     // When transport sessionId is already set this means we are trying to reconnect.
@@ -206,24 +198,19 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
     }
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-optional<ServerCapabilities>
-Client<RequestT, NotificationT, ResultT>::GetServerCapabilities() const {
+optional<ServerCapabilities> Client::GetServerCapabilities() const {
     return m_ServerCapabilities;
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-optional<Implementation> Client<RequestT, NotificationT, ResultT>::GetServerVersion() const {
+optional<Implementation> Client::GetServerVersion() const {
     return m_ServerVersion;
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-optional<string> Client<RequestT, NotificationT, ResultT>::GetInstructions() const {
+optional<string> Client::GetInstructions() const {
     return m_Instructions;
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const string& Method) {
+void Client::AssertCapabilityForMethod(const string& Method) {
     if (Method == MTHD_LOGGING_SET_LEVEL) {
         if (!m_ServerCapabilities
             || !m_ServerCapabilities->Logging) { // TODO: Access logging capability properly
@@ -264,8 +251,7 @@ void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const s
     // MTHD_INITIALIZE and MTHD_PING require no specific capability
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-void Client<RequestT, NotificationT, ResultT>::AssertNotificationCapability(const string& Method) {
+void Client::AssertNotificationCapability(const string& Method) {
     if (Method == MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED) {
         // TODO: Check Capabilities_.Roots.ListChanged properly
         // if (!Capabilities_.Roots || !Capabilities_.Roots->ListChanged) {
@@ -277,9 +263,7 @@ void Client<RequestT, NotificationT, ResultT>::AssertNotificationCapability(cons
     // require no specific capability
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-void Client<RequestT, NotificationT, ResultT>::AssertRequestHandlerCapability(
-    const string& Method) {
+void Client::AssertRequestHandlerCapability(const string& Method) {
     if (Method == MTHD_SAMPLING_CREATE_MESSAGE) {
         // TODO: Check Capabilities_.Sampling properly
         // if (!Capabilities_.Sampling) {
@@ -296,90 +280,66 @@ void Client<RequestT, NotificationT, ResultT>::AssertRequestHandlerCapability(
     // MTHD_PING requires no specific capability
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::Ping(const optional<RequestOptions>& Options) {
+async<JSON> Client::Ping(const optional<RequestOptions>& Options) {
     return co_await Request(JSON{{MSG_METHOD, MTHD_PING}}, "EmptyResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::Complete(const JSON& Params,
-                                                   const optional<RequestOptions>& Options) {
+async<JSON> Client::Complete(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON CompleteRequest = JSON{{MSG_METHOD, MTHD_COMPLETION_COMPLETE}, {MSG_PARAMS, Params}};
     return co_await Request(CompleteRequest, "CompleteResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::SetLoggingLevel(LoggingLevel Level,
-                                                          const optional<RequestOptions>& Options) {
+async<JSON> Client::SetLoggingLevel(LoggingLevel Level, const optional<RequestOptions>& Options) {
     JSON SetLevelRequest = JSON{{MSG_METHOD, MTHD_LOGGING_SET_LEVEL},
                                 {MSG_PARAMS, JSON{{MSG_LEVEL, static_cast<int>(Level)}}}};
     return co_await Request(SetLevelRequest, "EmptyResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::GetPrompt(const JSON& Params,
-                                                    const optional<RequestOptions>& Options) {
+async<JSON> Client::GetPrompt(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON GetPromptRequest = JSON{{MSG_METHOD, MTHD_PROMPTS_GET}, {MSG_PARAMS, Params}};
     return co_await Request(GetPromptRequest, "GetPromptResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::ListPrompts(const optional<JSON>& Params,
-                                                      const optional<RequestOptions>& Options) {
+async<JSON> Client::ListPrompts(const optional<JSON>& Params,
+                                const optional<RequestOptions>& Options) {
     JSON ListPromptsRequest = JSON{{MSG_METHOD, MTHD_PROMPTS_LIST}};
     if (Params) { ListPromptsRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListPromptsRequest, "ListPromptsResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::ListResources(const optional<JSON>& Params,
-                                                        const optional<RequestOptions>& Options) {
+async<JSON> Client::ListResources(const optional<JSON>& Params,
+                                  const optional<RequestOptions>& Options) {
     JSON ListResourcesRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_LIST}};
     if (Params) { ListResourcesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourcesRequest, "ListResourcesResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON> Client<RequestT, NotificationT, ResultT>::ListResourceTemplates(
-    const optional<JSON>& Params, const optional<RequestOptions>& Options) {
+async<JSON> Client::ListResourceTemplates(const optional<JSON>& Params,
+                                          const optional<RequestOptions>& Options) {
     JSON ListResourceTemplatesRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_TEMPLATES_LIST}};
     if (Params) { ListResourceTemplatesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourceTemplatesRequest, "ListResourceTemplatesResultSchema",
                             Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::ReadResource(const JSON& Params,
-                                                       const optional<RequestOptions>& Options) {
+async<JSON> Client::ReadResource(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON ReadResourceRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_READ}, {MSG_PARAMS, Params}};
     return co_await Request(ReadResourceRequest, "ReadResourceResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON> Client<RequestT, NotificationT, ResultT>::SubscribeResource(
-    const JSON& Params, const optional<RequestOptions>& Options) {
+async<JSON> Client::SubscribeResource(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON SubscribeRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_SUBSCRIBE}, {MSG_PARAMS, Params}};
     return co_await Request(SubscribeRequest, "EmptyResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON> Client<RequestT, NotificationT, ResultT>::UnsubscribeResource(
-    const JSON& Params, const optional<RequestOptions>& Options) {
+async<JSON> Client::UnsubscribeResource(const JSON& Params,
+                                        const optional<RequestOptions>& Options) {
     JSON UnsubscribeRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_UNSUBSCRIBE}, {MSG_PARAMS, Params}};
     return co_await Request(UnsubscribeRequest, "EmptyResultSchema", Options);
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const string& ResultSchema,
-                                                   const optional<RequestOptions>& Options) {
+async<JSON> Client::CallTool(const JSON& Params, const string& ResultSchema,
+                             const optional<RequestOptions>& Options) {
     JSON CallToolRequest = JSON{{MSG_METHOD, MTHD_TOOLS_CALL}, {MSG_PARAMS, Params}};
 
     JSON Result = co_await Request(CallToolRequest, ResultSchema, Options);
@@ -414,8 +374,7 @@ Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const str
     co_return Result;
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-void Client<RequestT, NotificationT, ResultT>::CacheToolOutputSchemas(const vector<Tool>& Tools) {
+void Client::CacheToolOutputSchemas(const vector<Tool>& Tools) {
     m_CachedToolOutputValidators.clear();
 
     for (const auto& ToolItem : Tools) {
@@ -433,18 +392,14 @@ void Client<RequestT, NotificationT, ResultT>::CacheToolOutputSchemas(const vect
     }
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-optional<ValidateFunction>
-Client<RequestT, NotificationT, ResultT>::GetToolOutputValidator(const string& ToolName) {
+optional<ValidateFunction> Client::GetToolOutputValidator(const string& ToolName) {
     auto It = m_CachedToolOutputValidators.find(ToolName);
     if (It != m_CachedToolOutputValidators.end()) { return It->second; }
     return nullopt;
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<JSON>
-Client<RequestT, NotificationT, ResultT>::ListTools(const optional<JSON>& Params,
-                                                    const optional<RequestOptions>& Options) {
+async<JSON> Client::ListTools(const optional<JSON>& Params,
+                              const optional<RequestOptions>& Options) {
     JSON ListToolsRequest = JSON{{MSG_METHOD, MTHD_TOOLS_LIST}};
     if (Params) { ListToolsRequest[MSG_PARAMS] = *Params; }
 
@@ -458,8 +413,7 @@ Client<RequestT, NotificationT, ResultT>::ListTools(const optional<JSON>& Params
     co_return Result;
 }
 
-template <typename RequestT, typename NotificationT, typename ResultT>
-async<void> Client<RequestT, NotificationT, ResultT>::SendRootsListChanged() {
+async<void> Client::SendRootsListChanged() {
     JSON RootsListChangedNotification = JSON{{MSG_METHOD, MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED}};
     co_await Notification(RootsListChangedNotification);
 }
