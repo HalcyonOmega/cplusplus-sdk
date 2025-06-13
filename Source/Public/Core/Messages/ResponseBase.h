@@ -57,6 +57,7 @@ bool IsResponseBase(const JSON& value) {
 //         MSG_TYPE : MSG_OBJECT
 // };
 
+// TODO: @HalcyonOmega - Cleanup As Appropriate
 struct Result {
     optional<JSON> Meta; // This result property is reserved by the protocol to allow clients and
                          // servers to attach additional metadata to their responses.

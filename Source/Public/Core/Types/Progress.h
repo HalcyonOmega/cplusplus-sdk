@@ -60,7 +60,7 @@ struct ProgressToken {
 // An out-of-band notification used to inform the receiver of a progress update for a long-running
 // request.
 struct ProgressNotification : public NotificationBase {
-    struct ProgressNotificationParams : public NotificationParams {
+    struct ProgressNotificationParams : public Notification::NotificationParams {
         ProgressToken
             ProgressToken; // The progress token which was given in the initial request, used to
                            // associate this notification with the request that is proceeding.

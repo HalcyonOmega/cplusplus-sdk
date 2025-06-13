@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Types/Roles.h"
 #include "RequestBase.h"
 #include "ResponseBase.h"
 #include "SamplingBase.h"
@@ -161,7 +162,7 @@ DEFINE_ENUM_JSON(StopReason, {{StopReason::EndTurn, STOP_REASON_END_TURN},
 struct CreateMessageResult : public ResponseBase, SamplingMessage {
     string Model; // The name of the model that generated the message.
     optional<variant<StopReason, string>> StopReason; // The reason why sampling stopped, if known.
-    Role Role;                                        // The role of the message.
+    enum Role Role;                                   // The role of the message.
     // TODO: @HalcyonOmega - Was z.discriminatedUnion(MSG_TYPE, [TextContent, ImageContent,
     // AudioContent]) Content;
     variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.

@@ -1,16 +1,10 @@
 #pragma once
 
-#include "Core.h"
-#include "Core/Constants/MessageConstants.h"
-#include "Core/Constants/MethodConstants.h"
-#include "Core/Messages/Requests/RequestBase.h"
-#include "Core/Messages/Responses/ResponseBase.h"
+#include "AutocompleteBase.h"
+#include "RequestBase.h"
+#include "ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-struct AutocompleteReference {
-    string Type;
-};
 
 // ResourceReference {
 //   MSG_DESCRIPTION : "A reference to a resource or resource template definition.",
@@ -29,9 +23,7 @@ struct AutocompleteReference {
 
 // A reference to a resource or resource template definition.
 struct ResourceReference : public AutocompleteReference {
-    // The URI or URI template of the resource.
-    // @format uri-template
-    string URI;
+    variant<URI, URITemplate> URI; // The URI or URI template of the resource.
 
     ResourceReference() {
         Type = MSG_REF_RESOURCE;

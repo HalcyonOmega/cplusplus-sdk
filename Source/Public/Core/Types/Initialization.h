@@ -52,10 +52,6 @@ struct InitializeRequest : public RequestBase {
     InitializeRequest() : RequestBase(MTHD_INITIALIZE) {}
 };
 
-// TODO: @HalcyonOmega - Fix This
-const isInitializeRequest =
-    (value : unknown) : value is InitializeRequest = > InitializeRequest.safeParse(value).success;
-
 // InitializeResult {
 //   MSG_DESCRIPTION : "After receiving an initialize request from the client, "
 //                   "the server sends this response.",
@@ -133,9 +129,5 @@ struct InitializeResult : public ResponseBase {
 struct InitializedNotification : public NotificationBase {
     InitializedNotification() : NotificationBase(MTHD_NOTIFICATIONS_INITIALIZED) {}
 };
-
-// TODO: @HalcyonOmega - Fix This
-const isInitializedNotification = (value : unknown)
-    : value is InitializedNotification = > InitializedNotification.safeParse(value).success;
 
 MCP_NAMESPACE_END

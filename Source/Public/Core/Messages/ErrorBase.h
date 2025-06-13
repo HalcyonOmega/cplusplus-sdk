@@ -7,19 +7,19 @@
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: @HalcyonOmega Consider subclassing ErrorBase from ResponseBase
-
-struct ErrorParams {
-    Errors Code;        // The error type that occurred.
-    string Message;     // A short description of the error. The message SHOULD be limited to a
-                        // concise single sentence.
-    optional<any> Data; // Additional information about the error. The value of this member is
-                        // defined by the sender (e.g. detailed error information, nested errors
-                        // etc.)
-};
-
 // A response to a request that indicates an error occurred.
+// TODO: @HalcyonOmega Consider subclassing ErrorBase from ResponseBase
 class ErrorBase : public MessageBase {
+  public:
+    struct ErrorParams {
+        Errors Code;        // The error type that occurred.
+        string Message;     // A short description of the error. The message SHOULD be limited to a
+                            // concise single sentence.
+        optional<any> Data; // Additional information about the error. The value of this member is
+                            // defined by the sender (e.g. detailed error information, nested errors
+                            // etc.)
+    };
+
   private:
     RequestID m_ID;
     ErrorParams m_Error;

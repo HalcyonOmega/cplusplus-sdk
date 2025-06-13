@@ -57,18 +57,7 @@ bool IsNotificationBase(const JSON& value) {
            && value.contains(MSG_METHOD) && !value.contains(MSG_ID);
 }
 
-// TODO: @HalcyonOmega Cleanup below
-
-struct NotificationParamsMeta {
-    AdditionalProperties AdditionalProperties;
-};
-
-struct NotificationParams {
-    optional<NotificationParamsMeta>
-        Meta; // This parameter name is reserved by MCP to allow
-              // clients and servers to attach additional metadata to their notifications.
-    AdditionalProperties AdditionalProperties;
-};
+// TODO: @HalcyonOmega Cleanup below - Duplicate Notification Types
 
 // Notification {
 //   MSG_PROPERTIES : {
@@ -93,6 +82,17 @@ struct NotificationParams {
 // };
 
 struct Notification {
+    struct NotificationParams {
+        struct NotificationParamsMeta {
+            AdditionalProperties AdditionalProperties;
+        };
+
+        optional<NotificationParamsMeta>
+            Meta; // This parameter name is reserved by MCP to allow
+                  // clients and servers to attach additional metadata to their notifications.
+        AdditionalProperties AdditionalProperties;
+    };
+
     string Method;
     optional<NotificationParams> Params;
 };

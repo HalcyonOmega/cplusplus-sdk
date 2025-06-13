@@ -1,6 +1,17 @@
 #pragma once
 
-#include "Core.h"
+#include "Core/Features/Autocomplete/Autocompletions.h"
+#include "Core/Features/Prompt/Prompts.h"
+#include "Core/Features/Resource/Resources.h"
+#include "Core/Features/Root/Roots.h"
+#include "Core/Features/Sampling/Sampling.h"
+#include "Core/Features/Tool/Tools.h"
+#include "Core/Types/Cancellation.h"
+#include "Core/Types/Initialization.h"
+#include "Core/Types/Logging.h"
+#include "Core/Types/Ping.h"
+#include "Core/Types/Progress.h"
+#include "Macros.h"
 
 MCP_NAMESPACE_BEGIN
 
