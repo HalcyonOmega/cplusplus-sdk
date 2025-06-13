@@ -73,7 +73,9 @@ struct URIFile {
 
 // TODO: @HalcyonOmega create JSONSchema class. Needed to define ToolInputSchema and
 // ToolOutputSchema.
-class JSONSchema;
+struct JSONSchema {
+    JSON Value;
+};
 
 // Cursor {
 //   MSG_DESCRIPTION : "An opaque token used to represent a cursor for
