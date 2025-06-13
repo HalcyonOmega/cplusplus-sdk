@@ -35,7 +35,7 @@ struct ClientAuthorizationParams {
     optional<string> RedirectUri;
 
     static bool Validate(const map<string, string>& Params, ClientAuthorizationParams& Output,
-                         string& ErrorMessage);
+                         string& ErrorBase);
 };
 
 // Request authorization parameters validation
@@ -47,7 +47,7 @@ struct RequestAuthorizationParams {
     optional<string> State;
 
     static bool Validate(const map<string, string>& Params, RequestAuthorizationParams& Output,
-                         string& ErrorMessage);
+                         string& ErrorBase);
 };
 
 // Client information structure

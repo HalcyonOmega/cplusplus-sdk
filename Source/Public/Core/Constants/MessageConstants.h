@@ -8,7 +8,7 @@ MCP_NAMESPACE_BEGIN
 std::string REGEXSearch; // Just this part => "[^\\"]*"
 
 // Message Keys
-static constexpr const char* MSG_NULL = "";
+static constexpr const char* MSG_EMPTY = "";
 static constexpr const char* MSG_ID = "id";
 static constexpr const char* MSG_METHOD = "method";
 static constexpr const char* MSG_PARAMS = "params";

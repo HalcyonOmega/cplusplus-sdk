@@ -10,11 +10,8 @@ MCP_NAMESPACE_BEGIN
 //       : {
 //         MSG_META : {
 //           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
-//           to "
-//                           "allow clients and servers to attach additional "
-//                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to allow clients
+//           and servers to attach additional metadata to their responses.", MSG_TYPE : MSG_OBJECT
 //         }
 //       },
 //         MSG_TYPE : MSG_OBJECT

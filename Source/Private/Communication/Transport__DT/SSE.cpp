@@ -88,7 +88,7 @@ void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
 
     JSON body;
     try {
-        string contentTypeHeader = MSG_NULL;
+        string contentTypeHeader = MSG_EMPTY;
         auto ctIt = req->headers.find(TSPT_CONTENT_TYPE);
         if (ctIt != req->headers.end()) { contentTypeHeader = ctIt->second; }
 
@@ -236,7 +236,7 @@ future<void> SSEClientTransport::_startOrAuth() {
         // );
         // _abortController = new AbortController();
 
-        // _eventSource->onerror = [this](const ErrorMessage& event) {
+        // _eventSource->onerror = [this](const ErrorBase& event) {
         //     if (event.code == HTTPStatus::Unauthorized && _authProvider) {
         //         return _authThenStart();
         //     }
@@ -386,7 +386,7 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
                 string text;
                 try {
                     text = response.text().get();
-                } catch (...) { text = MSG_NULL; }
+                } catch (...) { text = MSG_EMPTY; }
 
                 throw runtime_error("Error POSTing to endpoint (HTTP " + to_string(response.status)
                                     + "): " + text);

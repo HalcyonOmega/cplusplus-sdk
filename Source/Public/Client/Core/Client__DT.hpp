@@ -390,9 +390,9 @@ Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const str
     if (Validator) {
         // If tool has outputSchema, it MUST return structuredContent (unless it's an error)
         if (!Result.contains("structuredContent") && !Result.value(MSG_IS_ERROR, false)) {
-            throw ErrorMessage(ErrorCode::InvalidRequest,
-                               "Tool " + ToolName
-                                   + " has an output schema but did not return structured content");
+            throw ErrorBase(ErrorCode::InvalidRequest,
+                            "Tool " + ToolName
+                                + " has an output schema but did not return structured content");
         }
 
         // Only validate structured content if present (not when there's an error)
@@ -400,15 +400,13 @@ Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const str
             try {
                 bool IsValid = (*Validator)(Result["structuredContent"]);
                 if (!IsValid) {
-                    throw ErrorMessage(
-                        ErrorCode::InvalidParams,
-                        "Structured content does not match the tool's output schema: "
-                            + Ajv_.ErrorsText(Ajv_.Errors));
+                    throw ErrorBase(ErrorCode::InvalidParams,
+                                    "Structured content does not match the tool's output schema: "
+                                        + Ajv_.ErrorsText(Ajv_.Errors));
                 }
-            } catch (const ErrorMessage& Error) { throw; } catch (const exception& Error) {
-                throw ErrorMessage(ErrorCode::InvalidParams,
-                                   "Failed to validate structured content: "
-                                       + string(Error.what()));
+            } catch (const ErrorBase& Error) { throw; } catch (const exception& Error) {
+                throw ErrorBase(ErrorCode::InvalidParams,
+                                "Failed to validate structured content: " + string(Error.what()));
             }
         }
     }

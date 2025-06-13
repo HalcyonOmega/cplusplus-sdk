@@ -24,9 +24,9 @@ bool RateLimitState::CheckRateLimit(const string& identifier, int maxRequests, i
     return true;
 }
 
-bool TokenRequestSchema::Validate(const JSON& Body, TokenRequestSchema& Out, string& ErrorMessage) {
+bool TokenRequestSchema::Validate(const JSON& Body, TokenRequestSchema& Out, string& ErrorBase) {
     if (!Body.contains("grant_type") || !Body["grant_type"].is_string()) {
-        ErrorMessage = "Missing or invalid grant_type";
+        ErrorBase = "Missing or invalid grant_type";
         return false;
     }
     Out.GrantType = Body["grant_type"];
@@ -34,13 +34,13 @@ bool TokenRequestSchema::Validate(const JSON& Body, TokenRequestSchema& Out, str
 }
 
 bool AuthorizationCodeGrantSchema::Validate(const JSON& Body, AuthorizationCodeGrantSchema& Out,
-                                            string& ErrorMessage) {
+                                            string& ErrorBase) {
     if (!Body.contains(MSG_CODE) || !Body[MSG_CODE].is_string()) {
-        ErrorMessage = "Missing or invalid code";
+        ErrorBase = "Missing or invalid code";
         return false;
     }
     if (!Body.contains("code_verifier") || !Body["code_verifier"].is_string()) {
-        ErrorMessage = "Missing or invalid code_verifier";
+        ErrorBase = "Missing or invalid code_verifier";
         return false;
     }
 
@@ -55,9 +55,9 @@ bool AuthorizationCodeGrantSchema::Validate(const JSON& Body, AuthorizationCodeG
 }
 
 bool RefreshTokenGrantSchema::Validate(const JSON& Body, RefreshTokenGrantSchema& Out,
-                                       string& ErrorMessage) {
+                                       string& ErrorBase) {
     if (!Body.contains("refresh_token") || !Body["refresh_token"].is_string()) {
-        ErrorMessage = "Missing or invalid refresh_token";
+        ErrorBase = "Missing or invalid refresh_token";
         return false;
     }
 
@@ -156,10 +156,10 @@ Task<JSON> TokenHandler::HandleRequestAsync(const JSON& RequestBody, const JSON&
         if (!client) { throw ServerError("Internal Server Error"); }
 
         // Validate basic token request
-        string ErrorMessage;
+        string ErrorBase;
         TokenRequestSchema TokenRequest;
-        if (!TokenRequestSchema::Validate(RequestBody, TokenRequest, ErrorMessage)) {
-            throw InvalidRequestError(ErrorMessage);
+        if (!TokenRequestSchema::Validate(RequestBody, TokenRequest, ErrorBase)) {
+            throw InvalidRequestError(ErrorBase);
         }
 
         const string& GrantType = TokenRequest.GrantType;
@@ -187,10 +187,10 @@ Task<JSON> TokenHandler::HandleRequestAsync(const JSON& RequestBody, const JSON&
 
 Task<JSON> TokenHandler::HandleAuthorizationCodeGrantAsync(const JSON& RequestBody,
                                                            shared_ptr<Client> client) {
-    string ErrorMessage;
+    string ErrorBase;
     AuthorizationCodeGrantSchema Grant;
-    if (!AuthorizationCodeGrantSchema::Validate(RequestBody, Grant, ErrorMessage)) {
-        throw InvalidRequestError(ErrorMessage);
+    if (!AuthorizationCodeGrantSchema::Validate(RequestBody, Grant, ErrorBase)) {
+        throw InvalidRequestError(ErrorBase);
     }
 
     const string& Code = Grant.Code;
@@ -220,10 +220,10 @@ Task<JSON> TokenHandler::HandleAuthorizationCodeGrantAsync(const JSON& RequestBo
 
 Task<JSON> TokenHandler::HandleRefreshTokenGrantAsync(const JSON& RequestBody,
                                                       shared_ptr<Client> client) {
-    string ErrorMessage;
+    string ErrorBase;
     RefreshTokenGrantSchema Grant;
-    if (!RefreshTokenGrantSchema::Validate(RequestBody, Grant, ErrorMessage)) {
-        throw InvalidRequestError(ErrorMessage);
+    if (!RefreshTokenGrantSchema::Validate(RequestBody, Grant, ErrorBase)) {
+        throw InvalidRequestError(ErrorBase);
     }
 
     const string& RefreshToken = Grant.RefreshToken;

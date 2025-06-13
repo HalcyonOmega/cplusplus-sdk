@@ -159,7 +159,7 @@ inline bool CLI::IsValidUrl(const string& url) {
 inline string CLI::GetUrlProtocol(const string& url) {
     size_t pos = url.find("://");
     if (pos != string::npos) { return url.substr(0, pos + 1); }
-    return MSG_NULL;
+    return MSG_EMPTY;
 }
 
 inline void CLI::PrintUsage() {

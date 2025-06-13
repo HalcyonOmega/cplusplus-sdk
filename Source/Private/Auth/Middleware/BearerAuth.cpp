@@ -31,7 +31,7 @@ string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string
         transform(LowerKey.begin(), LowerKey.end(), LowerKey.begin(), ::tolower);
         if (LowerKey == LowerHeaderName) { return Value; }
     }
-    return MSG_NULL;
+    return MSG_EMPTY;
 }
 
 MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options) {

@@ -33,7 +33,7 @@ void URLHelper::ParseURL(const string& URLString) {
         PathQueryFragment = Remaining.substr(PathStart);
     } else {
         HostAndPort = Remaining;
-        PathQueryFragment = MSG_NULL;
+        PathQueryFragment = MSG_EMPTY;
     }
 
     // Parse host and port
@@ -43,7 +43,7 @@ void URLHelper::ParseURL(const string& URLString) {
         Port = HostAndPort.substr(PortStart + 1);
     } else {
         Hostname = HostAndPort;
-        Port = MSG_NULL;
+        Port = MSG_EMPTY;
     }
 
     // Parse path, query, and fragment
@@ -61,23 +61,23 @@ void URLHelper::ParseURL(const string& URLString) {
                 Hash = PathQueryFragment.substr(FragmentStart);
             } else {
                 Search = PathQueryFragment.substr(QueryStart);
-                Hash = MSG_NULL;
+                Hash = MSG_EMPTY;
             }
         } else if (FragmentStart != string::npos) {
             // Has fragment but no query
             Pathname = PathQueryFragment.substr(0, FragmentStart);
-            Search = MSG_NULL;
+            Search = MSG_EMPTY;
             Hash = PathQueryFragment.substr(FragmentStart);
         } else {
             // Only path
             Pathname = PathQueryFragment;
-            Search = MSG_NULL;
-            Hash = MSG_NULL;
+            Search = MSG_EMPTY;
+            Hash = MSG_EMPTY;
         }
     } else {
-        Pathname = MSG_NULL;
-        Search = MSG_NULL;
-        Hash = MSG_NULL;
+        Pathname = MSG_EMPTY;
+        Search = MSG_EMPTY;
+        Hash = MSG_EMPTY;
     }
 
     // Ensure pathname starts with /
@@ -188,7 +188,7 @@ RequestHandler ExpressRouter::CreateHandler() {
         for (const auto& MiddlewareHandler : Middleware) { MiddlewareHandler(Request, Response); }
 
         // Route to specific handler
-        string Path = Request.value("path", MSG_NULL);
+        string Path = Request.value("path", MSG_EMPTY);
         auto It = Routes.find(Path);
         if (It != Routes.end()) { It->second(Request, Response); }
     };

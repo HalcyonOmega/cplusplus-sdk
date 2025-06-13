@@ -1,16 +1,10 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/MethodConstants.h"
-#include "Core/Messages/Requests/Requests.h"
-#include "Utilities/JSON/JSONLayer.hpp"
+#include "Core/Messages/Requests/RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-//! NOTE: @HalcyonOmega NON-JSON-RPC Types in JSON
-
-/* Ping */
 
 // PingRequest {
 //   MSG_DESCRIPTION : "A ping, issued by either the server or the client, to "
@@ -49,40 +43,8 @@ MCP_NAMESPACE_BEGIN
 // A ping, issued by either the server or the client, to check that the other
 // party is still alive. The receiver must promptly respond, or else may be
 // disconnected.
-struct PingRequest : public RequestMessage {
-    PingRequest() : RequestMessage(MTHD_PING) {}
-};
-
-/* Pagination */
-
-struct PaginatedRequestParams : public RequestParams {
-    optional<Cursor>
-        Cursor; // An opaque token representing the current pagination position. If
-                // provided, the server should return results starting after this cursor.
-};
-
-// PaginatedRequest {
-//   MSG_PROPERTIES : {
-//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
-//     MSG_PARAMS : {
-//       MSG_PROPERTIES : {
-//         MSG_CURSOR : {
-//           MSG_DESCRIPTION :
-//               "An opaque token representing the current pagination "
-//               "position.\nIf provided, the server should return results "
-//               "starting after this cursor.",
-//           MSG_TYPE : MSG_STRING
-//         }
-//       },
-//       MSG_TYPE : MSG_OBJECT
-//     }
-//   },
-//                  MSG_REQUIRED : [MSG_METHOD],
-//                               MSG_TYPE : MSG_OBJECT
-// };
-
-struct PaginatedRequest : public RequestMessage {
-    optional<PaginatedRequestParams> Params;
+struct PingRequest : public RequestBase {
+    PingRequest() : RequestBase(MTHD_PING) {}
 };
 
 MCP_NAMESPACE_END

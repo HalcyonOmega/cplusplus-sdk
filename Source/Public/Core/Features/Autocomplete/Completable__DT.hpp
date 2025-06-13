@@ -29,13 +29,13 @@ using ErrorMapFunction = function<string(const string& issueCode, const ParseCon
 struct ParseContext {
     JSON Data;
     vector<string> Path;
-    optional<string> ErrorMessage;
+    optional<string> ErrorBase;
 };
 
 struct TypeDef {
     MCP_TypeKind TypeName;
     string Description;
-    optional<string> ErrorMessage;
+    optional<string> ErrorBase;
 };
 
 // Create params structure (like original RawCreateParams & { complete: CompleteCallback<T> })
@@ -52,7 +52,7 @@ template <typename T> struct CreateParams {
 struct ProcessedCreateParams {
     optional<ErrorMapFunction> ErrorMap;
     string Description;
-    optional<string> ErrorMessage;
+    optional<string> ErrorBase;
 };
 
 // Like original processCreateParams function - DECLARED EARLY

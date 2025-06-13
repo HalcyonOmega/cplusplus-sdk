@@ -23,7 +23,7 @@ template <typename T> class Completable;
 struct ParseContext {
     JSON Data;
     vector<string> Path;
-    optional<string> ErrorMessage;
+    optional<string> ErrorBase;
 };
 
 // Error map function type (like original ZodErrorMap)
@@ -36,7 +36,7 @@ using CompleteCallback = function<variant<vector<T>, future<vector<T>>>(const T&
 struct TypeDef {
     MCP_TypeKind TypeName;
     string Description;
-    optional<string> ErrorMessage;
+    optional<string> ErrorBase;
 };
 
 // Create params structure (like original RawCreateParams & { complete: CompleteCallback<T> })
@@ -53,7 +53,7 @@ template <typename T> struct CreateParams {
 struct ProcessedCreateParams {
     optional<ErrorMapFunction> ErrorMap;
     string Description;
-    optional<string> ErrorMessage;
+    optional<string> ErrorBase;
 };
 
 // Like original processCreateParams function - DECLARED EARLY
@@ -129,13 +129,13 @@ template <typename T> ProcessedCreateParams ProcessCreateParams(const CreatePara
 
     if (InParams.ErrorMap()) {
         Result.ErrorMap = InParams.ErrorMap;
-        Result.Description = InParams.Description.value_or(MSG_NULL);
+        Result.Description = InParams.Description.value_or(MSG_EMPTY);
         return Result;
     }
 
     // Create custom error map like original
     auto CustomMap = [InParams](const string& IssueCode, const ParseContext& Context) -> string {
-        const string& Message = InParams.Message.value_or(MSG_NULL);
+        const string& Message = InParams.Message.value_or(MSG_EMPTY);
 
         if (IssueCode == "invalid_enum_value") {
             return !Message.empty() ? Message : "Invalid enum value";
@@ -149,7 +149,7 @@ template <typename T> ProcessedCreateParams ProcessCreateParams(const CreatePara
     };
 
     Result.ErrorMap = CustomMap;
-    Result.Description = InParams.Description.value_or(MSG_NULL);
+    Result.Description = InParams.Description.value_or(MSG_EMPTY);
     return Result;
 }
 
@@ -218,7 +218,7 @@ shared_ptr<Completable<T>> Completable<T>::Create(shared_ptr<MCP_Type<T, TypeDef
     // Process create params like original processCreateParams
     auto ProcessedParams = ProcessCreateParams(InParams);
     Completable->Definition.Description = ProcessedParams.Description;
-    Completable->Definition.ErrorMessage = ProcessedParams.ErrorMessage;
+    Completable->Definition.ErrorBase = ProcessedParams.ErrorBase;
 
     return Completable;
 }

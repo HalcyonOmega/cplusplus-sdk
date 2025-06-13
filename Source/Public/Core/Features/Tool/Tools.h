@@ -277,7 +277,7 @@ struct CallToolRequestParams {
 // };
 
 // Used by the client to invoke a tool provided by the server.
-struct CallToolRequest : public RequestMessage {
+struct CallToolRequest : public RequestBase {
     CallToolRequestParams Params;
 
     CallToolRequest() {
@@ -317,7 +317,7 @@ struct CallToolRequest : public RequestMessage {
 // An optional notification from the server to the client, informing it that the
 // list of tools it offers has changed. This may be issued by servers without
 // any previous subscription from the client.
-struct ToolListChangedNotification : public NotificationMessage {
+struct ToolListChangedNotification : public NotificationBase {
     ToolListChangedNotification() {
         Method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
     }

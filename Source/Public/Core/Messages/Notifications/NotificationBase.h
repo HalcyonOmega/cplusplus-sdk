@@ -6,7 +6,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// NotificationMessage {
+// NotificationBase {
 //   MSG_DESCRIPTION : "A notification which does not expect a response.",
 //                   MSG_PROPERTIES
 //       : {
@@ -31,14 +31,14 @@ MCP_NAMESPACE_BEGIN
 // };
 
 // A notification which does not expect a response. Supports JSON-RPC 2.0.
-class NotificationMessage : public MessageBase {
+class NotificationBase : public MessageBase {
   private:
     string m_Method;
     optional<unique_ptr<MessageParams>> m_Params = nullopt;
 
   public:
     // Constructors
-    NotificationMessage(string Method, optional<unique_ptr<MessageParams>> Params = nullopt)
+    NotificationBase(string Method, optional<unique_ptr<MessageParams>> Params = nullopt)
         : m_Method(std::move(Method)), m_Params(std::move(Params)) {}
 
     // Direct Getters
@@ -52,8 +52,8 @@ class NotificationMessage : public MessageBase {
     [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
-bool IsNotificationMessage(const JSON& value) {
-    return value.is_object() && value.value(MSG_JSON_RPC, MSG_NULL) == MSG_JSON_RPC_VERSION
+bool IsNotificationBase(const JSON& value) {
+    return value.is_object() && value.value(MSG_JSON_RPC, MSG_EMPTY) == MSG_JSON_RPC_VERSION
            && value.contains(MSG_METHOD) && !value.contains(MSG_ID);
 }
 

@@ -7,10 +7,10 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: Nate - HTTP_Request and HTTP_Response
 
 bool ClientAuthorizationParams::Validate(const map<string, string>& Params,
-                                         ClientAuthorizationParams& Output, string& ErrorMessage) {
+                                         ClientAuthorizationParams& Output, string& ErrorBase) {
     auto ClientIdIt = Params.find(MSG_CLIENT_ID);
     if (ClientIdIt == Params.end() || ClientIdIt->second.empty()) {
-        ErrorMessage = "client_id is required";
+        ErrorBase = "client_id is required";
         return false;
     }
     Output.ClientId = ClientIdIt->second;
@@ -20,7 +20,7 @@ bool ClientAuthorizationParams::Validate(const map<string, string>& Params,
         // Validate URL format
         regex URLPattern(R"(^https?://[^\s]+$)");
         if (!regex_match(RedirectUriIt->second, URLPattern)) {
-            ErrorMessage = "redirect_uri must be a valid URL";
+            ErrorBase = "redirect_uri must be a valid URL";
             return false;
         }
         Output.RedirectUri = RedirectUriIt->second;
@@ -30,25 +30,24 @@ bool ClientAuthorizationParams::Validate(const map<string, string>& Params,
 }
 
 bool RequestAuthorizationParams::Validate(const map<string, string>& Params,
-                                          RequestAuthorizationParams& Output,
-                                          string& ErrorMessage) {
+                                          RequestAuthorizationParams& Output, string& ErrorBase) {
     auto ResponseTypeIt = Params.find(MSG_RESPONSE_TYPE);
     if (ResponseTypeIt == Params.end() || ResponseTypeIt->second != MSG_CODE) {
-        ErrorMessage = "response_type must be 'code'";
+        ErrorBase = "response_type must be 'code'";
         return false;
     }
     Output.ResponseType = ResponseTypeIt->second;
 
     auto CodeChallengeIt = Params.find(MSG_CODE_CHALLENGE);
     if (CodeChallengeIt == Params.end() || CodeChallengeIt->second.empty()) {
-        ErrorMessage = "code_challenge is required";
+        ErrorBase = "code_challenge is required";
         return false;
     }
     Output.CodeChallenge = CodeChallengeIt->second;
 
     auto CodeChallengeMethodIt = Params.find(MSG_CODE_CHALLENGE_METHOD);
     if (CodeChallengeMethodIt == Params.end() || CodeChallengeMethodIt->second != "S256") {
-        ErrorMessage = "code_challenge_method must be 'S256'";
+        ErrorBase = "code_challenge_method must be 'S256'";
         return false;
     }
     Output.CodeChallengeMethod = CodeChallengeMethodIt->second;
@@ -128,10 +127,10 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
 
     try {
         ClientAuthorizationParams ClientParams;
-        string ErrorMessage;
+        string ErrorBase;
 
-        if (!ClientAuthorizationParams::Validate(Params, ClientParams, ErrorMessage)) {
-            throw InvalidRequestError(ErrorMessage);
+        if (!ClientAuthorizationParams::Validate(Params, ClientParams, ErrorBase)) {
+            throw InvalidRequestError(ErrorBase);
         }
 
         ClientId = ClientParams.ClientId;
@@ -174,10 +173,10 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
 
     try {
         RequestAuthorizationParams RequestParams;
-        string ErrorMessage;
+        string ErrorBase;
 
-        if (!RequestAuthorizationParams::Validate(Params, RequestParams, ErrorMessage)) {
-            throw InvalidRequestError(ErrorMessage);
+        if (!RequestAuthorizationParams::Validate(Params, RequestParams, ErrorBase)) {
+            throw InvalidRequestError(ErrorBase);
         }
 
         State = RequestParams.State;

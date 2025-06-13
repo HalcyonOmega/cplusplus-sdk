@@ -8,7 +8,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// BatchRequestMessage {
+// BatchRequestBase {
 //   MSG_DESCRIPTION : "A JSON-RPC batch request, as described in "
 //                   "https://www.jsonrpc.org/specification#batch.",
 //                   MSG_ITEMS : {
@@ -24,11 +24,11 @@ MCP_NAMESPACE_BEGIN
  * A JSON-RPC batch request, as described in
  * https://www.jsonrpc.org/specification#batch.
  */
-struct BatchRequestMessage {
-    vector<variant<RequestMessage, NotificationMessage>> Items;
+struct BatchRequestBase {
+    vector<variant<RequestBase, NotificationBase>> Items;
 };
 
-// BatchResponseMessage {
+// BatchResponseBase {
 //   MSG_DESCRIPTION : "A JSON-RPC batch response, as described in "
 //                   "https://www.jsonrpc.org/specification#batch.",
 //                   MSG_ITEMS : {
@@ -44,8 +44,8 @@ struct BatchRequestMessage {
  * A JSON-RPC batch response, as described in
  * https://www.jsonrpc.org/specification#batch.
  */
-struct BatchResponseMessage {
-    vector<variant<ResponseMessage, ErrorMessage>> Items;
+struct BatchResponseBase {
+    vector<variant<ResponseBase, ErrorBase>> Items;
 };
 
 // JSONRPC_Message {
@@ -85,8 +85,8 @@ struct BatchResponseMessage {
  */
 class JSONRPC_Message {
   public:
-    variant<RequestMessage, NotificationMessage, ResponseMessage, ErrorMessage, BatchRequestMessage,
-            BatchResponseMessage>
+    variant<RequestBase, NotificationBase, ResponseBase, ErrorBase, BatchRequestBase,
+            BatchResponseBase>
         Message;
 };
 

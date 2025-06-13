@@ -3,10 +3,11 @@
 #include "Core.h"
 #include "Core/Constants/ErrorConstants.h"
 #include "Core/Messages/MessageBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
 
-// TODO: @HalcyonOmega Consider subclassing ErrorMessage from ResponseMessage
+// TODO: @HalcyonOmega Consider subclassing ErrorBase from ResponseBase
 
 struct ErrorParams {
     Errors Code;        // The error type that occurred.
@@ -18,7 +19,7 @@ struct ErrorParams {
 };
 
 // A response to a request that indicates an error occurred.
-class ErrorMessage : public MessageBase {
+class ErrorBase : public MessageBase {
   private:
     RequestID m_ID;
     ErrorParams m_Error;
@@ -26,17 +27,17 @@ class ErrorMessage : public MessageBase {
   public:
     // Constructors
     // TODO: Check RequestID default IntID = 0 - should this be another default?
-    ErrorMessage(Errors Code, string Message, optional<any> Data = nullopt)
+    ErrorBase(Errors Code, string Message, optional<any> Data = nullopt)
         : m_ID(0), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
 
-    ErrorMessage(RequestID RequestID, Errors Code, string Message)
+    ErrorBase(RequestID RequestID, Errors Code, string Message)
         : m_ID(std::move(RequestID)), m_Error({.Code = Code, .Message = Message, .Data = nullopt}) {
     }
 
-    ErrorMessage(RequestID RequestID, Errors Code, string Message, optional<any> Data = nullopt)
+    ErrorBase(RequestID RequestID, Errors Code, string Message, optional<any> Data = nullopt)
         : m_ID(std::move(RequestID)), m_Error({.Code = Code, .Message = Message, .Data = Data}) {}
 
-    ErrorMessage(RequestID RequestID, ErrorParams Error)
+    ErrorBase(RequestID RequestID, ErrorParams Error)
         : m_ID(std::move(RequestID)), m_Error(std::move(Error)) {}
 
     // Direct Getters
@@ -50,8 +51,8 @@ class ErrorMessage : public MessageBase {
     [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
-bool IsErrorMessage(const JSON& value) {
-    return value.is_object() && value.value(MSG_JSON_RPC, MSG_NULL) == MSG_JSON_RPC_VERSION
+bool IsErrorBase(const JSON& value) {
+    return value.is_object() && value.value(MSG_JSON_RPC, MSG_EMPTY) == MSG_JSON_RPC_VERSION
            && value.contains(MSG_ID) && value.contains(MSG_ERROR) && !value.contains(MSG_RESULT);
 }
 

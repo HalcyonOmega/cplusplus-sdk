@@ -162,13 +162,12 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     RequestID m_RequestRequestID{0};
 
     unordered_map<string, function<future<SendResultT>(
-                              const RequestMessage&,
+                              const RequestBase&,
                               const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>>
         m_RequestHandlers;
     unordered_map<RequestID, AbortSignal> m_RequestHandlerAbortControllers;
-    unordered_map<string, function<future<void>(const NotificationMessage&)>>
-        m_NotificationHandlers;
-    unordered_map<int64_t, function<void(const variant<ResponseMessage, ErrorMessage>&)>>
+    unordered_map<string, function<future<void>(const NotificationBase&)>> m_NotificationHandlers;
+    unordered_map<int64_t, function<void(const variant<ResponseBase, ErrorBase>&)>>
         m_ResponseHandlers;
     unordered_map<int64_t, ProgressCallback> m_ProgressHandlers;
     unordered_map<int64_t, TimeoutInfo> m_TimeoutInfo;
@@ -206,7 +205,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         // Set up default handlers for cancelled notifications and progress notifications
         SetNotificationHandler(
             MTHD_NOTIFICATION_CANCELLED,
-            [this](const JSON_RPC_Notification& InNotification) -> future<void> {
+            [this](const NotificationBase& InNotification) -> future<void> {
                 // Extract RequestID and reason from notification params
                 if (InNotification.Params && InNotification.Params->contains(MSG_REQUEST_ID)) {
                     RequestID RequestID = (*InNotification.Params)[MSG_REQUEST_ID];
@@ -225,7 +224,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             });
 
         SetNotificationHandler(MTHD_NOTIFICATION_PROGRESS,
-                               [this](const JSON_RPC_Notification& InNotification) -> future<void> {
+                               [this](const NotificationBase& InNotification) -> future<void> {
                                    OnProgress(InNotification);
                                    promise<void> Promise;
                                    Promise.set_value();
@@ -234,7 +233,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         // Automatic pong by default for ping requests
         SetRequestHandler(MTHD_PING,
-                          [](const JSON_RPC_Request& InRequest,
+                          [](const RequestBase& InRequest,
                              const RequestHandlerExtra<SendRequestT, SendNotificationT>& InExtra)
                               -> future<SendResultT> {
                               // Return empty object as ping response
@@ -245,7 +244,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     }
 
   private:
-    void OnProgress(const JSON_RPC_Notification& InNotification) {
+    void OnProgress(const NotificationBase& InNotification) {
         if (!InNotification.Params || !InNotification.Params->contains(MSG_PROGRESS_TOKEN)) {
             OnErrorInternal(runtime_error("Received a progress notification without progressToken: "
                                           + InNotification.Method));
@@ -274,7 +273,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             && TimeoutIt->second.ResetTimeoutOnProgress) {
             try {
                 ResetTimeout(ProgressToken);
-            } catch (const ErrorMessage& InError) {
+            } catch (const ErrorBase& InError) {
                 ResponseHandler->second(InError);
                 return;
             }
@@ -321,7 +320,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         if (Info.MaxTotalTimeout && TotalElapsed >= *Info.MaxTotalTimeout) {
             m_TimeoutInfo.erase(It);
-            throw ErrorMessage(
+            throw ErrorBase(
                 ErrorCode::RequestTimeout, "Maximum total timeout exceeded",
                 JSON{{"maxTotalTimeout", *Info.MaxTotalTimeout}, {"totalElapsed", TotalElapsed}});
         }
@@ -340,7 +339,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     }
 
     void OnCloseInternal() {
-        unordered_map<int64_t, function<void(const variant<JSON_RPC_Response, ErrorMessage>&)>>
+        unordered_map<int64_t, function<void(const variant<ResponseBase, ErrorBase>&)>>
             ResponseHandlers;
 
         {
@@ -354,7 +353,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         if (m_OnClose) { m_OnClose(); }
 
-        ErrorMessage Error(ErrorCode::ConnectionClosed, "Connection closed");
+        ErrorBase Error(ErrorCode::ConnectionClosed, "Connection closed");
         for (const auto& [ID, Handler] : ResponseHandlers) { Handler(Error); }
     }
 
@@ -362,8 +361,8 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         if (m_OnError) { m_OnError(InError); }
     }
 
-    void OnNotification(const JSON_RPC_Notification& InNotification) {
-        function<future<void>(const JSON_RPC_Notification&)> Handler;
+    void OnNotification(const NotificationBase& InNotification) {
+        function<future<void>(const NotificationBase&)> Handler;
 
         {
             lock_guard<mutex> Lock(m_HandlersMutex);
@@ -372,12 +371,12 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         }
 
         if (!handler && FallbackNotificationHandler) {
-            // Convert JSON_RPC_Notification to Notification type
+            // Convert NotificationBase to Notification type
             Notification Notification;
             Notification.Method = InNotification.Method;
             Notification.Params = InNotification.Params;
 
-            Handler = [this, Notification](const JSON_RPC_Notification&) -> future<void> {
+            Handler = [this, Notification](const NotificationBase&) -> future<void> {
                 return FallbackNotificationHandler(Notification);
             };
         }
@@ -397,9 +396,8 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         });
     }
 
-    void OnRequest(const JSON_RPC_Request& InRequest,
-                   const optional<AuthInfo>& InAuthInfo = nullopt) {
-        function<future<SendResultT>(const JSON_RPC_Request&,
+    void OnRequest(const RequestBase& InRequest, const optional<AuthInfo>& InAuthInfo = nullopt) {
+        function<future<SendResultT>(const RequestBase&,
                                      const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>
             Handler;
 
@@ -415,14 +413,14 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             Request.Method = InRequest.Method;
             Request.Params = InRequest.Params;
 
-            Handler = [this, Request](const JSON_RPC_Request&,
+            Handler = [this, Request](const RequestBase&,
                                       const RequestHandlerExtra<SendRequestT, SendNotificationT>&)
                 -> future<SendResultT> { return FallbackRequestHandler(Request); };
         }
 
         if (!Handler) {
             // Send method not found error
-            JSON_RPC_Error ErrorResponse;
+            ErrorBase ErrorResponse;
             ErrorResponse.JSON_RPC = MSG_JSON_RPC_VERSION;
             ErrorResponse.ID = InRequest.ID;
             ErrorResponse.Error.Code = static_cast<int32_t>(ErrorCode::MethodNotFound);
@@ -474,7 +472,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 // TODO: Fix External Ref: AbortSignal - Check if request was aborted
                 if (!Extra.Signal.IsAborted()) {
                     if (m_Transport) {
-                        JSON_RPC_Response Response;
+                        ResponseBase Response;
                         Response.JSON_RPC = MSG_JSON_RPC_VERSION;
                         Response.ID = InRequest.ID;
                         Response.Result = JSON{}; // Convert SendResultT to JSON
@@ -487,7 +485,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                 // TODO: Fix External Ref: AbortSignal - Check if request was aborted
                 if (!Extra.Signal.IsAborted()) {
                     // Send error response
-                    JSON_RPC_Error ErrorResponse;
+                    ErrorBase ErrorResponse;
                     ErrorResponse.JSON_RPC = MSG_JSON_RPC_VERSION;
                     ErrorResponse.ID = InRequest.ID;
                     ErrorResponse.Error.Code = static_cast<int32_t>(ErrorCode::InternalError);
@@ -505,13 +503,13 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         });
     }
 
-    void OnResponse(const variant<ResponseMessage, ErrorMessage>& InResponse) {
+    void OnResponse(const variant<ResponseBase, ErrorBase>& InResponse) {
         RequestID ResponseID;
 
-        if (holds_alternative<ResponseMessage>(InResponse)) {
-            ResponseID = get<ResponseMessage>(InResponse).ID;
+        if (holds_alternative<ResponseBase>(InResponse)) {
+            ResponseID = get<ResponseBase>(InResponse).ID;
         } else {
-            ResponseID = get<ErrorMessage>(InResponse).ID;
+            ResponseID = get<ErrorBase>(InResponse).ID;
         }
 
         // Convert RequestID to int64_t for message correlation
@@ -529,7 +527,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             }
         }
 
-        function<void(const variant<JSON_RPC_Response, McpError>&)> Handler;
+        function<void(const variant<ResponseBase, McpError>&)> Handler;
 
         {
             lock_guard<mutex> Lock(m_HandlersMutex);
@@ -548,10 +546,10 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         CleanupTimeout(RequestID);
 
-        if (holds_alternative<JSON_RPC_Response>(InResponse)) {
-            Handler(get<JSON_RPC_Response>(InResponse));
+        if (holds_alternative<ResponseBase>(InResponse)) {
+            Handler(get<ResponseBase>(InResponse));
         } else {
-            const auto& ErrorResp = get<JSON_RPC_Error>(InResponse);
+            const auto& ErrorResp = get<ErrorBase>(InResponse);
             McpError Error(static_cast<ErrorCode>(ErrorResp.Error.Code), ErrorResp.Error.Message,
                            ErrorResp.Error.Data);
             Handler(Error);
@@ -577,13 +575,13 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             // Parse JSON message and route to appropriate handler
             if (IsJSONRPCResponse(InMessage) || IsJSONRPCError(InMessage)) {
                 if (IsJSONRPCResponse(InMessage)) {
-                    JSON_RPC_Response Response;
+                    ResponseBase Response;
                     Response.JSON_RPC = InMessage[MSG_JSON_RPC];
                     Response.ID = InMessage[MSG_ID];
                     Response.Result = InMessage[MSG_RESULT];
                     OnResponse(response);
                 } else {
-                    JSON_RPC_Error ErrorResponse;
+                    ErrorBase ErrorResponse;
                     ErrorResponse.JSON_RPC = InMessage[MSG_JSON_RPC];
                     ErrorResponse.ID = InMessage[MSG_ID];
                     ErrorResponse.Error.Code = InMessage[MSG_ERROR][MSG_CODE];
@@ -594,14 +592,14 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                     OnResponse(error);
                 }
             } else if (IsJSONRPCRequest(InMessage)) {
-                JSON_RPC_Request Request;
+                RequestBase Request;
                 Request.JSON_RPC = InMessage[MSG_JSON_RPC];
                 Request.ID = InMessage[MSG_ID];
                 Request.Method = InMessage[MSG_METHOD];
                 if (InMessage.contains(MSG_PARAMS)) { Request.Params = InMessage[MSG_PARAMS]; }
                 OnRequest(Request, InAuthInfo);
             } else if (IsJSONRPCNotification(InMessage)) {
-                JSON_RPC_Notification Notification;
+                NotificationBase Notification;
                 Notification.JSON_RPC = InMessage[MSG_JSON_RPC];
                 Notification.Method = InMessage[MSG_METHOD];
                 if (InMessage.contains(MSG_PARAMS)) { Notification.Params = InMessage[MSG_PARAMS]; }
@@ -675,7 +673,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         int64_t RequestID = m_RequestRequestID++;
 
-        RequestMessage Request;
+        RequestBase Request;
         Request.JSON_RPC = MSG_JSON_RPC_VERSION;
         Request.ID = RequestID;
         Request.Method = InRequest.Method;
@@ -705,7 +703,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
             // Send cancellation notification
             if (m_Transport) {
-                JSON_RPC_Notification CancelNotification;
+                NotificationBase CancelNotification;
                 CancelNotification.JSON_RPC = MSG_JSON_RPC_VERSION;
                 CancelNotification.Method = MTHD_NOTIFICATION_CANCELLED;
                 CancelNotification.Params = JSON::object();
@@ -720,7 +718,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
             lock_guard<mutex> Lock(m_HandlersMutex);
             m_ResponseHandlers[RequestID] =
                 [ResultPromise = move(ResultPromise), Cancel,
-                 InOptions](const variant<JSON_RPC_Response, McpError>& InResponse) mutable {
+                 InOptions](const variant<ResponseBase, McpError>& InResponse) mutable {
                     // TODO: Fix External Ref: AbortSignal - Check if request was aborted
                     // if (options && options->Signal && options->Signal->IsAborted()) {
                     //     return;
@@ -732,7 +730,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
                     }
 
                     try {
-                        const auto& Response = get<JSON_RPC_Response>(InResponse);
+                        const auto& Response = get<ResponseBase>(InResponse);
                         // Parse response result as ResultT using simple JSON conversion
                         if constexpr (std::is_same_v<ResultT, JSON>) {
                             ResultPromise.set_value(Response.Result);
@@ -797,7 +795,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
         AssertNotificationCapability(InNotification.Method);
 
-        JSON_RPC_Notification Notification;
+        NotificationBase Notification;
         Notification.JSON_RPC = MSG_JSON_RPC_VERSION;
         Notification.Method = InNotification.Method;
         Notification.Params = InNotification.Params;
@@ -824,7 +822,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      */
     void SetRequestHandler(
         const string& InMethod,
-        function<future<SendResultT>(const JSON_RPC_Request&,
+        function<future<SendResultT>(const RequestBase&,
                                      const RequestHandlerExtra<SendRequestT, SendNotificationT>&)>
             InHandler) {
         AssertRequestHandlerCapability(InMethod);
@@ -840,7 +838,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
      * Note that this will replace any previous notification handler for the same method.
      */
     void SetNotificationHandler(const string& InMethod,
-                                function<future<void>(const JSON_RPC_Notification&)> InHandler) {
+                                function<future<void>(const NotificationBase&)> InHandler) {
         lock_guard<mutex> Lock(m_HandlersMutex);
         m_NotificationHandlers[InMethod] = move(InHandler);
     }

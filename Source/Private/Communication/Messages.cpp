@@ -30,7 +30,7 @@ string_view RequestID::ToString() const {
 /* MessageParams */
 string MessageParams::Serialize() const {
     // TODO: @HalcyonOmega Implement
-    return MSG_NULL;
+    return MSG_EMPTY;
 }
 
 /* MessageBase */
@@ -44,20 +44,20 @@ string MessageBase::Serialize() const {
 }
 
 /* Request Message */
-RequestID RequestMessage::GetRequestID() const {
+RequestID RequestBase::GetRequestID() const {
     return m_ID;
 };
 
-string_view RequestMessage::GetMethod() const {
+string_view RequestBase::GetMethod() const {
     return m_Method;
 };
 
-optional<const MessageParams*> RequestMessage::GetParams() const {
+optional<const MessageParams*> RequestBase::GetParams() const {
     if (m_Params()) { return m_Params.value().get(); }
     return std::nullopt;
 };
 
-JSON RequestMessage::ToJSON() const {
+JSON RequestBase::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
     JSON_Object[MSG_ID] = GetRequestID().ToString();
@@ -68,10 +68,10 @@ JSON RequestMessage::ToJSON() const {
     return JSON_Object;
 }
 
-unique_ptr<MessageBase> RequestMessage::FromJSON(const JSON& InJSON) {
+unique_ptr<MessageBase> RequestBase::FromJSON(const JSON& InJSON) {
     // Basic validation
-    if (!IsRequestMessage(InJSON)) {
-        throw std::invalid_argument("JSON does not represent a RequestMessage");
+    if (!IsRequestBase(InJSON)) {
+        throw std::invalid_argument("JSON does not represent a RequestBase");
     }
 
     // Parse ID
@@ -79,37 +79,37 @@ unique_ptr<MessageBase> RequestMessage::FromJSON(const JSON& InJSON) {
         const auto& JSON_ID = InJSON.at(MSG_ID);
         if (JSON_ID.is_string()) { return RequestID(JSON_ID.get<string>()); }
         if (JSON_ID.is_number_integer()) { return RequestID(JSON_ID.get<long long>()); }
-        throw std::invalid_argument("Unsupported id type for RequestMessage");
+        throw std::invalid_argument("Unsupported id type for RequestBase");
     }();
 
     auto Method = InJSON.at(MSG_METHOD).get<string>();
 
     // Currently, Params parsing is not implemented – store as nullopt
-    auto NewMessage = std::make_unique<RequestMessage>(std::move(Method));
+    auto NewMessage = std::make_unique<RequestBase>(std::move(Method));
     NewMessage->m_ID = std::move(ParsedID);
     return NewMessage;
 }
 
-string RequestMessage::Serialize() const {
+string RequestBase::Serialize() const {
     return MessageBase::Serialize();
 }
 
-unique_ptr<MessageBase> RequestMessage::Deserialize(string InString) {
+unique_ptr<MessageBase> RequestBase::Deserialize(string InString) {
     JSON Parsed = JSON::parse(std::move(InString));
     return FromJSON(Parsed);
 }
 
 /* Response Message */
-RequestID ResponseMessage::GetRequestID() const {
+RequestID ResponseBase::GetRequestID() const {
     return m_ID;
 };
 
-const MessageParams* ResponseMessage::GetResult() const {
+const MessageParams* ResponseBase::GetResult() const {
     if (m_Result) { return m_Result.get(); }
     return nullptr;
 }
 
-JSON ResponseMessage::ToJSON() const {
+JSON ResponseBase::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
     JSON_Object[MSG_ID] = GetRequestID().ToString();
@@ -119,43 +119,43 @@ JSON ResponseMessage::ToJSON() const {
     return JSON_Object;
 }
 
-unique_ptr<MessageBase> ResponseMessage::FromJSON(const JSON& InJSON) {
-    if (!IsResponseMessage(InJSON)) {
-        throw std::invalid_argument("JSON does not represent a ResponseMessage");
+unique_ptr<MessageBase> ResponseBase::FromJSON(const JSON& InJSON) {
+    if (!IsResponseBase(InJSON)) {
+        throw std::invalid_argument("JSON does not represent a ResponseBase");
     }
 
     RequestID ParsedID = [&]() -> RequestID {
         const auto& JSON_ID = InJSON.at(MSG_ID);
         if (JSON_ID.is_string()) { return RequestID(JSON_ID.get<string>()); }
         if (JSON_ID.is_number_integer()) { return RequestID(JSON_ID.get<long long>()); }
-        throw std::invalid_argument("Unsupported id type for ResponseMessage");
+        throw std::invalid_argument("Unsupported id type for ResponseBase");
     }();
 
     // Result parsing not implemented – store nullptr
-    auto NewMessage = std::make_unique<ResponseMessage>(std::move(ParsedID), nullptr);
+    auto NewMessage = std::make_unique<ResponseBase>(std::move(ParsedID), nullptr);
     return NewMessage;
 }
 
-string ResponseMessage::Serialize() const {
+string ResponseBase::Serialize() const {
     return MessageBase::Serialize();
 }
 
-unique_ptr<MessageBase> ResponseMessage::Deserialize(string InString) {
+unique_ptr<MessageBase> ResponseBase::Deserialize(string InString) {
     JSON Parsed = JSON::parse(std::move(InString));
     return FromJSON(Parsed);
 }
 
 /* Notification Message */
-string_view NotificationMessage::GetMethod() const {
+string_view NotificationBase::GetMethod() const {
     return m_Method;
 };
 
-optional<const MessageParams*> NotificationMessage::GetParams() const {
+optional<const MessageParams*> NotificationBase::GetParams() const {
     if (m_Params()) { return m_Params.value().get(); }
     return std::nullopt;
 };
 
-JSON NotificationMessage::ToJSON() const {
+JSON NotificationBase::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
     JSON_Object[MSG_METHOD] = GetMethod();
@@ -165,35 +165,35 @@ JSON NotificationMessage::ToJSON() const {
     return JSON_Object;
 }
 
-unique_ptr<MessageBase> NotificationMessage::FromJSON(const JSON& InJSON) {
-    if (!IsNotificationMessage(InJSON)) {
-        throw std::invalid_argument("JSON does not represent a NotificationMessage");
+unique_ptr<MessageBase> NotificationBase::FromJSON(const JSON& InJSON) {
+    if (!IsNotificationBase(InJSON)) {
+        throw std::invalid_argument("JSON does not represent a NotificationBase");
     }
 
     auto Method = InJSON.at(MSG_METHOD).get<string>();
-    auto NewMessage = std::make_unique<NotificationMessage>(std::move(Method));
+    auto NewMessage = std::make_unique<NotificationBase>(std::move(Method));
     return NewMessage;
 }
 
-string NotificationMessage::Serialize() const {
+string NotificationBase::Serialize() const {
     return MessageBase::Serialize();
 }
 
-unique_ptr<MessageBase> NotificationMessage::Deserialize(string InString) {
+unique_ptr<MessageBase> NotificationBase::Deserialize(string InString) {
     JSON Parsed = JSON::parse(std::move(InString));
     return FromJSON(Parsed);
 }
 
-/* ErrorMessage */
-RequestID ErrorMessage::GetID() const {
+/* ErrorBase */
+RequestID ErrorBase::GetID() const {
     return m_ID;
 };
 
-ErrorParams ErrorMessage::GetError() const {
+ErrorParams ErrorBase::GetError() const {
     return m_Error;
 };
 
-JSON ErrorMessage::ToJSON() const {
+JSON ErrorBase::ToJSON() const {
     JSON JSON_Object;
     JSON_Object[MSG_JSON_RPC] = GetJSONRPCVersion();
     JSON_Object[MSG_ID] = GetID().ToString();
@@ -202,16 +202,16 @@ JSON ErrorMessage::ToJSON() const {
     return JSON_Object;
 }
 
-unique_ptr<MessageBase> ErrorMessage::FromJSON(const JSON& InJSON) {
-    if (!IsErrorMessage(InJSON)) {
-        throw std::invalid_argument("JSON does not represent an ErrorMessage");
+unique_ptr<MessageBase> ErrorBase::FromJSON(const JSON& InJSON) {
+    if (!IsErrorBase(InJSON)) {
+        throw std::invalid_argument("JSON does not represent an ErrorBase");
     }
 
     RequestID ParsedID = [&]() -> RequestID {
         const auto& JSON_ID = InJSON.at(MSG_ID);
         if (JSON_ID.is_string()) { return RequestID(JSON_ID.get<string>()); }
         if (JSON_ID.is_number_integer()) { return RequestID(JSON_ID.get<long long>()); }
-        throw std::invalid_argument("Unsupported id type for ErrorMessage");
+        throw std::invalid_argument("Unsupported id type for ErrorBase");
     }();
 
     Errors Code = InJSON.at(MSG_ERROR).at(MSG_CODE).get<Errors>();
@@ -220,15 +220,15 @@ unique_ptr<MessageBase> ErrorMessage::FromJSON(const JSON& InJSON) {
     if (InJSON.at(MSG_ERROR).contains(MSG_DATA)) { Data = InJSON.at(MSG_ERROR).at(MSG_DATA); }
 
     auto NewMessage =
-        std::make_unique<ErrorMessage>(std::move(ParsedID), Code, std::move(Message), Data);
+        std::make_unique<ErrorBase>(std::move(ParsedID), Code, std::move(Message), Data);
     return NewMessage;
 }
 
-string ErrorMessage::Serialize() const {
+string ErrorBase::Serialize() const {
     return MessageBase::Serialize();
 }
 
-unique_ptr<MessageBase> ErrorMessage::Deserialize(string InString) {
+unique_ptr<MessageBase> ErrorBase::Deserialize(string InString) {
     JSON Parsed = JSON::parse(std::move(InString));
     return FromJSON(Parsed);
 }

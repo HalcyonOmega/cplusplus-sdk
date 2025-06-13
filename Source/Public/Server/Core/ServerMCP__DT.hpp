@@ -374,12 +374,12 @@ class MCPServer {
 
                 auto it = RegisteredTools_.find(toolName);
                 if (it == RegisteredTools_.end()) {
-                    throw ErrorMessage(ErrorCode::InvalidParams, "Tool " + toolName + " not found");
+                    throw ErrorBase(ErrorCode::InvalidParams, "Tool " + toolName + " not found");
                 }
 
                 const auto& tool = it->second;
                 if (!tool.Enabled) {
-                    throw ErrorMessage(ErrorCode::InvalidParams, "Tool " + toolName + " disabled");
+                    throw ErrorBase(ErrorCode::InvalidParams, "Tool " + toolName + " disabled");
                 }
 
                 CallToolResult result;
@@ -388,7 +388,7 @@ class MCPServer {
                     if (tool.InputSchema) {
                         auto validator = SchemaValidator_.Compile(*tool.InputSchema);
                         if (!validator(toolArgs)) {
-                            throw ErrorMessage(
+                            throw ErrorBase(
                                 ErrorCode::InvalidParams,
                                 "Invalid arguments for tool " + toolName + ": "
                                     + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
@@ -401,7 +401,7 @@ class MCPServer {
                     if (tool.OutputSchema && result.StructuredContent) {
                         auto validator = SchemaValidator_.Compile(*tool.OutputSchema);
                         if (!validator(*result.StructuredContent)) {
-                            throw ErrorMessage(
+                            throw ErrorBase(
                                 ErrorCode::InvalidParams,
                                 "Invalid structured content for tool " + toolName + ": "
                                     + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
@@ -442,8 +442,8 @@ class MCPServer {
                 } else if (refType == "ref/resource") {
                     return HandleResourceCompletion(request, extra);
                 } else {
-                    throw ErrorMessage(ErrorCode::InvalidParams,
-                                       "Invalid completion reference: " + refType);
+                    throw ErrorBase(ErrorCode::InvalidParams,
+                                    "Invalid completion reference: " + refType);
                 }
             });
 
@@ -457,12 +457,12 @@ class MCPServer {
 
         auto it = RegisteredPrompts_.find(promptName);
         if (it == RegisteredPrompts_.end()) {
-            throw ErrorMessage(ErrorCode::InvalidParams, "Prompt " + promptName + " not found");
+            throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + promptName + " not found");
         }
 
         const auto& prompt = it->second;
         if (!prompt.Enabled) {
-            throw ErrorMessage(ErrorCode::InvalidParams, "Prompt " + promptName + " disabled");
+            throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + promptName + " disabled");
         }
 
         if (!prompt.ArgsSchema) { return EmptyCompletionResult_; }
@@ -495,7 +495,7 @@ class MCPServer {
             return EmptyCompletionResult_;
         }
 
-        throw ErrorMessage(ErrorCode::InvalidParams, "Resource template " + uri + " not found");
+        throw ErrorBase(ErrorCode::InvalidParams, "Resource template " + uri + " not found");
     }
 
     void SetResourceRequestHandlers() {
@@ -578,8 +578,7 @@ class MCPServer {
                 auto resourceIt = RegisteredResources_.find(uri);
                 if (resourceIt != RegisteredResources_.end()) {
                     if (!resourceIt->second.Enabled) {
-                        throw ErrorMessage(ErrorCode::InvalidParams,
-                                           "Resource " + uri + " disabled");
+                        throw ErrorBase(ErrorCode::InvalidParams, "Resource " + uri + " disabled");
                     }
                     return resourceIt->second.Callback(uri, extra);
                 }
@@ -590,7 +589,7 @@ class MCPServer {
                     if (variables) { return templateEntry.Callback(uri, *variables, extra); }
                 }
 
-                throw ErrorMessage(ErrorCode::InvalidParams, "Resource " + uri + " not found");
+                throw ErrorBase(ErrorCode::InvalidParams, "Resource " + uri + " not found");
             });
 
         SetCompletionRequestHandler();
@@ -644,24 +643,22 @@ class MCPServer {
 
                 auto it = RegisteredPrompts_.find(promptName);
                 if (it == RegisteredPrompts_.end()) {
-                    throw ErrorMessage(ErrorCode::InvalidParams,
-                                       "Prompt " + promptName + " not found");
+                    throw ErrorBase(ErrorCode::InvalidParams,
+                                    "Prompt " + promptName + " not found");
                 }
 
                 const auto& prompt = it->second;
                 if (!prompt.Enabled) {
-                    throw ErrorMessage(ErrorCode::InvalidParams,
-                                       "Prompt " + promptName + " disabled");
+                    throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + promptName + " disabled");
                 }
 
                 // Validate arguments against ArgsSchema if present
                 if (prompt.ArgsSchema) {
                     auto validator = SchemaValidator_.Compile(*prompt.ArgsSchema);
                     if (!validator(args)) {
-                        throw ErrorMessage(
-                            ErrorCode::InvalidParams,
-                            "Invalid arguments for prompt " + promptName + ": "
-                                + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
+                        throw ErrorBase(ErrorCode::InvalidParams,
+                                        "Invalid arguments for prompt " + promptName + ": "
+                                            + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
                     }
                 }
 

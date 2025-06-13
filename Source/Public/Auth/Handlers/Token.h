@@ -13,7 +13,6 @@
 #include "Core.h"
 #include "Core/Constants/TransportConstants.h"
 
-
 // TODO: Fix External Ref: express framework integration
 // TODO: Fix External Ref: cors library integration
 
@@ -137,7 +136,7 @@ struct RateLimitState {
 struct TokenRequestSchema {
     string GrantType;
 
-    static bool Validate(const JSON& Body, TokenRequestSchema& Out, string& ErrorMessage);
+    static bool Validate(const JSON& Body, TokenRequestSchema& Out, string& ErrorBase);
 };
 
 struct AuthorizationCodeGrantSchema {
@@ -145,14 +144,14 @@ struct AuthorizationCodeGrantSchema {
     string CodeVerifier;
     optional<string> RedirectURI;
 
-    static bool Validate(const JSON& Body, AuthorizationCodeGrantSchema& Out, string& ErrorMessage);
+    static bool Validate(const JSON& Body, AuthorizationCodeGrantSchema& Out, string& ErrorBase);
 };
 
 struct RefreshTokenGrantSchema {
     string RefreshToken;
     optional<string> Scope;
 
-    static bool Validate(const JSON& Body, RefreshTokenGrantSchema& Out, string& ErrorMessage);
+    static bool Validate(const JSON& Body, RefreshTokenGrantSchema& Out, string& ErrorBase);
 };
 
 struct TokenHandlerOptions {

@@ -19,7 +19,7 @@ class Session {
             const Implementation& ClientInfo);
     ~Session();
 
-    void Initialize(std::function<void(const std::optional<ErrorMessage>&)> Callback);
+    void Initialize(std::function<void(const std::optional<ErrorBase>&)> Callback);
     void Shutdown();
 
     SessionState GetState() const;
@@ -43,7 +43,7 @@ class Session {
     std::optional<std::string> m_NegotiatedProtocolVersion;
 
     SessionState m_State;
-    std::function<void(const std::optional<ErrorMessage>&)> m_InitializeCallback;
+    std::function<void(const std::optional<ErrorBase>&)> m_InitializeCallback;
     // TODO: Add request ID management
     // TODO: Add JSON serialization/deserialization (using JSON alias from Core.h)
     // TODO: Add methods for sending requests and handling responses/notifications

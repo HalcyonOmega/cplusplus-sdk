@@ -30,7 +30,7 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
             MethodNotAllowedError("The method " + Req.Method + " is not allowed for this endpoint");
 
         // Create Allow header with comma-separated methods (matching allowedMethods.join(', '))
-        string AllowHeader = MSG_NULL;
+        string AllowHeader = MSG_EMPTY;
         for (size_t i = 0; i < AllowedMethods.size(); ++i) {
             if (i > 0) { AllowHeader += ", "; }
             AllowHeader += AllowedMethods[i];

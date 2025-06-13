@@ -90,7 +90,7 @@ struct Root {
  * This request is typically used when the server needs to understand the file system
  * structure or access specific locations that the client has permission to read from.
  */
-struct ListRootsRequest : public RequestMessage {
+struct ListRootsRequest : public RequestBase {
     ListRootsRequest() {
         method = MTHD_ROOTS_LIST;
     }
@@ -158,7 +158,7 @@ struct ListRootsResult : public ResultMessage {
  * This notification should be sent whenever the client adds, removes, or modifies any root.
  * The server should then request an updated list of roots using the ListRootsRequest.
  */
-struct RootsListChangedNotification : public NotificationMessage {
+struct RootsListChangedNotification : public NotificationBase {
     RootsListChangedNotification() {
         method = MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED;
     }

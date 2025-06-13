@@ -77,7 +77,7 @@ ProxyOAuthServerProvider::ChallengeForAuthorizationCode(const OAuthClientInforma
                                                         const string& AuthorizationCode) const {
     // In a proxy setup, we don't store the code challenge ourselves
     // Instead, we proxy the token request and let the upstream server validate it
-    co_return MSG_NULL;
+    co_return MSG_EMPTY;
 }
 
 future<OAuthTokens> ProxyOAuthServerProvider::ExchangeAuthorizationCode(
@@ -146,7 +146,7 @@ future<HTTP_Response> ProxyOAuthServerProvider::HttpPost(const string& Url,
                                                          const map<string, string>& Headers,
                                                          const string& Body) {
     // TODO: Implement actual HTTP POST request
-    co_return HTTP_Response{false, 500, MSG_NULL};
+    co_return HTTP_Response{false, 500, MSG_EMPTY};
 }
 
 string ProxyOAuthServerProvider::BuildFormEncodedBody(const map<string, string>& Params) {

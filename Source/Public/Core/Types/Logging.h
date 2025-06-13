@@ -75,10 +75,10 @@ struct SetLevelRequestParams {
 // };
 
 // A request from the client to the server, to enable or adjust logging.
-struct SetLevelRequest : public RequestMessage {
+struct SetLevelRequest : public RequestBase {
     SetLevelRequestParams Params;
 
-    SetLevelRequest() : RequestMessage(MTHD_LOGGING_SET_LEVEL) {}
+    SetLevelRequest() : RequestBase(MTHD_LOGGING_SET_LEVEL) {}
 };
 
 struct LoggingMessageNotificationParams {
@@ -122,10 +122,10 @@ struct LoggingMessageNotificationParams {
 
 // Notification of a log message passed from server to client. If no logging/setLevel request has
 // been sent from the client, the server MAY decide which messages to send automatically.
-struct LoggingMessageNotification : public NotificationMessage {
+struct LoggingMessageNotification : public NotificationBase {
     LoggingMessageNotificationParams Params;
 
-    LoggingMessageNotification() : NotificationMessage(MTHD_NOTIFICATIONS_MESSAGE) {}
+    LoggingMessageNotification() : NotificationBase(MTHD_NOTIFICATIONS_MESSAGE) {}
 };
 
 MCP_NAMESPACE_END

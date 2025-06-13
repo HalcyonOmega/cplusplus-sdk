@@ -35,7 +35,7 @@ struct BearerAuthMiddlewareOptions {
 /**
  * Request context that includes authentication information
  */
-// TODO: Consider child class of RequestMessage
+// TODO: Consider child class of RequestBase
 struct AuthenticatedRequest {
     /**
      * Information about the validated access token, if the RequireBearerAuth middleware was used.

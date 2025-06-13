@@ -2,10 +2,11 @@
 
 #include "Core.h"
 #include "Core/Messages/MessageBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
 
-// ResponseMessage {
+// ResponseBase {
 //   MSG_DESCRIPTION : "A successful (non-error) response to a request.",
 //                   MSG_PROPERTIES : {
 //                     MSG_ID : {"$ref" : "#/definitions/RequestID"},
@@ -17,14 +18,14 @@ MCP_NAMESPACE_BEGIN
 // };
 
 // A successful (non-error) response to a request. Supports JSON-RPC 2.0.
-class ResponseMessage : public MessageBase {
+class ResponseBase : public MessageBase {
   private:
     RequestID m_ID;
     unique_ptr<MessageParams> m_Result;
 
   public:
     // Constructors
-    ResponseMessage(RequestID RequestID, unique_ptr<MessageParams> Result)
+    ResponseBase(RequestID RequestID, unique_ptr<MessageParams> Result)
         : m_ID(std::move(RequestID)), m_Result(std::move(Result)) {}
 
     // Direct Getters
@@ -38,8 +39,8 @@ class ResponseMessage : public MessageBase {
     [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
-bool IsResponseMessage(const JSON& value) {
-    return value.is_object() && value.value(MSG_JSON_RPC, MSG_NULL) == MSG_JSON_RPC_VERSION
+bool IsResponseBase(const JSON& value) {
+    return value.is_object() && value.value(MSG_JSON_RPC, MSG_EMPTY) == MSG_JSON_RPC_VERSION
            && value.contains(MSG_ID) && value.contains(MSG_RESULT) && !value.contains(MSG_ERROR);
 }
 

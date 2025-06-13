@@ -125,7 +125,7 @@ using EventSourceInit = map<string, string>;
 // RequestInit equivalent - using variant to handle different value types
 using RequestInit = map<string, variant<string, HeadersInit, bool>>;
 
-class SSEError : public ErrorMessage {};
+class SSEError : public ErrorBase {};
 
 /**
  * Configuration options for the SSEClientTransport.

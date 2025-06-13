@@ -569,25 +569,25 @@ struct to_json_schema<T> {
 } // namespace detail
 
 // Moved definition outside of write_json_schema to fix MSVC bug
-template <class Opts> struct opts_write_type_info_off : std::decay_t<Opts> {
-    bool write_type_info = false;
+template <class Opts> struct OptsWriteTypeInfoOff : std::decay_t<Opts> {
+    bool WriteTypeInfo = false;
 };
 
 template <class T, auto Opts = opts{}, class Buffer>
-[[nodiscard]] error_ctx write_json_schema(Buffer&& buffer) {
+[[nodiscard]] error_ctx WriteJSONSchema(Buffer&& buffer) {
     detail::schematic s{};
     s.defs.emplace();
-    detail::to_json_schema<std::decay_t<T>>::template op<Opts>(s, *s.defs);
+    detail::ToJSONSchema<std::decay_t<T>>::template op<Opts>(s, *s.defs);
     // Making this static constexpr options to fix MSVC bug
-    static constexpr opts options = opts_write_type_info_off<decltype(Opts)>{{Opts}};
+    static constexpr opts options = OptsWriteTypeInfoOff<decltype(Opts)>{{Opts}};
     return write<options>(std::move(s), std::forward<Buffer>(buffer));
 }
 
 template <class T, auto Opts = opts{}>
-[[nodiscard]] glz::expected<std::string, error_ctx> write_json_schema() {
-    std::string buffer{};
-    const error_ctx ec = write_json_schema<T, Opts>(buffer);
+[[nodiscard]] glz::expected<std::string, error_ctx> WriteJSONSchema() {
+    std::string Buffer{};
+    const error_ctx ec = WriteJSONSchema<T, Opts>(Buffer);
     if (bool(ec)) [[unlikely]] { return glz::unexpected(ec); }
-    return {buffer};
+    return {Buffer};
 }
 } // namespace glz

@@ -36,8 +36,8 @@ StreamableHTTPServerTransport::HandleRequest(const HTTP_Request& req, shared_ptr
     }
 }
 
-future<void> StreamableHTTPServerTransport::HandleGetRequest(const RequestMessage& req,
-                                                             shared_ptr<ResponseMessage> res) {
+future<void> StreamableHTTPServerTransport::HandleGetRequest(const RequestBase& req,
+                                                             shared_ptr<ResponseBase> res) {
     return async(launch::async, [this, req, res]() {
         // The client MUST include an Accept header, listing text/event-stream as a supported
         // content type.
@@ -123,7 +123,7 @@ future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEvent
                     return async(launch::async, [this, res, EventID, message]() {
                         if (!writeSSEEvent(res, message, EventID)) {
                             if (onerror) { onerror(runtime_error("Failed replay events")); }
-                            res->end(MSG_NULL);
+                            res->end(MSG_EMPTY);
                         }
                     });
                 });
@@ -258,7 +258,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                           {MSG_MESSAGE,
                            "Invalid Request: Only one initialization request is allowed"}}},
                         {MSG_ID, nullptr}};
-                    ErrorMessage Response = ErrorMessage(
+                    ErrorBase Response = ErrorBase(
                         RequestID = nullptr, Code = Errors::InvalidRequest,
                         Message = "Invalid Request: Only one initialization request is allowed");
                     res->writeHead(HTTPStatus::BadRequest, {});
@@ -284,7 +284,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
             // check if it contains requests
             bool hasRequests = false;
             for (const auto& msg : messages) {
-                if (IsRequestMessage(msg)) {
+                if (IsRequestBase(msg)) {
                     hasRequests = true;
                     break;
                 }
@@ -293,7 +293,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
             if (!hasRequests) {
                 // if it only contains notifications or responses, return 202
                 res->writeHead(202, {});
-                res->end(MSG_NULL);
+                res->end(MSG_EMPTY);
 
                 // handle each message
                 for (const auto& message : messages) {
@@ -317,7 +317,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                 // Store the response for this request to send messages back through this
                 // connection We need to track by request ID to maintain the connection
                 for (const auto& message : messages) {
-                    if (IsRequestMessage(message)) {
+                    if (IsRequestBase(message)) {
                         _streamMapping[StreamID] = res;
                         _requestToStreamMapping[message.data[MSG_ID]] = StreamID;
                     }
@@ -353,7 +353,7 @@ future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const HTTP_Reque
         if (!validateSession(req, res)) { return; }
         close().wait();
         res->writeHead(HTTPStatus::Ok, {});
-        res->end(MSG_NULL);
+        res->end(MSG_EMPTY);
     });
 }
 
@@ -389,7 +389,7 @@ bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& req,
         res->writeHead(HTTPStatus::BadRequest, {});
         res->end(errorResponse.dump());
         return false;
-    } else if (SessionIDIt->second != SessionID.value_or(MSG_NULL)) {
+    } else if (SessionIDIt->second != SessionID.value_or(MSG_EMPTY)) {
         // Reject requests with invalid session ID with HTTPStatus::NotFound
         JSON errorResponse = {
             {MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
@@ -406,7 +406,7 @@ bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& req,
 future<void> StreamableHTTPServerTransport::Close() override {
     return async(launch::async, [this]() {
         // Close all SSE connections
-        for (auto& [id, response] : _streamMapping) { response->end(MSG_NULL); }
+        for (auto& [id, response] : _streamMapping) { response->end(MSG_EMPTY); }
         _streamMapping.clear();
 
         // Clear any pending responses
@@ -420,7 +420,7 @@ future<void> StreamableHTTPServerTransport::Send(
     return async(launch::async, [this, message, relatedRequestID]() {
         optional<RequestID> RequestID = relatedRequestID;
 
-        bool isResponse = IsResponseMessage(message);
+        bool isResponse = IsResponseBase(message);
         if (isResponse) {
             // If the message is a response, use the request ID from the message
             if (message.data.contains(MSG_ID)) { RequestID = message.data[MSG_ID]; }
@@ -523,7 +523,7 @@ future<void> StreamableHTTPServerTransport::Send(
                     }
                 } else {
                     // End the SSE stream
-                    response->end(MSG_NULL);
+                    response->end(MSG_EMPTY);
                 }
                 // Clean up
                 for (const auto& id : relatedIds) {
@@ -688,7 +688,7 @@ void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
         //         try {
         //             // TODO: Fix External Ref: MessageBaseSchema validation
         //             auto message = JSON::parse(event.data);
-        //             if (options.replayRequestID && IsResponseMessage(message)) {
+        //             if (options.replayRequestID && IsResponseBase(message)) {
         //                 message[MSG_ID] = *options.replayRequestID;
         //             }
         //             if (onmessage) onmessage(message);

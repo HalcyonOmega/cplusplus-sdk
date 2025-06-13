@@ -2,7 +2,9 @@
 
 #include "Core.h"
 #include "Core/Constants/MethodConstants.h"
-#include "Core/Messages/MessagesIncludes.h"
+#include "Core/Messages/Notifications/NotificationBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 #include "Core/Types/Capabilities.h"
 #include "Core/Types/Implementation.h"
 
@@ -43,11 +45,15 @@ struct InitializeRequestParams {
 
 // This request is sent from the client to the server when it first connects, asking it to begin
 // initialization.
-struct InitializeRequest : public RequestMessage {
+struct InitializeRequest : public RequestBase {
     InitializeRequestParams Params;
 
-    InitializeRequest() : RequestMessage(MTHD_INITIALIZE) {}
+    InitializeRequest() : RequestBase(MTHD_INITIALIZE) {}
 };
+
+// TODO: @HalcyonOmega - Fix This
+const isInitializeRequest =
+    (value : unknown) : value is InitializeRequest = > InitializeRequest.safeParse(value).success;
 
 // InitializeResult {
 //   MSG_DESCRIPTION : "After receiving an initialize request from the client, "
@@ -123,8 +129,8 @@ struct InitializeResult : public ResultMessage {
 // };
 
 // This notification is sent from the client to the server after initialization has finished.
-struct InitializedNotification : public NotificationMessage {
-    InitializedNotification() : NotificationMessage(MTHD_NOTIFICATIONS_INITIALIZED) {}
+struct InitializedNotification : public NotificationBase {
+    InitializedNotification() : NotificationBase(MTHD_NOTIFICATIONS_INITIALIZED) {}
 };
 
 MCP_NAMESPACE_END

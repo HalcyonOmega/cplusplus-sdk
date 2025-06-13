@@ -55,12 +55,12 @@ void Session::SendInitializedNotification() {
     // if (m_Transport) { m_Transport->Send(json_notification.dump()); }
 }
 
-void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)> callback) {
+void Session::Initialize(std::function<void(const std::optional<ErrorBase>&)> callback) {
     if (m_State != SessionState::Uninitialized) {
         if (callback) {
             // TODO: Define proper error codes/messages in ErrorConstants.h or similar
-            callback(ErrorMessage(Errors::ConnectionClosed,
-                                  "Session already initialized or initializing.", std::nullopt));
+            callback(ErrorBase(Errors::ConnectionClosed,
+                               "Session already initialized or initializing.", std::nullopt));
         }
         return;
     }
@@ -129,7 +129,7 @@ void Session::Initialize(std::function<void(const std::optional<ErrorMessage>&)>
         if (m_InitializeCallback) {
             m_State = SessionState::Error;
             // TODO: Define proper error codes/messages
-            m_InitializeCallback(ErrorMessage(Errors::RequestTimeout, "Transport not available."));
+            m_InitializeCallback(ErrorBase(Errors::RequestTimeout, "Transport not available."));
         }
     }
 }

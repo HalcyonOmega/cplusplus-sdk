@@ -20,7 +20,7 @@ class StdioServerTransport : public Transport {
                 private _stdout : Writable = process.stdout, ) {}
 
     onclose ?: () = > void;
-    onerror ?: (ErrorMessage Error) = > void;
+    onerror ?: (ErrorBase Error) = > void;
     onmessage ?: (MessageBase Message) = > void;
 
     // Arrow functions to bind `this` properly, while maintaining function identity.

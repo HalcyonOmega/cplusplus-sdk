@@ -280,7 +280,7 @@ struct CreateMessageRequestParams {
  * which model to select. The client should also inform the user before beginning sampling, to allow
  * them to inspect the request (human in the loop) and decide whether to approve it.
  */
-struct CreateMessageRequest : public RequestMessage {
+struct CreateMessageRequest : public RequestBase {
     CreateMessageRequestParams Params;
 
     CreateMessageRequest() {

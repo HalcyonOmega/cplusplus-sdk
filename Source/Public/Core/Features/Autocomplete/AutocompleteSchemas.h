@@ -111,10 +111,10 @@ struct CompleteRequestParams {
 // };
 
 // A request from the client to the server, to ask for completion options.
-struct CompleteRequest : public RequestMessage {
+struct CompleteRequest : public RequestBase {
     CompleteRequestParams Params;
 
-    CompleteRequest() : RequestMessage(MTHD_COMPLETION_COMPLETE) {}
+    CompleteRequest() : RequestBase(MTHD_COMPLETION_COMPLETE) {}
 };
 
 struct CompleteResultParams {
