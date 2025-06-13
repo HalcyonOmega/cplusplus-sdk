@@ -22,20 +22,24 @@
 #include "MessageBase.h"
 
 // Forward declarations
-class Stream;
 class ChildProcess;
-class PassThrough;
+class AbortController;
+
+// Type definitions to match Node.js types
+using IOType = std::string; // "pipe", "inherit", "overlapped", etc.
+using Stream = std::iostream;
+using PassThrough = std::stringstream; // TODO: From "node:stream"
 
 MCP_NAMESPACE_BEGIN
 
 // Platform-specific environment variables to inherit by default
 #ifdef _WIN32
-const std::vector<std::string> DEFAULT_INHERITED_ENV_VARS = {
+const vector<string> DEFAULT_INHERITED_ENV_VARS = {
     "APPDATA",     "HOMEDRIVE",  "HOMEPATH", "LOCALAPPDATA", "PATH",       "PROCESSOR_ARCHITECTURE",
     "SYSTEMDRIVE", "SYSTEMROOT", "TEMP",     "USERNAME",     "USERPROFILE"};
 #else
-const std::vector<std::string> DEFAULT_INHERITED_ENV_VARS = {"HOME",  "LOGNAME", "PATH",
-                                                             "SHELL", "TERM",    "USER"};
+const vector<string> DEFAULT_INHERITED_ENV_VARS = {"HOME",  "LOGNAME", "PATH",
+                                                   "SHELL", "TERM",    "USER"};
 #endif
 
 // Parameters for configuring a stdio server process
@@ -43,53 +47,53 @@ struct StdioServerParameters {
     /**
      * The executable to run to start the server.
      */
-    std::string Command;
+    string Command;
 
     /**
      * Command line arguments to pass to the executable.
      */
-    std::optional<std::vector<std::string>> Args;
+    optional<vector<string>> Args;
 
     /**
      * The environment to use when spawning the process.
      * If not specified, the result of GetDefaultEnvironment() will be used.
      */
-    std::optional<std::unordered_map<std::string, std::string>> Env;
+    optional<unordered_map<string, string>> Env;
 
     /**
      * How to handle stderr of the child process.
      * The default is "inherit", meaning messages to stderr will be printed to the parent process's
      * stderr.
      */
-    std::string Stderr = "inherit";
+    optional<variant<IOType, Stream*, int>> Stderr;
 
     /**
      * The working directory to use when spawning the process.
      * If not specified, the current working directory will be inherited.
      */
-    std::optional<std::string> CWD;
+    optional<string> CWD;
 };
 
 /**
  * Returns a default environment object including only environment variables deemed safe to inherit.
  */
-inline std::unordered_map<std::string, std::string> GetDefaultEnvironment() {
-    std::unordered_map<std::string, std::string> env;
+inline unordered_map<string, string> GetDefaultEnvironment() {
+    unordered_map<string, string> Env;
 
     for (const auto& key : DEFAULT_INHERITED_ENV_VARS) {
-        const char* value = std::getenv(key.c_str());
+        const char* value = getenv(key.c_str());
         if (value == nullptr) { continue; }
 
-        std::string valueStr(value);
+        string valueStr(value);
         if (valueStr.starts_with("()")) {
             // Skip functions, which are a security risk.
             continue;
         }
 
-        env[key] = valueStr;
+        Env[key] = valueStr;
     }
 
-    return env;
+    return Env;
 }
 
 /**
@@ -100,99 +104,72 @@ inline std::unordered_map<std::string, std::string> GetDefaultEnvironment() {
  */
 class StdioServerTransport : public Transport {
   private:
-    std::unique_ptr<ReadBuffer> m_ReadBuffer;
-    std::atomic<bool> m_Started{false};
-    std::istream& m_Stdin;
-    std::ostream& m_Stdout;
-    std::thread m_ReadThread;
-    std::atomic<bool> m_ShouldStop{false};
-    std::mutex m_CallbackMutex;
-
-    // Transport callbacks as per interface
-    MessageCallback m_OnMessage;
-    ErrorCallback m_OnError;
-    CloseCallback m_OnClose;
-    StartCallback m_OnStart;
-    StopCallback m_OnStop;
+    unique_ptr<ReadBuffer> m_ReadBuffer;
+    atomic<bool> m_Started{false};
+    istream& m_Stdin;
+    ostream& m_Stdout;
+    thread m_ReadThread;
+    atomic<bool> m_ShouldStop{false};
 
   public:
-    explicit StdioServerTransport(std::istream& stdin_stream = std::cin,
-                                  std::ostream& stdout_stream = std::cout)
+    explicit StdioServerTransport(istream& stdin_stream = cin, ostream& stdout_stream = cout)
         : m_Stdin(stdin_stream), m_Stdout(stdout_stream) {
-        m_ReadBuffer = std::make_unique<ReadBuffer>();
+        m_ReadBuffer = make_unique<ReadBuffer>();
     }
 
     ~StdioServerTransport() override {
-        Stop();
+        Close(); // Don't wait in destructor
     }
 
     // Transport interface implementation
-    void Start() override {
-        if (m_Started.exchange(true)) {
-            throw std::runtime_error(
-                "StdioServerTransport already started! If using Server class, note "
-                "that connect() calls start() automatically.");
-        }
+    future<void> Start() override {
+        return async(launch::async, [this]() {
+            if (m_Started.exchange(true)) {
+                throw runtime_error(
+                    "StdioServerTransport already started! If using Server class, note "
+                    "that connect() calls start() automatically.");
+            }
 
-        m_ReadThread = std::thread(&StdioServerTransport::ReadLoop, this);
+            m_ReadThread = thread(&StdioServerTransport::ReadLoop, this);
 
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        if (m_OnStart) { m_OnStart(); }
+            if (OnStart) { OnStart.value(); }
+        });
     }
 
-    void Stop() override {
-        if (!m_Started.exchange(false)) return;
+    future<void> Close() override {
+        return async(launch::async, [this]() {
+            if (!m_Started.exchange(false)) return;
 
-        m_ShouldStop = true;
+            m_ShouldStop = true;
 
-        if (m_ReadThread.joinable()) { m_ReadThread.join(); }
+            if (m_ReadThread.joinable()) { m_ReadThread.join(); }
 
-        if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
+            if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
 
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        if (m_OnStop) { m_OnStop(); }
-        if (m_OnClose) { m_OnClose(); }
+            if (OnClose) { OnClose.value(); }
+        });
     }
 
-    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override {
-        std::string message = InMessage + "\n"; // Add newline for message boundary
-        m_Stdout << message;
-        m_Stdout.flush();
+    future<void> Send(const MessageBase& /* InMessage */,
+                      const TransportSendOptions& /* InOptions */ = {}) override {
+        return async(launch::async, [this]() {
+            // TODO: Serialize MessageBase to JSON string
+            // For now, this is a placeholder - would need proper serialization
+            string serialized = "{}"; // Placeholder
+            string message = serialized + "\n";
+            m_Stdout << message;
+            m_Stdout.flush();
+        });
     }
 
-    void SetOnMessage(MessageCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnMessage = std::move(InCallback);
-    }
-
-    void SetOnError(ErrorCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnError = std::move(InCallback);
-    }
-
-    void SetOnClose(CloseCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnClose = std::move(InCallback);
-    }
-
-    void SetOnStart(StartCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnStart = std::move(InCallback);
-    }
-
-    void SetOnStop(StopCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnStop = std::move(InCallback);
-    }
-
-    void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override {
+    void WriteSSEEvent(const string& InEvent, const string& InData) override {
         // SSE format: event: {event}\ndata: {data}\n\n
         m_Stdout << "event: " << InEvent << "\n";
         m_Stdout << "data: " << InData << "\n\n";
         m_Stdout.flush();
     }
 
-    bool Resume(const std::string& InResumptionToken) override {
+    bool Resume(const string& /* InResumptionToken */) override {
         // Not implemented yet
         return false;
     }
@@ -201,7 +178,7 @@ class StdioServerTransport : public Transport {
     /**
      * Event handler for incoming data
      */
-    void OnData(const std::vector<uint8_t>& chunk) {
+    void OnData(const vector<uint8_t>& chunk) {
         if (m_ReadBuffer) {
             m_ReadBuffer->Append(chunk);
             ProcessReadBuffer();
@@ -211,9 +188,13 @@ class StdioServerTransport : public Transport {
     /**
      * Event handler for errors
      */
-    void OnErrorInternal(const std::string& error) {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        if (m_OnError) { m_OnError(error); }
+    void OnErrorInternal(const string& error) {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (m_OnError) {
+            // Create ErrorBase from string message
+            ErrorBase ErrorMessage = ErrorBase(Errors::InternalError, error);
+            m_OnError(ErrorMessage);
+        }
     }
 
     /**
@@ -222,14 +203,20 @@ class StdioServerTransport : public Transport {
     void ProcessReadBuffer() {
         while (true) {
             try {
-                auto message = m_ReadBuffer->ReadMessage();
-                if (!message) { break; }
+                // TODO: ReadMessage should return optional<unique_ptr<MessageBase>>
+                // For now, commented out until ReadBuffer interface is updated
+                // auto message = m_ReadBuffer->ReadMessage();
+                // if (!message) { break; }
 
-                std::lock_guard<std::mutex> lock(m_CallbackMutex);
-                if (m_OnMessage) {
-                    m_OnMessage(message.value(), nullptr); // No auth info for stdio
-                }
-            } catch (const std::exception& e) { OnErrorInternal(e.what()); }
+                // lock_guard<mutex> lock(m_CallbackMutex);
+                // if (m_OnMessage) {
+                //     m_OnMessage(*message.value(), std::nullopt); // No auth info for stdio
+                // }
+                break; // Placeholder
+            } catch (const exception& e) {
+                OnErrorInternal(e.what());
+                break;
+            }
         }
     }
 
@@ -237,12 +224,12 @@ class StdioServerTransport : public Transport {
      * Main reading loop that runs in a separate thread
      */
     void ReadLoop() {
-        std::vector<uint8_t> buffer(4096);
+        vector<uint8_t> buffer(4096);
 
         while (!m_ShouldStop && m_Started) {
             try {
                 m_Stdin.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
-                std::streamsize bytesRead = m_Stdin.gcount();
+                streamsize bytesRead = m_Stdin.gcount();
 
                 if (bytesRead > 0) {
                     buffer.resize(bytesRead);
@@ -251,7 +238,7 @@ class StdioServerTransport : public Transport {
                 }
 
                 if (m_Stdin.eof() || m_Stdin.fail()) { break; }
-            } catch (const std::exception& e) {
+            } catch (const exception& e) {
                 OnErrorInternal(e.what());
                 break;
             }
@@ -266,108 +253,103 @@ class StdioServerTransport : public Transport {
  */
 class StdioClientTransport : public Transport {
   private:
-    std::unique_ptr<ChildProcess> m_Process;
-    std::atomic<bool> m_AbortRequested{false};
-    std::unique_ptr<ReadBuffer> m_ReadBuffer;
+    // Default Variables
+    unique_ptr<ChildProcess> m_Process;
+    unique_ptr<AbortController> m_AbortController; // TODO: @HalcyonOmega = new AbortController
+    unique_ptr<ReadBuffer> m_ReadBuffer;
     StdioServerParameters m_ServerParams;
-    std::unique_ptr<PassThrough> m_StderrStream;
-    std::mutex m_CallbackMutex;
-    std::atomic<bool> m_Started{false};
+    unique_ptr<PassThrough> m_StderrStream;
 
-    // Transport callbacks as per interface
-    MessageCallback m_OnMessage;
-    ErrorCallback m_OnError;
-    CloseCallback m_OnClose;
-    StartCallback m_OnStart;
-    StopCallback m_OnStop;
+    // Additional Variables
+    atomic<bool> m_AbortRequested{false};
+    atomic<bool> m_Started{false};
 
   public:
-    explicit StdioClientTransport(const StdioServerParameters& serverParams)
-        : m_ServerParams(serverParams) {
-        m_ReadBuffer = std::make_unique<ReadBuffer>();
+    explicit StdioClientTransport(const StdioServerParameters& ServerParams)
+        : m_ServerParams(ServerParams) {
+        m_ReadBuffer = make_unique<ReadBuffer>();
 
-        if (serverParams.Stderr == "pipe" || serverParams.Stderr == "overlapped") {
-            m_StderrStream = std::make_unique<PassThrough>();
+        // Check if stderr should be piped
+        if (ServerParams.Stderr.has_value()) {
+            const auto& stderr_val = ServerParams.Stderr.value();
+            if (std::holds_alternative<IOType>(stderr_val)) {
+                const auto& stderr_str = std::get<IOType>(stderr_val);
+                if (stderr_str == "pipe" || stderr_str == "overlapped") {
+                    m_StderrStream = make_unique<PassThrough>();
+                }
+            }
         }
     }
 
     ~StdioClientTransport() override {
-        Stop();
+        // Ensure proper cleanup by calling Close if not already closed
+        if (m_Started.load()) {
+            try {
+                auto future = Close();
+                // Don't wait in destructor to avoid blocking
+            } catch (...) {
+                // Ignore exceptions in destructor
+            }
+        }
     }
 
     // Transport interface implementation
-    void Start() override {
-        if (m_Started.exchange(true)) {
-            throw std::runtime_error(
-                "StdioClientTransport already started! If using Client class, note "
-                "that connect() calls start() automatically.");
-        }
+    std::future<void> Start() override {
+        return std::async(std::launch::async, [this]() {
+            if (m_Started.exchange(true)) {
+                throw std::runtime_error(
+                    "StdioClientTransport already started! If using Client class, note "
+                    "that connect() calls start() automatically.");
+            }
 
-        try {
-            SpawnProcess();
-
-            std::lock_guard<std::mutex> lock(m_CallbackMutex);
-            if (m_OnStart) { m_OnStart(); }
-        } catch (const std::exception& e) {
-            m_Started = false;
-            std::lock_guard<std::mutex> lock(m_CallbackMutex);
-            if (m_OnError) { m_OnError(e.what()); }
-            throw;
-        }
+            try {
+                SpawnProcess();
+                if (OnStart) { OnStart.value(); }
+            } catch (const std::exception& e) {
+                m_Started = false;
+                if (OnError) {
+                    // Create ErrorBase from string - this would need proper ErrorBase
+                    // implementation For now, this is a placeholder
+                    throw; // Re-throw for now
+                }
+                throw;
+            }
+        });
     }
 
-    void Stop() override {
-        if (!m_Started.exchange(false)) return;
+    std::future<void> Close() override {
+        return std::async(std::launch::async, [this]() {
+            if (!m_Started.exchange(false)) { return; }
 
-        m_AbortRequested = true;
-        m_Process.reset();
+            m_AbortRequested = true;
+            m_Process.reset();
 
-        if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
+            if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
 
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        if (m_OnStop) { m_OnStop(); }
-        if (m_OnClose) { m_OnClose(); }
+            if (OnClose) { OnClose.value(); }
+        });
     }
 
-    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override {
-        if (!m_Process || !m_Started) { throw std::runtime_error("Not connected"); }
+    future<void> Send(const MessageBase& /* InMessage */,
+                      const TransportSendOptions& /* InOptions */ = {}) override {
+        return std::async(std::launch::async, [this]() {
+            if (!m_Process || !m_Started) { throw runtime_error("Not connected"); }
 
-        std::string message = InMessage + "\n"; // Add newline for message boundary
-        WriteToProcess(message);
+            // TODO: Serialize MessageBase to JSON string
+            // For now, this is a placeholder - would need proper serialization
+            std::string serialized = "{}"; // Placeholder
+            std::string message = serialized + "\n";
+            WriteToProcess(message);
+        });
     }
 
-    void SetOnMessage(MessageCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnMessage = std::move(InCallback);
-    }
-
-    void SetOnError(ErrorCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnError = std::move(InCallback);
-    }
-
-    void SetOnClose(CloseCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnClose = std::move(InCallback);
-    }
-
-    void SetOnStart(StartCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnStart = std::move(InCallback);
-    }
-
-    void SetOnStop(StopCallback InCallback) override {
-        std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_OnStop = std::move(InCallback);
-    }
-
-    void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override {
+    void WriteSSEEvent(const string& InEvent, const string& InData) override {
         // SSE format: event: {event}\ndata: {data}\n\n
-        std::string sseMessage = "event: " + InEvent + "\ndata: " + InData + "\n\n";
+        string sseMessage = "event: " + InEvent + "\ndata: " + InData + "\n\n";
         WriteToProcess(sseMessage);
     }
 
-    bool Resume(const std::string& InResumptionToken) override {
+    bool Resume(const string& /* InResumptionToken */) override {
         // Not implemented yet
         return false;
     }
@@ -396,7 +378,7 @@ class StdioClientTransport : public Transport {
         // 4. Set the working directory
         // 5. Start monitoring the process for data and errors
 
-        throw std::runtime_error(
+        throw runtime_error(
             "Process spawning not yet implemented - requires platform-specific code");
     }
 
@@ -406,16 +388,23 @@ class StdioClientTransport : public Transport {
     void ProcessReadBuffer() {
         while (true) {
             try {
-                auto message = m_ReadBuffer->ReadMessage();
-                if (!message) { break; }
+                // TODO: ReadMessage() returns optional<MessageBase> but MessageBase is abstract
+                // This would need to be changed to return a concrete message type
+                // For now, skip the actual message processing
 
-                std::lock_guard<std::mutex> lock(m_CallbackMutex);
-                if (m_OnMessage) {
-                    m_OnMessage(message.value(), nullptr); // No auth info for stdio
+                // auto message = m_ReadBuffer->ReadMessage();
+                // if (!message) { break; }
+
+                // if (OnMessage) {
+                //     OnMessage.value()(message.value(), std::nullopt); // No auth info for stdio
+                // }
+                break; // Placeholder - would need proper message processing
+            } catch (const std::exception& /* e */) {
+                if (OnError) {
+                    // TODO: Create proper ErrorBase from exception
+                    // For now, this is a placeholder
                 }
-            } catch (const std::exception& e) {
-                std::lock_guard<std::mutex> lock(m_CallbackMutex);
-                if (m_OnError) { m_OnError(e.what()); }
+                break;
             }
         }
     }
@@ -423,20 +412,11 @@ class StdioClientTransport : public Transport {
     /**
      * Writes data to the child process stdin
      */
-    void WriteToProcess(const std::string& data) {
+    void WriteToProcess(const string& /* data */) {
         // This would write to the child process stdin
-        // Placeholder implementation - would need actual process communication
-        throw std::runtime_error("Process communication not yet implemented");
+        // TODO: Placeholder implementation - would need actual process communication
+        throw runtime_error("Process communication not yet implemented");
     }
 };
-
-/**
- * Utility function to check if running in Electron environment
- */
-inline bool IsElectron() {
-    // This would check for Electron-specific environment variables or properties
-    // For now, returning false as a placeholder
-    return false;
-}
 
 MCP_NAMESPACE_END

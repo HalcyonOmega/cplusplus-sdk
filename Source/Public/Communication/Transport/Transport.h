@@ -9,6 +9,11 @@
 
 MCP_NAMESPACE_BEGIN
 
+using StartCallback = function<void()>;
+using CloseCallback = function<void()>;
+using ErrorCallback = function<void(const ErrorBase&)>;
+using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
+
 // Transport options
 struct TransportOptions {
     optional<string> ResumptionToken;
@@ -61,19 +66,19 @@ class Transport {
     [[deprecated("Not yet implemented - will be supported in a future version")]]
     virtual bool Resume(const std::string& InResumptionToken) = 0;
 
-    optional<function<void()>> OnStart;
+    optional<StartCallback> OnStart;
 
     // Callback for when the connection is closed for any reason. This should be invoked when
     // Close() is called as well.
-    optional<function<void()>> OnClose;
+    optional<CloseCallback> OnClose;
 
     // Callback for when an error occurs. Note that errors are not necessarily fatal; they are used
     // for reporting any kind of exceptional condition out of band.
-    optional<function<void(const ErrorBase&)>> OnError;
+    optional<ErrorCallback> OnError;
 
     // Callback for when a message (request or response) is received over the connection. Includes
     // the AuthInfo if the transport is authenticated.
-    optional<function<void(const MessageBase&, const optional<AuthInfo>&)>> OnMessage;
+    optional<MessageCallback> OnMessage;
 
     // The session ID generated for this connection.
     optional<string> SessionID;
