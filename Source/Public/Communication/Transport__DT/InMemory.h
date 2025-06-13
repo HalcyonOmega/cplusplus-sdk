@@ -1,19 +1,11 @@
 #pragma once
 
 #include "Auth/Types/Auth.h"
-#include "Communication/Messages.h"
+#include "Communication/Transport/Transport.h"
 #include "Core.h"
-
+#include "MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-// TODO: Fix External Ref: Transport interface
-// TODO: Fix External Ref: RequestID type
-
-struct QueuedMessage {
-    MessageBase Message;
-    optional<AuthInfo> AuthInfo;
-};
 
 /**
  * In-memory transport for creating clients and servers that talk to each other within the same
@@ -70,9 +62,6 @@ class InMemoryTransport : public Transport {
 
             return make_pair(move(ClientTransport), move(ServerTransport));
         }
-        void Start();
-
-        void close();
 
         /**
          * Sends a message with optional auth info.

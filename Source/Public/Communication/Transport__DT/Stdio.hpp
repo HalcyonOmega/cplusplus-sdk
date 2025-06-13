@@ -1,314 +1,442 @@
 #pragma once
 
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <vector>
+
+#include "Communication/Transport/Transport.h"
+#include "Communication/Utilities/ReadBuffer.h"
 #include "Core.h"
+#include "ErrorBase.h"
+#include "MessageBase.h"
+
+// Forward declarations
+class Stream;
+class ChildProcess;
+class PassThrough;
 
 MCP_NAMESPACE_BEGIN
 
-/**
- * Server transport for stdio: this communicates with a MCP client by reading from the current
- * process' stdin and writing to stdout.
- *
- * This transport is only available in Node.js environments.
- */
-class StdioServerTransport : public Transport {
-  private:
-    ReadBuffer m_ReadBuffer;
-    bool m_Started = false;
+// Platform-specific environment variables to inherit by default
+#ifdef _WIN32
+const std::vector<std::string> DEFAULT_INHERITED_ENV_VARS = {
+    "APPDATA",     "HOMEDRIVE",  "HOMEPATH", "LOCALAPPDATA", "PATH",       "PROCESSOR_ARCHITECTURE",
+    "SYSTEMDRIVE", "SYSTEMROOT", "TEMP",     "USERNAME",     "USERPROFILE"};
+#else
+const std::vector<std::string> DEFAULT_INHERITED_ENV_VARS = {"HOME",  "LOGNAME", "PATH",
+                                                             "SHELL", "TERM",    "USER"};
+#endif
 
-  public:
-    constructor(private _stdin : Readable = process.stdin,
-                private _stdout : Writable = process.stdout, ) {}
-
-    onclose ?: () = > void;
-    onerror ?: (ErrorBase Error) = > void;
-    onmessage ?: (MessageBase Message) = > void;
-
-    // Arrow functions to bind `this` properly, while maintaining function identity.
-    _ondata = (chunk : Buffer) => {
-        this._readBuffer.append(chunk);
-        this.processReadBuffer();
-    };
-    _onerror = (error : Error) => {
-        this.onerror ?.(error);
-    };
-
-    /**
-     * Starts listening for messages on stdin.
-     */
-    async start() : Promise<void> {
-        if (this._started) {
-            throw new Error("StdioServerTransport already started! If using Server class, note "
-                            "that connect() calls start() automatically.", );
-        }
-
-        this._started = true;
-        this._stdin.on(MSG_DATA, this._ondata);
-        this._stdin.on(MSG_ERROR, this._onerror);
-    }
-
-  private
-    processReadBuffer() {
-        while (true) {
-            try {
-                const message = this._readBuffer.readMessage();
-                if (message == = null) { break; }
-
-                this.onmessage ?.(message);
-            } catch (error) { this.onerror ?.(error as Error); }
-        }
-    }
-
-    async close() : Promise<void> {
-        // Remove our event listeners first
-        this._stdin.off(MSG_DATA, this._ondata);
-        this._stdin.off(MSG_ERROR, this._onerror);
-
-        // Check if we were the only data listener
-        const remainingDataListeners = this._stdin.listenerCount('data');
-        if (remainingDataListeners == = 0) {
-            // Only pause stdin if we were the only listener
-            // This prevents interfering with other parts of the application that might be using
-            // stdin
-            this._stdin.pause();
-        }
-
-        // Clear the buffer and notify closure
-        this._readBuffer.clear();
-        this.onclose ?.();
-    }
-
-    send(MessageBase Message) : Promise<void> {
-        return new Promise((resolve) = > {
-            // TODO: SerializeMessage may need to return with newline
-            const json = serializeMessage(message);
-            if (this._stdout.write(json)) {
-                resolve();
-            } else {
-                this._stdout.once("drain", resolve);
-            }
-        });
-    }
-}
-
+// Parameters for configuring a stdio server process
 struct StdioServerParameters {
     /**
      * The executable to run to start the server.
      */
-    string Command;
+    std::string Command;
 
     /**
      * Command line arguments to pass to the executable.
      */
-    optional<vector<string>> Args;
+    std::optional<std::vector<std::string>> Args;
 
     /**
      * The environment to use when spawning the process.
-     *
-     * If not specified, the result of getDefaultEnvironment() will be used.
+     * If not specified, the result of GetDefaultEnvironment() will be used.
      */
-    optional<unordered_map<string, string>> Env;
+    std::optional<std::unordered_map<std::string, std::string>> Env;
 
     /**
-     * How to handle stderr of the child process. This matches the semantics of Node's
-     * `child_process.spawn`.
-     *
+     * How to handle stderr of the child process.
      * The default is "inherit", meaning messages to stderr will be printed to the parent process's
      * stderr.
      */
-    stderr ?: IOType | Stream | number;
+    std::string Stderr = "inherit";
 
     /**
      * The working directory to use when spawning the process.
-     *
      * If not specified, the current working directory will be inherited.
      */
-    optional<string> CWD;
+    std::optional<std::string> CWD;
 };
-
-/**
- * Environment variables to inherit by default, if an environment is not explicitly given.
- */
-const DEFAULT_INHERITED_ENV_VARS =
-  process.platform === "win32"
-    ? [
-        "APPDATA",
-        "HOMEDRIVE",
-        "HOMEPATH",
-        "LOCALAPPDATA",
-        "PATH",
-        "PROCESSOR_ARCHITECTURE",
-        "SYSTEMDRIVE",
-        "SYSTEMROOT",
-        "TEMP",
-        "USERNAME",
-        "USERPROFILE",
-      ]
-    : /* list inspired by the default env inheritance of sudo */
-      ["HOME", "LOGNAME", "PATH", "SHELL", "TERM", "USER"];
 
 /**
  * Returns a default environment object including only environment variables deemed safe to inherit.
  */
-Record<string, string> GetDefaultEnvironment() {
-    const env : Record<string, string> = {};
+inline std::unordered_map<std::string, std::string> GetDefaultEnvironment() {
+    std::unordered_map<std::string, std::string> env;
 
-    for (const key of DEFAULT_INHERITED_ENV_VARS) {
-        const value = process.env[key];
-        if (value == = undefined) { continue; }
+    for (const auto& key : DEFAULT_INHERITED_ENV_VARS) {
+        const char* value = std::getenv(key.c_str());
+        if (value == nullptr) { continue; }
 
-        if (value.startsWith("()")) {
+        std::string valueStr(value);
+        if (valueStr.starts_with("()")) {
             // Skip functions, which are a security risk.
             continue;
         }
 
-        env[key] = value;
+        env[key] = valueStr;
     }
 
     return env;
 }
 
 /**
- * Client transport for stdio: this will connect to a server by spawning a process and communicating
- * with it over stdin/stdout.
+ * Server transport for stdio: this communicates with a MCP client by reading from the current
+ * process' stdin and writing to stdout.
  *
- * This transport is only available in Node.js environments.
+ * This transport provides cross-platform stdio communication capabilities.
  */
-class StdioClientTransport : public Transport {
-  private
-    _process ?: ChildProcess;
-  private
-    _abortController : AbortController = new AbortController();
-  private
-    _readBuffer : ReadBuffer = new ReadBuffer();
-  private
-    _serverParams : StdioServerParameters;
-  private
-    _stderrStream : PassThrough | null = null;
+class StdioServerTransport : public Transport {
+  private:
+    std::unique_ptr<ReadBuffer> m_ReadBuffer;
+    std::atomic<bool> m_Started{false};
+    std::istream& m_Stdin;
+    std::ostream& m_Stdout;
+    std::thread m_ReadThread;
+    std::atomic<bool> m_ShouldStop{false};
+    std::mutex m_CallbackMutex;
 
-    onclose ?: () = > void;
-    onerror ?: (error : Error) = > void;
-    onmessage ?: (message : MessageBase) = > void;
+    // Transport callbacks as per interface
+    MessageCallback m_OnMessage;
+    ErrorCallback m_OnError;
+    CloseCallback m_OnClose;
+    StartCallback m_OnStart;
+    StopCallback m_OnStop;
 
-    constructor(server : StdioServerParameters) {
-        this._serverParams = server;
-        if (server.stderr == = "pipe" || server.stderr == = "overlapped") {
-            this._stderrStream = new PassThrough();
+  public:
+    explicit StdioServerTransport(std::istream& stdin_stream = std::cin,
+                                  std::ostream& stdout_stream = std::cout)
+        : m_Stdin(stdin_stream), m_Stdout(stdout_stream) {
+        m_ReadBuffer = std::make_unique<ReadBuffer>();
+    }
+
+    ~StdioServerTransport() override {
+        Stop();
+    }
+
+    // Transport interface implementation
+    void Start() override {
+        if (m_Started.exchange(true)) {
+            throw std::runtime_error(
+                "StdioServerTransport already started! If using Server class, note "
+                "that connect() calls start() automatically.");
+        }
+
+        m_ReadThread = std::thread(&StdioServerTransport::ReadLoop, this);
+
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        if (m_OnStart) { m_OnStart(); }
+    }
+
+    void Stop() override {
+        if (!m_Started.exchange(false)) return;
+
+        m_ShouldStop = true;
+
+        if (m_ReadThread.joinable()) { m_ReadThread.join(); }
+
+        if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
+
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        if (m_OnStop) { m_OnStop(); }
+        if (m_OnClose) { m_OnClose(); }
+    }
+
+    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override {
+        std::string message = InMessage + "\n"; // Add newline for message boundary
+        m_Stdout << message;
+        m_Stdout.flush();
+    }
+
+    void SetOnMessage(MessageCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnMessage = std::move(InCallback);
+    }
+
+    void SetOnError(ErrorCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnError = std::move(InCallback);
+    }
+
+    void SetOnClose(CloseCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnClose = std::move(InCallback);
+    }
+
+    void SetOnStart(StartCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnStart = std::move(InCallback);
+    }
+
+    void SetOnStop(StopCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnStop = std::move(InCallback);
+    }
+
+    void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override {
+        // SSE format: event: {event}\ndata: {data}\n\n
+        m_Stdout << "event: " << InEvent << "\n";
+        m_Stdout << "data: " << InData << "\n\n";
+        m_Stdout.flush();
+    }
+
+    bool Resume(const std::string& InResumptionToken) override {
+        // Not implemented yet
+        return false;
+    }
+
+  private:
+    /**
+     * Event handler for incoming data
+     */
+    void OnData(const std::vector<uint8_t>& chunk) {
+        if (m_ReadBuffer) {
+            m_ReadBuffer->Append(chunk);
+            ProcessReadBuffer();
         }
     }
 
     /**
-     * Starts the server process and prepares to communicate with it.
+     * Event handler for errors
      */
-    async start() : Promise<void> {
-        if (this._process) {
-            throw new Error("StdioClientTransport already started! If using Client class, note "
-                            "that connect() calls start() automatically.");
-        }
-
-        return new Promise((resolve, reject) = > {
-      this._process = spawn(
-        this._serverParams.command,
-        this._serverParams.args ?? [],
-        {
-            env:
-                this._serverParams.env
-                    ? ? getDefaultEnvironment(),
-                    stdio
-                      : ["pipe", "pipe", this._serverParams.stderr ? ? "inherit"], shell : false,
-                signal:this._abortController.signal,
-                windowsHide:process.platform == = "win32" && isElectron(),
-                cwd:this._serverParams.cwd,
-        }
-      );
-
-      this._process.on(
-          MSG_ERROR, (error) = > {
-              if (error.name == = "AbortError") {
-                  // Expected when close() is called.
-                  this.onclose ?.();
-                  return;
-              }
-
-              reject(error);
-              this.onerror ?.(error);
-          });
-
-      this._process.on("spawn", () = > { resolve(); });
-
-      this._process.on(
-          "close", (_code) = > {
-              this._process = undefined;
-              this.onclose ?.();
-          });
-
-      this._process.stdin ?.on(MSG_ERROR, (error) = > { this.onerror ?.(error); });
-
-      this._process.stdout ?.on(
-                                MSG_DATA, (chunk) = > {
-                                    this._readBuffer.append(chunk);
-                                    this.processReadBuffer();
-                                });
-
-      this._process.stdout ?.on(MSG_ERROR, (error) = > { this.onerror ?.(error); });
-
-      if (this._stderrStream && this._process.stderr) {
-          this._process.stderr.pipe(this._stderrStream);
-      }
-        });
+    void OnErrorInternal(const std::string& error) {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        if (m_OnError) { m_OnError(error); }
     }
 
     /**
-     * The stderr stream of the child process, if `StdioServerParameters.stderr` was set to "pipe"
-     * or "overlapped".
-     *
-     * If stderr piping was requested, a PassThrough stream is returned _immediately_, allowing
-     * callers to attach listeners before the start method is invoked. This prevents loss of any
-     * early error output emitted by the child process.
+     * Processes the read buffer and extracts complete messages
      */
-    get stderr() : Stream | null {
-        if (this._stderrStream) { return this._stderrStream; }
-
-        return this._process ?.stderr ? ? null;
-    }
-
-  private
-    processReadBuffer() {
+    void ProcessReadBuffer() {
         while (true) {
             try {
-                const message = this._readBuffer.readMessage();
-                if (message == = null) { break; }
+                auto message = m_ReadBuffer->ReadMessage();
+                if (!message) { break; }
 
-                this.onmessage ?.(message);
-            } catch (error) { this.onerror ?.(error as Error); }
+                std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                if (m_OnMessage) {
+                    m_OnMessage(message.value(), nullptr); // No auth info for stdio
+                }
+            } catch (const std::exception& e) { OnErrorInternal(e.what()); }
         }
     }
 
-    async close() : Promise<void> {
-        this._abortController.abort();
-        this._process = undefined;
-        this._readBuffer.clear();
+    /**
+     * Main reading loop that runs in a separate thread
+     */
+    void ReadLoop() {
+        std::vector<uint8_t> buffer(4096);
+
+        while (!m_ShouldStop && m_Started) {
+            try {
+                m_Stdin.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+                std::streamsize bytesRead = m_Stdin.gcount();
+
+                if (bytesRead > 0) {
+                    buffer.resize(bytesRead);
+                    OnData(buffer);
+                    buffer.resize(4096);
+                }
+
+                if (m_Stdin.eof() || m_Stdin.fail()) { break; }
+            } catch (const std::exception& e) {
+                OnErrorInternal(e.what());
+                break;
+            }
+        }
+    }
+};
+
+/**
+ * Client transport for stdio: this will connect to a server by spawning a process and communicating
+ * with it over stdin/stdout. This transport is only available in environments that support process
+ * spawning.
+ */
+class StdioClientTransport : public Transport {
+  private:
+    std::unique_ptr<ChildProcess> m_Process;
+    std::atomic<bool> m_AbortRequested{false};
+    std::unique_ptr<ReadBuffer> m_ReadBuffer;
+    StdioServerParameters m_ServerParams;
+    std::unique_ptr<PassThrough> m_StderrStream;
+    std::mutex m_CallbackMutex;
+    std::atomic<bool> m_Started{false};
+
+    // Transport callbacks as per interface
+    MessageCallback m_OnMessage;
+    ErrorCallback m_OnError;
+    CloseCallback m_OnClose;
+    StartCallback m_OnStart;
+    StopCallback m_OnStop;
+
+  public:
+    explicit StdioClientTransport(const StdioServerParameters& serverParams)
+        : m_ServerParams(serverParams) {
+        m_ReadBuffer = std::make_unique<ReadBuffer>();
+
+        if (serverParams.Stderr == "pipe" || serverParams.Stderr == "overlapped") {
+            m_StderrStream = std::make_unique<PassThrough>();
+        }
     }
 
-    send(message : MessageBase) : Promise<void> {
-        return new Promise((resolve) = > {
-      if (!this._process?.stdin) {
-          throw new Error("Not connected");
-      }
-
-      // TODO: SerializeMessage may need to return with newline
-      const json = serializeMessage(message);
-      if (this._process.stdin.write(json)) {
-          resolve();
-      } else {
-          this._process.stdin.once("drain", resolve);
-      }
-        });
+    ~StdioClientTransport() override {
+        Stop();
     }
-}
 
-function
-isElectron() {
-    return MSG_TYPE in process;
+    // Transport interface implementation
+    void Start() override {
+        if (m_Started.exchange(true)) {
+            throw std::runtime_error(
+                "StdioClientTransport already started! If using Client class, note "
+                "that connect() calls start() automatically.");
+        }
+
+        try {
+            SpawnProcess();
+
+            std::lock_guard<std::mutex> lock(m_CallbackMutex);
+            if (m_OnStart) { m_OnStart(); }
+        } catch (const std::exception& e) {
+            m_Started = false;
+            std::lock_guard<std::mutex> lock(m_CallbackMutex);
+            if (m_OnError) { m_OnError(e.what()); }
+            throw;
+        }
+    }
+
+    void Stop() override {
+        if (!m_Started.exchange(false)) return;
+
+        m_AbortRequested = true;
+        m_Process.reset();
+
+        if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
+
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        if (m_OnStop) { m_OnStop(); }
+        if (m_OnClose) { m_OnClose(); }
+    }
+
+    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override {
+        if (!m_Process || !m_Started) { throw std::runtime_error("Not connected"); }
+
+        std::string message = InMessage + "\n"; // Add newline for message boundary
+        WriteToProcess(message);
+    }
+
+    void SetOnMessage(MessageCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnMessage = std::move(InCallback);
+    }
+
+    void SetOnError(ErrorCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnError = std::move(InCallback);
+    }
+
+    void SetOnClose(CloseCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnClose = std::move(InCallback);
+    }
+
+    void SetOnStart(StartCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnStart = std::move(InCallback);
+    }
+
+    void SetOnStop(StopCallback InCallback) override {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_OnStop = std::move(InCallback);
+    }
+
+    void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override {
+        // SSE format: event: {event}\ndata: {data}\n\n
+        std::string sseMessage = "event: " + InEvent + "\ndata: " + InData + "\n\n";
+        WriteToProcess(sseMessage);
+    }
+
+    bool Resume(const std::string& InResumptionToken) override {
+        // Not implemented yet
+        return false;
+    }
+
+    /**
+     * The stderr stream of the child process, if StdioServerParameters.Stderr was set to "pipe" or
+     * "overlapped".
+     */
+    PassThrough* GetStderr() const {
+        return m_StderrStream.get();
+    }
+
+  private:
+    /**
+     * Spawns the child process with the configured parameters
+     */
+    void SpawnProcess() {
+        // This would typically use platform-specific process creation APIs
+        // For now, this is a placeholder that would need to be implemented
+        // with proper process spawning logic for the target platform
+
+        // The actual implementation would:
+        // 1. Create the child process with the specified command and arguments
+        // 2. Set up stdin/stdout/stderr redirection
+        // 3. Configure the environment variables
+        // 4. Set the working directory
+        // 5. Start monitoring the process for data and errors
+
+        throw std::runtime_error(
+            "Process spawning not yet implemented - requires platform-specific code");
+    }
+
+    /**
+     * Processes the read buffer and extracts complete messages
+     */
+    void ProcessReadBuffer() {
+        while (true) {
+            try {
+                auto message = m_ReadBuffer->ReadMessage();
+                if (!message) { break; }
+
+                std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                if (m_OnMessage) {
+                    m_OnMessage(message.value(), nullptr); // No auth info for stdio
+                }
+            } catch (const std::exception& e) {
+                std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                if (m_OnError) { m_OnError(e.what()); }
+            }
+        }
+    }
+
+    /**
+     * Writes data to the child process stdin
+     */
+    void WriteToProcess(const std::string& data) {
+        // This would write to the child process stdin
+        // Placeholder implementation - would need actual process communication
+        throw std::runtime_error("Process communication not yet implemented");
+    }
+};
+
+/**
+ * Utility function to check if running in Electron environment
+ */
+inline bool IsElectron() {
+    // This would check for Electron-specific environment variables or properties
+    // For now, returning false as a placeholder
+    return false;
 }
 
 MCP_NAMESPACE_END

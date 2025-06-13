@@ -5,23 +5,18 @@
 #include <string>
 #include <vector>
 
-#include "Communication/Messages.h"
 #include "Core.h"
-#include "Core/Constants/MessageConstants.h"
+#include "MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
 
-/**
- * Buffers a continuous stdio stream into discrete JSON-RPC messages.
- */
+// Buffers a continuous stdio stream into discrete JSON-RPC messages.
 class ReadBuffer {
   public:
     ReadBuffer() = default;
     ~ReadBuffer() = default;
 
-    /**
-     * Append new data to the buffer.
-     */
+    // Append new data to the buffer.
     void Append(const std::vector<uint8_t>& chunk) {
         if (m_Buffer.empty()) {
             m_Buffer = chunk;
@@ -30,10 +25,8 @@ class ReadBuffer {
         }
     }
 
-    /**
-     * Attempt to read a complete message from the buffer.
-     * Returns nullopt if no complete message is available.
-     */
+    // Attempt to read a complete message from the buffer. Returns nullopt if no complete message is
+    // available.
     std::optional<MessageBase> ReadMessage() {
         if (m_Buffer.empty()) { return std::nullopt; }
 
@@ -57,9 +50,7 @@ class ReadBuffer {
         }
     }
 
-    /**
-     * Clear the buffer.
-     */
+    // Clear the buffer.
     void Clear() {
         m_Buffer.clear();
     }

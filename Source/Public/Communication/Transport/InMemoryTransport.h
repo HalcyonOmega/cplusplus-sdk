@@ -38,11 +38,6 @@ class InMemoryTransport : public Transport {
     void Start() override;
     void Stop() override;
     void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override;
-    void SetOnMessage(MessageCallback InCallback) override;
-    void SetOnError(ErrorCallback InCallback) override;
-    void SetOnClose(CloseCallback InCallback) override;
-    void SetOnStart(StartCallback InCallback) override;
-    void SetOnStop(StopCallback InCallback) override;
     void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override;
 
     // New method for resumability support
@@ -57,21 +52,14 @@ class InMemoryTransport : public Transport {
 
   private:
     struct QueuedMessage {
-        std::string Message;
-        std::optional<AuthInfo> AuthInfo;
+        MessageBase Message;
+        optional<AuthInfo> AuthInfo;
     };
 
     std::weak_ptr<InMemoryTransport> m_OtherTransport;
     std::queue<QueuedMessage> m_MessageQueue;
     std::mutex m_QueueMutex;
     std::string m_SessionID;
-
-    // Callbacks
-    MessageCallback m_OnMessage;
-    ErrorCallback m_OnError;
-    CloseCallback m_OnClose;
-    StartCallback m_OnStart;
-    StopCallback m_OnStop;
 };
 
 MCP_NAMESPACE_END
