@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -26,11 +27,11 @@ class ReadBuffer {
     }
 
     // Attempt to read a complete message from the buffer. Returns nullopt if no complete message is
-    // available.
-    std::optional<MessageBase> ReadMessage() {
+    // available. NOTE: Full JSON parsing is pending – for now we only detect frame boundaries.
+    std::optional<std::unique_ptr<MessageBase>> ReadMessage() {
         if (m_Buffer.empty()) { return std::nullopt; }
 
-        // Find message boundary (newline)
+        // Look for a newline that terminates a length-delimited JSON-RPC frame.
         auto it = std::find(m_Buffer.begin(), m_Buffer.end(), '\n');
         if (it == m_Buffer.end()) { return std::nullopt; }
 
@@ -42,7 +43,8 @@ class ReadBuffer {
         m_Buffer.erase(m_Buffer.begin(), it + 1);
 
         try {
-            return DeserializeMessage(line);
+            // TODO: DeserializeMessage(line);
+            return std::nullopt;
         } catch (const std::exception&) {
             // Invalid message, clear the buffer to prevent getting stuck
             m_Buffer.clear();

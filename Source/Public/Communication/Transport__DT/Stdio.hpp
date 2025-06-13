@@ -10,16 +10,21 @@
 #include <mutex>
 #include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "Communication/Transport/Transport.h"
+#include "Communication/Utilities/AbortController.h"
+#include "Communication/Utilities/ChildProcess.h"
 #include "Communication/Utilities/ReadBuffer.h"
 #include "Core.h"
 #include "ErrorBase.h"
 #include "MessageBase.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 // Forward declarations
 class ChildProcess;
@@ -110,6 +115,8 @@ class StdioServerTransport : public Transport {
     ostream& m_Stdout;
     thread m_ReadThread;
     atomic<bool> m_ShouldStop{false};
+    // Protects callback invocation to avoid concurrent access between read thread and callers.
+    mutable mutex m_CallbackMutex;
 
   public:
     explicit StdioServerTransport(istream& stdin_stream = cin, ostream& stdout_stream = cout)
@@ -138,7 +145,7 @@ class StdioServerTransport : public Transport {
 
     future<void> Close() override {
         return async(launch::async, [this]() {
-            if (!m_Started.exchange(false)) return;
+            if (!m_Started.exchange(false)) { return; }
 
             m_ShouldStop = true;
 
@@ -150,14 +157,11 @@ class StdioServerTransport : public Transport {
         });
     }
 
-    future<void> Send(const MessageBase& /* InMessage */,
+    future<void> Send(const MessageBase& InMessage,
                       const TransportSendOptions& /* InOptions */ = {}) override {
-        return async(launch::async, [this]() {
-            // TODO: Serialize MessageBase to JSON string
-            // For now, this is a placeholder - would need proper serialization
-            string serialized = "{}"; // Placeholder
-            string message = serialized + "\n";
-            m_Stdout << message;
+        return async(launch::async, [this, &InMessage = InMessage]() {
+            string serialized = SerializeMessage(InMessage);
+            m_Stdout << serialized << "\n";
             m_Stdout.flush();
         });
     }
@@ -190,10 +194,10 @@ class StdioServerTransport : public Transport {
      */
     void OnErrorInternal(const string& error) {
         lock_guard<mutex> lock(m_CallbackMutex);
-        if (m_OnError) {
+        if (OnError) {
             // Create ErrorBase from string message
             ErrorBase ErrorMessage = ErrorBase(Errors::InternalError, error);
-            m_OnError(ErrorMessage);
+            OnError.value()(ErrorMessage);
         }
     }
 
@@ -203,16 +207,14 @@ class StdioServerTransport : public Transport {
     void ProcessReadBuffer() {
         while (true) {
             try {
-                // TODO: ReadMessage should return optional<unique_ptr<MessageBase>>
-                // For now, commented out until ReadBuffer interface is updated
-                // auto message = m_ReadBuffer->ReadMessage();
-                // if (!message) { break; }
+                auto messageOpt = m_ReadBuffer->ReadMessage();
+                if (!messageOpt) { break; }
 
-                // lock_guard<mutex> lock(m_CallbackMutex);
-                // if (m_OnMessage) {
-                //     m_OnMessage(*message.value(), std::nullopt); // No auth info for stdio
-                // }
-                break; // Placeholder
+                lock_guard<mutex> lock(m_CallbackMutex);
+                if (OnMessage && *messageOpt) {
+                    OnMessage.value()(*messageOpt->get(), std::nullopt);
+                }
+                // Continue loop to check for more complete messages
             } catch (const exception& e) {
                 OnErrorInternal(e.what());
                 break;
@@ -330,16 +332,13 @@ class StdioClientTransport : public Transport {
         });
     }
 
-    future<void> Send(const MessageBase& /* InMessage */,
+    future<void> Send(const MessageBase& InMessage,
                       const TransportSendOptions& /* InOptions */ = {}) override {
-        return std::async(std::launch::async, [this]() {
+        return std::async(std::launch::async, [this, &InMessage = InMessage]() {
             if (!m_Process || !m_Started) { throw runtime_error("Not connected"); }
 
-            // TODO: Serialize MessageBase to JSON string
-            // For now, this is a placeholder - would need proper serialization
-            std::string serialized = "{}"; // Placeholder
-            std::string message = serialized + "\n";
-            WriteToProcess(message);
+            string serialized = SerializeMessage(InMessage);
+            WriteToProcess(serialized + "\n");
         });
     }
 
@@ -388,17 +387,14 @@ class StdioClientTransport : public Transport {
     void ProcessReadBuffer() {
         while (true) {
             try {
-                // TODO: ReadMessage() returns optional<MessageBase> but MessageBase is abstract
-                // This would need to be changed to return a concrete message type
-                // For now, skip the actual message processing
+                auto messageOpt = m_ReadBuffer->ReadMessage();
+                if (!messageOpt) { break; }
 
-                // auto message = m_ReadBuffer->ReadMessage();
-                // if (!message) { break; }
+                if (OnMessage && *messageOpt) {
+                    OnMessage.value()(*messageOpt->get(), std::nullopt);
+                }
 
-                // if (OnMessage) {
-                //     OnMessage.value()(message.value(), std::nullopt); // No auth info for stdio
-                // }
-                break; // Placeholder - would need proper message processing
+                // Continue looping in case multiple messages are queued
             } catch (const std::exception& /* e */) {
                 if (OnError) {
                     // TODO: Create proper ErrorBase from exception
@@ -412,10 +408,12 @@ class StdioClientTransport : public Transport {
     /**
      * Writes data to the child process stdin
      */
-    void WriteToProcess(const string& /* data */) {
-        // This would write to the child process stdin
-        // TODO: Placeholder implementation - would need actual process communication
-        throw runtime_error("Process communication not yet implemented");
+    void WriteToProcess(const string& data) {
+        if (m_Process) {
+            m_Process->Write(data);
+        } else {
+            throw runtime_error("Process communication not available (process not started)");
+        }
     }
 };
 
