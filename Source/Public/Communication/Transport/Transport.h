@@ -82,6 +82,9 @@ class Transport {
 
     // The session ID generated for this connection.
     optional<string> SessionID;
+
+    mutable mutex m_CallbackMutex; // Protects callback invocation to avoid concurrent access
+                                   // between read thread and callers.
 };
 
 MCP_NAMESPACE_END

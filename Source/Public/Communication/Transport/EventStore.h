@@ -5,9 +5,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-/**
- * Event store interface for resumability support
- */
+// Event store interface for resumability support
 class EventStore {
   public:
     virtual ~EventStore() = default;

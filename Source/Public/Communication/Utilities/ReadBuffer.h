@@ -8,6 +8,7 @@
 
 #include "Core.h"
 #include "MessageBase.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -43,7 +44,8 @@ class ReadBuffer {
         m_Buffer.erase(m_Buffer.begin(), it + 1);
 
         try {
-            // TODO: DeserializeMessage(line);
+            auto msgPtr = DeserializeMessage(line);
+            if (msgPtr) { return std::make_optional(std::move(msgPtr)); }
             return std::nullopt;
         } catch (const std::exception&) {
             // Invalid message, clear the buffer to prevent getting stuck

@@ -115,8 +115,6 @@ class StdioServerTransport : public Transport {
     ostream& m_Stdout;
     thread m_ReadThread;
     atomic<bool> m_ShouldStop{false};
-    // Protects callback invocation to avoid concurrent access between read thread and callers.
-    mutable mutex m_CallbackMutex;
 
   public:
     explicit StdioServerTransport(istream& stdin_stream = cin, ostream& stdout_stream = cout)
@@ -362,13 +360,41 @@ class StdioClientTransport : public Transport {
     }
 
   private:
-    /**
-     * Spawns the child process with the configured parameters
-     */
+    // Spawns the child process with the configured parameters
     void SpawnProcess() {
-        // This would typically use platform-specific process creation APIs
-        // For now, this is a placeholder that would need to be implemented
-        // with proper process spawning logic for the target platform
+        // Build child process options
+        ChildProcess::Options procOpts;
+        procOpts.Command = m_ServerParams.Command;
+        procOpts.Args = m_ServerParams.Args.value_or(std::vector<std::string>{});
+        procOpts.Environment = m_ServerParams.Env.value_or(GetDefaultEnvironment());
+        procOpts.WorkingDirectory = m_ServerParams.CWD;
+
+        bool pipeErr = false;
+        if (m_ServerParams.Stderr.has_value()) {
+            if (std::holds_alternative<IOType>(m_ServerParams.Stderr.value())) {
+                std::string mode = std::get<IOType>(m_ServerParams.Stderr.value());
+                pipeErr = (mode == "pipe" || mode == "overlapped");
+            }
+        }
+        procOpts.PipeStderr = pipeErr;
+
+        // Callback: forward stdout chunks into ReadBuffer
+        procOpts.StdoutCallback = [this](const std::vector<uint8_t>& data) {
+            if (m_ReadBuffer) {
+                m_ReadBuffer->Append(data);
+                ProcessReadBuffer();
+            }
+        };
+
+        if (pipeErr) {
+            procOpts.StderrCallback = [this](const std::vector<uint8_t>& data) {
+                if (m_StderrStream) {
+                    m_StderrStream->write(reinterpret_cast<const char*>(data.data()), data.size());
+                }
+            };
+        }
+
+        m_Process = std::make_unique<ChildProcess>(procOpts);
 
         // The actual implementation would:
         // 1. Create the child process with the specified command and arguments
@@ -405,9 +431,7 @@ class StdioClientTransport : public Transport {
         }
     }
 
-    /**
-     * Writes data to the child process stdin
-     */
+    // Writes data to the child process stdin
     void WriteToProcess(const string& data) {
         if (m_Process) {
             m_Process->Write(data);
