@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Communication/Transport/EventStore.h"
-#include "Constants.h"
 #include "Core.h"
 #include "Transport.h"
 
@@ -35,9 +34,10 @@ class InMemoryTransport : public Transport {
     ~InMemoryTransport() override;
 
     // Transport interface implementation
-    void Start() override;
-    void Stop() override;
-    void Send(const std::string& InMessage, const TransportSendOptions& InOptions = {}) override;
+    future<void> Start() override;
+    future<void> Close() override;
+    future<void> Send(const MessageBase& InMessage,
+                      const TransportSendOptions& InOptions = {}) override;
     void WriteSSEEvent(const std::string& InEvent, const std::string& InData) override;
 
     // New method for resumability support
@@ -52,7 +52,7 @@ class InMemoryTransport : public Transport {
 
   private:
     struct QueuedMessage {
-        MessageBase Message;
+        shared_ptr<MessageBase> Message;
         optional<AuthInfo> AuthInfo;
     };
 

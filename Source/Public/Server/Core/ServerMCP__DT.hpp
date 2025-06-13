@@ -9,42 +9,10 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Forward declarations
-struct Tool;
-struct ListToolsResult;
-struct CallToolResult;
-struct CompleteRequest;
-struct CompleteResult;
-struct PromptReference;
-struct ResourceReference;
-struct Resource;
-struct ListResourcesResult;
-struct ListResourceTemplatesResult;
-struct ReadResourceResult;
-struct ListPromptsResult;
-struct Prompt;
-struct PromptArgument;
-struct GetPromptResult;
-struct ServerRequest;
-struct ServerNotification;
-struct ToolAnnotations;
-class Server;
-struct RequestHandlerExtra;
-
 /**
  * Callback to complete one variable within a resource template's URI template.
  */
 using CompleteResourceTemplateCallback = function<vector<string>(const string&)>;
-
-/**
- * Additional, optional information for annotating a resource.
- */
-struct ResourceMetadata {
-    optional<string> Name;
-    optional<string> Description;
-    optional<string> MimeType;
-    // Additional metadata fields can be added here
-};
 
 /**
  * Callback to list all resources matching a given template.
@@ -282,30 +250,31 @@ class MCPServer {
      * The underlying Server instance, useful for advanced operations like sending notifications.
      */
     shared_ptr<Server> GetServer() const {
-        return ServerInstance_;
+        return m_ServerInstance;
     }
 
   private:
-    shared_ptr<Server> ServerInstance_;
-    unordered_map<string, RegisteredResource> RegisteredResources_;
-    unordered_map<string, RegisteredResourceTemplate> RegisteredResourceTemplates_;
-    unordered_map<string, RegisteredTool> RegisteredTools_;
-    unordered_map<string, RegisteredPrompt> RegisteredPrompts_;
+    shared_ptr<Server> m_ServerInstance;
+    unordered_map<string, RegisteredResource> m_RegisteredResources;
+    unordered_map<string, RegisteredResourceTemplate> m_RegisteredResourceTemplates;
+    unordered_map<string, RegisteredTool> m_RegisteredTools;
+    unordered_map<string, RegisteredPrompt> m_RegisteredPrompts;
 
-    bool ToolHandlersInitialized_ = false;
-    bool CompletionHandlerInitialized_ = false;
-    bool ResourceHandlersInitialized_ = false;
-    bool PromptHandlersInitialized_ = false;
+    bool m_ToolHandlersInitialized = false;
+    bool m_CompletionHandlerInitialized = false;
+    bool m_ResourceHandlersInitialized = false;
+    bool m_PromptHandlersInitialized = false;
 
-    static const JSON EmptyObjectJSONSchema_;
-    static const CompleteResult EmptyCompletionResult_;
+    static const JSON m_EmptyObjectJSONSchema;
+    static const CompleteResult m_EmptyCompletionResult;
 
     // JSON Schema validator for input/output validation
-    AjvValidator SchemaValidator_;
+    AjvValidator m_SchemaValidator;
 
   public:
-    MCPServer(const Implementation& serverInfo, const optional<ServerOptions>& options = nullopt) {
-        ServerInstance_ = make_shared<Server>(serverInfo, options);
+    MCPServer(const Implementation& InServerInfo,
+              const optional<ServerOptions>& InOptions = nullopt) {
+        m_ServerInstance = make_shared<Server>(InServerInfo, InOptions);
     }
 
     /**
@@ -315,655 +284,656 @@ class MCPServer {
      * already been set, and expects that it is the only user of the Transport instance going
      * forward.
      */
-    future<void> Connect(shared_ptr<Transport> transport) {
-        return ServerInstance_->Connect(transport);
+    future<void> Connect(shared_ptr<Transport> InTransport) {
+        return m_ServerInstance->Connect(InTransport);
     }
 
     /**
      * Closes the connection.
      */
     future<void> Close() {
-        return ServerInstance_->Close();
+        return m_ServerInstance->Close();
     }
 
   private:
     void SetToolRequestHandlers() {
-        if (ToolHandlersInitialized_) { return; }
+        if (m_ToolHandlersInitialized) { return; }
 
         // Assert can set request handlers
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_TOOLS_LIST);
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_TOOLS_CALL);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_TOOLS_LIST);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_TOOLS_CALL);
 
         // Register capabilities
-        ServerCapabilities caps;
+        ServerCapabilities caps; // TODO: Implement ServerCapabilities
         // TODO: Set up tools capability with listChanged = true
-        ServerInstance_->RegisterCapabilities(caps);
+        m_ServerInstance->RegisterCapabilities(caps);
 
         // Set handler for tools/list
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_TOOLS_LIST,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> ListToolsResult {
-                ListToolsResult result;
+                ListToolsResult Result;
 
-                for (const auto& [name, tool] : RegisteredTools_) {
-                    if (!tool.Enabled) continue;
+                for (const auto& [Name, Tool] : m_RegisteredTools) {
+                    if (!Tool.Enabled) continue;
 
-                    Tool toolDef;
-                    toolDef.Name = name;
-                    toolDef.Description = tool.Description;
-                    toolDef.InputSchema = tool.InputSchema.value_or(EmptyObjectJSONSchema_);
-                    if (tool.OutputSchema) { toolDef.OutputSchema = *tool.OutputSchema; }
-                    toolDef.Annotations = tool.Annotations;
+                    Tool ToolDef;
+                    ToolDef.Name = Name;
+                    ToolDef.Description = Tool.Description;
+                    ToolDef.InputSchema = Tool.InputSchema.value_or(m_EmptyObjectJSONSchema);
+                    if (Tool.OutputSchema) { ToolDef.OutputSchema = *Tool.OutputSchema; }
+                    ToolDef.Annotations = Tool.Annotations;
 
-                    result.Tools.push_back(toolDef);
+                    Result.Tools.push_back(ToolDef);
                 }
 
-                return result;
+                return Result;
             });
 
         // Set handler for tools/call
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_TOOLS_CALL,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> CallToolResult {
-                auto toolName = request[MSG_PARAMS][MSG_NAME].get<string>();
-                auto toolArgs = request[MSG_PARAMS].value(MSG_ARGUMENTS, JSON::object());
+                auto ToolName = InRequest[MSG_PARAMS][MSG_NAME].get<string>();
+                auto ToolArgs = InRequest[MSG_PARAMS].value(MSG_ARGUMENTS, JSON::object());
 
-                auto it = RegisteredTools_.find(toolName);
-                if (it == RegisteredTools_.end()) {
-                    throw ErrorBase(ErrorCode::InvalidParams, "Tool " + toolName + " not found");
+                auto it = m_RegisteredTools.find(ToolName);
+                if (it == m_RegisteredTools.end()) {
+                    throw ErrorBase(ErrorCode::InvalidParams, "Tool " + ToolName + " not found");
                 }
 
-                const auto& tool = it->second;
-                if (!tool.Enabled) {
-                    throw ErrorBase(ErrorCode::InvalidParams, "Tool " + toolName + " disabled");
+                const auto& Tool = it->second;
+                if (!Tool.Enabled) {
+                    throw ErrorBase(ErrorCode::InvalidParams, "Tool " + ToolName + " disabled");
                 }
 
                 CallToolResult result;
                 try {
                     // Validate input against InputSchema if present
-                    if (tool.InputSchema) {
-                        auto validator = SchemaValidator_.Compile(*tool.InputSchema);
-                        if (!validator(toolArgs)) {
+                    if (Tool.InputSchema) {
+                        auto Validator = m_SchemaValidator.Compile(*Tool.InputSchema);
+                        if (!Validator(ToolArgs)) {
                             throw ErrorBase(
                                 ErrorCode::InvalidParams,
-                                "Invalid arguments for tool " + toolName + ": "
-                                    + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
+                                "Invalid arguments for tool " + ToolName + ": "
+                                    + m_SchemaValidator.ErrorsText(m_SchemaValidator.Errors));
                         }
                     }
 
-                    result = tool.Callback(toolArgs, extra);
+                    result = Tool.Callback(ToolArgs, extra);
 
                     // Validate output against OutputSchema if present
-                    if (tool.OutputSchema && result.StructuredContent) {
-                        auto validator = SchemaValidator_.Compile(*tool.OutputSchema);
+                    if (Tool.OutputSchema && result.StructuredContent) {
+                        auto validator = m_SchemaValidator.Compile(*Tool.OutputSchema);
                         if (!validator(*result.StructuredContent)) {
                             throw ErrorBase(
                                 ErrorCode::InvalidParams,
-                                "Invalid structured content for tool " + toolName + ": "
-                                    + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
+                                "Invalid structured content for tool " + ToolName + ": "
+                                    + m_SchemaValidator.ErrorsText(m_SchemaValidator.Errors));
                         }
                     }
 
-                    return result;
-                } catch (const exception& e) {
-                    CallToolResult errorResult;
-                    errorResult.IsError = true;
+                    return Result;
+                } catch (const exception& E) {
+                    CallToolResult ErrorResult;
+                    ErrorResult.IsError = true;
                     // Create error content
-                    Content errorContent;
-                    errorContent.Type = MSG_TEXT;
-                    errorContent.Text = e.what();
-                    errorResult.Content.push_back(errorContent);
-                    return errorResult;
+                    Content ErrorContent;
+                    ErrorContent.Type = MSG_TEXT;
+                    ErrorContent.Text = E.what();
+                    ErrorResult.Content.push_back(ErrorContent);
+                    return ErrorResult;
                 }
             });
 
-        ToolHandlersInitialized_ = true;
+        m_ToolHandlersInitialized = true;
     }
 
     void SetCompletionRequestHandler() {
-        if (CompletionHandlerInitialized_) { return; }
+        if (m_CompletionHandlerInitialized) { return; }
 
         // Assert can set request handler
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_COMPLETION_COMPLETE);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_COMPLETION_COMPLETE);
 
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_COMPLETION_COMPLETE,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> CompleteResult {
-                auto refType = request[MSG_PARAMS][MSG_REF][MSG_TYPE].get<string>();
+                auto RefType = InRequest[MSG_PARAMS][MSG_REF][MSG_TYPE].get<string>();
 
-                if (refType == "ref/prompt") {
-                    return HandlePromptCompletion(request, extra);
-                } else if (refType == "ref/resource") {
-                    return HandleResourceCompletion(request, extra);
+                if (RefType == "ref/prompt") {
+                    return HandlePromptCompletion(InRequest, InExtra);
+                } else if (RefType == "ref/resource") {
+                    return HandleResourceCompletion(InRequest, InExtra);
                 } else {
                     throw ErrorBase(ErrorCode::InvalidParams,
-                                    "Invalid completion reference: " + refType);
+                                    "Invalid completion reference: " + RefType);
                 }
             });
 
-        CompletionHandlerInitialized_ = true;
+        m_CompletionHandlerInitialized = true;
     }
 
     CompleteResult
-    HandlePromptCompletion(const JSON& request,
-                           const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-        auto promptName = request[MSG_PARAMS][MSG_REF][MSG_NAME].get<string>();
+    HandlePromptCompletion(const JSON& InRequest,
+                           const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+        auto PromptName = InRequest[MSG_PARAMS][MSG_REF][MSG_NAME].get<string>();
 
-        auto it = RegisteredPrompts_.find(promptName);
-        if (it == RegisteredPrompts_.end()) {
-            throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + promptName + " not found");
+        auto It = m_RegisteredPrompts.find(PromptName);
+        if (It == m_RegisteredPrompts.end()) {
+            throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + PromptName + " not found");
         }
 
-        const auto& prompt = it->second;
-        if (!prompt.Enabled) {
-            throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + promptName + " disabled");
+        const auto& Prompt = It->second;
+        if (!Prompt.Enabled) {
+            throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + PromptName + " disabled");
         }
 
-        if (!prompt.ArgsSchema) { return EmptyCompletionResult_; }
+        if (!Prompt.ArgsSchema) { return m_EmptyCompletionResult; }
 
         // TODO: Implement completion logic for prompt arguments
-        return EmptyCompletionResult_;
+        return m_EmptyCompletionResult;
     }
 
-    CompleteResult
-    HandleResourceCompletion(const JSON& request,
-                             const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-        auto uri = request[MSG_PARAMS][MSG_REF][MSG_URI].get<string>();
+    CompleteResult HandleResourceCompletion(
+        const JSON& InRequest,
+        const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+        auto URI = InRequest[MSG_PARAMS][MSG_REF][MSG_URI].get<string>();
 
         // Find matching template
-        for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
-            auto variables = templateEntry.Template.Match(uri);
-            if (variables) {
-                auto argName = request[MSG_PARAMS]["argument"][MSG_NAME].get<string>();
-                auto completer = templateEntry.Template.GetCompleteCallback(argName);
-                if (completer) {
-                    auto argValue = request[MSG_PARAMS]["argument"][MSG_VALUE].get<string>();
-                    auto suggestions = (*completer)(argValue);
-                    return CreateCompletionResult(suggestions);
+        for (const auto& [Name, TemplateEntry] : m_RegisteredResourceTemplates) {
+            auto Variables = TemplateEntry.Template.Match(URI);
+            if (Variables) {
+                auto ArgName = InRequest[MSG_PARAMS]["argument"][MSG_NAME].get<string>();
+                auto Completer = TemplateEntry.Template.GetCompleteCallback(ArgName);
+                if (Completer) {
+                    auto ArgValue = InRequest[MSG_PARAMS]["argument"][MSG_VALUE].get<string>();
+                    auto Suggestions = (*Completer)(ArgValue);
+                    return CreateCompletionResult(Suggestions);
                 }
             }
         }
 
         // Check if it's a fixed resource URI
-        if (RegisteredResources_.find(uri) != RegisteredResources_.end()) {
-            return EmptyCompletionResult_;
+        if (m_RegisteredResources.find(URI) != m_RegisteredResources.end()) {
+            return m_EmptyCompletionResult;
         }
 
-        throw ErrorBase(ErrorCode::InvalidParams, "Resource template " + uri + " not found");
+        throw ErrorBase(ErrorCode::InvalidParams, "Resource template " + URI + " not found");
     }
 
     void SetResourceRequestHandlers() {
-        if (ResourceHandlersInitialized_) { return; }
+        if (m_ResourceHandlersInitialized) { return; }
 
         // Assert can set request handlers
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_RESOURCES_LIST);
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_RESOURCES_TEMPLATES_LIST);
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_RESOURCES_READ);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_RESOURCES_LIST);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_RESOURCES_TEMPLATES_LIST);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_RESOURCES_READ);
 
         // Register capabilities
-        ServerCapabilities caps;
+        ServerCapabilities Caps;
         // TODO: Set up resources capability with listChanged = true
-        ServerInstance_->RegisterCapabilities(caps);
+        m_ServerInstance->RegisterCapabilities(Caps);
 
         // Set handler for resources/list
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_RESOURCES_LIST,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> ListResourcesResult {
-                ListResourcesResult result;
+                ListResourcesResult Result;
 
                 // Add fixed resources
-                for (const auto& [uri, resource] : RegisteredResources_) {
-                    if (!resource.Enabled) continue;
+                for (const auto& [URI, Resource] : m_RegisteredResources) {
+                    if (!Resource.Enabled) continue;
 
-                    Resource res;
-                    res.Uri = uri;
-                    res.Name = resource.Name;
-                    if (resource.Metadata) {
+                    Resource Res;
+                    Res.URI = URI;
+                    Res.Name = Resource.Name;
+                    if (Resource.Metadata) {
                         // TODO: Copy metadata fields
                     }
-                    result.Resources.push_back(res);
+                    Result.Resources.push_back(Res);
                 }
 
                 // Add template resources
-                for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
-                    if (templateEntry.Template.GetListCallback()) {
-                        auto templateResult = (*templateEntry.Template.GetListCallback())(extra);
-                        for (const auto& resource : templateResult.Resources) {
-                            result.Resources.push_back(resource);
+                for (const auto& [Name, TemplateEntry] : m_RegisteredResourceTemplates) {
+                    if (TemplateEntry.Template.GetListCallback()) {
+                        auto TemplateResult = (*TemplateEntry.Template.GetListCallback())(InExtra);
+                        for (const auto& Resource : TemplateResult.Resources) {
+                            Result.Resources.push_back(Resource);
                         }
                     }
                 }
 
-                return result;
+                return Result;
             });
 
         // Set handler for resources/templates/list
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_RESOURCES_TEMPLATES_LIST,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> ListResourceTemplatesResult {
-                ListResourceTemplatesResult result;
+                ListResourceTemplatesResult Result;
 
-                for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
-                    ResourceTemplate resTmpl;
-                    resTmpl.Name = name;
-                    resTmpl.URI_Template = templateEntry.Template.GetURI_Template();
-                    if (templateEntry.Metadata) {
+                for (const auto& [Name, TemplateEntry] : m_RegisteredResourceTemplates) {
+                    ResourceTemplate ResTmpl;
+                    ResTmpl.Name = Name;
+                    ResTmpl.URI_Template = TemplateEntry.Template.GetURI_Template();
+                    if (TemplateEntry.Metadata) {
                         // TODO: Copy metadata fields
                     }
-                    result.ResourceTemplates.push_back(resTmpl);
+                    Result.ResourceTemplates.push_back(ResTmpl);
                 }
 
-                return result;
+                return Result;
             });
 
         // Set handler for resources/read
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_RESOURCES_READ,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> ReadResourceResult {
-                auto uri = request[MSG_PARAMS][MSG_URI].get<string>();
+                auto URI = InRequest[MSG_PARAMS][MSG_URI].get<string>();
 
                 // Check for exact resource match first
-                auto resourceIt = RegisteredResources_.find(uri);
-                if (resourceIt != RegisteredResources_.end()) {
-                    if (!resourceIt->second.Enabled) {
-                        throw ErrorBase(ErrorCode::InvalidParams, "Resource " + uri + " disabled");
+                auto ResourceIt = m_RegisteredResources.find(URI);
+                if (ResourceIt != m_RegisteredResources.end()) {
+                    if (!ResourceIt->second.Enabled) {
+                        throw ErrorBase(ErrorCode::InvalidParams, "Resource " + URI + " disabled");
                     }
-                    return resourceIt->second.Callback(uri, extra);
+                    return ResourceIt->second.Callback(URI, InExtra);
                 }
 
                 // Check templates
-                for (const auto& [name, templateEntry] : RegisteredResourceTemplates_) {
-                    auto variables = templateEntry.Template.Match(uri);
-                    if (variables) { return templateEntry.Callback(uri, *variables, extra); }
+                for (const auto& [Name, TemplateEntry] : m_RegisteredResourceTemplates) {
+                    auto Variables = TemplateEntry.Template.Match(URI);
+                    if (Variables) { return TemplateEntry.Callback(URI, *Variables, InExtra); }
                 }
 
-                throw ErrorBase(ErrorCode::InvalidParams, "Resource " + uri + " not found");
+                throw ErrorBase(ErrorCode::InvalidParams, "Resource " + URI + " not found");
             });
 
         SetCompletionRequestHandler();
-        ResourceHandlersInitialized_ = true;
+        m_ResourceHandlersInitialized = true;
     }
 
     void SetPromptRequestHandlers() {
-        if (PromptHandlersInitialized_) { return; }
+        if (m_PromptHandlersInitialized) { return; }
 
         // Assert can set request handlers
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_PROMPTS_LIST);
-        ServerInstance_->AssertCanSetRequestHandler(MTHD_PROMPTS_GET);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_PROMPTS_LIST);
+        m_ServerInstance->AssertCanSetRequestHandler(MTHD_PROMPTS_GET);
 
         // Register capabilities
-        ServerCapabilities caps;
+        ServerCapabilities Caps;
         // TODO: Set up prompts capability with listChanged = true
-        ServerInstance_->RegisterCapabilities(caps);
+        m_ServerInstance->RegisterCapabilities(Caps);
 
         // Set handler for prompts/list
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_PROMPTS_LIST,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> ListPromptsResult {
-                ListPromptsResult result;
+                ListPromptsResult Result;
 
-                for (const auto& [name, prompt] : RegisteredPrompts_) {
-                    if (!prompt.Enabled) continue;
+                for (const auto& [Name, Prompt] : m_RegisteredPrompts) {
+                    if (!Prompt.Enabled) continue;
 
                     Prompt promptDef;
-                    promptDef.Name = name;
-                    promptDef.Description = prompt.Description;
-                    if (prompt.ArgsSchema) {
+                    PromptDef.Name = Name;
+                    PromptDef.Description = Prompt.Description;
+                    if (Prompt.ArgsSchema) {
                         // TODO: Convert JSON schema to PromptArgument vector
                     }
 
-                    result.Prompts.push_back(promptDef);
+                    Result.Prompts.push_back(PromptDef);
                 }
 
-                return result;
+                return Result;
             });
 
         // Set handler for prompts/get
-        ServerInstance_->SetRequestHandler(
+        m_ServerInstance->SetRequestHandler(
             MTHD_PROMPTS_GET,
-            [this](const JSON& request,
-                   const RequestHandlerExtra<ServerRequest, ServerNotification>& extra)
+            [this](const JSON& InRequest,
+                   const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra)
                 -> GetPromptResult {
-                auto promptName = request[MSG_PARAMS][MSG_NAME].get<string>();
-                auto args = request[MSG_PARAMS].value(MSG_ARGUMENTS, JSON::object());
+                auto PromptName = InRequest[MSG_PARAMS][MSG_NAME].get<string>();
+                auto Args = InRequest[MSG_PARAMS].value(MSG_ARGUMENTS, JSON::object());
 
-                auto it = RegisteredPrompts_.find(promptName);
-                if (it == RegisteredPrompts_.end()) {
+                auto It = m_RegisteredPrompts.find(PromptName);
+                if (It == m_RegisteredPrompts.end()) {
                     throw ErrorBase(ErrorCode::InvalidParams,
-                                    "Prompt " + promptName + " not found");
+                                    "Prompt " + PromptName + " not found");
                 }
 
-                const auto& prompt = it->second;
-                if (!prompt.Enabled) {
-                    throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + promptName + " disabled");
+                const auto& Prompt = It->second;
+                if (!Prompt.Enabled) {
+                    throw ErrorBase(ErrorCode::InvalidParams, "Prompt " + PromptName + " disabled");
                 }
 
                 // Validate arguments against ArgsSchema if present
-                if (prompt.ArgsSchema) {
-                    auto validator = SchemaValidator_.Compile(*prompt.ArgsSchema);
-                    if (!validator(args)) {
-                        throw ErrorBase(ErrorCode::InvalidParams,
-                                        "Invalid arguments for prompt " + promptName + ": "
-                                            + SchemaValidator_.ErrorsText(SchemaValidator_.Errors));
+                if (Prompt.ArgsSchema) {
+                    auto Validator = m_SchemaValidator.Compile(*Prompt.ArgsSchema);
+                    if (!Validator(Args)) {
+                        throw ErrorBase(
+                            ErrorCode::InvalidParams,
+                            "Invalid arguments for prompt " + PromptName + ": "
+                                + m_SchemaValidator.ErrorsText(m_SchemaValidator.Errors));
                     }
                 }
 
-                return prompt.Callback(args, extra);
+                return Prompt.Callback(Args, InExtra);
             });
 
         SetCompletionRequestHandler();
-        PromptHandlersInitialized_ = true;
+        m_PromptHandlersInitialized = true;
     }
 
     RegisteredTool CreateRegisteredTool(
-        const string& name, const optional<string>& description, const optional<JSON>& inputSchema,
-        const optional<JSON>& outputSchema, const optional<ToolAnnotations>& annotations,
+        const string& Name, const optional<string>& Description, const optional<JSON>& InputSchema,
+        const optional<JSON>& OutputSchema, const optional<ToolAnnotations>& Annotations,
         const function<CallToolResult(
             const JSON&, const RequestHandlerExtra<ServerRequest, ServerNotification>&)>&
             callback) {
-        RegisteredTool tool;
-        tool.Description = description;
-        tool.InputSchema = inputSchema;
-        tool.OutputSchema = outputSchema;
-        tool.Annotations = annotations;
-        tool.Callback = callback;
-        tool.Enabled = true;
+        RegisteredTool Tool;
+        Tool.Description = Description;
+        Tool.InputSchema = InputSchema;
+        Tool.OutputSchema = OutputSchema;
+        Tool.Annotations = Annotations;
+        Tool.Callback = Callback;
+        Tool.Enabled = true;
 
-        RegisteredTools_[name] = tool;
+        m_RegisteredTools[Name] = Tool;
         SetToolRequestHandlers();
         SendToolListChanged();
 
-        return tool;
+        return Tool;
     }
 
-    static CompleteResult CreateCompletionResult(const vector<string>& suggestions) {
-        CompleteResult result;
+    static CompleteResult CreateCompletionResult(const vector<string>& Suggestions) {
+        CompleteResult Result;
 
         // Limit to maximum 100 suggestions as per MCP protocol
-        size_t maxCount = min(suggestions.size(), static_cast<size_t>(100));
-        vector<string> limitedValues(suggestions.begin(), suggestions.begin() + maxCount);
+        size_t MaxCount = min(Suggestions.size(), static_cast<size_t>(100));
+        vector<string> LimitedValues(Suggestions.begin(), Suggestions.begin() + MaxCount);
 
         // TODO: Set up completion structure with values, total, and hasMore
         // result.Completion.Values = limitedValues;
         // result.Completion.Total = suggestions.size();
         // result.Completion.HasMore = suggestions.size() > 100;
 
-        return result;
+        return Result;
     }
 
-    static vector<PromptArgument> PromptArgumentsFromSchema(const JSON& schema) {
-        vector<PromptArgument> args;
+    static vector<PromptArgument> PromptArgumentsFromSchema(const JSON& Schema) {
+        vector<PromptArgument> Args;
         // TODO: Convert JSON schema to PromptArgument vector
-        return args;
+        return Args;
     }
 
   public:
     // Resource registration methods
-    RegisteredResource Resource(const string& name, const string& uri,
-                                const ReadResourceCallback& callback) {
-        return Resource(name, uri, nullopt, callback);
+    RegisteredResource Resource(const string& Name, const string& URI,
+                                const ReadResourceCallback& Callback) {
+        return Resource(Name, URI, nullopt, Callback);
     }
 
-    RegisteredResource Resource(const string& name, const string& uri,
-                                const optional<ResourceMetadata>& metadata,
-                                const ReadResourceCallback& callback) {
-        if (RegisteredResources_.find(uri) != RegisteredResources_.end()) {
-            throw runtime_error("Resource " + uri + " is already registered");
+    RegisteredResource Resource(const string& Name, const string& URI,
+                                const optional<ResourceMetadata>& Metadata,
+                                const ReadResourceCallback& Callback) {
+        if (m_RegisteredResources.find(URI) != m_RegisteredResources.end()) {
+            throw runtime_error("Resource " + URI + " is already registered");
         }
 
-        RegisteredResource resource;
-        resource.Name = name;
-        resource.Metadata = metadata;
-        resource.Callback = callback;
-        resource.Enabled = true;
+        RegisteredResource Resource;
+        Resource.Name = Name;
+        Resource.Metadata = Metadata;
+        Resource.Callback = Callback;
+        Resource.Enabled = true;
 
-        RegisteredResources_[uri] = resource;
+        m_RegisteredResources[URI] = Resource;
         SetResourceRequestHandlers();
         SendResourceListChanged();
 
-        return resource;
+        return Resource;
     }
 
-    RegisteredResourceTemplate Resource(const string& name, const ResourceTemplate& tmpl,
-                                        const ReadResourceTemplateCallback& callback) {
-        return Resource(name, tmpl, nullopt, callback);
+    RegisteredResourceTemplate Resource(const string& Name, const ResourceTemplate& Tmpl,
+                                        const ReadResourceTemplateCallback& Callback) {
+        return Resource(Name, Tmpl, nullopt, Callback);
     }
 
-    RegisteredResourceTemplate Resource(const string& name, const ResourceTemplate& tmpl,
-                                        const optional<ResourceMetadata>& metadata,
-                                        const ReadResourceTemplateCallback& callback) {
-        if (RegisteredResourceTemplates_.find(name) != RegisteredResourceTemplates_.end()) {
-            throw runtime_error("Resource template " + name + " is already registered");
+    RegisteredResourceTemplate Resource(const string& Name, const ResourceTemplate& Tmpl,
+                                        const optional<ResourceMetadata>& Metadata,
+                                        const ReadResourceTemplateCallback& Callback) {
+        if (m_RegisteredResourceTemplates.find(Name) != m_RegisteredResourceTemplates.end()) {
+            throw runtime_error("Resource template " + Name + " is already registered");
         }
 
-        RegisteredResourceTemplate resourceTemplate(tmpl);
-        resourceTemplate.Metadata = metadata;
-        resourceTemplate.Callback = callback;
-        resourceTemplate.Enabled = true;
+        RegisteredResourceTemplate ResourceTemplate(Tmpl);
+        ResourceTemplate.Metadata = Metadata;
+        ResourceTemplate.Callback = Callback;
+        ResourceTemplate.Enabled = true;
 
-        RegisteredResourceTemplates_[name] = resourceTemplate;
+        m_RegisteredResourceTemplates[Name] = ResourceTemplate;
         SetResourceRequestHandlers();
         SendResourceListChanged();
 
-        return resourceTemplate;
+        return ResourceTemplate;
     }
 
     // Tool registration methods
-    RegisteredTool Tool(const string& name, const ToolCallback<void>& callback) {
+    RegisteredTool Tool(const string& Name, const ToolCallback<void>& Callback) {
         return CreateRegisteredTool(
-            name, nullopt, nullopt, nullopt, nullopt,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-                return callback(extra);
+            Name, nullopt, nullopt, nullopt, nullopt,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+                return Callback(InExtra);
             });
     }
 
-    RegisteredTool Tool(const string& name, const string& description,
-                        const ToolCallback<void>& callback) {
+    RegisteredTool Tool(const string& Name, const string& Description,
+                        const ToolCallback<void>& Callback) {
         return CreateRegisteredTool(
-            name, description, nullopt, nullopt, nullopt,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-                return callback(extra);
+            Name, Description, nullopt, nullopt, nullopt,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+                return Callback(InExtra);
             });
     }
 
     template <typename Args>
-    RegisteredTool Tool(const string& name, const JSON& paramsSchemaOrAnnotations,
-                        const ToolCallback<Args>& callback) {
+    RegisteredTool Tool(const string& Name, const JSON& ParamsSchemaOrAnnotations,
+                        const ToolCallback<Args>& Callback) {
         // TODO: Determine if paramsSchemaOrAnnotations is schema or annotations
         return CreateRegisteredTool(
-            name, nullopt, paramsSchemaOrAnnotations, nullopt, nullopt,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
+            Name, nullopt, ParamsSchemaOrAnnotations, nullopt, nullopt,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
                 // TODO: Parse args to Args type
-                Args parsedArgs; // Would convert JSON to Args
-                return callback(parsedArgs, extra);
+                Args ParsedArgs; // Would convert JSON to Args
+                return Callback(ParsedArgs, InExtra);
             });
     }
 
     template <typename Args>
-    RegisteredTool Tool(const string& name, const string& description,
-                        const JSON& paramsSchemaOrAnnotations, const ToolCallback<Args>& callback) {
+    RegisteredTool Tool(const string& Name, const string& Description,
+                        const JSON& ParamsSchemaOrAnnotations, const ToolCallback<Args>& Callback) {
         // TODO: Determine if paramsSchemaOrAnnotations is schema or annotations
         return CreateRegisteredTool(
-            name, description, paramsSchemaOrAnnotations, nullopt, nullopt,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
+            Name, Description, ParamsSchemaOrAnnotations, nullopt, nullopt,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
                 // TODO: Parse args to Args type
-                Args parsedArgs; // Would convert JSON to Args
-                return callback(parsedArgs, extra);
+                Args ParsedArgs; // Would convert JSON to Args
+                return Callback(ParsedArgs, InExtra);
             });
     }
 
     template <typename Args>
-    RegisteredTool Tool(const string& name, const JSON& paramsSchema,
-                        const ToolAnnotations& annotations, const ToolCallback<Args>& callback) {
+    RegisteredTool Tool(const string& Name, const JSON& ParamsSchema,
+                        const ToolAnnotations& Annotations, const ToolCallback<Args>& Callback) {
         return CreateRegisteredTool(
-            name, nullopt, paramsSchema, nullopt, annotations,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
+            Name, nullopt, ParamsSchema, nullopt, Annotations,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
                 // TODO: Parse args to Args type
-                Args parsedArgs; // Would convert JSON to Args
-                return callback(parsedArgs, extra);
+                Args ParsedArgs; // Would convert JSON to Args
+                return Callback(ParsedArgs, InExtra);
             });
     }
 
     template <typename Args>
-    RegisteredTool Tool(const string& name, const string& description, const JSON& paramsSchema,
-                        const ToolAnnotations& annotations, const ToolCallback<Args>& callback) {
+    RegisteredTool Tool(const string& Name, const string& Description, const JSON& ParamsSchema,
+                        const ToolAnnotations& Annotations, const ToolCallback<Args>& Callback) {
         return CreateRegisteredTool(
-            name, description, paramsSchema, nullopt, annotations,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
+            Name, Description, ParamsSchema, nullopt, Annotations,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
                 // TODO: Parse args to Args type
-                Args parsedArgs; // Would convert JSON to Args
-                return callback(parsedArgs, extra);
+                Args ParsedArgs; // Would convert JSON to Args
+                return Callback(ParsedArgs, InExtra);
             });
     }
 
     template <typename InputArgs, typename OutputArgs>
-    RegisteredTool RegisterTool(const string& name, const unordered_map<string, JSON>& config,
-                                const ToolCallback<InputArgs>& callback) {
-        if (RegisteredTools_.find(name) != RegisteredTools_.end()) {
-            throw runtime_error("Tool " + name + " is already registered");
+    RegisteredTool RegisterTool(const string& Name, const unordered_map<string, JSON>& Config,
+                                const ToolCallback<InputArgs>& Callback) {
+        if (m_RegisteredTools.find(Name) != m_RegisteredTools.end()) {
+            throw runtime_error("Tool " + Name + " is already registered");
         }
 
-        optional<string> description;
-        optional<JSON> inputSchema;
-        optional<JSON> outputSchema;
-        optional<ToolAnnotations> annotations;
+        optional<string> Description;
+        optional<JSON> InputSchema;
+        optional<JSON> OutputSchema;
+        optional<ToolAnnotations> Annotations;
 
-        auto descIt = config.find(MSG_DESCRIPTION);
-        if (descIt != config.end()) { description = descIt->second.get<string>(); }
+        auto DescIt = Config.find(MSG_DESCRIPTION);
+        if (DescIt != Config.end()) { Description = DescIt->second.get<string>(); }
 
-        auto inputIt = config.find(MSG_INPUT_SCHEMA);
-        if (inputIt != config.end()) { inputSchema = inputIt->second; }
+        auto InputIt = Config.find(MSG_INPUT_SCHEMA);
+        if (InputIt != Config.end()) { InputSchema = InputIt->second; }
 
-        auto outputIt = config.find("outputSchema");
-        if (outputIt != config.end()) { outputSchema = outputIt->second; }
+        auto OutputIt = Config.find("outputSchema");
+        if (OutputIt != Config.end()) { OutputSchema = OutputIt->second; }
 
-        auto annotIt = config.find(MSG_ANNOTATIONS);
-        if (annotIt != config.end()) {
+        auto AnnotIt = Config.find(MSG_ANNOTATIONS);
+        if (AnnotIt != Config.end()) {
             // TODO: Parse annotations from JSON
         }
 
         return CreateRegisteredTool(
-            name, description, inputSchema, outputSchema, annotations,
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
+            Name, Description, InputSchema, OutputSchema, Annotations,
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
                 // TODO: Parse args to InputArgs type
-                InputArgs parsedArgs; // Would convert JSON to InputArgs
-                return callback(parsedArgs, extra);
+                InputArgs ParsedArgs; // Would convert JSON to InputArgs
+                return Callback(ParsedArgs, InExtra);
             });
     }
 
     // Prompt registration methods
-    RegisteredPrompt Prompt(const string& name, const PromptCallback<void>& callback) {
-        if (RegisteredPrompts_.find(name) != RegisteredPrompts_.end()) {
-            throw runtime_error("Prompt " + name + " is already registered");
+    RegisteredPrompt Prompt(const string& Name, const PromptCallback<void>& Callback) {
+        if (m_RegisteredPrompts.find(Name) != m_RegisteredPrompts.end()) {
+            throw runtime_error("Prompt " + Name + " is already registered");
         }
 
-        RegisteredPrompt prompt;
-        prompt.Callback =
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-                return callback(extra);
+        RegisteredPrompt Prompt;
+        Prompt.Callback =
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+                return Callback(InExtra);
             };
-        prompt.Enabled = true;
+        Prompt.Enabled = true;
 
-        RegisteredPrompts_[name] = prompt;
+        m_RegisteredPrompts[Name] = Prompt;
         SetPromptRequestHandlers();
         SendPromptListChanged();
 
-        return prompt;
+        return Prompt;
     }
 
-    RegisteredPrompt Prompt(const string& name, const string& description,
-                            const PromptCallback<void>& callback) {
-        if (RegisteredPrompts_.find(name) != RegisteredPrompts_.end()) {
-            throw runtime_error("Prompt " + name + " is already registered");
+    RegisteredPrompt Prompt(const string& Name, const string& Description,
+                            const PromptCallback<void>& Callback) {
+        if (m_RegisteredPrompts.find(Name) != m_RegisteredPrompts.end()) {
+            throw runtime_error("Prompt " + Name + " is already registered");
         }
 
-        RegisteredPrompt prompt;
-        prompt.Description = description;
-        prompt.Callback =
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-                return callback(extra);
+        RegisteredPrompt Prompt;
+        Prompt.Description = Description;
+        Prompt.Callback =
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+                return Callback(InExtra);
             };
-        prompt.Enabled = true;
+        Prompt.Enabled = true;
 
-        RegisteredPrompts_[name] = prompt;
+        m_RegisteredPrompts[Name] = Prompt;
         SetPromptRequestHandlers();
         SendPromptListChanged();
 
-        return prompt;
-    }
-
-    template <typename Args>
-    RegisteredPrompt Prompt(const string& name, const JSON& argsSchema,
-                            const PromptCallback<Args>& callback) {
-        if (RegisteredPrompts_.find(name) != RegisteredPrompts_.end()) {
-            throw runtime_error("Prompt " + name + " is already registered");
-        }
-
-        RegisteredPrompt prompt;
-        prompt.ArgsSchema = argsSchema;
-        prompt.Callback =
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
-                // TODO: Parse args to Args type
-                Args parsedArgs; // Would convert JSON to Args
-                return callback(parsedArgs, extra);
-            };
-        prompt.Enabled = true;
-
-        RegisteredPrompts_[name] = prompt;
-        SetPromptRequestHandlers();
-        SendPromptListChanged();
-
-        return prompt;
+        return Prompt;
     }
 
     template <typename Args>
-    RegisteredPrompt Prompt(const string& name, const string& description, const JSON& argsSchema,
-                            const PromptCallback<Args>& callback) {
-        if (RegisteredPrompts_.find(name) != RegisteredPrompts_.end()) {
-            throw runtime_error("Prompt " + name + " is already registered");
+    RegisteredPrompt Prompt(const string& Name, const JSON& ArgsSchema,
+                            const PromptCallback<Args>& Callback) {
+        if (m_RegisteredPrompts.find(Name) != m_RegisteredPrompts.end()) {
+            throw runtime_error("Prompt " + Name + " is already registered");
         }
 
-        RegisteredPrompt prompt;
-        prompt.Description = description;
-        prompt.ArgsSchema = argsSchema;
-        prompt.Callback =
-            [callback](const JSON& args,
-                       const RequestHandlerExtra<ServerRequest, ServerNotification>& extra) {
+        RegisteredPrompt Prompt;
+        Prompt.ArgsSchema = ArgsSchema;
+        Prompt.Callback =
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
                 // TODO: Parse args to Args type
-                Args parsedArgs; // Would convert JSON to Args
-                return callback(parsedArgs, extra);
+                Args ParsedArgs; // Would convert JSON to Args
+                return Callback(ParsedArgs, InExtra);
             };
-        prompt.Enabled = true;
+        Prompt.Enabled = true;
 
-        RegisteredPrompts_[name] = prompt;
+        m_RegisteredPrompts[Name] = Prompt;
         SetPromptRequestHandlers();
         SendPromptListChanged();
 
-        return prompt;
+        return Prompt;
+    }
+
+    template <typename Args>
+    RegisteredPrompt Prompt(const string& Name, const string& Description, const JSON& ArgsSchema,
+                            const PromptCallback<Args>& Callback) {
+        if (m_RegisteredPrompts.find(Name) != m_RegisteredPrompts.end()) {
+            throw runtime_error("Prompt " + Name + " is already registered");
+        }
+
+        RegisteredPrompt Prompt;
+        Prompt.Description = Description;
+        Prompt.ArgsSchema = ArgsSchema;
+        Prompt.Callback =
+            [Callback](const JSON& Args,
+                       const RequestHandlerExtra<ServerRequest, ServerNotification>& InExtra) {
+                // TODO: Parse args to Args type
+                Args ParsedArgs; // Would convert JSON to Args
+                return Callback(ParsedArgs, InExtra);
+            };
+        Prompt.Enabled = true;
+
+        m_RegisteredPrompts[Name] = Prompt;
+        SetPromptRequestHandlers();
+        SendPromptListChanged();
+
+        return Prompt;
     }
 
     /**
@@ -971,28 +941,28 @@ class MCPServer {
      * @returns True if the server is connected
      */
     bool IsConnected() const {
-        return ServerInstance_->GetTransport() != nullptr;
+        return m_ServerInstance->GetTransport() != nullptr;
     }
 
     /**
      * Sends a resource list changed event to the client, if connected.
      */
     void SendResourceListChanged() {
-        if (IsConnected()) { ServerInstance_->SendResourceListChanged(); }
+        if (IsConnected()) { m_ServerInstance->SendResourceListChanged(); }
     }
 
     /**
      * Sends a tool list changed event to the client, if connected.
      */
     void SendToolListChanged() {
-        if (IsConnected()) { ServerInstance_->SendToolListChanged(); }
+        if (IsConnected()) { m_ServerInstance->SendToolListChanged(); }
     }
 
     /**
      * Sends a prompt list changed event to the client, if connected.
      */
     void SendPromptListChanged() {
-        if (IsConnected()) { ServerInstance_->SendPromptListChanged(); }
+        if (IsConnected()) { m_ServerInstance->SendPromptListChanged(); }
     }
 };
 

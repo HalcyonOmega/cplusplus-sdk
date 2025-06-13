@@ -5,15 +5,10 @@
 MCP_NAMESPACE_BEGIN
 
 struct ServerOptions : public ProtocolOptions {
-    /**
-     * Capabilities to advertise as being supported by this server.
-     */
-    optional<ServerCapabilities> Capabilities;
-
-    /**
-     * Optional instructions describing how to use the server and its features.
-     */
-    optional<string> Instructions;
+    optional<ServerCapabilities>
+        Capabilities; // Capabilities to advertise as being supported by this server.
+    optional<string>
+        Instructions; // Optional instructions describing how to use the server and its features.
 };
 
 /**

@@ -35,13 +35,13 @@ template <typename RequestT = Request, typename NotificationT = Notification,
           typename ResultT = Result>
 class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> {
   private:
-    optional<ServerCapabilities> ServerCapabilities_;
-    optional<Implementation> ServerVersion_;
-    ClientCapabilities Capabilities_;
-    optional<string> Instructions_;
-    map<string, ValidateFunction> CachedToolOutputValidators_;
-    AjvValidator Ajv_;
-    Implementation ClientInfo_;
+    optional<ServerCapabilities> m_ServerCapabilities;
+    optional<Implementation> m_ServerVersion;
+    ClientCapabilities m_Capabilities;
+    optional<string> m_Instructions;
+    map<string, ValidateFunction> m_CachedToolOutputValidators;
+    AjvValidator m_Ajv;
+    Implementation m_ClientInfo;
 
   public:
     /**
@@ -129,10 +129,10 @@ class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> 
 template <typename RequestT, typename NotificationT, typename ResultT>
 Client<RequestT, NotificationT, ResultT>::Client(const Implementation& ClientInfo,
                                                  const optional<ClientOptions>& Options)
-    : Protocol<ClientRequest, ClientNotification, ClientResult>(Options), ClientInfo_(ClientInfo),
-      Capabilities_(Options ? Options->Capabilities.value_or(ClientCapabilities{})
-                            : ClientCapabilities{}),
-      Ajv_() {}
+    : Protocol<ClientRequest, ClientNotification, ClientResult>(Options), m_ClientInfo(ClientInfo),
+      m_Capabilities(Options ? Options->Capabilities.value_or(ClientCapabilities{})
+                             : ClientCapabilities{}),
+      m_Ajv() {}
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::RegisterCapabilities(
@@ -151,7 +151,7 @@ template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::AssertCapability(const string& Capability,
                                                                 const string& Method) {
     // TODO: Implement capability checking logic based on ServerCapabilities_
-    if (!ServerCapabilities_) {
+    if (!m_ServerCapabilities) {
         throw runtime_error("Server does not support " + Capability + " (required for " + Method
                             + ")");
     }
@@ -173,8 +173,8 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
                  {MSG_PARAMS,
                   JSON{
                       {MSG_PROTOCOL_VERSION, MCP_LATEST_PROTOCOL_VERSION},
-                      {MSG_CAPABILITIES, JSON::object()}, // TODO: Serialize Capabilities_ properly
-                      {MSG_CLIENT_INFO, JSON::object()}   // TODO: Serialize ClientInfo_ properly
+                      {MSG_CAPABILITIES, JSON::object()}, // TODO: Serialize m_Capabilities properly
+                      {MSG_CLIENT_INFO, JSON::object()}   // TODO: Serialize m_ClientInfo properly
                   }}};
 
         JSON Result = co_await Request(InitializeRequest, "InitializeResultSchema", Options);
@@ -209,36 +209,36 @@ Client<RequestT, NotificationT, ResultT>::Connect(shared_ptr<Transport> Transpor
 template <typename RequestT, typename NotificationT, typename ResultT>
 optional<ServerCapabilities>
 Client<RequestT, NotificationT, ResultT>::GetServerCapabilities() const {
-    return ServerCapabilities_;
+    return m_ServerCapabilities;
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 optional<Implementation> Client<RequestT, NotificationT, ResultT>::GetServerVersion() const {
-    return ServerVersion_;
+    return m_ServerVersion;
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 optional<string> Client<RequestT, NotificationT, ResultT>::GetInstructions() const {
-    return Instructions_;
+    return m_Instructions;
 }
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const string& Method) {
     if (Method == MTHD_LOGGING_SET_LEVEL) {
-        if (!ServerCapabilities_
-            || !ServerCapabilities_->Logging) { // TODO: Access logging capability properly
+        if (!m_ServerCapabilities
+            || !m_ServerCapabilities->Logging) { // TODO: Access logging capability properly
             throw runtime_error("Server does not support logging (required for " + Method + ")");
         }
     } else if (Method == MTHD_PROMPTS_GET || Method == MTHD_PROMPTS_LIST) {
-        if (!ServerCapabilities_
-            || !ServerCapabilities_->Prompts) { // TODO: Access prompts capability properly
+        if (!m_ServerCapabilities
+            || !m_ServerCapabilities->Prompts) { // TODO: Access prompts capability properly
             throw runtime_error("Server does not support prompts (required for " + Method + ")");
         }
     } else if (Method == MTHD_RESOURCES_LIST || Method == MTHD_RESOURCES_TEMPLATES_LIST
                || Method == MTHD_RESOURCES_READ || Method == MTHD_RESOURCES_SUBSCRIBE
                || Method == MTHD_RESOURCES_UNSUBSCRIBE) {
-        if (!ServerCapabilities_
-            || !ServerCapabilities_->Resources) { // TODO: Access resources capability properly
+        if (!m_ServerCapabilities
+            || !m_ServerCapabilities->Resources) { // TODO: Access resources capability properly
             throw runtime_error("Server does not support resources (required for " + Method + ")");
         }
 
@@ -250,13 +250,13 @@ void Client<RequestT, NotificationT, ResultT>::AssertCapabilityForMethod(const s
             // }
         }
     } else if (Method == MTHD_TOOLS_CALL || Method == MTHD_TOOLS_LIST) {
-        if (!ServerCapabilities_
-            || !ServerCapabilities_->Tools) { // TODO: Access tools capability properly
+        if (!m_ServerCapabilities
+            || !m_ServerCapabilities->Tools) { // TODO: Access tools capability properly
             throw runtime_error("Server does not support tools (required for " + Method + ")");
         }
     } else if (Method == MTHD_COMPLETION_COMPLETE) {
-        if (!ServerCapabilities_
-            || !ServerCapabilities_->Completions) { // TODO: Access completions capability properly
+        if (!m_ServerCapabilities
+            || !m_ServerCapabilities->Completions) { // TODO: Access completions capability properly
             throw runtime_error("Server does not support completions (required for " + Method
                                 + ")");
         }
@@ -402,7 +402,7 @@ Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const str
                 if (!IsValid) {
                     throw ErrorBase(ErrorCode::InvalidParams,
                                     "Structured content does not match the tool's output schema: "
-                                        + Ajv_.ErrorsText(Ajv_.Errors));
+                                        + m_Ajv.ErrorsText(m_Ajv.Errors));
                 }
             } catch (const ErrorBase& Error) { throw; } catch (const exception& Error) {
                 throw ErrorBase(ErrorCode::InvalidParams,
@@ -416,7 +416,7 @@ Client<RequestT, NotificationT, ResultT>::CallTool(const JSON& Params, const str
 
 template <typename RequestT, typename NotificationT, typename ResultT>
 void Client<RequestT, NotificationT, ResultT>::CacheToolOutputSchemas(const vector<Tool>& Tools) {
-    CachedToolOutputValidators_.clear();
+    m_CachedToolOutputValidators.clear();
 
     for (const auto& ToolItem : Tools) {
         // If the tool has an outputSchema, create and cache the validator
@@ -436,8 +436,8 @@ void Client<RequestT, NotificationT, ResultT>::CacheToolOutputSchemas(const vect
 template <typename RequestT, typename NotificationT, typename ResultT>
 optional<ValidateFunction>
 Client<RequestT, NotificationT, ResultT>::GetToolOutputValidator(const string& ToolName) {
-    auto It = CachedToolOutputValidators_.find(ToolName);
-    if (It != CachedToolOutputValidators_.end()) { return It->second; }
+    auto It = m_CachedToolOutputValidators.find(ToolName);
+    if (It != m_CachedToolOutputValidators.end()) { return It->second; }
     return nullopt;
 }
 
