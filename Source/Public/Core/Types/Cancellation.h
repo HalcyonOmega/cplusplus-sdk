@@ -2,23 +2,15 @@
 
 #include "Core.h"
 #include "Core/Messages/Notifications/NotificationBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
 
 struct CancelledNotificationParams {
-    /**
-     * The ID of the request to cancel.
-     *
-     * This MUST correspond to the ID of a request previously issued in the same
-     * direction.
-     */
-    RequestID RequestId;
-
-    /**
-     * An optional string describing the reason for the cancellation. This MAY
-     * be logged or presented to the user.
-     */
-    optional<string> reason;
+    RequestID RequestID;     // The ID of the request to cancel. This MUST correspond to the ID of a
+                             // request previously issued in the same direction.
+    optional<string> Reason; // An optional string describing the reason for the cancellation.
+                             // This MAY be logged or presented to the user.
 };
 
 // CancelledNotification {
@@ -73,11 +65,9 @@ struct CancelledNotificationParams {
  * A client MUST NOT attempt to cancel its `initialize` request.
  */
 struct CancelledNotification : public NotificationBase {
-    CancelledNotificationParams params;
+    CancelledNotificationParams Params;
 
-    CancelledNotification() {
-        method = MTHD_NOTIFICATIONS_CANCELLED;
-    }
+    CancelledNotification() : NotificationBase(MTHD_NOTIFICATIONS_CANCELLED) {}
 };
 
 MCP_NAMESPACE_END

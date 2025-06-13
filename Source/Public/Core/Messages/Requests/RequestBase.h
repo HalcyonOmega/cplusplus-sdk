@@ -2,13 +2,11 @@
 
 #include "Core.h"
 #include "Core/Messages/MessageBase.h"
+#include "Core/Types/Progress.h"
+#include "SchemaAliases.h"
 #include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward Declarations
-// TODO: @HalcyonOmega Fix External Ref: ProgressToken
-struct ProgressToken;
 
 // RequestID {
 //   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",

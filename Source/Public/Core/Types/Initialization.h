@@ -133,4 +133,8 @@ struct InitializedNotification : public NotificationBase {
     InitializedNotification() : NotificationBase(MTHD_NOTIFICATIONS_INITIALIZED) {}
 };
 
+// TODO: @HalcyonOmega - Fix This
+const isInitializedNotification = (value : unknown)
+    : value is InitializedNotification = > InitializedNotification.safeParse(value).success;
+
 MCP_NAMESPACE_END

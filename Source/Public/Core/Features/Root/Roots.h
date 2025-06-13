@@ -1,12 +1,11 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Messages/Notifications/NotificationBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward Declarations
-// TODO: @HalcyonOmega create URI class
-class URIFile; // This *must* start with "file://" for now.
 
 // Root {
 //     MSG_DESCRIPTION : "Represents a root directory or file that the server can operate on.",
@@ -153,15 +152,11 @@ struct ListRootsResult : public ResultMessage {
 //                        MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * A notification from the client to the server, informing it that the list of roots has changed.
- * This notification should be sent whenever the client adds, removes, or modifies any root.
- * The server should then request an updated list of roots using the ListRootsRequest.
- */
+// A notification from the client to the server, informing it that the list of roots has
+// changed.This notification should be sent whenever the client adds, removes, or modifies any root
+// The server should then request an updated list of roots using the ListRootsRequest.
 struct RootsListChangedNotification : public NotificationBase {
-    RootsListChangedNotification() {
-        method = MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED;
-    }
+    RootsListChangedNotification() : NotificationBase(MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED) {}
 };
 
 MCP_NAMESPACE_END

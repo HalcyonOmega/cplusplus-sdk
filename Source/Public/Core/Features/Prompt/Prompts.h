@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Features/Notification/NotificationSchemas.h"
-#include "Core/Features/Request/RequestSchemas.h"
-#include "Core/Features/Result/ResultSchemas.h"
-#include "Core/Features/Roles/RolesSchemas.h"
+#include "Core/Messages/Notifications/NotificationBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 #include "Core/Types/Roles.h"
 
 MCP_NAMESPACE_BEGIN
@@ -274,15 +273,11 @@ struct GetPromptResult : public Result {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * An optional notification from the server to the client, informing it that the
- * list of prompts it offers has changed. This may be issued by servers without
- * any previous subscription from the client.
- */
-struct PromptListChangedNotification : public Notification {
-    PromptListChangedNotification() {
-        method = MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED;
-    }
+// An optional notification from the server to the client, informing it that the list of prompts it
+// offers has changed. This may be issued by servers without any previous subscription from the
+// client.
+struct PromptListChangedNotification : public NotificationBase {
+    PromptListChangedNotification() : NotificationBase(MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED) {}
 };
 
 MCP_NAMESPACE_END

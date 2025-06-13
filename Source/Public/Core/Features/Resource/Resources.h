@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Constants/MethodConstants.h"
+#include "Core/Messages/Notifications/NotificationBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 #include "Core/Types/Annotations.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward Declarations
-// TODO: @HalcyonOmega create URI class
-class URI;
-class URITemplate;
 
 // Resource {
 //   MSG_DESCRIPTION : "A known resource that the server is capable of reading.",
@@ -263,13 +262,8 @@ struct ListResourceTemplatesResult : public PaginatedResult {
 };
 
 struct ResourceUpdatedNotificationParams {
-    /**
-     * The URI of the resource that has been updated. This might be a sub-resource
-     * of the one that the client actually subscribed to.
-     *
-     * @format uri
-     */
-    string uri;
+    URI URI; // The URI of the resource that has been updated. This might be a sub-resource of the
+             // one that the client actually subscribed to.
 };
 
 // ResourceUpdatedNotification {
@@ -299,16 +293,13 @@ struct ResourceUpdatedNotificationParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * A notification from the server to the client, informing it that a resource
- * has changed and may need to be read again. This should only be sent if the
- * client previously sent a resources/subscribe request.
- */
-struct ResourceUpdatedNotification : public Notification {
-    ResourceUpdatedNotification() {
-        method = MTHD_NOTIFICATIONS_RESOURCES_UPDATED;
-    }
-    ResourceUpdatedNotificationParams params;
+// A notification from the server to the client, informing it that a resource has changed and may
+// need to be read again. This should only be sent if the client previously sent a
+// resources/subscribe request.
+struct ResourceUpdatedNotification : public NotificationBase {
+    ResourceUpdatedNotificationParams Params;
+
+    ResourceUpdatedNotification() : NotificationBase(MTHD_NOTIFICATIONS_RESOURCES_UPDATED) {}
 };
 
 struct SubscribeRequestParams {
@@ -512,15 +503,12 @@ struct ReadResourceResult : public Result {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * An optional notification from the server to the client, informing it that the
- * list of resources it can read from has changed. This may be issued by servers
- * without any previous subscription from the client.
- */
-struct ResourceListChangedNotification : public Notification {
-    ResourceListChangedNotification() {
-        method = MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED;
-    }
+// An optional notification from the server to the client, informing it that the list of resources
+// it can read from has changed. This may be issued by servers without any previous subscription
+// from the client.
+struct ResourceListChangedNotification : public NotificationBase {
+    ResourceListChangedNotification()
+        : NotificationBase(MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED) {}
 };
 
 MCP_NAMESPACE_END

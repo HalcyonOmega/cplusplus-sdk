@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/MethodConstants.h"
+#include "Core/Messages/Notifications/NotificationBase.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -314,13 +315,11 @@ struct CallToolRequest : public RequestBase {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-// An optional notification from the server to the client, informing it that the
-// list of tools it offers has changed. This may be issued by servers without
-// any previous subscription from the client.
+// An optional notification from the server to the client, informing it that the list of tools it
+// offers has changed. This may be issued by servers without any previous subscription from the
+// client.
 struct ToolListChangedNotification : public NotificationBase {
-    ToolListChangedNotification() {
-        Method = MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED;
-    }
+    ToolListChangedNotification() : NotificationBase(MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED) {}
 };
 
 MCP_NAMESPACE_END

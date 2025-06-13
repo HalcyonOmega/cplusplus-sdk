@@ -57,4 +57,18 @@ using AdditionalObjects = unordered_map<string,
                                                // part of the schema, but is used to pass
                                                // additional information to the server or client.
 
+// TODO: @HalcyonOmega create URI, URIFile, & URITemplate classes
+struct URI {
+    string Value;
+};
+
+struct URITemplate {
+    string Value;
+};
+
+struct URIFile {
+    static constexpr const char* URI_FILE_PREFIX = "file://";
+    string Value = URI_FILE_PREFIX; // This *must* start with "file://" for now.
+};
+
 MCP_NAMESPACE_END

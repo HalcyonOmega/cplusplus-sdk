@@ -1,18 +1,6 @@
 #pragma once
 
 #include "Core.h"
-#include "Schemas/Common/AutocompleteSchemas.h"
-#include "Schemas/Common/CommonSchemas.h"
-#include "Schemas/Common/InitializeSchemas.h"
-#include "Schemas/Common/LoggingSchemas.h"
-#include "Schemas/Common/NotificationSchemas.h"
-#include "Schemas/Common/PromptSchemas.h"
-#include "Schemas/Common/RequestSchemas.h"
-#include "Schemas/Common/ResourceSchemas.h"
-#include "Schemas/Common/ResultSchemas.h"
-#include "Schemas/Common/RootsSchemas.h"
-#include "Schemas/Common/SamplingSchemas.h"
-#include "Schemas/Common/ToolSchemas.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -24,9 +12,7 @@ MCP_NAMESPACE_BEGIN
 //                   MSG_TYPE : MSG_STRING
 // };
 
-/**
- * An opaque token used to represent a cursor for pagination.
- */
+// An opaque token used to represent a cursor for pagination.
 using Cursor = string;
 
 /* Client messages */

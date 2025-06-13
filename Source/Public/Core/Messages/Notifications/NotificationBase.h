@@ -60,15 +60,13 @@ bool IsNotificationBase(const JSON& value) {
 // TODO: @HalcyonOmega Cleanup below
 
 struct NotificationParamsMeta {
-    AdditionalProperties additionalProperties;
+    AdditionalProperties AdditionalProperties;
 };
 
 struct NotificationParams {
-    /**
-     * This parameter name is reserved by MCP to allow clients and servers to
-     * attach additional metadata to their notifications.
-     */
-    optional<NotificationParamsMeta> Meta;
+    optional<NotificationParamsMeta>
+        Meta; // This parameter name is reserved by MCP to allow
+              // clients and servers to attach additional metadata to their notifications.
     AdditionalProperties AdditionalProperties;
 };
 
@@ -95,8 +93,8 @@ struct NotificationParams {
 // };
 
 struct Notification {
-    string method;
-    optional<NotificationParams> params;
+    string Method;
+    optional<NotificationParams> Params;
 };
 
 MCP_NAMESPACE_END

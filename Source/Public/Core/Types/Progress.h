@@ -28,7 +28,7 @@ struct ProgressNotificationParams : public NotificationParams {
 
     // TODO: @HalcyonOmega - Is this the best way to handle additional properties?
     ProgressNotificationParams() {
-        additionalProperties = {{MSG_PROGRESS_TOKEN, ProgressToken},
+        AdditionalProperties = {{MSG_PROGRESS_TOKEN, ProgressToken},
                                 {MSG_PROGRESS, Progress},
                                 {MSG_TOTAL, Total},
                                 {MSG_MESSAGE, Message}};
