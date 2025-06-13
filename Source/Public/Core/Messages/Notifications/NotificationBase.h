@@ -57,4 +57,46 @@ bool IsNotificationBase(const JSON& value) {
            && value.contains(MSG_METHOD) && !value.contains(MSG_ID);
 }
 
+// TODO: @HalcyonOmega Cleanup below
+
+struct NotificationParamsMeta {
+    AdditionalProperties additionalProperties;
+};
+
+struct NotificationParams {
+    /**
+     * This parameter name is reserved by MCP to allow clients and servers to
+     * attach additional metadata to their notifications.
+     */
+    optional<NotificationParamsMeta> Meta;
+    AdditionalProperties AdditionalProperties;
+};
+
+// Notification {
+//   MSG_PROPERTIES : {
+//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//     MSG_PARAMS : {
+//       MSG_ADDITIONAL_PROPERTIES : {},
+//       MSG_PROPERTIES : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION :
+//               "This parameter name is reserved by MCP to allow clients and "
+//               "servers to attach additional metadata to their
+//               notifications.",
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//       MSG_TYPE : MSG_OBJECT
+//     }
+//   },
+//                  MSG_REQUIRED : [MSG_METHOD],
+//                               MSG_TYPE : MSG_OBJECT
+// };
+
+struct Notification {
+    string method;
+    optional<NotificationParams> params;
+};
+
 MCP_NAMESPACE_END

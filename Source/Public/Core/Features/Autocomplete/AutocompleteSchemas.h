@@ -118,9 +118,9 @@ struct CompleteRequest : public RequestBase {
 };
 
 struct CompleteResultParams {
-    vector<string> Values;  // An array of completion values. Must not exceed 100 items.
-    optional<number> Total; // The total number of completion options available. This can exceed the
-                            // number of values actually sent in the response.
+    vector<string> Values; // An array of completion values. Must not exceed 100 items.
+    optional<int> Total;   // The total number of completion options available. This can exceed the
+                           // number of values actually sent in the response.
     optional<bool>
         HasMore; // Indicates whether there are additional completion options beyond
                  // those provided in the current response, even if the exact total is unknown.

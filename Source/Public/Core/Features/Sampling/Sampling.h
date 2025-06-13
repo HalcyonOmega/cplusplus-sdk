@@ -195,15 +195,12 @@ struct CreateMessageRequestParams {
      * attached to the prompt. The client MAY ignore this request.
      */
     optional<IncludeContext> IncludeContext;
-    /**
-     * @TJS-type number
-     */
-    optional<number> Temperature;
+    optional<double> Temperature;
     /**
      * The maximum number of tokens to sample, as requested by the server. The client MAY choose
      * to sample fewer tokens than requested.
      */
-    number MaxTokens;
+    int MaxTokens;
     optional<vector<string>> StopSequences;
     /**
      * Optional metadata to pass through to the LLM provider. The format of this metadata is
