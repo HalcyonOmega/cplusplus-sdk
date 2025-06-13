@@ -116,14 +116,9 @@ struct Prompt {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to request a list of prompts and prompt templates the
- * server has.
- */
+// Sent from the client to request a list of prompts and prompt templates the server has.
 struct ListPromptsRequest : public PaginatedRequest {
-    ListPromptsRequest() {
-        method = MTHD_PROMPTS_LIST;
-    }
+    ListPromptsRequest() : PaginatedRequest(MTHD_PROMPTS_LIST) {}
 };
 
 // ListPromptsResult {
@@ -152,22 +147,9 @@ struct ListPromptsRequest : public PaginatedRequest {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a prompts/list request from the client.
- */
+// The server's response to a prompts/list request from the client.
 struct ListPromptsResult : public PaginatedResult {
-    vector<Prompt> prompts;
-};
-
-struct GetPromptRequestParams {
-    /**
-     * The name of the prompt or prompt template.
-     */
-    string name;
-    /**
-     * Arguments to use for templating the prompt.
-     */
-    optional<AdditionalStrings> arguments;
+    vector<Prompt> Prompts;
 };
 
 // GetPromptRequest {
@@ -196,15 +178,16 @@ struct GetPromptRequestParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Used by the client to get a prompt provided by the server.
- */
-struct GetPromptRequest : public Request {
-    GetPromptRequestParams params;
+// Used by the client to get a prompt provided by the server.
+struct GetPromptRequest : public RequestBase {
+    struct GetPromptRequestParams {
+        string Name;                           // The name of the prompt or prompt template.
+        optional<AdditionalStrings> Arguments; // Arguments to use for templating the prompt.
+    };
 
-    GetPromptRequest() {
-        method = MTHD_PROMPTS_GET;
-    }
+    GetPromptRequestParams Params;
+
+    GetPromptRequest() : RequestBase(MTHD_PROMPTS_GET) {}
 };
 
 // GetPromptResult {
@@ -233,15 +216,10 @@ struct GetPromptRequest : public Request {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a prompts/get request from the client.
- */
+// The server's response to a prompts/get request from the client.
 struct GetPromptResult : public Result {
-    /**
-     * An optional description for the prompt.
-     */
-    optional<string> description;
-    vector<PromptMessage> messages;
+    optional<string> Description;   // An optional description for the prompt.
+    vector<PromptMessage> Messages; // A list of prompt messages.
 };
 
 // PromptListChangedNotification {

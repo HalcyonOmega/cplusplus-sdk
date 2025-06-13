@@ -3,8 +3,8 @@
 #include "Core.h"
 #include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/MethodConstants.h"
-#include "RequestSchemas.h"
-#include "ResultSchemas.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -61,16 +61,6 @@ struct PromptReference : public AutocompleteReference {
     }
 };
 
-struct CompleteRequestParamsArgument {
-    string Name;  // The name of the argument
-    string Value; // The value of the argument to use for completion matching
-};
-
-struct CompleteRequestParams {
-    variant<PromptReference, ResourceReference> Ref; // The reference to the argument
-    CompleteRequestParamsArgument Argument;          // The argument's information
-};
-
 // CompleteRequest {
 //   MSG_DESCRIPTION : "A request from the client to the server, to ask for "
 //                   "completion options.",
@@ -112,18 +102,19 @@ struct CompleteRequestParams {
 
 // A request from the client to the server, to ask for completion options.
 struct CompleteRequest : public RequestBase {
+    struct CompleteRequestParams {
+        struct CompleteRequestParamsArgument {
+            string Name;  // The name of the argument
+            string Value; // The value of the argument to use for completion matching
+        };
+
+        variant<PromptReference, ResourceReference> Ref; // The reference to the argument
+        CompleteRequestParamsArgument Argument;          // The argument's information
+    };
+
     CompleteRequestParams Params;
 
     CompleteRequest() : RequestBase(MTHD_COMPLETION_COMPLETE) {}
-};
-
-struct CompleteResultParams {
-    vector<string> Values; // An array of completion values. Must not exceed 100 items.
-    optional<int> Total;   // The total number of completion options available. This can exceed the
-                           // number of values actually sent in the response.
-    optional<bool>
-        HasMore; // Indicates whether there are additional completion options beyond
-                 // those provided in the current response, even if the exact total is unknown.
 };
 
 // CompleteResult {
@@ -168,7 +159,17 @@ struct CompleteResultParams {
 // };
 
 // The server's response to a completion/complete request
-struct CompleteResult : public ResultMessage {
+struct CompleteResult : public ResponseBase {
+    struct CompleteResultParams {
+        // TODO: @HalcyonOmega MUST enforce max length of 100 items
+        vector<string> Values; // An array of completion values. Must not exceed 100 items.
+        optional<int> Total;   // The total number of completion options available. This can exceed
+                               // the number of values actually sent in the response.
+        optional<bool>
+            HasMore; // Indicates whether there are additional completion options beyond
+                     // those provided in the current response, even if the exact total is unknown.
+    };
+
     CompleteResultParams Completion;
 };
 

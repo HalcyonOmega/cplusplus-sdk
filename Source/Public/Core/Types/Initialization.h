@@ -91,7 +91,7 @@ const isInitializeRequest =
 // };
 
 // After receiving an initialize request from the client, the server sends this response.
-struct InitializeResult : public ResultMessage {
+struct InitializeResult : public ResponseBase {
     string ProtocolVersion; // The version of the Model Context Protocol that the server wants to
                             // use. This may not match the version that the client requested. If the
                             // client cannot support this version, it MUST disconnect.

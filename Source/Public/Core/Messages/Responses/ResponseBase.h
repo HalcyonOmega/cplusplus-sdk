@@ -58,11 +58,8 @@ bool IsResponseBase(const JSON& value) {
 // };
 
 struct Result {
-    /**
-     * This result property is reserved by the protocol to allow clients and
-     * servers to attach additional metadata to their responses.
-     */
-    optional<JSON> Meta;
+    optional<JSON> Meta; // This result property is reserved by the protocol to allow clients and
+                         // servers to attach additional metadata to their responses.
     AdditionalProperties AdditionalProperties;
 };
 
@@ -86,11 +83,9 @@ struct Result {
 // };
 
 struct PaginatedResult : public ResponseBase {
-    /**
-     * An opaque token representing the pagination position after the last
-     * returned result. If present, there may be more results available.
-     */
-    optional<Cursor> NextCursor;
+    optional<Cursor>
+        NextCursor; // An opaque token representing the pagination position after the
+                    // last returned result. If present, there may be more results available.
 };
 
 // EmptyResult {

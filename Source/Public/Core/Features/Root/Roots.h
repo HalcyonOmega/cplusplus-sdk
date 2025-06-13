@@ -80,19 +80,13 @@ struct Root {
 //                                       MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the server to request a list of root URIs from the client. Roots allow
- * servers to ask for specific directories or files to operate on. A common example
- * for roots is providing a set of repositories or directories a server should operate
- * on.
- *
- * This request is typically used when the server needs to understand the file system
- * structure or access specific locations that the client has permission to read from.
- */
+// Sent from the server to request a list of root URIs from the client. Roots allow servers to ask
+// for specific directories or files to operate on. A common example for roots is providing a set of
+// repositories or directories a server should operate on. This request is typically used when the
+// server needs to understand the file system structure or access specific locations that the client
+// has permission to read from.
 struct ListRootsRequest : public RequestBase {
-    ListRootsRequest() {
-        method = MTHD_ROOTS_LIST;
-    }
+    ListRootsRequest() : RequestBase(MTHD_ROOTS_LIST) {}
 };
 
 // ListRootsResult {
@@ -117,13 +111,10 @@ struct ListRootsRequest : public RequestBase {
 //                        MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The client's response to a roots/list request from the server.
- * This result contains an array of Root objects, each representing a root directory
- * or file that the server can operate on.
- */
-struct ListRootsResult : public ResultMessage {
-    vector<Root> roots;
+// The client's response to a roots/list request from the server. This result contains an array of
+// Root objects, each representing a root directory or file that the server can operate on.
+struct ListRootsResult : public ResponseBase {
+    vector<Root> Roots;
 };
 
 // RootsListChangedNotification {

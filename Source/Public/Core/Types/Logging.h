@@ -44,15 +44,6 @@ DEFINE_ENUM_JSON(LoggingLevel, {{LoggingLevel::Debug, LOG_DEBUG},
                                 {LoggingLevel::Alert, LOG_ALERT},
                                 {LoggingLevel::Emergency, LOG_EMERGENCY}});
 
-struct SetLevelRequestParams {
-    /**
-     * The level of logging that the client wants to receive from the server. The
-     * server should send all logs at this level and higher (i.e., more severe) to
-     * the client as notifications/message.
-     */
-    LoggingLevel level;
-};
-
 // SetLevelRequest {
 //   MSG_DESCRIPTION
 //       : "A request from the client to the server, to enable or adjust logging.",
@@ -79,16 +70,15 @@ struct SetLevelRequestParams {
 
 // A request from the client to the server, to enable or adjust logging.
 struct SetLevelRequest : public RequestBase {
+    struct SetLevelRequestParams {
+        LoggingLevel Level; // The level of logging that the client wants to receive from the
+                            // server. The server should send all logs at this level and higher
+                            // (i.e., more severe) to the client as notifications/message.
+    };
+
     SetLevelRequestParams Params;
 
     SetLevelRequest() : RequestBase(MTHD_LOGGING_SET_LEVEL) {}
-};
-
-struct LoggingMessageNotificationParams {
-    LoggingLevel Level;      // The severity of this log message.
-    optional<string> Logger; // An optional name of the logger issuing this message.
-    JSON Data;               // The data to be logged, such as a string message or an object. Any
-                             // JSON serializable type is allowed here.
 };
 
 // LoggingMessageNotification {
@@ -126,6 +116,13 @@ struct LoggingMessageNotificationParams {
 // Notification of a log message passed from server to client. If no logging/setLevel request has
 // been sent from the client, the server MAY decide which messages to send automatically.
 struct LoggingMessageNotification : public NotificationBase {
+    struct LoggingMessageNotificationParams {
+        LoggingLevel Level;      // The severity of this log message.
+        optional<string> Logger; // An optional name of the logger issuing this message.
+        JSON Data; // The data to be logged, such as a string message or an object. Any
+                   // JSON serializable type is allowed here.
+    };
+
     LoggingMessageNotificationParams Params;
 
     LoggingMessageNotification() : NotificationBase(MTHD_NOTIFICATIONS_MESSAGE) {}

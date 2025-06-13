@@ -56,7 +56,6 @@ MCP_NAMESPACE_BEGIN
 
 // A known resource that the server is capable of reading.
 struct Resource {
-    // TODO: @HalcyonOmega create URI class
     URI URI;     // The URI of this resource.
     string Name; // A human-readable name for this resource. This can be used by clients to populate
                  // UI elements.
@@ -65,7 +64,6 @@ struct Resource {
                                   // resources. It can be thought of like a "hint" to the model.
     optional<string> MIMEType;    // The MIME type of this resource, if known.
     optional<Annotations> Annotations; // Optional annotations for the client.
-
     optional<long long> Size; // The size of the raw resource content, in bytes (i.e., before base64
                               // encoding or any tokenization), if known. This can be used by Hosts
                               // to display file sizes and estimate context window usage.
@@ -152,13 +150,9 @@ struct ResourceTemplate {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to request a list of resources the server has.
- */
+// Sent from the client to request a list of resources the server has.
 struct ListResourcesRequest : public PaginatedRequest {
-    ListResourcesRequest() {
-        method = MTHD_RESOURCES_LIST;
-    }
+    ListResourcesRequest() : PaginatedRequest(MTHD_RESOURCES_LIST) {}
 };
 
 // ListResourcesResult {
@@ -187,11 +181,9 @@ struct ListResourcesRequest : public PaginatedRequest {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a resources/list request from the client.
- */
+// The server's response to a resources/list request from the client.
 struct ListResourcesResult : public PaginatedResult {
-    vector<Resource> resources;
+    vector<Resource> Resources;
 };
 
 // ListResourceTemplatesRequest {
@@ -217,13 +209,9 @@ struct ListResourcesResult : public PaginatedResult {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to request a list of resource templates the server has.
- */
+// Sent from the client to request a list of resource templates the server has.
 struct ListResourceTemplatesRequest : public PaginatedRequest {
-    ListResourceTemplatesRequest() {
-        method = MTHD_RESOURCES_TEMPLATES_LIST;
-    }
+    ListResourceTemplatesRequest() : PaginatedRequest(MTHD_RESOURCES_TEMPLATES_LIST) {}
 };
 
 // ListResourceTemplatesResult {
@@ -254,16 +242,9 @@ struct ListResourceTemplatesRequest : public PaginatedRequest {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a resources/templates/list request from the client.
- */
+// The server's response to a resources/templates/list request from the client.
 struct ListResourceTemplatesResult : public PaginatedResult {
-    vector<ResourceTemplate> resourceTemplates;
-};
-
-struct ResourceUpdatedNotificationParams {
-    URI URI; // The URI of the resource that has been updated. This might be a sub-resource of the
-             // one that the client actually subscribed to.
+    vector<ResourceTemplate> ResourceTemplates;
 };
 
 // ResourceUpdatedNotification {
@@ -297,19 +278,14 @@ struct ResourceUpdatedNotificationParams {
 // need to be read again. This should only be sent if the client previously sent a
 // resources/subscribe request.
 struct ResourceUpdatedNotification : public NotificationBase {
+    struct ResourceUpdatedNotificationParams {
+        URI URI; // The URI of the resource that has been updated. This might be a sub-resource of
+                 // the one that the client actually subscribed to.
+    };
+
     ResourceUpdatedNotificationParams Params;
 
     ResourceUpdatedNotification() : NotificationBase(MTHD_NOTIFICATIONS_RESOURCES_UPDATED) {}
-};
-
-struct SubscribeRequestParams {
-    /**
-     * The URI of the resource to subscribe to. The URI can use any protocol; it
-     * is up to the server how to interpret it.
-     *
-     * @format uri
-     */
-    string uri;
 };
 
 // SubscribeRequest {
@@ -338,24 +314,17 @@ struct SubscribeRequestParams {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to request resources/updated notifications from the
- * server whenever a particular resource changes.
- */
-struct SubscribeRequest : public Request {
-    SubscribeRequest() {
-        method = MTHD_RESOURCES_SUBSCRIBE;
-    }
-    SubscribeRequestParams params;
-};
+// Sent from the client to request resources/updated notifications from the server whenever a
+// particular resource changes.
+struct SubscribeRequest : public RequestBase {
+    struct SubscribeRequestParams {
+        URI URI; // The URI of the resource to subscribe to. The URI can use any protocol; it is
+                 // up to the server how to interpret it.
+    };
 
-struct UnsubscribeRequestParams {
-    /**
-     * The URI of the resource to unsubscribe from.
-     *
-     * @format uri
-     */
-    string uri;
+    SubscribeRequestParams Params;
+
+    SubscribeRequest() : RequestBase(MTHD_RESOURCES_SUBSCRIBE) {}
 };
 
 // UnsubscribeRequest {
@@ -381,26 +350,15 @@ struct UnsubscribeRequestParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to request cancellation of resources/updated
- * notifications from the server. This should follow a previous
- * resources/subscribe request.
- */
-struct UnsubscribeRequest : public Request {
-    UnsubscribeRequest() {
-        method = MTHD_RESOURCES_UNSUBSCRIBE;
-    }
-    UnsubscribeRequestParams params;
-};
+// Sent from the client to request cancellation of resources/updated notifications from the server.
+// This should follow a previous resources/subscribe request.
+struct UnsubscribeRequest : public RequestBase {
+    struct UnsubscribeRequestParams {
+        URI URI; // The URI of the resource to unsubscribe from.
+    };
 
-struct ReadResourceRequestParams {
-    /**
-     * The URI of the resource to read. The URI can use any protocol; it is up to
-     * the server how to interpret it.
-     *
-     * @format uri
-     */
-    string uri;
+    UnsubscribeRequestParams Params;
+    UnsubscribeRequest() : RequestBase(MTHD_RESOURCES_UNSUBSCRIBE) {}
 };
 
 // ReadResourceRequest {
@@ -429,14 +387,15 @@ struct ReadResourceRequestParams {
 //                                     MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Sent from the client to the server, to read a specific resource URI.
- */
-struct ReadResourceRequest : public Request {
-    ReadResourceRequest() {
-        method = MTHD_RESOURCES_READ;
-    }
-    ReadResourceRequestParams params;
+// Sent from the client to the server, to read a specific resource URI.
+struct ReadResourceRequest : public RequestBase {
+    struct ReadResourceRequestParams {
+        URI URI; // The URI of the resource to read. The URI can use any protocol; it is up to the
+                 // server how to interpret it.
+    };
+
+    ReadResourceRequestParams Params;
+    ReadResourceRequest() : RequestBase(MTHD_RESOURCES_READ) {}
 };
 
 // ReadResourceResult {
@@ -466,11 +425,9 @@ struct ReadResourceRequest : public Request {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's response to a resources/read request from the client.
- */
+// The server's response to a resources/read request from the client.
 struct ReadResourceResult : public Result {
-    vector<variant<TextResourceContents, BlobResourceContents>> contents;
+    vector<variant<TextResourceContents, BlobResourceContents>> Contents;
 };
 
 // ResourceListChangedNotification {

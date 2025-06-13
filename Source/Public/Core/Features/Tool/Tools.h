@@ -4,13 +4,10 @@
 #include "Core/Constants/MessageConstants.h"
 #include "Core/Constants/MethodConstants.h"
 #include "Core/Messages/Notifications/NotificationBase.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward Declarations
-// TODO: @HalcyonOmega create JSONSchema class. Needed to define ToolInputSchema and
-// ToolOutputSchema.
-class JSONSchema;
 
 // ToolAnnotations {
 //   MSG_DESCRIPTION
@@ -162,9 +159,7 @@ struct Tool {
 
 // Sent from the client to request a list of tools the server has.
 struct ListToolsRequest : public PaginatedRequest {
-    ListToolsRequest() {
-        Method = MTHD_TOOLS_LIST;
-    }
+    ListToolsRequest() : PaginatedRequest(MTHD_TOOLS_LIST) {}
 };
 
 // ListToolsResult {
@@ -247,15 +242,24 @@ struct ListToolsResult : public PaginatedResult {
 // However, any errors in _finding_ the tool, an error indicating that the
 // server does not support tool calls, or any other exceptional conditions,
 // should be reported as an MCP error response.
-struct CallToolResult : public ResultMessage {
-    vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>> Content;
-    optional<bool> IsError; // Whether the tool call ended in an error. If not set, this is assumed
-                            // to be false (the call was successful).
-};
-
-struct CallToolRequestParams {
-    string Name;
-    optional<AdditionalProperties> Arguments;
+struct CallToolResult : public ResponseBase {
+    vector<variant<TextContent, ImageContent, AudioContent, EmbeddedResource>> Content =
+        {}; // A list of content objects that represent the result of the tool call. If the Tool
+            // does not define an output, this field MUST be present in the result. For backwards
+            // compatibility, this field is always present, but it may be empty.
+    optional<bool>
+        IsError; // Whether the tool call ended in an error. If not set, this is assumed
+                 // to be false (the call was successful). Any errors that originate from
+                 // the tool SHOULD be reported inside the result object, with `isError`
+                 // set to true, _not_ as an MCP protocol - level error response.
+                 // Otherwise, the LLM would not be able to see that an error occurred
+                 // and self-correct. However, any errors in _finding_ the tool, an
+                 // error indicating that the *server does not support tool calls, or any other
+                 // exceptional conditions, should be reported as an MCP error response.
+    optional<JSONSchema>
+        StructuredContent; // An object containing structured tool output. If the Tool
+                           // defines an output, this field MUST be present in the result,
+                           // and contain a JSON object that matches the schema.
 };
 
 // CallToolRequest {
@@ -279,11 +283,14 @@ struct CallToolRequestParams {
 
 // Used by the client to invoke a tool provided by the server.
 struct CallToolRequest : public RequestBase {
+    struct CallToolRequestParams {
+        string Name;
+        optional<AdditionalProperties> Arguments;
+    };
+
     CallToolRequestParams Params;
 
-    CallToolRequest() {
-        Method = MTHD_TOOLS_CALL;
-    }
+    CallToolRequest() : RequestBase(MTHD_TOOLS_CALL) {}
 };
 
 // ToolListChangedNotification {

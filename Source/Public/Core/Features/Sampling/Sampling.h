@@ -1,8 +1,11 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/Messages/Requests/RequestBase.h"
+#include "Core/Messages/Responses/ResponseBase.h"
 #include "Core/Types/Content.h"
 #include "Core/Types/Roles.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -54,12 +57,8 @@ struct SamplingMessage {
 //                        MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * Hints to use for model selection.
- *
- * Keys not declared here are currently left unspecified by the spec and are up
- * to the client to interpret.
- */
+// Hints to use for model selection. Keys not declared here are currently left unspecified by the
+// spec and are up to the client to interpret.
 struct ModelHint {
     /**
      * A hint for a model name.
@@ -142,19 +141,13 @@ struct ModelHint {
 //         MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * The server's preferences for model selection, requested of the client during sampling.
- *
- * Because LLMs can vary along multiple dimensions, choosing the "best" model is
- * rarely straightforward.  Different models excel in different areas—some are
- * faster but less capable, others are more capable but more expensive, and so
- * on. This interface allows servers to express their priorities across multiple
- * dimensions to help clients make an appropriate selection for their use case.
- *
- * These preferences are always advisory. The client MAY ignore them. It is also
- * up to the client to decide how to interpret these preferences and how to
- * balance them against other considerations.
- */
+// The server's preferences for model selection, requested of the client during sampling. Because
+// LLMs can vary along multiple dimensions, choosing the "best" model is rarely straightforward.
+// Different models excel in different areas—some are faster but less capable, others are more
+// capable but more expensive, and so on. This interface allows servers to express their priorities
+// across multiple dimensions to help clients make an appropriate selection for their use case.
+// These preferences are always advisory. The client MAY ignore them. It is also up to the client to
+// decide how to interpret these preferences and how to balance them against other considerations.
 struct ModelPreferences {
     optional<vector<ModelHint>>
         Hints; // Optional hints to use for model selection. If multiple hints are specified, the
@@ -176,38 +169,15 @@ struct ModelPreferences {
                                            // means intelligence is the most important factor.
 };
 
-enum class IncludeContext { none, thisServer, allServers };
+static constexpr const char* INCLUDE_CONTEXT_NONE = "none";
+static constexpr const char* INCLUDE_CONTEXT_THIS_SERVER = "thisServer";
+static constexpr const char* INCLUDE_CONTEXT_ALL_SERVERS = "allServers";
 
-struct CreateMessageRequestParams {
-    vector<SamplingMessage> Messages;
-    /**
-     * The server's preferences for which model to select. The client MAY ignore these
-     * preferences.
-     */
-    optional<ModelPreferences> ModelPreferences;
-    /**
-     * An optional system prompt the server wants to use for sampling. The client MAY modify or
-     * omit this prompt.
-     */
-    optional<string> SystemPrompt;
-    /**
-     * A request to include context from one or more MCP servers (including the caller), to be
-     * attached to the prompt. The client MAY ignore this request.
-     */
-    optional<IncludeContext> IncludeContext;
-    optional<double> Temperature;
-    /**
-     * The maximum number of tokens to sample, as requested by the server. The client MAY choose
-     * to sample fewer tokens than requested.
-     */
-    int MaxTokens;
-    optional<vector<string>> StopSequences;
-    /**
-     * Optional metadata to pass through to the LLM provider. The format of this metadata is
-     * provider-specific.
-     */
-    optional<JSON> Metadata;
-};
+enum class IncludeContext { None, ThisServer, AllServers };
+
+DEFINE_ENUM_JSON(IncludeContext, {{IncludeContext::None, INCLUDE_CONTEXT_NONE},
+                                  {IncludeContext::ThisServer, INCLUDE_CONTEXT_THIS_SERVER},
+                                  {IncludeContext::AllServers, INCLUDE_CONTEXT_ALL_SERVERS}});
 
 // CreateMessageRequest {
 //   MSG_DESCRIPTION
@@ -272,20 +242,43 @@ struct CreateMessageRequestParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * A request from the server to sample an LLM via the client. The client has full discretion over
- * which model to select. The client should also inform the user before beginning sampling, to allow
- * them to inspect the request (human in the loop) and decide whether to approve it.
- */
+// A request from the server to sample an LLM via the client. The client has full discretion over
+// which model to select. The client should also inform the user before beginning sampling, to allow
+// them to inspect the request (human in the loop) and decide whether to approve it.
 struct CreateMessageRequest : public RequestBase {
+    struct CreateMessageRequestParams {
+        vector<SamplingMessage> Messages;
+        optional<ModelPreferences>
+            ModelPreferences; // The server's preferences for which model to select. The client MAY
+                              // ignore these preferences.
+        optional<string> SystemPrompt; // An optional system prompt the server wants to use for
+                                       // sampling. The client MAY modify or omit this prompt.
+        optional<IncludeContext>
+            IncludeContext; // A request to include context from one or more
+                            // MCP servers (including the caller), to be attached to the prompt. The
+                            // client MAY ignore this request.
+        optional<double> Temperature;
+        int MaxTokens; // The maximum number of tokens to sample, as requested by the server. The
+                       // client MAY choose to sample fewer tokens than
+                       // requested.optional<vector<string>> StopSequences;
+        optional<JSON> Metadata; // Optional metadata to pass through to the LLM provider. The
+                                 // format of this metadata is provider-specific.
+    };
+
     CreateMessageRequestParams Params;
 
-    CreateMessageRequest() {
-        method = MTHD_SAMPLING_CREATE_MESSAGE;
-    }
+    CreateMessageRequest() : RequestBase(MTHD_SAMPLING_CREATE_MESSAGE) {}
 };
 
-enum class StopReason { endTurn, stopSequence, maxTokens };
+static constexpr const char* STOP_REASON_END_TURN = "endTurn";
+static constexpr const char* STOP_REASON_STOP_SEQUENCE = "stopSequence";
+static constexpr const char* STOP_REASON_MAX_TOKENS = "maxTokens";
+
+enum class StopReason { EndTurn, StopSequence, MaxTokens };
+
+DEFINE_ENUM_JSON(StopReason, {{StopReason::EndTurn, STOP_REASON_END_TURN},
+                              {StopReason::StopSequence, STOP_REASON_STOP_SEQUENCE},
+                              {StopReason::MaxTokens, STOP_REASON_MAX_TOKENS}});
 
 // CreateMessageResult {
 //   MSG_DESCRIPTION
@@ -323,15 +316,17 @@ enum class StopReason { endTurn, stopSequence, maxTokens };
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
+// The client's response to a sampling/create_message request from the server. The client should
+// inform the user before returning the sampled message, to allow them to inspect the response
+// (human in the loop) and decide whether to allow the server to see it.
 // TODO: Typescript extended from Result and SamplingMessage - How to convert properly?
-/**
- * The client's response to a sampling/create_message request from the server. The client should
- * inform the user before returning the sampled message, to allow them to inspect the response
- * (human in the loop) and decide whether to allow the server to see it.
- */
-struct CreateMessageResult : public ResultMessage, SamplingMessage {
+struct CreateMessageResult : public ResponseBase, SamplingMessage {
     string Model; // The name of the model that generated the message.
     optional<variant<StopReason, string>> StopReason; // The reason why sampling stopped, if known.
+    Role Role;                                        // The role of the message.
+    // TODO: @HalcyonOmega - Was z.discriminatedUnion(MSG_TYPE, [TextContent, ImageContent,
+    // AudioContent]) Content;
+    variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
 };
 
 MCP_NAMESPACE_END

@@ -71,4 +71,8 @@ struct URIFile {
     string Value = URI_FILE_PREFIX; // This *must* start with "file://" for now.
 };
 
+// TODO: @HalcyonOmega create JSONSchema class. Needed to define ToolInputSchema and
+// ToolOutputSchema.
+class JSONSchema;
+
 MCP_NAMESPACE_END
