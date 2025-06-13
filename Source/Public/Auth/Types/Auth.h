@@ -20,7 +20,7 @@ struct OAuthProtectedResourceMetadata {
     optional<vector<string>> AuthorizationDetailsTypesSupported;
     optional<vector<string>> DPOP_SigningAlgValuesSupported;
     optional<bool> DPOP_BoundAccessTokensRequired;
-    unordered_map<string, JSON> Additional; // For passthrough properties
+    AdditionalProperties AdditionalProperties; // For passthrough properties
 };
 
 // RFC 8414 OAuth 2.0 Authorization Server Metadata
@@ -43,7 +43,7 @@ struct OAuthMetadata {
     optional<vector<string>> IntrospectionEndpointAuthMethodsSupported;
     optional<vector<string>> IntrospectionEndpointAuthSigningAlgValuesSupported;
     optional<vector<string>> CodeChallengeMethodsSupported;
-    unordered_map<string, JSON> Additional; // For passthrough properties
+    AdditionalProperties AdditionalProperties; // For passthrough properties
 };
 
 // OAuth 2.1 token response

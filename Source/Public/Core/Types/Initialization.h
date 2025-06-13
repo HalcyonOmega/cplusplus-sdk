@@ -10,13 +10,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct InitializeRequestParams {
-    string ProtocolVersion; // The latest version of the Model Context Protocol that the client
-                            // supports. The client MAY decide to support older versions as well.
-    ClientCapabilities Capabilities; // The capabilities of the client.
-    Implementation ClientInfo;       // Information about the client.
-};
-
 // InitializeRequest {
 //   MSG_DESCRIPTION : "This request is sent from the client to the server when it "
 //                   "first connects, asking it to begin initialization.",
@@ -46,6 +39,14 @@ struct InitializeRequestParams {
 // This request is sent from the client to the server when it first connects, asking it to begin
 // initialization.
 struct InitializeRequest : public RequestBase {
+    struct InitializeRequestParams {
+        string
+            ProtocolVersion; // The latest version of the Model Context Protocol that the client
+                             // supports. The client MAY decide to support older versions as well.
+        ClientCapabilities Capabilities; // The capabilities of the client.
+        Implementation ClientInfo;       // Information about the client.
+    };
+
     InitializeRequestParams Params;
 
     InitializeRequest() : RequestBase(MTHD_INITIALIZE) {}

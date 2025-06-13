@@ -6,13 +6,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct CancelledNotificationParams {
-    RequestID RequestID;     // The ID of the request to cancel. This MUST correspond to the ID of a
-                             // request previously issued in the same direction.
-    optional<string> Reason; // An optional string describing the reason for the cancellation.
-                             // This MAY be logged or presented to the user.
-};
-
 // CancelledNotification {
 //   MSG_DESCRIPTION
 //       : "This notification can be sent by either side to indicate that it is
@@ -51,20 +44,19 @@ struct CancelledNotificationParams {
 //                      MSG_TYPE : MSG_OBJECT
 // };
 
-/**
- * This notification can be sent by either side to indicate that it is
- * cancelling a previously-issued request.
- *
- * The request SHOULD still be in-flight, but due to communication latency, it
- * is always possible that this notification MAY arrive after the request has
- * already finished.
- *
- * This notification indicates that the result will be unused, so any associated
- * processing SHOULD cease.
- *
- * A client MUST NOT attempt to cancel its `initialize` request.
- */
+// This notification can be sent by either side to indicate that it is cancelling a
+// previously-issued request. The request SHOULD still be in-flight, but due to communication
+// latency, it is always possible that this notification MAY arrive after the request has already
+// finished. This notification indicates that the result will be unused, so any associated
+// processing SHOULD cease. A client MUST NOT attempt to cancel its `initialize` request.
 struct CancelledNotification : public NotificationBase {
+    struct CancelledNotificationParams {
+        RequestID RequestID; // The ID of the request to cancel. This MUST correspond to the ID of a
+                             // request previously issued in the same direction.
+        optional<string> Reason; // An optional string describing the reason for the cancellation.
+                                 // This MAY be logged or presented to the user.
+    };
+
     CancelledNotificationParams Params;
 
     CancelledNotification() : NotificationBase(MTHD_NOTIFICATIONS_CANCELLED) {}

@@ -17,24 +17,6 @@ struct ProgressToken {
     variant<string, int> Value;
 };
 
-struct ProgressNotificationParams : public NotificationParams {
-    ProgressToken
-        ProgressToken;   // The progress token which was given in the initial request, used to
-                         // associate this notification with the request that is proceeding.
-    double Progress;     // The progress thus far. This should increase every time progress is made,
-                         // even if the total is unknown.
-    optional<int> Total; // Total number of items to process (or total progress required), if known.
-    optional<string> Message; // An optional message describing the current progress.
-
-    // TODO: @HalcyonOmega - Is this the best way to handle additional properties?
-    ProgressNotificationParams() {
-        AdditionalProperties = {{MSG_PROGRESS_TOKEN, ProgressToken},
-                                {MSG_PROGRESS, Progress},
-                                {MSG_TOTAL, Total},
-                                {MSG_MESSAGE, Message}};
-    }
-};
-
 // ProgressNotification {
 //   MSG_DESCRIPTION : "An out-of-band notification used to inform the receiver "
 //                   "of a progress update for a long-running request.",
@@ -78,6 +60,25 @@ struct ProgressNotificationParams : public NotificationParams {
 // An out-of-band notification used to inform the receiver of a progress update for a long-running
 // request.
 struct ProgressNotification : public NotificationBase {
+    struct ProgressNotificationParams : public NotificationParams {
+        ProgressToken
+            ProgressToken; // The progress token which was given in the initial request, used to
+                           // associate this notification with the request that is proceeding.
+        double Progress; // The progress thus far. This should increase every time progress is made,
+                         // even if the total is unknown.
+        optional<int>
+            Total; // Total number of items to process (or total progress required), if known.
+        optional<string> Message; // An optional message describing the current progress.
+
+        // TODO: @HalcyonOmega - Is this the best way to handle additional properties?
+        ProgressNotificationParams() {
+            AdditionalProperties = {{MSG_PROGRESS_TOKEN, ProgressToken},
+                                    {MSG_PROGRESS, Progress},
+                                    {MSG_TOTAL, Total},
+                                    {MSG_MESSAGE, Message}};
+        }
+    };
+
     ProgressNotificationParams Params;
 
     ProgressNotification() : NotificationBase(MTHD_NOTIFICATIONS_PROGRESS) {}

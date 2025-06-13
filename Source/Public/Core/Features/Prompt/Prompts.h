@@ -29,10 +29,10 @@ MCP_NAMESPACE_BEGIN
 
 // Describes an argument that a prompt can accept.
 struct PromptArgument {
-    string Name;                  // The name of the argument.
-    optional<string> Description; // A human-readable description of the argument.
-    optional<bool> Required;      // Whether this argument must be provided.
-    Passthrough Additional;       // Additional properties.
+    string Name;                     // The name of the argument.
+    optional<string> Description;    // A human-readable description of the argument.
+    optional<bool> Required;         // Whether this argument must be provided.
+    AdditionalProperties Additional; // Additional properties.
 };
 
 // PromptMessage {
