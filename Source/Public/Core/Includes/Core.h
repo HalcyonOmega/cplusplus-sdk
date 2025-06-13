@@ -75,4 +75,13 @@ struct URIFile {
 // ToolOutputSchema.
 class JSONSchema;
 
+// Cursor {
+//   MSG_DESCRIPTION : "An opaque token used to represent a cursor for
+//   pagination.",
+//                   MSG_TYPE : MSG_STRING
+// };
+
+// An opaque token used to represent a cursor for pagination.
+using Cursor = string;
+
 MCP_NAMESPACE_END

@@ -49,6 +49,8 @@ find_package(Threads REQUIRED)
 # Include directories
 include_directories(Source/Public)
 include_directories(Source/Public/Core/Includes)
+include_directories(Source/Public/Core/Constants)
+include_directories(Source/Public/Core/Messages)
 include_directories(Source/Public/Utilities/ThirdParty)
 
 # Add testing if enabled
@@ -116,6 +118,7 @@ file(GLOB_RECURSE ALL_HEADERS
     "${CMAKE_SOURCE_DIR}/Source/Public/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/Core/Includes/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/Core/Constants/*.h"
+    "${CMAKE_SOURCE_DIR}/Source/Public/Core/Messages/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/*.hpp"
     "${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty/*.h"
     "${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty/*.hpp"
@@ -136,6 +139,8 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/Core/Constants>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/Core/Messages>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
         ${CMAKE_SOURCE_DIR}/Source/Private

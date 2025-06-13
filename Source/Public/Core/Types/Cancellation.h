@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Messages/Notifications/NotificationBase.h"
-#include "Core/Messages/Requests/RequestBase.h"
+#include "NotificationBase.h"
+#include "RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
 

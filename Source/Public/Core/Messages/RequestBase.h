@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Messages/MessageBase.h"
 #include "Core/Types/Progress.h"
-#include "SchemaAliases.h"
+#include "MessageBase.h"
 #include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
@@ -27,20 +26,6 @@ struct RequestID {
 
     // Direct Getters
     [[nodiscard]] string_view ToString() const;
-};
-
-// TODO: @HalcyonOmega RequestParams not implemented in RequestBase
-struct RequestParams {
-    struct RequestParamsMeta {
-        optional<ProgressToken>
-            ProgressToken; // If specified, the caller is requesting out-of-band
-                           // progress notifications for this request (as represented by
-                           // notifications/progress). The value of this parameter is an opaque
-                           // token that will be attached to any subsequent notifications. The
-                           // receiver is not obligated to provide these notifications.
-    };
-    optional<RequestParamsMeta> Meta;
-    DEFINE_TYPE_JSON(RequestParams, JKEY(Meta, MSG_META))
 };
 
 // RequestBase {
@@ -77,6 +62,21 @@ struct RequestParams {
 
 // A request that expects a response. Supports JSON-RPC 2.0.
 class RequestBase : public MessageBase {
+  public:
+    // TODO: @HalcyonOmega RequestParams not implemented in RequestBase
+    struct RequestParams {
+        struct RequestParamsMeta {
+            optional<ProgressToken>
+                ProgressToken; // If specified, the caller is requesting out-of-band
+                               // progress notifications for this request (as represented by
+                               // notifications/progress). The value of this parameter is an opaque
+                               // token that will be attached to any subsequent notifications. The
+                               // receiver is not obligated to provide these notifications.
+        };
+        optional<RequestParamsMeta> Meta;
+        DEFINE_TYPE_JSON(RequestParams, JKEY(Meta, MSG_META))
+    };
+
   private:
     RequestID m_ID;
     string m_Method;

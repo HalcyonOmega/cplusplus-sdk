@@ -1,14 +1,10 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Constants/MessageConstants.h"
 #include "Core/Types/Annotations.h"
+#include "MessageConstants.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward Declarations
-// TODO: @HalcyonOmega create URI class. Needed to define URI.
-class URI;
 
 struct Content {
     string Type;                       // The type of content.

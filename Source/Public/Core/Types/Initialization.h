@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Constants/MethodConstants.h"
-#include "Core/Messages/Notifications/NotificationBase.h"
-#include "Core/Messages/Requests/RequestBase.h"
-#include "Core/Messages/Responses/ResponseBase.h"
 #include "Core/Types/Capabilities.h"
 #include "Core/Types/Implementation.h"
+#include "MethodConstants.h"
+#include "NotificationBase.h"
+#include "RequestBase.h"
+#include "ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
 

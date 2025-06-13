@@ -4,17 +4,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-/* General */
-
-// Cursor {
-//   MSG_DESCRIPTION : "An opaque token used to represent a cursor for
-//   pagination.",
-//                   MSG_TYPE : MSG_STRING
-// };
-
-// An opaque token used to represent a cursor for pagination.
-using Cursor = string;
-
 /* Client messages */
 
 // ClientRequest {

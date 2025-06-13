@@ -1,11 +1,9 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Constants/MethodConstants.h"
-#include "Core/Messages/Messages.h"
-#include "Core/Messages/Notifications/NotificationBase.h"
-#include "Core/Messages/Requests/RequestBase.h"
-#include "Core/Messages/Responses/ResponseBase.h"
+#include "MethodConstants.h"
+#include "NotificationBase.h"
+#include "RequestBase.h"
 #include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN

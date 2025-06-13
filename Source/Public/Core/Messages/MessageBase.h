@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "Core.h"
-#include "Core/Constants/MessageConstants.h"
+#include "MessageConstants.h"
 
 MCP_NAMESPACE_BEGIN
 

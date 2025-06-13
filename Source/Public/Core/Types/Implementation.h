@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Constants/MessageConstants.h"
+#include "MessageConstants.h"
 #include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN

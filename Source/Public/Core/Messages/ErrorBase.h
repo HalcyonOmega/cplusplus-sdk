@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Core.h"
-#include "Core/Constants/ErrorConstants.h"
-#include "Core/Messages/MessageBase.h"
-#include "Core/Messages/Requests/RequestBase.h"
+#include "ErrorConstants.h"
+#include "MessageBase.h"
+#include "RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
 
