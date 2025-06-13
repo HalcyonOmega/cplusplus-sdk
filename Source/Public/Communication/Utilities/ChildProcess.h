@@ -15,9 +15,15 @@
     #include <sys/types.h>
     #include <sys/wait.h>
     #include <unistd.h>
+#else
+    #define NOMINMAX
+    #include <windows.h>
 #endif
 
 #include "Core.h"
+
+#include <chrono>
+#include <errno.h>
 
 MCP_NAMESPACE_BEGIN
 
@@ -82,12 +88,38 @@ class ChildProcess {
     void Write(const std::string& data) {
 #ifndef _WIN32
         if (m_StdinFD != -1) {
-            ssize_t written = ::write(m_StdinFD, data.data(), data.size());
-            (void)written; // ignore result for now
+            const char* ptr = data.data();
+            size_t remaining = data.size();
+            while (remaining > 0) {
+                ssize_t n = ::write(m_StdinFD, ptr, remaining);
+                if (n == -1) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        // pipe full, wait a bit
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                        continue;
+                    }
+                    break;
+                }
+                remaining -= static_cast<size_t>(n);
+                ptr += n;
+            }
         }
 #else
-        DWORD written = 0;
-        WriteFile(m_StdinWrite, data.data(), static_cast<DWORD>(data.size()), &written, nullptr);
+        const char* ptr = data.data();
+        size_t remaining = data.size();
+        while (remaining > 0) {
+            DWORD written = 0;
+            if (!WriteFile(m_StdinWrite, ptr, static_cast<DWORD>(remaining), &written, nullptr)) {
+                // If pipe is busy, wait
+                if (GetLastError() == ERROR_NO_DATA || GetLastError() == ERROR_PIPE_BUSY) {
+                    Sleep(5);
+                    continue;
+                }
+                break;
+            }
+            remaining -= written;
+            ptr += written;
+        }
 #endif
     }
 
@@ -127,6 +159,32 @@ class ChildProcess {
 
         if (m_StdoutThread.joinable()) m_StdoutThread.join();
         if (m_StderrThread.joinable()) m_StderrThread.join();
+#endif
+    }
+
+    // Blocks until the child exits or timeoutMs (milliseconds) elapses. If timeoutMs is nullopt, waits indefinitely.
+    bool WaitForExit(std::optional<int> timeoutMs = std::nullopt) {
+#ifndef _WIN32
+        if (m_PID <= 0) return true;
+        int status = 0;
+        if (timeoutMs) {
+            // poll with sleep 50ms
+            int elapsed = 0;
+            while (elapsed < *timeoutMs) {
+                pid_t res = ::waitpid(m_PID, &status, WNOHANG);
+                if (res == m_PID) return true;
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                elapsed += 50;
+            }
+            return false;
+        } else {
+            ::waitpid(m_PID, &status, 0);
+            return true;
+        }
+#else
+        if (!m_ProcessHandle) return true;
+        DWORD wait = WaitForSingleObject(m_ProcessHandle, timeoutMs ? *timeoutMs : INFINITE);
+        return wait == WAIT_OBJECT_0;
 #endif
     }
 

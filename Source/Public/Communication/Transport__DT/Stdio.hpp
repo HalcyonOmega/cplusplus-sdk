@@ -26,10 +26,6 @@
 #include "MessageBase.h"
 #include "Utilities/JSON/JSONLayer.hpp"
 
-// Forward declarations
-class ChildProcess;
-class AbortController;
-
 // Type definitions to match Node.js types
 using IOType = std::string; // "pipe", "inherit", "overlapped", etc.
 using Stream = std::iostream;
@@ -264,6 +260,8 @@ class StdioClientTransport : public Transport {
     atomic<bool> m_AbortRequested{false};
     atomic<bool> m_Started{false};
 
+    std::thread m_MonitorThread;
+
   public:
     explicit StdioClientTransport(const StdioServerParameters& ServerParams)
         : m_ServerParams(ServerParams) {
@@ -325,6 +323,8 @@ class StdioClientTransport : public Transport {
             m_Process.reset();
 
             if (m_ReadBuffer) { m_ReadBuffer->Clear(); }
+
+            if (m_MonitorThread.joinable()) { m_MonitorThread.join(); }
 
             if (OnClose) { OnClose.value(); }
         });
@@ -396,15 +396,18 @@ class StdioClientTransport : public Transport {
 
         m_Process = std::make_unique<ChildProcess>(procOpts);
 
-        // The actual implementation would:
-        // 1. Create the child process with the specified command and arguments
-        // 2. Set up stdin/stdout/stderr redirection
-        // 3. Configure the environment variables
-        // 4. Set the working directory
-        // 5. Start monitoring the process for data and errors
+        // Start thread to monitor child exit
+        m_MonitorThread = std::thread([this]() {
+            if (!m_Process) return;
+            m_Process->WaitForExit();
 
-        throw runtime_error(
-            "Process spawning not yet implemented - requires platform-specific code");
+            // Notify close on exit
+            {
+                std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                if (OnClose) { OnClose.value(); }
+            }
+            m_Started = false;
+        });
     }
 
     /**
@@ -416,8 +419,11 @@ class StdioClientTransport : public Transport {
                 auto messageOpt = m_ReadBuffer->ReadMessage();
                 if (!messageOpt) { break; }
 
-                if (OnMessage && *messageOpt) {
-                    OnMessage.value()(*messageOpt->get(), std::nullopt);
+                {
+                    std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                    if (OnMessage && *messageOpt) {
+                        OnMessage.value()(*messageOpt->get(), std::nullopt);
+                    }
                 }
 
                 // Continue looping in case multiple messages are queued
