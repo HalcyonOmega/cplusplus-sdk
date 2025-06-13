@@ -4,7 +4,6 @@
 #include "Core/Protocol__DT.hpp"
 #include "SchemaAliases.h"
 
-
 MCP_NAMESPACE_BEGIN
 
 struct ServerOptions : public ProtocolOptions {

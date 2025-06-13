@@ -1,136 +1,9 @@
-#pragma once
+#include "Client/Core/Client.h"
 
-#include <future>
-
-#include "Core.h"
-#include "Core/Protocol__DT.hpp"
-#include "SchemaAliases.h"
+#include "Core/Features/Root/Roots.h"
+#include "Core/Features/Tool/Tools.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Basic validation function type (TODO: Implement proper Ajv equivalent)
-using ValidateFunction = function<bool(const JSON&)>;
-
-// Basic Ajv-like validator class (TODO: Implement proper validation)
-class AjvValidator {
-  public:
-    ValidateFunction Compile(const JSON& Schema);
-    string ErrorsText(const vector<string>& Errors);
-    vector<string> Errors;
-};
-
-struct ClientOptions {
-    optional<ClientCapabilities> Capabilities;
-    // TODO: Add other ProtocolOptions fields
-};
-
-/**
- * An MCP client on top of a pluggable transport.
- *
- * The client will automatically begin the initialization flow with the server when Connect() is
- * called.
- *
- * To use with custom types, extend the base Request/Notification/Result types and pass them as type
- * parameters.
- */
-class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> {
-  private:
-    optional<ServerCapabilities> m_ServerCapabilities;
-    optional<Implementation> m_ServerVersion;
-    ClientCapabilities m_Capabilities;
-    optional<string> m_Instructions;
-    map<string, ValidateFunction> m_CachedToolOutputValidators;
-    AjvValidator m_Ajv;
-    Implementation m_ClientInfo;
-
-  public:
-    /**
-     * Initializes this client with the given name and version information.
-     */
-    Client(const Implementation& ClientInfo, const optional<ClientOptions>& Options = nullopt);
-
-    /**
-     * Registers new capabilities. This can only be called before connecting to a transport.
-     *
-     * The new capabilities will be merged with any existing capabilities previously given (e.g., at
-     * initialization).
-     */
-    void RegisterCapabilities(const ClientCapabilities& Capabilities);
-
-  protected:
-    void AssertCapability(const string& Capability, const string& Method);
-    void AssertCapabilityForMethod(const string& Method);
-    void AssertNotificationCapability(const string& Method);
-    void AssertRequestHandlerCapability(const string& Method);
-
-  public:
-    async<void> Connect(shared_ptr<Transport> TransportPtr,
-                        const optional<RequestOptions>& Options = nullopt) override;
-
-    /**
-     * After initialization has completed, this will be populated with the server's reported
-     * capabilities.
-     */
-    optional<ServerCapabilities> GetServerCapabilities() const;
-
-    /**
-     * After initialization has completed, this will be populated with information about the
-     * server's name and version.
-     */
-    optional<Implementation> GetServerVersion() const;
-
-    /**
-     * After initialization has completed, this may be populated with information about the server's
-     * instructions.
-     */
-    optional<string> GetInstructions() const;
-
-    // Client method implementations
-    async<JSON> Ping(const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> Complete(const JSON& Params, const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> SetLoggingLevel(LoggingLevel Level,
-                                const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> GetPrompt(const JSON& Params, const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> ListPrompts(const optional<JSON>& Params = nullopt,
-                            const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> ListResources(const optional<JSON>& Params = nullopt,
-                              const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> ListResourceTemplates(const optional<JSON>& Params = nullopt,
-                                      const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> ReadResource(const JSON& Params, const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> SubscribeResource(const JSON& Params,
-                                  const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> UnsubscribeResource(const JSON& Params,
-                                    const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> CallTool(const JSON& Params, const string& ResultSchema = "CallToolResultSchema",
-                         const optional<RequestOptions>& Options = nullopt);
-
-    async<JSON> ListTools(const optional<JSON>& Params = nullopt,
-                          const optional<RequestOptions>& Options = nullopt);
-
-    async<void> SendRootsListChanged();
-
-  private:
-    void CacheToolOutputSchemas(const vector<Tool>& Tools);
-    optional<ValidateFunction> GetToolOutputValidator(const string& ToolName);
-};
-
-// Template implementation
-Client::Client(const Implementation& ClientInfo, const optional<ClientOptions>& Options)
-    : Protocol<ClientRequest, ClientNotification, ClientResult>(Options), m_ClientInfo(ClientInfo),
-      m_Capabilities(Options ? Options->Capabilities.value_or(ClientCapabilities{})
-                             : ClientCapabilities{}),
-      m_Ajv() {}
 
 void Client::RegisterCapabilities(const ClientCapabilities& Capabilities) {
     if (GetTransport()) {
@@ -151,8 +24,8 @@ void Client::AssertCapability(const string& Capability, const string& Method) {
     }
 }
 
-async<void> Client::Connect(shared_ptr<Transport> TransportPtr,
-                            const optional<RequestOptions>& Options) {
+future<void> Client::Connect(shared_ptr<Transport> TransportPtr,
+                             const optional<RequestOptions>& Options) {
     co_await Protocol<ClientRequest, ClientNotification, ClientResult>::Connect(TransportPtr);
 
     // When transport sessionId is already set this means we are trying to reconnect.
@@ -280,66 +153,67 @@ void Client::AssertRequestHandlerCapability(const string& Method) {
     // MTHD_PING requires no specific capability
 }
 
-async<JSON> Client::Ping(const optional<RequestOptions>& Options) {
+future<JSON> Client::Ping(const optional<RequestOptions>& Options) {
     return co_await Request(JSON{{MSG_METHOD, MTHD_PING}}, "EmptyResultSchema", Options);
 }
 
-async<JSON> Client::Complete(const JSON& Params, const optional<RequestOptions>& Options) {
+future<JSON> Client::Complete(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON CompleteRequest = JSON{{MSG_METHOD, MTHD_COMPLETION_COMPLETE}, {MSG_PARAMS, Params}};
     return co_await Request(CompleteRequest, "CompleteResultSchema", Options);
 }
 
-async<JSON> Client::SetLoggingLevel(LoggingLevel Level, const optional<RequestOptions>& Options) {
+future<JSON> Client::SetLoggingLevel(LoggingLevel Level, const optional<RequestOptions>& Options) {
     JSON SetLevelRequest = JSON{{MSG_METHOD, MTHD_LOGGING_SET_LEVEL},
                                 {MSG_PARAMS, JSON{{MSG_LEVEL, static_cast<int>(Level)}}}};
     return co_await Request(SetLevelRequest, "EmptyResultSchema", Options);
 }
 
-async<JSON> Client::GetPrompt(const JSON& Params, const optional<RequestOptions>& Options) {
+future<JSON> Client::GetPrompt(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON GetPromptRequest = JSON{{MSG_METHOD, MTHD_PROMPTS_GET}, {MSG_PARAMS, Params}};
     return co_await Request(GetPromptRequest, "GetPromptResultSchema", Options);
 }
 
-async<JSON> Client::ListPrompts(const optional<JSON>& Params,
-                                const optional<RequestOptions>& Options) {
+future<JSON> Client::ListPrompts(const optional<JSON>& Params,
+                                 const optional<RequestOptions>& Options) {
     JSON ListPromptsRequest = JSON{{MSG_METHOD, MTHD_PROMPTS_LIST}};
     if (Params) { ListPromptsRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListPromptsRequest, "ListPromptsResultSchema", Options);
 }
 
-async<JSON> Client::ListResources(const optional<JSON>& Params,
-                                  const optional<RequestOptions>& Options) {
+future<JSON> Client::ListResources(const optional<JSON>& Params,
+                                   const optional<RequestOptions>& Options) {
     JSON ListResourcesRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_LIST}};
     if (Params) { ListResourcesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourcesRequest, "ListResourcesResultSchema", Options);
 }
 
-async<JSON> Client::ListResourceTemplates(const optional<JSON>& Params,
-                                          const optional<RequestOptions>& Options) {
+future<JSON> Client::ListResourceTemplates(const optional<JSON>& Params,
+                                           const optional<RequestOptions>& Options) {
     JSON ListResourceTemplatesRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_TEMPLATES_LIST}};
     if (Params) { ListResourceTemplatesRequest[MSG_PARAMS] = *Params; }
     return co_await Request(ListResourceTemplatesRequest, "ListResourceTemplatesResultSchema",
                             Options);
 }
 
-async<JSON> Client::ReadResource(const JSON& Params, const optional<RequestOptions>& Options) {
+future<JSON> Client::ReadResource(const JSON& Params, const optional<RequestOptions>& Options) {
     JSON ReadResourceRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_READ}, {MSG_PARAMS, Params}};
     return co_await Request(ReadResourceRequest, "ReadResourceResultSchema", Options);
 }
 
-async<JSON> Client::SubscribeResource(const JSON& Params, const optional<RequestOptions>& Options) {
+future<JSON> Client::SubscribeResource(const JSON& Params,
+                                       const optional<RequestOptions>& Options) {
     JSON SubscribeRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_SUBSCRIBE}, {MSG_PARAMS, Params}};
     return co_await Request(SubscribeRequest, "EmptyResultSchema", Options);
 }
 
-async<JSON> Client::UnsubscribeResource(const JSON& Params,
-                                        const optional<RequestOptions>& Options) {
+future<JSON> Client::UnsubscribeResource(const JSON& Params,
+                                         const optional<RequestOptions>& Options) {
     JSON UnsubscribeRequest = JSON{{MSG_METHOD, MTHD_RESOURCES_UNSUBSCRIBE}, {MSG_PARAMS, Params}};
     return co_await Request(UnsubscribeRequest, "EmptyResultSchema", Options);
 }
 
-async<JSON> Client::CallTool(const JSON& Params, const string& ResultSchema,
-                             const optional<RequestOptions>& Options) {
+future<JSON> Client::CallTool(const JSON& Params, const string& ResultSchema,
+                              const optional<RequestOptions>& Options) {
     JSON CallToolRequest = JSON{{MSG_METHOD, MTHD_TOOLS_CALL}, {MSG_PARAMS, Params}};
 
     JSON Result = co_await Request(CallToolRequest, ResultSchema, Options);
@@ -398,12 +272,11 @@ optional<ValidateFunction> Client::GetToolOutputValidator(const string& ToolName
     return nullopt;
 }
 
-async<JSON> Client::ListTools(const optional<JSON>& Params,
-                              const optional<RequestOptions>& Options) {
-    JSON ListToolsRequest = JSON{{MSG_METHOD, MTHD_TOOLS_LIST}};
-    if (Params) { ListToolsRequest[MSG_PARAMS] = *Params; }
-
-    JSON Result = co_await Request(ListToolsRequest, "ListToolsResultSchema", Options);
+future<ListToolsResult> Client::ListTools() {
+    SendRequest<ListToolsRequest>();
+    ListToolsResult Result;
+    co_await ListenResponse(Result);
+    // ListToolsResult Result = co_await Request(Request, "ListToolsResultSchema");
 
     // Cache the tools and their output schemas for future validation
     // TODO: Extract tools from Result and call CacheToolOutputSchemas
@@ -413,9 +286,10 @@ async<JSON> Client::ListTools(const optional<JSON>& Params,
     co_return Result;
 }
 
-async<void> Client::SendRootsListChanged() {
-    JSON RootsListChangedNotification = JSON{{MSG_METHOD, MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED}};
-    co_await Notification(RootsListChangedNotification);
+void Client::SendRootsListChanged() {
+    RootsListChangedNotification Notification;
+    SendNotification(Notification);
+    return;
 }
 
 MCP_NAMESPACE_END
