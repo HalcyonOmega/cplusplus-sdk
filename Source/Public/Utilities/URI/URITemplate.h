@@ -6,12 +6,11 @@ MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
 string EncodeURI(const string& InValue);
-
 string EncodeURIComponent(const string& InValue);
 
-using Variables = unordered_map<string, std::variant<string, vector<string>>>;
+using Variables = unordered_map<string, variant<string, vector<string>>>;
 
-class URI_Template {
+class URITemplate {
   public:
     /**
      * Returns true if the given string contains any URI template expressions.
@@ -19,15 +18,10 @@ class URI_Template {
      * braces, like {foo} or {?bar}.
      */
     static bool IsTemplate(const string& InString);
-
     vector<string> GetVariableNames() const;
-
-    explicit URI_Template(const string& InTemplateStr);
-
+    explicit URITemplate(const string& InTemplateStr);
     string ToString() const;
-
     string Expand(const Variables& InVariables) const;
-
     Variables Match(const string& InURI) const;
 
   private:
@@ -44,20 +38,13 @@ class URI_Template {
     vector<Part> m_Parts;
 
     static void ValidateLength(const string& InString, size_t InMax, const string& InContext);
-
     vector<Part> Parse(const string& InTemplateStr);
-
     string GetOperator(const string& InExpression) const;
-
     vector<string> GetNames(const string& InExpression) const;
-
     string EncodeValue(const string& InValue, const string& InOperatorChar) const;
-
     string ExpandPart(const TemplatePart& InPart, const Variables& InVariables) const;
-
     string EscapeRegExp(const string& InString) const;
-
-    vector<std::pair<string, string>> PartToRegExp(const TemplatePart& InPart) const;
+    vector<pair<string, string>> PartToRegExp(const TemplatePart& InPart) const;
 };
 
 MCP_NAMESPACE_END

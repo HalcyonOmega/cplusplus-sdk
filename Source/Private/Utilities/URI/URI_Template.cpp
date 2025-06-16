@@ -1,6 +1,5 @@
-#include "Utilities/URI/URI_Template.h"
-
 #include "Constants.h"
+#include "Utilities/URI/URITemplate.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -56,16 +55,16 @@ string EncodeURIComponent(const string& Value) {
     return Result;
 }
 
-// URI_Template method implementations
+// URITemplate method implementations
 
-bool URI_Template::IsTemplate(const string& Str) {
+bool URITemplate::IsTemplate(const string& Str) {
     // Look for any sequence of characters between curly braces
     // that isn't just whitespace
     regex Pattern(R"(\{[^}\s]+\})");
     return regex_search(Str, Pattern);
 }
 
-vector<string> URI_Template::GetVariableNames() const {
+vector<string> URITemplate::GetVariableNames() const {
     vector<string> Names;
     for (const auto& Part : m_Parts) {
         if (holds_alternative<TemplatePart>(Part)) {
@@ -76,16 +75,16 @@ vector<string> URI_Template::GetVariableNames() const {
     return Names;
 }
 
-URI_Template::URI_Template(const string& TemplateStr) : m_Template(TemplateStr) {
+URITemplate::URITemplate(const string& TemplateStr) : m_Template(TemplateStr) {
     ValidateLength(TemplateStr, MAX_TEMPLATE_LENGTH, "Template");
     m_Parts = Parse(TemplateStr);
 }
 
-string URI_Template::ToString() const {
+string URITemplate::ToString() const {
     return m_Template;
 }
 
-string URI_Template::Expand(const Variables& Variables) const {
+string URITemplate::Expand(const Variables& Variables) const {
     string Result;
     bool HasQueryParam = false;
 
@@ -116,7 +115,7 @@ string URI_Template::Expand(const Variables& Variables) const {
     return Result;
 }
 
-Variables URI_Template::Match(const string& Uri) const {
+Variables URITemplate::Match(const string& Uri) const {
     ValidateLength(Uri, MAX_TEMPLATE_LENGTH, "URI");
     string Pattern = "^";
     vector<pair<string, bool>> Names; // name, exploded
@@ -163,14 +162,14 @@ Variables URI_Template::Match(const string& Uri) const {
     return result;
 }
 
-void URI_Template::ValidateLength(const string& str, size_t max, const string& context) {
+void URITemplate::ValidateLength(const string& str, size_t max, const string& context) {
     if (str.length() > max) {
         throw runtime_error(context + " exceeds maximum length of " + to_string(max)
                             + " characters (got " + to_string(str.length()) + ")");
     }
 }
 
-vector<URI_Template::Part> URI_Template::Parse(const string& templateStr) {
+vector<URITemplate::Part> URITemplate::Parse(const string& templateStr) {
     vector<Part> parts;
     string currentText;
     size_t i = 0;
@@ -215,7 +214,7 @@ vector<URI_Template::Part> URI_Template::Parse(const string& templateStr) {
     return parts;
 }
 
-string URI_Template::GetOperator(const string& expr) const {
+string URITemplate::GetOperator(const string& expr) const {
     vector<string> operators = {"+", "#", ".", "/", "?", "&"};
     for (const auto& op : operators) {
         if (expr.substr(0, op.length()) == op) { return op; }
@@ -223,7 +222,7 @@ string URI_Template::GetOperator(const string& expr) const {
     return MSG_EMPTY;
 }
 
-vector<string> URI_Template::GetNames(const string& expr) const {
+vector<string> URITemplate::GetNames(const string& expr) const {
     string operatorChar = GetOperator(expr);
     string namesPart = expr.substr(operatorChar.length());
 
@@ -246,13 +245,13 @@ vector<string> URI_Template::GetNames(const string& expr) const {
     return names;
 }
 
-string URI_Template::EncodeValue(const string& value, const string& operatorChar) const {
+string URITemplate::EncodeValue(const string& value, const string& operatorChar) const {
     ValidateLength(value, MAX_VARIABLE_LENGTH, "Variable value");
     if (operatorChar == "+" || operatorChar == "#") { return EncodeURI(value); }
     return EncodeURIComponent(value);
 }
 
-string URI_Template::ExpandPart(const TemplatePart& part, const Variables& variables) const {
+string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variables) const {
     if (part.operatorChar == "?" || part.operatorChar == "&") {
         vector<string> pairs;
         for (const auto& name : part.names) {
@@ -353,7 +352,7 @@ string URI_Template::ExpandPart(const TemplatePart& part, const Variables& varia
     }
 }
 
-string URI_Template::EscapeRegExp(const string& str) const {
+string URITemplate::EscapeRegExp(const string& str) const {
     string result;
     for (char c : str) {
         if (c == '.' || c == '*' || c == '+' || c == '?' || c == '^' || c == '$' || c == '{'
@@ -365,7 +364,7 @@ string URI_Template::EscapeRegExp(const string& str) const {
     return result;
 }
 
-vector<pair<string, string>> URI_Template::PartToRegExp(const TemplatePart& part) const {
+vector<pair<string, string>> URITemplate::PartToRegExp(const TemplatePart& part) const {
     vector<pair<string, string>> patterns;
 
     // Validate variable name length for matching

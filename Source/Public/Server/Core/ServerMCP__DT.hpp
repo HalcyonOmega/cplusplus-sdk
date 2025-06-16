@@ -5,7 +5,7 @@
 
 // Additional Includes
 #include "Client/Core/Client.hpp" // For AjvValidator
-#include "Utilities/URI/URI_Template.h"
+#include "Utilities/URI/URITemplate.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -39,24 +39,24 @@ using ReadResourceTemplateCallback = function<ReadResourceResult(
  */
 class ResourceTemplate {
   private:
-    string m_URI_Template;
+    string m_URITemplate;
     optional<ListResourcesCallback> m_ListCallback;
     unordered_map<string, CompleteResourceTemplateCallback> m_CompleteCallbacks;
 
   public:
-    ResourceTemplate(const string& InURI_Template,
+    ResourceTemplate(const string& InURITemplate,
                      const optional<ListResourcesCallback>& InListCallback,
                      const optional<unordered_map<string, CompleteResourceTemplateCallback>>&
                          InCompleteCallbacks = nullopt)
-        : m_URI_Template(InURI_Template), m_ListCallback(InListCallback) {
+        : m_URITemplate(InURITemplate), m_ListCallback(InListCallback) {
         if (InCompleteCallbacks) { m_CompleteCallbacks = *InCompleteCallbacks; }
     }
 
     /**
      * Gets the URI template pattern.
      */
-    const string& GetURI_Template() const {
-        return m_URI_Template;
+    const string& GetURITemplate() const {
+        return m_URITemplate;
     }
 
     /**
@@ -80,8 +80,8 @@ class ResourceTemplate {
      * Matches a URI against this template and returns variables if successful.
      */
     optional<unordered_map<string, string>> Match(const string& InURI) const {
-        URI_Template URI_Template(m_URI_Template);
-        auto Variables = URI_Template.Match(InURI);
+        URITemplate URITemplate(m_URITemplate);
+        auto Variables = URITemplate.Match(InURI);
 
         if (Variables.empty()) { return nullopt; }
 
@@ -525,7 +525,7 @@ class MCPServer {
                 for (const auto& [Name, TemplateEntry] : m_RegisteredResourceTemplates) {
                     ResourceTemplate ResTmpl;
                     ResTmpl.Name = Name;
-                    ResTmpl.URI_Template = TemplateEntry.Template.GetURI_Template();
+                    ResTmpl.URITemplate = TemplateEntry.Template.GetURITemplate();
                     if (TemplateEntry.Metadata) {
                         // TODO: Copy metadata fields
                     }

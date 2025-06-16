@@ -1,53 +1,10 @@
 #pragma once
 
 #include "Core.h"
-#include "Transport.h"
+#include "StreamableHTTPBase.h"
+#include "Utilities/HTTP/HTTPLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
-
-// Default reconnection options for StreamableHTTP connections
-struct StreamableHTTPReconnectionOptions {
-    int MaxReconnectionDelay = 30000;    // 30 seconds
-    int InitialReconnectionDelay = 1000; // 1 second
-    double ReconnectionDelayGrowFactor = 1.5;
-    int MaxRetries = 2;
-};
-
-const StreamableHTTPReconnectionOptions DEFAULT_STREAMABLE_HTTP_RECONNECTION_OPTIONS = {
-    1000,  // initialReconnectionDelay
-    30000, // maxReconnectionDelay
-    1.5,   // reconnectionDelayGrowFactor
-    2      // maxRetries
-};
-
-class StreamableHTTPTransport : public Transport {
-  public:
-    explicit StreamableHTTPTransport(const string& InURL);
-    ~StreamableHTTPTransport() override;
-
-    // Transport interface implementation
-    future<void> Start() override;
-    future<void> Close() override;
-    future<void> Send(const MessageBase& InMessage,
-                      const TransportSendOptions& InOptions = {}) override;
-    void WriteSSEEvent(const string& InEvent, const string& InData) override;
-
-    // New method for resumability support
-    bool Resume(const string& InResumptionToken) override;
-
-    optional<string> GetSessionID() const;
-
-  private:
-    void ReadLoop();
-    void ParseSSEData(const string& InData);
-
-    string m_URL;
-    string m_Path;
-    int m_Port;
-    unique_ptr<HTTP_Client> m_Client;
-    atomic<bool> m_IsRunning;
-    thread m_ReadThread;
-};
 
 /**
  * Server transport for Streamable HTTP: this implements the MCP Streamable HTTP transport
@@ -79,7 +36,7 @@ class StreamableHTTPTransport : public Transport {
  * - No Session ID is included in any responses
  * - No session validation is performed
  */
-class StreamableHTTPServerTransport : public Transport {
+class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
   private:
     // when SessionID is not set (nullopt), it means the transport is in stateless mode
     optional<function<string()>> m_SessionIDGenerator;
@@ -177,7 +134,7 @@ class StreamableHTTPServerTransport : public Transport {
 // Client transport for Streamable HTTP: this implements the MCP Streamable HTTP transport
 // specification. It will connect to a server using HTTP POST for sending messages and HTTP GET with
 // Server-Sent Events for receiving messages.
-class StreamableHTTPClientTransport : public Transport {
+class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
   private:
     atomic<bool> m_AbortRequested;
     string m_URL;
@@ -223,8 +180,6 @@ class StreamableHTTPClientTransport : public Transport {
 
     future<void> Send(const vector<MessageBase>& InMessages,
                       const TransportSendOptions& InOptions = {});
-
-    optional<string> GetSessionID() const;
 
     // Terminates the current session by sending a DELETE request to the server.
     future<void> TerminateSession();

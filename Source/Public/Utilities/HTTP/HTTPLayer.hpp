@@ -6,8 +6,9 @@
 MCP_NAMESPACE_BEGIN
 
 /* Needed Classes/Structs */
-struct HTTP_Client;
-struct HTTP_Server;
+// TODO: @HalcyonOmega Implement HTTP_Client and HTTP_Server classes.
+class HTTP_Client;
+class HTTP_Server;
 
 class HTTP_Response {
   private:
