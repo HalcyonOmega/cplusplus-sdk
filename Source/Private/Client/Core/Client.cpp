@@ -26,7 +26,7 @@ void Client::AssertCapability(const string& Capability, const string& Method) {
 
 future<void> Client::Connect(shared_ptr<Transport> TransportPtr,
                              const optional<RequestOptions>& Options) {
-    co_await Protocol<ClientRequest, ClientNotification, ClientResult>::Connect(TransportPtr);
+    co_await IMCPProtocol<ClientRequest, ClientNotification, ClientResult>::Connect(TransportPtr);
 
     // When transport sessionId is already set this means we are trying to reconnect.
     // In this case we don't need to initialize again.

@@ -29,7 +29,8 @@ struct ListRootsResultSchema;
  * Initializes this server with the given name and version information.
  */
 Server(const Implementation& serverInfo, const optional<ServerOptions>& options = nullopt)
-    : Protocol<ServerRequest, ServerNotification, ServerResult>(options), ServerInfo_(serverInfo) {
+    : IMCPProtocol<ServerRequest, ServerNotification, ServerResult>(options),
+      ServerInfo_(serverInfo) {
     if (options) {
         Capabilities_ = options->capabilities.value_or(ServerCapabilities{});
         Instructions_ = options->instructions;

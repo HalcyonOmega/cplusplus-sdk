@@ -21,7 +21,7 @@ struct ServerOptions : public ProtocolOptions {
  * To use with custom types, extend the base Request/Notification/Result types and pass them as type
  * parameters.
  */
-class Server : public Protocol<ServerRequest, ServerNotification, ServerResult> {
+class Server : public IMCPProtocol<ServerRequest, ServerNotification, ServerResult> {
   private:
     optional<ClientCapabilities> m_ClientCapabilities;
     optional<Implementation> m_ClientVersion;
@@ -38,7 +38,8 @@ class Server : public Protocol<ServerRequest, ServerNotification, ServerResult> 
 
     // Initializes this server with the given name and version information.
     Server(const Implementation& InServerInfo, const optional<ServerOptions>& InOptions = nullopt)
-        : Protocol<ServerRequest, ServerNotification, ServerResult>(), m_ServerInfo(InServerInfo) {
+        : IMCPProtocol<ServerRequest, ServerNotification, ServerResult>(),
+          m_ServerInfo(InServerInfo) {
         if (InOptions) {
             m_Capabilities = InOptions->Capabilities.value_or(ServerCapabilities{});
             m_Instructions = InOptions->Instructions;

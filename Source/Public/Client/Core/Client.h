@@ -25,7 +25,7 @@ struct ClientOptions {
  * To use with custom types, extend the base Request/Notification/Result types and pass them as type
  * parameters.
  */
-class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> {
+class Client : public IMCPProtocol<ClientRequest, ClientNotification, ClientResult> {
   private:
     optional<ServerCapabilities> m_ServerCapabilities;
     optional<Implementation> m_ServerVersion;

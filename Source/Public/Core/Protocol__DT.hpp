@@ -101,7 +101,8 @@ struct TimeoutInfo {
 
 // Implements MCP protocol framing on top of a pluggable transport, including features like
 // request/response linking, notifications, and progress.
-template <typename SendRequestT, typename SendNotificationT, typename SendResultT> class Protocol {
+template <typename SendRequestT, typename SendNotificationT, typename SendResultT>
+class IMCPProtocol {
   private:
     shared_ptr<Transport> m_Transport;
     RequestID m_RequestRequestID{0};
@@ -136,27 +137,31 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     // A handler to invoke for any notification types that do not have their own handler installed.
     function<future<void>(const NotificationBase&)> FallbackNotificationHandler;
 
-    explicit Protocol(const optional<ProtocolOptions>& InOptions = nullopt) : m_Options(InOptions) {
+    explicit IMCPProtocol(const optional<ProtocolOptions>& InOptions = nullopt)
+        : m_Options(InOptions) {
         // Set up default handlers for cancelled notifications and progress notifications
-        SetNotificationHandler(
-            MTHD_NOTIFICATION_CANCELLED,
-            [this](const NotificationBase& InNotification) -> future<void> {
-                // Extract RequestID and reason from notification params
-                if (InNotification.Params && InNotification.Params->contains(MSG_REQUEST_ID)) {
-                    RequestID RequestID = (*InNotification.Params)[MSG_REQUEST_ID];
+        SetNotificationHandler(MTHD_NOTIFICATION_CANCELLED,
+                               [this](const NotificationBase& InNotification) -> future<void> {
+                                   // Extract RequestID and reason from notification params
+                                   if (InNotification.GetParams()
+                                       && InNotification.GetParams()->contains(MSG_REQUEST_ID)) {
+                                       RequestID RequestID =
+                                           (*InNotification.GetParams())[MSG_REQUEST_ID];
 
-                    lock_guard<mutex> lock(m_HandlersMutex);
-                    auto it = m_RequestHandlerAbortControllers.find(RequestID);
-                    if (it != m_RequestHandlerAbortControllers.end()) {
-                        // TODO: Fix External Ref: AbortSignal - Signal abort with reason
-                        string Reason = InNotification.Params->value("reason", "Request cancelled");
-                        // it->second.abort(reason);
-                    }
-                }
-                promise<void> Promise;
-                Promise.set_value();
-                return Promise.get_future();
-            });
+                                       lock_guard<mutex> lock(m_HandlersMutex);
+                                       auto it = m_RequestHandlerAbortControllers.find(RequestID);
+                                       if (it != m_RequestHandlerAbortControllers.end()) {
+                                           // TODO: Fix External Ref: AbortSignal - Signal abort
+                                           // with reason
+                                           string Reason = InNotification.GetParams()->value(
+                                               "reason", "Request cancelled");
+                                           // it->second.abort(reason);
+                                       }
+                                   }
+                                   promise<void> Promise;
+                                   Promise.set_value();
+                                   return Promise.get_future();
+                               });
 
         SetNotificationHandler(MTHD_NOTIFICATION_PROGRESS,
                                [this](const NotificationBase& InNotification) -> future<void> {
@@ -220,8 +225,8 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         ProgressData.ProgressToken = ProgressToken;
 
         // Extract the params excluding progressToken (equivalent to TypeScript destructuring)
-        if (InNotification.Params->contains(MSG_DATA)) {
-            ProgressData.Data = (*InNotification.Params)[MSG_DATA];
+        if (InNotification.GetParams() && InNotification.GetParams()->contains(MSG_DATA)) {
+            ProgressData.Data = (*InNotification.GetParams())[MSG_DATA];
         }
 
         Handler(ProgressData);
