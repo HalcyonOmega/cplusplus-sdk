@@ -5,6 +5,7 @@
 
 #include "Constants.h"
 #include "Core.h"
+#include "ErrorBase.h"
 #include "UUID/UUIDLayer.h"
 
 MCP_NAMESPACE_BEGIN
@@ -36,42 +37,47 @@ string InMemoryEventStore::GenerateEventID() {
     return to_string(chrono::system_clock::now().time_since_epoch().count());
 }
 
-InMemoryTransport::InMemoryTransport() {
-    SessionID = GenerateUUID();
-}
+InMemoryTransport::InMemoryTransport() : m_OtherTransport(nullptr), m_SessionID(GenerateUUID()) {}
 
 InMemoryTransport::~InMemoryTransport() {
-    Stop();
+    Close();
+    if (m_OtherTransport) {
+        m_OtherTransport->Close();
+        m_OtherTransport->m_OtherTransport = nullptr;
+    }
 }
 
-void InMemoryTransport::Start() {
+future<void> InMemoryTransport::Start() {
     // Process any messages that were queued before start was called
     lock_guard<mutex> Lock(m_QueueMutex);
     while (!m_MessageQueue.empty()) {
         const auto& QueuedMessage = m_MessageQueue.front();
-        if (m_OnMessage) {
-            m_OnMessage(QueuedMessage.Message,
-                        QueuedMessage.AuthInfo ? &*QueuedMessage.AuthInfo : nullptr);
-        }
+        if (OnMessage) { OnMessage.value()(*QueuedMessage.Message, QueuedMessage.AuthInfo); }
         m_MessageQueue.pop();
     }
-    if (m_OnStart) { m_OnStart(); }
+    if (OnStart) { OnStart.value()(); }
 }
 
-void InMemoryTransport::Stop() {
+future<void> InMemoryTransport::Close() {
     if (auto Other = m_OtherTransport.lock()) { Other->m_OtherTransport.reset(); }
     m_OtherTransport.reset();
-    if (m_OnStop) { m_OnStop(); }
-    if (m_OnClose) { m_OnClose(); }
+    if (OnStop) { OnStop.value()(); }
+    if (OnClose) { OnClose.value()(); }
 }
 
-void InMemoryTransport::Send(const string& InMessage, const TransportSendOptions& InOptions) {
-    if (auto Other = m_OtherTransport.lock()) {
-        if (Other->m_OnMessage) {
-            Other->m_OnMessage(InMessage, nullptr);
+future<void> InMemoryTransport::Send(const MessageBase& InMessage,
+                                     const TransportSendOptions& InOptions) {
+    if (auto Other = m_OtherTransport) {
+        // Build optional auth info to forward
+        optional<AuthInfo> ForwardAuth = InOptions.AuthInfo;
+
+        if (Other->OnMessage) {
+            // Deliver immediately if the peer has an OnMessage handler installed
+            Other->OnMessage.value()(InMessage, ForwardAuth);
         } else {
+            // Otherwise enqueue the message until the peer starts the transport
             lock_guard<mutex> Lock(Other->m_QueueMutex);
-            Other->m_MessageQueue.push({InMessage, nullopt});
+            Other->m_MessageQueue.push({make_shared<MessageBase>(InMessage), ForwardAuth});
         }
 
         // Handle resumption token if provided
@@ -79,28 +85,8 @@ void InMemoryTransport::Send(const string& InMessage, const TransportSendOptions
             InOptions.OnResumptionToken(*InOptions.ResumptionToken);
         }
     } else {
-        if (m_OnError) { m_OnError("Not connected"); }
+        if (OnError) { OnError.value()(ErrorBase("Not connected")); }
     }
-}
-
-void InMemoryTransport::SetOnMessage(MessageCallback InCallback) {
-    m_OnMessage = move(InCallback);
-}
-
-void InMemoryTransport::SetOnError(ErrorCallback InCallback) {
-    m_OnError = move(InCallback);
-}
-
-void InMemoryTransport::SetOnClose(CloseCallback InCallback) {
-    m_OnClose = move(InCallback);
-}
-
-void InMemoryTransport::SetOnStart(StartCallback InCallback) {
-    m_OnStart = move(InCallback);
-}
-
-void InMemoryTransport::SetOnStop(StopCallback InCallback) {
-    m_OnStop = move(InCallback);
 }
 
 void InMemoryTransport::WriteSSEEvent(const string& InEvent, const string& InData) {
@@ -113,7 +99,7 @@ void InMemoryTransport::WriteSSEEvent(const string& InEvent, const string& InDat
 bool InMemoryTransport::Resume(const string& InResumptionToken) {
     (void)InResumptionToken;
     // In-memory transport does not support resumption
-    if (m_OnError) { m_OnError("Resumption not supported by InMemoryTransport"); }
+    if (OnError) { OnError.value()("Resumption not supported by InMemoryTransport"); }
     return false;
 }
 

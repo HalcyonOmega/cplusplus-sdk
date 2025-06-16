@@ -16,14 +16,6 @@ using ErrorCallback = function<void(const ErrorBase&)>;
 using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
 using ProgressCallback = function<void(const ProgressNotification&)>;
 
-// TODO: @HalcyonOmega Determine if this is needed.
-// Options for starting or authenticating an SSE connection
-struct StartSSEOptions {
-    optional<string> ResumptionToken;
-    function<void(const string&)> OnResumptionToken;
-    optional<RequestID> ReplayRequestID;
-};
-
 // Transport options
 struct TransportOptions {
     optional<string> ResumptionToken;
@@ -45,6 +37,11 @@ struct TransportSendOptions {
     // A callback that is invoked when the resumption token changes, if supported by the transport.
     // This allows clients to persist the latest token for potential reconnection.
     optional<function<void(const string& /* Token */)>> OnResumptionToken;
+
+    // Optional authentication information to forward to the peer transport. This allows
+    // in-process tests to exercise authenticated message flows without needing a full
+    // authentication pipeline.
+    optional<AuthInfo> AuthInfo;
 };
 
 // Describes the minimal contract for a MCP transport that a client or server can communicate over.
@@ -76,6 +73,11 @@ class Transport {
     [[deprecated("Not yet implemented - will be supported in a future version")]]
     virtual bool Resume(const string& InResumptionToken) = 0;
 
+    // Getters
+    optional<string> GetSessionID() const {
+        return m_SessionID;
+    }
+
     optional<StartCallback> OnStart;
 
     // Callback for when the connection is closed for any reason. This should be invoked when
@@ -90,11 +92,12 @@ class Transport {
     // the AuthInfo if the transport is authenticated.
     optional<MessageCallback> OnMessage;
 
+  private:
     // The session ID generated for this connection.
-    optional<string> SessionID;
+    optional<string> m_SessionID;
 
-    mutable mutex CallbackMutex; // Protects callback invocation to avoid concurrent access
-                                 // between read thread and callers.
+    mutable mutex m_CallbackMutex; // Protects callback invocation to avoid concurrent access
+                                   // between read thread and callers.
 };
 
 MCP_NAMESPACE_END

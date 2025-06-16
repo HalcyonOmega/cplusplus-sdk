@@ -10,8 +10,8 @@ MCP_NAMESPACE_BEGIN
 // Stores events in memory with their IDs for later retrieval.
 class InMemoryEventStore : public EventStore {
   public:
-    InMemoryEventStore() = default;
-    ~InMemoryEventStore() override = default;
+    InMemoryEventStore();
+    ~InMemoryEventStore() override;
 
     void StoreEvent(const string& InEvent) override;
     vector<string> ReplayEventsAfter(const string& InLastEventID) override;
@@ -26,54 +26,20 @@ class InMemoryEventStore : public EventStore {
 // process.
 class InMemoryTransport : public Transport {
   public:
-    InMemoryTransport() = default;
+    InMemoryTransport();
     ~InMemoryTransport() override;
 
     // Disable copy constructor and assignment operator to prevent issues with linked pairs
     InMemoryTransport(const InMemoryTransport&) = delete;
     InMemoryTransport& operator=(const InMemoryTransport&) = delete;
-    // Enable move constructor and assignment operator
-    InMemoryTransport(InMemoryTransport&& InOther) noexcept
-        : m_OtherTransport(InOther.m_OtherTransport), m_MessageQueue(move(InOther.m_MessageQueue)),
-          OnClose(move(InOther.OnClose)), OnError(move(InOther.OnError)),
-          OnMessage(move(InOther.OnMessage)), SessionID(move(InOther.SessionID)) {
-        InOther.m_OtherTransport = nullptr;
-        if (m_OtherTransport) { m_OtherTransport->m_OtherTransport = this; }
-    }
 
-    InMemoryTransport& operator=(InMemoryTransport&& InOther) noexcept {
-        if (this != &InOther) {
-            m_OtherTransport = InOther.m_OtherTransport;
-            m_MessageQueue = move(InOther.m_MessageQueue);
-            OnClose(move(InOther.OnClose)), OnError(move(InOther.OnError)),
-                OnMessage(move(InOther.OnMessage)), SessionID(move(InOther.SessionID)) {
-                InOther.m_OtherTransport = nullptr;
-                if (m_OtherTransport) { m_OtherTransport->m_OtherTransport = this; }
-            }
-            return *this;
-        }
+    // Sends a message with optional auth info. This is useful for testing authentication
+    // scenarios.
+    void Send(const MessageBase& InMessage, const optional<{
+                                                optional<RequestID> RelatedRequestID;
+                                                optional<AuthInfo> AuthInfo;
+                                            }>& InOptions = nullopt);
 
-        // Creates a pair of linked in-memory transports that can communicate with each other.
-        // One should be passed to a Client and one to a Server.
-        static pair<InMemoryTransport, InMemoryTransport> CreateLinkedPair() {
-            InMemoryTransport ClientTransport;
-            InMemoryTransport ServerTransport;
-
-            ClientTransport.m_OtherTransport = &ServerTransport;
-            ServerTransport.m_OtherTransport = &ClientTransport;
-
-            return make_pair(move(ClientTransport), move(ServerTransport));
-        }
-
-        // Sends a message with optional auth info. This is useful for testing authentication
-        // scenarios.
-        void Send(const MessageBase& InMessage, const optional<{
-                                                    optional<RequestID> RelatedRequestID;
-                                                    optional<AuthInfo> AuthInfo;
-                                                }>& InOptions = nullopt);
-
-        ~InMemoryTransport();
-    }
     // Transport interface implementation
     future<void> Start() override;
     future<void> Close() override;
@@ -94,7 +60,7 @@ class InMemoryTransport : public Transport {
         optional<AuthInfo> AuthInfo;
     };
 
-    weak_ptr<InMemoryTransport> m_OtherTransport;
+    shared_ptr<InMemoryTransport> m_OtherTransport;
     queue<QueuedMessage> m_MessageQueue;
     mutex m_QueueMutex;
 };
