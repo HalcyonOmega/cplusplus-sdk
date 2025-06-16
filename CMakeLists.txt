@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(cplusplus-mcp-sdk 
     VERSION 1.0.0
     DESCRIPTION "C++ SDK for MCP (Model Context Protocol)"
-    LANGUAGES CXX
+    LANGUAGES CXX C
 )
 
 # Set C++ standard
@@ -186,4 +186,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(poco)
 
 # Now you can link to the libraries you need as before
-target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::Foundation)
+target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::JSON Poco::Foundation)
