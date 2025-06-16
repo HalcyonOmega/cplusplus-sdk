@@ -1,21 +1,23 @@
 #pragma once
 
 #include "Auth/Types/Auth.h"
+#include "Communication/Transport/Transport.h"
 #include "Core.h"
+#include "Core/Messages/NotificationBase.h"
+#include "Core/Messages/RequestBase.h"
+#include "Core/Messages/ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
+
+// TODO: @HalcyonOmega Cleanup this file
 
 // The default request timeout, in milliseconds.
 static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
 
-/**
- * Callback for progress notifications.
- */
+// Callback for progress notifications.
 using ProgressCallback = function<void(const Progress&)>;
 
-/**
- * Additional initialization options.
- */
+// Additional initialization options.
 struct ProtocolOptions {
     /**
      * Whether to restrict emitted requests to only those that the remote side has indicated that
@@ -30,114 +32,57 @@ struct ProtocolOptions {
     optional<bool> EnforceStrictCapabilities;
 };
 
-/**
- * Options that can be given per request.
- */
+// Options that can be given per request.
 struct RequestOptions : public TransportSendOptions {
-    /**
-     * If set, requests progress notifications from the remote end (if supported). When progress
-     * notifications are received, this callback will be invoked.
-     */
+    // If set, requests progress notifications from the remote end (if supported). When progress
+    // notifications are received, this callback will be invoked.
     optional<ProgressCallback> OnProgress;
 
-    /**
-     * Can be used to cancel an in-flight request. This will cause an AbortError to be raised from
-     * request().
-     */
+    // Can be used to cancel an in-flight request. This will cause an AbortError to be raised from
+    // request().
     optional<AbortSignal> Signal;
 
-    /**
-     * A timeout (in milliseconds) for this request. If exceeded, an McpError with code
-     * `RequestTimeout` will be raised from request().
-     *
-     * If not specified, `DEFAULT_REQUEST_TIMEOUT_MSEC` will be used as the timeout.
-     */
+    // A timeout (in milliseconds) for this request. If exceeded, an MCP_Error with code
+    // `RequestTimeout` will be raised from request().
+    //
+    // If not specified, `DEFAULT_REQUEST_TIMEOUT_MSEC` will be used as the timeout.
     optional<int64_t> Timeout;
 
-    /**
-     * If true, receiving a progress notification will reset the request timeout.
-     * This is useful for long-running operations that send periodic progress updates.
-     * Default: false
-     */
+    // If true, receiving a progress notification will reset the request timeout.
+    // This is useful for long-running operations that send periodic progress updates.
+    // Default: false
     optional<bool> ResetTimeoutOnProgress;
 
-    /**
-     * Maximum total time (in milliseconds) to wait for a response.
-     * If exceeded, an McpError with code `RequestTimeout` will be raised, regardless of progress
-     * notifications. If not specified, there is no maximum total timeout.
-     */
+    // Maximum total time (in milliseconds) to wait for a response.
+    // If exceeded, an MCP_Error with code `RequestTimeout` will be raised, regardless of progress
+    // notifications. If not specified, there is no maximum total timeout.
     optional<int64_t> MaxTotalTimeout;
-
-    /**
-     * May be used to indicate to the transport which incoming request to associate this outgoing
-     * request with.
-     */
-    optional<RequestID> RelatedRequestID;
-
-    /**
-     * Resumption token for transport-level message resumption.
-     */
-    optional<string> ResumptionToken;
-
-    /**
-     * Callback for when a resumption token is provided.
-     */
-    optional<function<void(const string&)>> OnResumptionToken;
 };
 
-/**
- * Options that can be given per notification.
- */
-struct NotificationOptions {
-    /**
-     * May be used to indicate to the transport which incoming request to associate this outgoing
-     * notification with.
-     */
-    optional<RequestID> RelatedRequestID;
-};
-
-/**
- * Extra data given to request handlers.
- */
+// Extra data given to request handlers.
 template <typename SendRequestT, typename SendNotificationT> struct RequestHandlerExtra {
-    /**
-     * An abort signal used to communicate if the request was cancelled from the sender's side.
-     */
+    // An abort signal used to communicate if the request was cancelled from the sender's side.
     AbortSignal Signal;
 
-    /**
-     * Information about a validated access token, provided to request handlers.
-     */
+    // Information about a validated access token, provided to request handlers.
     optional<AuthInfo> AuthInfo;
 
-    /**
-     * The session ID from the transport, if available.
-     */
+    // The session ID from the transport, if available.
     optional<string> SessionID;
 
-    /**
-     * Metadata from the original request.
-     */
+    // Metadata from the original request.
     optional<RequestMeta> Meta;
 
-    /**
-     * The JSON-RPC ID of the request being handled.
-     * This can be useful for tracking or logging purposes.
-     */
+    // The JSON-RPC ID of the request being handled.
+    // This can be useful for tracking or logging purposes.
     RequestID RequestID;
 
-    /**
-     * Sends a notification that relates to the current request being handled.
-     *
-     * This is used by certain transports to correctly associate related messages.
-     */
+    // Sends a notification that relates to the current request being handled.
+    // This is used by certain transports to correctly associate related messages.
     function<future<void>(const SendNotificationT&)> SendNotification;
 
-    /**
-     * Sends a request that relates to the current request being handled.
-     *
-     * This is used by certain transports to correctly associate related messages.
-     */
+    // Sends a request that relates to the current request being handled.
+    // This is used by certain transports to correctly associate related messages.
     template <typename ResultT, typename SchemaT>
     function<future<ResultT>(const SendRequestT&, const SchemaT&, const optional<RequestOptions>&)>
         SendRequest;
@@ -176,30 +121,20 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     optional<ProtocolOptions> m_Options;
 
   public:
-    /**
-     * Callback for when the connection is closed for any reason.
-     *
-     * This is invoked when close() is called as well.
-     */
+    // Callback for when the connection is closed for any reason.
+    // This is invoked when close() is called as well.
     function<void()> OnClose;
 
-    /**
-     * Callback for when an error occurs.
-     *
-     * Note that errors are not necessarily fatal; they are used for reporting any kind of
-     * exceptional condition out of band.
-     */
+    // Callback for when an error occurs.
+    // Note that errors are not necessarily fatal; they are used for reporting any kind of
+    // exceptional condition out of band.
     function<void(const exception&)> OnError;
 
-    /**
-     * A handler to invoke for any request types that do not have their own handler installed.
-     */
-    function<future<SendResultT>(const Request&)> FallbackRequestHandler;
+    // A handler to invoke for any request types that do not have their own handler installed.
+    function<future<SendResultT>(const RequestBase&)> FallbackRequestHandler;
 
-    /**
-     * A handler to invoke for any notification types that do not have their own handler installed.
-     */
-    function<future<void>(const Notification&)> FallbackNotificationHandler;
+    // A handler to invoke for any notification types that do not have their own handler installed.
+    function<future<void>(const NotificationBase&)> FallbackNotificationHandler;
 
     explicit Protocol(const optional<ProtocolOptions>& InOptions = nullopt) : m_Options(InOptions) {
         // Set up default handlers for cancelled notifications and progress notifications
@@ -245,13 +180,14 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
 
   private:
     void OnProgress(const NotificationBase& InNotification) {
-        if (!InNotification.Params || !InNotification.Params->contains(MSG_PROGRESS_TOKEN)) {
+        if (!InNotification.GetParams()
+            || !InNotification.GetParams()->contains(MSG_PROGRESS_TOKEN)) {
             OnErrorInternal(runtime_error("Received a progress notification without progressToken: "
-                                          + InNotification.Method));
+                                          + InNotification.GetMethod()));
             return;
         }
 
-        int64_t ProgressToken = (*InNotification.Params)[MSG_PROGRESS_TOKEN];
+        int64_t ProgressToken = (*InNotification.GetParams())[MSG_PROGRESS_TOKEN];
 
         ProgressCallback Handler;
         {
@@ -557,14 +493,11 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     }
 
   public:
-    /**
-     * Attaches to the given transport, starts it, and starts listening for messages.
-     *
-     * The Protocol object assumes ownership of the Transport, replacing any callbacks that have
-     * already been set, and expects that it is the only user of the Transport instance going
-     * forward.
-     */
-    future<void> Connect(shared_ptr<Transport> InTransport) {
+    // Attaches to the given transport, starts it, and starts listening for messages.
+    // The Protocol object assumes ownership of the Transport, replacing any callbacks that have
+    // already been set, and expects that it is the only user of the Transport instance going
+    // forward.
+    future<void> Connect(const shared_ptr<Transport>& InTransport) {
         m_Transport = InTransport;
 
         // Set up transport callbacks
@@ -613,13 +546,11 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         return m_Transport->Start();
     }
 
-    shared_ptr<Transport> GetTransport() const {
+    const shared_ptr<Transport>& GetTransport() const {
         return m_Transport;
     }
 
-    /**
-     * Closes the connection.
-     */
+    // Closes the connection.
     future<void> Close() {
         if (m_Transport) { return m_Transport->Close(); }
         promise<void> Promise;
@@ -628,36 +559,24 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
     }
 
   protected:
-    /**
-     * A method to check if a capability is supported by the remote side, for the given method to be
-     * called.
-     *
-     * This should be implemented by subclasses.
-     */
+    // A method to check if a capability is supported by the remote side, for the given method to be
+    // called.
+    // This should be implemented by subclasses.
     virtual void AssertCapabilityForMethod(const string& InMethod) = 0;
 
-    /**
-     * A method to check if a notification is supported by the local side, for the given method to
-     * be sent.
-     *
-     * This should be implemented by subclasses.
-     */
+    // A method to check if a notification is supported by the local side, for the given method to
+    // be sent.
+    // This should be implemented by subclasses.
     virtual void AssertNotificationCapability(const string& InMethod) = 0;
 
-    /**
-     * A method to check if a request handler is supported by the local side, for the given method
-     * to be handled.
-     *
-     * This should be implemented by subclasses.
-     */
+    // A method to check if a request handler is supported by the local side, for the given method
+    // to be handled.
+    // This should be implemented by subclasses.
     virtual void AssertRequestHandlerCapability(const string& InMethod) = 0;
 
   public:
-    /**
-     * Sends a request and wait for a response.
-     *
-     * Do not use this method to emit notifications! Use Notification() instead.
-     */
+    // Sends a request and wait for a response.
+    // Do not use this method to emit notifications! Use Notification() instead.
     template <typename ResultT>
     future<ResultT> Request(const SendRequestT& InRequest,
                             const optional<RequestOptions>& InOptions = nullopt) {
@@ -786,9 +705,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         return ResultFuture;
     }
 
-    /**
-     * Emits a notification, which is a one-way message that does not expect a response.
-     */
+    // Emits a notification, which is a one-way message that does not expect a response.
     future<void> Notification(const SendNotificationT& InNotification,
                               const optional<NotificationOptions>& InOptions = nullopt) {
         if (!m_Transport) { throw runtime_error("Not connected"); }
@@ -814,12 +731,9 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         return Promise.get_future();
     }
 
-    /**
-     * Registers a handler to invoke when this protocol object receives a request with the given
-     * method.
-     *
-     * Note that this will replace any previous request handler for the same method.
-     */
+    // Registers a handler to invoke when this protocol object receives a request with the given
+    // method.
+    // Note that this will replace any previous request handler for the same method.
     void SetRequestHandler(
         const string& InMethod,
         function<future<SendResultT>(const RequestBase&,
@@ -831,30 +745,23 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         m_RequestHandlers[InMethod] = move(InHandler);
     }
 
-    /**
-     * Registers a handler to invoke when this protocol object receives a notification with the
-     * given method.
-     *
-     * Note that this will replace any previous notification handler for the same method.
-     */
+    // Registers a handler to invoke when this protocol object receives a notification with the
+    // given method.
+    // Note that this will replace any previous notification handler for the same method.
     void SetNotificationHandler(const string& InMethod,
                                 function<future<void>(const NotificationBase&)> InHandler) {
         lock_guard<mutex> Lock(m_HandlersMutex);
         m_NotificationHandlers[InMethod] = move(InHandler);
     }
 
-    /**
-     * Removes the request handler for the given method.
-     */
+    // Removes the request handler for the given method.
     void RemoveRequestHandler(const string& InMethod) {
         lock_guard<mutex> Lock(m_HandlersMutex);
         m_RequestHandlers.erase(InMethod);
     }
 
-    /**
-     * Asserts that a request handler has not already been set for the given method, in preparation
-     * for a new one being automatically installed.
-     */
+    // Asserts that a request handler has not already been set for the given method, in preparation
+    // for a new one being automatically installed.
     void AssertCanSetRequestHandler(const string& InMethod) {
         lock_guard<mutex> Lock(m_HandlersMutex);
         if (m_RequestHandlers.find(InMethod) != m_RequestHandlers.end()) {
@@ -863,9 +770,7 @@ template <typename SendRequestT, typename SendNotificationT, typename SendResult
         }
     }
 
-    /**
-     * Removes the notification handler for the given method.
-     */
+    // Removes the notification handler for the given method.
     void RemoveNotificationHandler(const string& InMethod) {
         lock_guard<mutex> Lock(m_HandlersMutex);
         m_NotificationHandlers.erase(InMethod);

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
-#include <condition_variable>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -45,39 +43,27 @@ const vector<string> DEFAULT_INHERITED_ENV_VARS = {"HOME",  "LOGNAME", "PATH",
 
 // Parameters for configuring a stdio server process
 struct StdioServerParameters {
-    /**
-     * The executable to run to start the server.
-     */
+    // The executable to run to start the server.
     string Command;
 
-    /**
-     * Command line arguments to pass to the executable.
-     */
+    // Command line arguments to pass to the executable.
     optional<vector<string>> Args;
 
-    /**
-     * The environment to use when spawning the process.
-     * If not specified, the result of GetDefaultEnvironment() will be used.
-     */
+    // The environment to use when spawning the process.
+    // If not specified, the result of GetDefaultEnvironment() will be used.
     optional<unordered_map<string, string>> Env;
 
-    /**
-     * How to handle stderr of the child process.
-     * The default is "inherit", meaning messages to stderr will be printed to the parent process's
-     * stderr.
-     */
+    // How to handle stderr of the child process.
+    // The default is "inherit", meaning messages to stderr will be printed to the parent process's
+    // stderr.
     optional<variant<IOType, Stream*, int>> Stderr;
 
-    /**
-     * The working directory to use when spawning the process.
-     * If not specified, the current working directory will be inherited.
-     */
+    // The working directory to use when spawning the process.
+    // If not specified, the current working directory will be inherited.
     optional<string> CWD;
 };
 
-/**
- * Returns a default environment object including only environment variables deemed safe to inherit.
- */
+// Returns a default environment object including only environment variables deemed safe to inherit.
 inline unordered_map<string, string> GetDefaultEnvironment() {
     unordered_map<string, string> Env;
 
@@ -97,12 +83,9 @@ inline unordered_map<string, string> GetDefaultEnvironment() {
     return Env;
 }
 
-/**
- * Server transport for stdio: this communicates with a MCP client by reading from the current
- * process' stdin and writing to stdout.
- *
- * This transport provides cross-platform stdio communication capabilities.
- */
+// Server transport for stdio: this communicates with a MCP client by reading from the current
+// process' stdin and writing to stdout.
+// This transport provides cross-platform stdio communication capabilities.
 class StdioServerTransport : public Transport {
   private:
     unique_ptr<ReadBuffer> m_ReadBuffer;
@@ -173,9 +156,7 @@ class StdioServerTransport : public Transport {
     }
 
   private:
-    /**
-     * Event handler for incoming data
-     */
+    // Event handler for incoming data
     void OnData(const vector<uint8_t>& chunk) {
         if (m_ReadBuffer) {
             m_ReadBuffer->Append(chunk);
@@ -183,9 +164,7 @@ class StdioServerTransport : public Transport {
         }
     }
 
-    /**
-     * Event handler for errors
-     */
+    // Event handler for errors
     void OnErrorInternal(const string& error) {
         lock_guard<mutex> lock(m_CallbackMutex);
         if (OnError) {
@@ -195,9 +174,7 @@ class StdioServerTransport : public Transport {
         }
     }
 
-    /**
-     * Processes the read buffer and extracts complete messages
-     */
+    // Processes the read buffer and extracts complete messages
     void ProcessReadBuffer() {
         while (true) {
             try {
@@ -216,9 +193,7 @@ class StdioServerTransport : public Transport {
         }
     }
 
-    /**
-     * Main reading loop that runs in a separate thread
-     */
+    // Main reading loop that runs in a separate thread
     void ReadLoop() {
         vector<uint8_t> buffer(4096);
 
@@ -242,11 +217,9 @@ class StdioServerTransport : public Transport {
     }
 };
 
-/**
- * Client transport for stdio: this will connect to a server by spawning a process and communicating
- * with it over stdin/stdout. This transport is only available in environments that support process
- * spawning.
- */
+// Client transport for stdio: this will connect to a server by spawning a process and communicating
+// with it over stdin/stdout. This transport is only available in environments that support process
+// spawning.
 class StdioClientTransport : public Transport {
   private:
     // Default Variables
@@ -351,10 +324,8 @@ class StdioClientTransport : public Transport {
         return false;
     }
 
-    /**
-     * The stderr stream of the child process, if StdioServerParameters.Stderr was set to "pipe" or
-     * "overlapped".
-     */
+    // The stderr stream of the child process, if StdioServerParameters.Stderr was set to "pipe" or
+    // "overlapped".
     PassThrough* GetStderr() const {
         return m_StderrStream.get();
     }
@@ -410,9 +381,7 @@ class StdioClientTransport : public Transport {
         });
     }
 
-    /**
-     * Processes the read buffer and extracts complete messages
-     */
+    // Processes the read buffer and extracts complete messages
     void ProcessReadBuffer() {
         while (true) {
             try {

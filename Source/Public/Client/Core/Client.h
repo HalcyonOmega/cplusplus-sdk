@@ -4,6 +4,8 @@
 
 #include "Communication/Transport/Transport.h"
 #include "Core.h"
+#include "Core/Features/Resource/Resources.h"
+#include "Core/Features/Tool/Tools.h"
 #include "Core/Protocol__DT.hpp"
 #include "SchemaAliases.h"
 
@@ -33,17 +35,13 @@ class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> 
     Implementation m_ClientInfo;
 
   public:
-    /**
-     * Initializes this client with the given name and version information.
-     */
+    // Initializes this client with the given name and version information.
     Client(const Implementation& ClientInfo, const optional<ClientOptions>& Options = nullopt);
 
-    /**
-     * Registers new capabilities. This can only be called before connecting to a transport.
-     *
-     * The new capabilities will be merged with any existing capabilities previously given (e.g., at
-     * initialization).
-     */
+    // Registers new capabilities. This can only be called before connecting to a transport.
+    //
+    // The new capabilities will be merged with any existing capabilities previously given (e.g., at
+    // initialization).
     void RegisterCapabilities(const ClientCapabilities& Capabilities);
 
   protected:
@@ -56,46 +54,45 @@ class Client : public Protocol<ClientRequest, ClientNotification, ClientResult> 
     future<void> Connect(shared_ptr<Transport> TransportPtr,
                          const optional<RequestOptions>& Options = nullopt) override;
 
-    /**
-     * After initialization has completed, this will be populated with the server's reported
-     * capabilities.
-     */
+    // After initialization has completed, this will be populated with the server's reported
+    // capabilities.
     [[nodiscard]] optional<ServerCapabilities> GetServerCapabilities() const;
 
-    /**
-     * After initialization has completed, this will be populated with information about the
-     * server's name and version.
-     */
+    // After initialization has completed, this will be populated with information about the
+    // server's name and version.
     [[nodiscard]] optional<Implementation> GetServerVersion() const;
 
-    /**
-     * After initialization has completed, this may be populated with information about the server's
-     * instructions.
-     */
+    // After initialization has completed, this may be populated with information about the server's
+    // instructions.
     [[nodiscard]] optional<string> GetInstructions() const;
 
     // Client Methods
-    future<JSON> Ping(const optional<RequestOptions>& Options = nullopt);
-    future<JSON> Complete(const JSON& Params, const optional<RequestOptions>& Options = nullopt);
-    future<JSON> SetLoggingLevel(LoggingLevel Level,
-                                 const optional<RequestOptions>& Options = nullopt);
-    future<JSON> GetPrompt(const JSON& Params, const optional<RequestOptions>& Options = nullopt);
-    future<JSON> ListPrompts(const optional<JSON>& Params = nullopt,
-                             const optional<RequestOptions>& Options = nullopt);
-    future<JSON> ListResources(const optional<JSON>& Params = nullopt,
-                               const optional<RequestOptions>& Options = nullopt);
-    future<JSON> ListResourceTemplates(const optional<JSON>& Params = nullopt,
-                                       const optional<RequestOptions>& Options = nullopt);
-    future<JSON> ReadResource(const JSON& Params,
-                              const optional<RequestOptions>& Options = nullopt);
-    future<JSON> SubscribeResource(const JSON& Params,
-                                   const optional<RequestOptions>& Options = nullopt);
-    future<JSON> UnsubscribeResource(const JSON& Params,
-                                     const optional<RequestOptions>& Options = nullopt);
-    future<JSON> CallTool(const JSON& Params, const string& ResultSchema = "CallToolResultSchema",
+    future<void> Ping(const optional<RequestOptions>& Options = nullopt);
+    future<CompleteResult> Complete(const CompleteRequest::CompleteRequestParams& Params,
+                                    const optional<RequestOptions>& Options = nullopt);
+    void SetLoggingLevel(LoggingLevel Level, const optional<RequestOptions>& Options = nullopt);
+    future<GetPromptResult> GetPrompt(const GetPromptRequest::GetPromptRequestParams& Params,
+                                      const optional<RequestOptions>& Options = nullopt);
+    future<ListPromptsResult> ListPrompts(const optional<ListPromptsRequest>& Params = nullopt,
+                                          const optional<RequestOptions>& Options = nullopt);
+    future<ListResourcesResult>
+    ListResources(const optional<ListResourcesRequest>& Params = nullopt,
+                  const optional<RequestOptions>& Options = nullopt);
+    future<ListResourceTemplatesResult>
+    ListResourceTemplates(const optional<ListResourceTemplatesRequest>& Params = nullopt,
                           const optional<RequestOptions>& Options = nullopt);
-    future<JSON> ListTools(const optional<JSON>& Params = nullopt,
-                           const optional<RequestOptions>& Options = nullopt);
+    future<ReadResourceResult>
+    ReadResource(const ReadResourceRequest::ReadResourceRequestParams& Params,
+                 const optional<RequestOptions>& Options = nullopt);
+    future<void> SubscribeResource(const SubscribeRequest::SubscribeRequestParams& Params,
+                                   const optional<RequestOptions>& Options = nullopt);
+    future<void> UnsubscribeResource(const UnsubscribeRequest::UnsubscribeRequestParams& Params,
+                                     const optional<RequestOptions>& Options = nullopt);
+    future<CallToolResult> CallTool(const CallToolRequest::CallToolRequestParams& Params,
+                                    const string& ResultSchema = "CallToolResultSchema",
+                                    const optional<RequestOptions>& Options = nullopt);
+    future<ListToolsResult> ListTools(const optional<ListToolsRequest>& Params = nullopt,
+                                      const optional<RequestOptions>& Options = nullopt);
     void SendRootsListChanged();
 
   private:
