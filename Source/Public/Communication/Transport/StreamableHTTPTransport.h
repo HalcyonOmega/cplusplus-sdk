@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Auth/Client/AuthClient.h"
 #include "Core.h"
 #include "StreamableHTTPBase.h"
 #include "Utilities/HTTP/HTTPLayer.hpp"
@@ -42,13 +43,23 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     optional<function<string()>> m_SessionIDGenerator;
     bool m_Started = false;
     unordered_map<string, shared_ptr<HTTP_Response>> m_StreamMapping;
-    unordered_map<RequestID, string> m_RequestToStreamMapping;
-    unordered_map<RequestID, MessageBase> m_RequestResponseMap;
+    map<RequestID, string> m_RequestToStreamMapping;
+    map<RequestID, MessageBase> m_RequestResponseMap;
     bool m_Initialized = false;
     bool m_EnableJSONResponse = false;
     string m_StandaloneSSEStreamID = "_GET_stream";
     shared_ptr<EventStore> m_EventStore;
     optional<function<void(const string&)>> m_OnSessionInitialized;
+
+    // TODO: @HalcyonOmega Verify if these are needed. Was in base StreamableHTTPTransport class
+    // before rework.
+    string m_URL;
+    string m_Path;
+    int m_Port;
+    unique_ptr<HTTP_Client> m_Client;
+    atomic<bool> m_IsRunning;
+    thread m_ReadThread;
+    // TODO: End of TODO
 
   public:
     // Configuration options for StreamableHTTPServerTransport
@@ -104,9 +115,15 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     // Only used when resumability is enabled
     future<void> ReplayEvents(const string& InLastEventID, shared_ptr<HTTP_Response> InResponse);
 
-    // Writes an event to the SSE stream with proper formatting
-    bool WriteSSEEvent(shared_ptr<HTTP_Response> InResponse, const MessageBase& InMessage,
-                       const optional<string>& InEventID = nullopt);
+    // Internal helper used by the server implementation to send events to a HTTP_Response
+    bool WriteSSEEventToResponse(shared_ptr<HTTP_Response> InResponse, const MessageBase& InMessage,
+                                 const optional<string>& InEventID = nullopt);
+
+    // Transport interface requirement – not used directly by server (server pushes via response)
+    void WriteSSEEvent(const string& InEvent, const string& InData) override {
+        (void)InEvent;
+        (void)InData;
+    }
 
     // Handles unsupported requests (PUT, PATCH, etc.)
     future<void> HandleUnsupportedRequest(shared_ptr<HTTP_Response> InResponse);
@@ -127,8 +144,15 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
   public:
     future<void> Close() override;
 
+    // StreamableHTTPTransportBase pure virtual requirement
     future<void> Send(const MessageBase& InMessage,
-                      const optional<RequestID>& InRelatedRequestID = nullopt) override;
+                      const TransportSendOptions& InOptions = {}) override {
+        return Send(InMessage, InOptions.RelatedRequestID);
+    }
+
+    bool Resume(const string& /*InResumptionToken*/) override {
+        return false;
+    }
 };
 
 // Client transport for Streamable HTTP: this implements the MCP Streamable HTTP transport
@@ -142,6 +166,11 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     map<string, string> m_RequestHeaders;
     shared_ptr<OAuthClientProvider> m_AuthProvider;
     StreamableHTTPReconnectionOptions m_ReconnectionOptions;
+    string m_Path;
+    int m_Port;
+    unique_ptr<HTTP_Client> m_Client;
+    atomic<bool> m_IsRunning;
+    thread m_ReadThread;
 
   public:
     // Configuration options for the `StreamableHTTPClientTransport`.
@@ -155,34 +184,42 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
 
     StreamableHTTPClientTransport(const string& InURL,
                                   const StreamableHTTPClientTransportOptions& InOptions = {})
-        : m_AbortRequested(false), m_URL(InURL), m_RequestHeaders(InOptions.RequestHeaders),
-          m_AuthProvider(InOptions.AuthProvider), m_SessionID(InOptions.SessionID),
+        : m_AbortRequested(false), m_URL(InURL),
+          m_RequestHeaders(InOptions.RequestHeaders.begin(), InOptions.RequestHeaders.end()),
+          m_AuthProvider(InOptions.AuthProvider),
           m_ReconnectionOptions(InOptions.ReconnectionOptions) {}
 
   private:
     future<void> AuthThenStart();
     future<unordered_map<string, string>> CommonHeaders();
-    future<void> StartOrAuthSSE(const StartSSEOptions& InOptions);
+    future<void> StartOrAuthSSE(const TransportSendOptions& InOptions);
     int GetNextReconnectionDelay(int InAttempt);
-    void ScheduleReconnection(const StartSSEOptions& InOptions, int InAttemptCount = 0);
-    void HandleSSEStream(const string& InStreamData, const StartSSEOptions& InOptions);
+    void ScheduleReconnection(const TransportSendOptions& InOptions, int InAttemptCount = 0);
+    void HandleSSEStream(const string& InStreamData, const TransportSendOptions& InOptions);
 
   public:
-    future<void> Start();
+    future<void> Start() override;
 
     // Call this method after the user has finished authorizing via their user agent and is
     // redirected back to the MCP client application.
     future<void> FinishAuth(const string& InAuthorizationCode);
 
-    future<void> Close();
+    future<void> Close() override;
 
-    future<void> Send(const MessageBase& InMessage, const TransportSendOptions& InOptions = {});
+    future<void> Send(const MessageBase& InMessage,
+                      const TransportSendOptions& InOptions = {}) override;
 
     future<void> Send(const vector<MessageBase>& InMessages,
                       const TransportSendOptions& InOptions = {});
 
     // Terminates the current session by sending a DELETE request to the server.
     future<void> TerminateSession();
+
+    void WriteSSEEvent(const string& InEvent, const string& InData) override;
+
+    bool Resume(const string& /*InResumptionToken*/) override {
+        return false;
+    }
 };
 
 MCP_NAMESPACE_END

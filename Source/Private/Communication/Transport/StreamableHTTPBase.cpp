@@ -31,7 +31,7 @@ StreamableHTTPTransportBase::StreamableHTTPTransportBase(const string& InURL)
 }
 
 StreamableHTTPTransportBase::~StreamableHTTPTransportBase() {
-    Stop();
+    Close();
 }
 
 future<void> StreamableHTTPTransportBase::Start() {

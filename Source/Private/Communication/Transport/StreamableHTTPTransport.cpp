@@ -572,7 +572,7 @@ future<map<string, string>> StreamableHTTPClientTransport::commonHeaders() {
     });
 }
 
-future<void> StreamableHTTPClientTransport::startOrAuthSse(const StartSSEOptions& options) {
+future<void> StreamableHTTPClientTransport::startOrAuthSse(const TransportSendOptions& options) {
     return async(launch::async, [this, options]() {
         try {
             auto headers = commonHeaders().get();
@@ -610,7 +610,7 @@ int StreamableHTTPClientTransport::getNextReconnectionDelay(int attempt) {
     return min(static_cast<int>(initialDelay * pow(growFactor, attempt)), maxDelay);
 }
 
-void StreamableHTTPClientTransport::scheduleReconnection(const StartSSEOptions& options,
+void StreamableHTTPClientTransport::scheduleReconnection(const TransportSendOptions& options,
                                                          int attemptCount = 0) {
     int maxRetries = reconnection_options_.maxRetries;
 
@@ -640,7 +640,7 @@ void StreamableHTTPClientTransport::scheduleReconnection(const StartSSEOptions& 
 }
 
 void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
-                                                    const StartSSEOptions& options) {
+                                                    const TransportSendOptions& options) {
     // TODO: Fix External Ref: SSE stream parsing
     optional<string> lastEventID;
 
@@ -680,8 +680,8 @@ void StreamableHTTPClientTransport::handleSseStream(const string& streamData,
 
         if (!abort_requested_ && lastEventID) {
             try {
-                StartSSEOptions reconnectOptions = {*lastEventID, options.onresumptiontoken,
-                                                    options.replayRequestID};
+                TransportSendOptions reconnectOptions = {*lastEventID, options.onresumptiontoken,
+                                                         options.replayRequestID};
                 scheduleReconnection(reconnectOptions, 0);
             } catch (const exception& reconnectError) {
                 if (onerror) {
@@ -728,7 +728,7 @@ future<void> StreamableHTTPClientTransport::send(const MessageBase& message,
     return async(launch::async, [this, message, options]() {
         try {
             if (options.resumptionToken) {
-                StartSSEOptions sseOptions = {
+                TransportSendOptions sseOptions = {
                     options.resumptionToken, options.onresumptiontoken,
                     nullopt // TODO: Extract message ID if it's a request
                 };

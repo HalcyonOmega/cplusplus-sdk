@@ -2,6 +2,7 @@
 
 #include "Auth/Types/Auth.h"
 #include "Core.h"
+#include "Utilities/HTTP/HTTPLayer.hpp"
 
 // TODO: Fix External Ref: pkce-challenge (PKCE challenge generation)
 // TODO: Fix External Ref: MCP_LATEST_PROTOCOL_VERSION from "../types.js"
