@@ -27,32 +27,32 @@ StreamableHTTPServerTransport::HandleRequest(const HTTP_Request& InRequest,
     }
 }
 
-future<void> StreamableHTTPServerTransport::HandleGetRequest(const HTTP_Request& req,
-                                                             shared_ptr<HTTP_Response> res) {
-    return async(launch::async, [this, req, res]() {
+future<void> StreamableHTTPServerTransport::HandleGetRequest(const HTTP_Request& InRequest,
+                                                             shared_ptr<HTTP_Response> InResponse) {
+    return async(launch::async, [this, InRequest, InResponse]() {
         // The client MUST include an Accept header, listing text/event-stream as a supported
         // content type.
-        auto acceptIt = req.Headers.find(TSPT_ACCEPT);
-        if (acceptIt == req.Headers.end()
+        auto acceptIt = InRequest.Headers.find(TSPT_ACCEPT);
+        if (acceptIt == InRequest.Headers.end()
             || acceptIt->second.find(TSPT_TEXT_EVENT_STREAM) == string::npos) {
             // TODO: Below -> Error should have {MSG_ID, nullptr}};
             ErrorBase Error(Errors::ConnectionClosed,
                             "Not Acceptable: Client must accept text/event-stream", nullptr);
-            res->WriteHead(HTTPStatus::NotAcceptable, {});
-            res->End(Error.Serialize());
+            InResponse->WriteHead(HTTPStatus::NotAcceptable, {});
+            InResponse->End(Error.Serialize());
             return;
         }
 
         // If an Mcp-Session-Id is returned by the server during initialization,
         // clients using the Streamable HTTP transport MUST include it
         // in the Mcp-Session-Id header on all of their subsequent HTTP requests.
-        if (!ValidateSession(req, res)) { return; }
+        if (!ValidateSession(InRequest, InResponse)) { return; }
 
         // Handle resumability: check for Last-Event-ID header
         if (m_EventStore) {
-            auto lastEventIDIt = req.Headers.find("last-event-id");
-            if (lastEventIDIt != req.Headers.end()) {
-                ReplayEvents(lastEventIDIt->second, res).wait();
+            auto lastEventIDIt = InRequest.Headers.find("last-event-id");
+            if (lastEventIDIt != InRequest.Headers.end()) {
+                ReplayEvents(lastEventIDIt->second, InResponse).wait();
                 return;
             }
         }
@@ -71,26 +71,26 @@ future<void> StreamableHTTPServerTransport::HandleGetRequest(const HTTP_Request&
             // Only one GET SSE stream is allowed per session
             ErrorBase Error(Errors::ConnectionClosed,
                             "Conflict: Only one SSE stream is allowed per session", nullptr);
-            res->WriteHead(HTTPStatus::Conflict, {});
-            res->End(Error.Serialize());
+            InResponse->WriteHead(HTTPStatus::Conflict, {});
+            InResponse->End(Error.Serialize());
             return;
         }
 
         // We need to send headers immediately as messages will arrive much later,
         // otherwise the client will just wait for the first message
-        res->WriteHead(HTTPStatus::Ok, Headers);
-        res->FlushHeaders();
+        InResponse->WriteHead(HTTPStatus::Ok, Headers);
+        InResponse->FlushHeaders();
 
         // Assign the response to the standalone SSE stream
-        m_StreamMapping[m_StandaloneSSEStreamID] = res;
+        m_StreamMapping[m_StandaloneSSEStreamID] = InResponse;
         // Set up close handler for client disconnects
-        res->On([this]() { m_StreamMapping.erase(m_StandaloneSSEStreamID); });
+        InResponse->On([this]() { m_StreamMapping.erase(m_StandaloneSSEStreamID); });
     });
 }
 
-future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEventID,
-                                                         shared_ptr<HTTP_Response> res) {
-    return async(launch::async, [this, lastEventID, res]() {
+future<void> StreamableHTTPServerTransport::ReplayEvents(const string& InLastEventID,
+                                                         shared_ptr<HTTP_Response> InResponse) {
+    return async(launch::async, [this, InLastEventID, InResponse]() {
         if (!m_EventStore) { return; }
         try {
             HTTP_Headers Headers = {{TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
@@ -98,23 +98,23 @@ future<void> StreamableHTTPServerTransport::ReplayEvents(const string& lastEvent
                                     {"Connection", "keep-alive"}};
 
             if (SessionID()) { Headers["mcp-session-id"] = SessionID.value(); }
-            res->WriteHead(HTTPStatus::Ok, Headers);
-            res->FlushHeaders();
+            InResponse->WriteHead(HTTPStatus::Ok, Headers);
+            InResponse->FlushHeaders();
 
             auto StreamIDFuture = m_EventStore->ReplayEventsAfter(
-                lastEventID,
-                [this, res](const EventID& InEventID,
-                            const MessageBase& InMessage) -> future<void> {
-                    return async(launch::async, [this, res, InEventID, InMessage]() {
-                        if (!WriteSSEEvent(res, InMessage, InEventID)) {
+                InLastEventID,
+                [this, InResponse](const EventID& InEventID,
+                                   const MessageBase& InMessage) -> future<void> {
+                    return async(launch::async, [this, InResponse, InEventID, InMessage]() {
+                        if (!WriteSSEEvent(InResponse, InMessage, InEventID)) {
                             CallOnError("Failed replay events");
-                            res->End(MSG_EMPTY);
+                            InResponse->End(MSG_EMPTY);
                         }
                     });
                 });
 
             auto StreamID = StreamIDFuture.get();
-            m_StreamMapping[StreamID] = res;
+            m_StreamMapping[StreamID] = InResponse;
         } catch (const exception& error) { CallOnError(error); }
     });
 }
@@ -131,27 +131,27 @@ bool StreamableHTTPServerTransport::WriteSSEEvent(shared_ptr<HTTP_Response> InRe
 }
 
 future<void>
-StreamableHTTPServerTransport::HandleUnsupportedRequest(shared_ptr<HTTP_Response> res) {
-    return async(launch::async, [res]() {
+StreamableHTTPServerTransport::HandleUnsupportedRequest(shared_ptr<HTTP_Response> InResponse) {
+    return async(launch::async, [InResponse]() {
         HTTP_Headers Headers = {{"Allow", "GET, POST, DELETE"}};
         // TODO: Below -> Error should have {MSG_ID, nullptr}};
         ErrorBase Error(Errors::ConnectionClosed, "Method not allowed.", nullptr);
-        res->WriteHead(HTTPStatus::MethodNotAllowed, Headers);
-        res->End(Error.Serialize());
+        InResponse->WriteHead(HTTPStatus::MethodNotAllowed, Headers);
+        InResponse->End(Error.Serialize());
     });
 }
 
 future<void>
-StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
-                                                 shared_ptr<HTTP_Response> res,
+StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& InRequest,
+                                                 shared_ptr<HTTP_Response> InResponse,
                                                  const optional<JSON>& ParsedBody = nullopt) {
-    return async(launch::async, [this, req, res, ParsedBody]() {
+    return async(launch::async, [this, InRequest, InResponse, ParsedBody]() {
         try {
             // Validate the Accept header
-            auto acceptIt = req.Headers.find(TSPT_ACCEPT);
+            auto acceptIt = InRequest.Headers.find(TSPT_ACCEPT);
             // The client MUST include an Accept header, listing both application/json and
             // text/event-stream as supported content types.
-            if (acceptIt == req.Headers.end()
+            if (acceptIt == InRequest.Headers.end()
                 || acceptIt->second.find(TSPT_APP_JSON) == string::npos
                 || acceptIt->second.find(TSPT_TEXT_EVENT_STREAM) == string::npos) {
                 // TODO: Below -> Error should have {MSG_ID, nullptr}};
@@ -159,30 +159,31 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                                 "Not Acceptable: Client must accept both application/json and "
                                 "text/event-stream",
                                 nullptr);
-                res->WriteHead(HTTPStatus::NotAcceptable, {});
-                res->End(Error.Serialize());
+                InResponse->WriteHead(HTTPStatus::NotAcceptable, {});
+                InResponse->End(Error.Serialize());
                 return;
             }
 
-            auto ctIt = req.Headers.find(TSPT_CONTENT_TYPE);
-            if (ctIt == req.Headers.end() || ctIt->second.find(TSPT_APP_JSON) == string::npos) {
+            auto ctIt = InRequest.Headers.find(TSPT_CONTENT_TYPE);
+            if (ctIt == InRequest.Headers.end()
+                || ctIt->second.find(TSPT_APP_JSON) == string::npos) {
                 // TODO: Below -> Error should have {MSG_ID, nullptr}};
                 ErrorBase Error(Errors::ConnectionClosed,
                                 "Unsupported Media Type: Content-Type must be application/json",
                                 nullptr);
-                res->WriteHead(HTTPStatus::UnsupportedMediaType, {});
-                res->End(Error.Serialize());
+                InResponse->WriteHead(HTTPStatus::UnsupportedMediaType, {});
+                InResponse->End(Error.Serialize());
                 return;
             }
 
-            optional<AuthInfo> AuthInfo = req.Auth;
+            optional<AuthInfo> AuthInfo = InRequest.Auth;
 
             JSON rawMessage;
             if (ParsedBody()) {
                 rawMessage = ParsedBody.value();
             } else {
                 try {
-                    rawMessage = JSON::parse(req.Body);
+                    rawMessage = JSON::parse(InRequest.Body);
                 } catch (const JSON::parse_error& e) {
                     CallOnError("JSON parse error: " + string(e.what()));
                 }
@@ -219,8 +220,8 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                     // TODO: Below -> Error should have {MSG_ID, nullptr}};
                     ErrorBase Error(Errors::InvalidRequest,
                                     "Invalid Request: Server already initialized", nullptr);
-                    res->WriteHead(HTTPStatus::BadRequest, {});
-                    res->End(Error.Serialize());
+                    InResponse->WriteHead(HTTPStatus::BadRequest, {});
+                    InResponse->End(Error.Serialize());
                     return;
                 }
                 if (messages.size() > 1) {
@@ -228,8 +229,8 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                     ErrorBase Error(Errors::InvalidRequest,
                                     "Invalid Request: Only one initialization request is allowed",
                                     nullptr);
-                    res->WriteHead(HTTPStatus::BadRequest, {});
-                    res->End(Error.Serialize());
+                    InResponse->WriteHead(HTTPStatus::BadRequest, {});
+                    InResponse->End(Error.Serialize());
                     return;
                 }
                 if (m_SessionIDGenerator()) { m_SessionID = m_SessionIDGenerator.value()(); }
@@ -246,7 +247,7 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
             // If an Mcp-Session-Id is returned by the server during initialization,
             // clients using the Streamable HTTP transport MUST include it
             // in the Mcp-Session-Id header on all of their subsequent HTTP requests.
-            if (!isInitializationRequest && !ValidateSession(req, res)) { return; }
+            if (!isInitializationRequest && !ValidateSession(InRequest, InResponse)) { return; }
 
             // check if it contains requests
             bool hasRequests = false;
@@ -259,8 +260,8 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
 
             if (!hasRequests) {
                 // if it only contains notifications or responses, return 202
-                res->WriteHead(HTTPStatus::Accepted, {});
-                res->End(MSG_EMPTY);
+                InResponse->WriteHead(HTTPStatus::Accepted, {});
+                InResponse->End(MSG_EMPTY);
 
                 // handle each message
                 for (const auto& message : Messages) {
@@ -278,18 +279,18 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
                     // After initialization, always include the session ID if we have one
                     if (SessionID()) { Headers["mcp-session-id"] = SessionID.value(); }
 
-                    res->WriteHead(HTTPStatus::Ok, Headers);
+                    InResponse->WriteHead(HTTPStatus::Ok, Headers);
                 }
                 // Store the response for this request to send messages back through this
                 // connection We need to track by request ID to maintain the connection
                 for (const auto& message : messages) {
                     if (IsRequestBase(message)) {
-                        m_StreamMapping[StreamID] = res;
+                        m_StreamMapping[StreamID] = InResponse;
                         m_RequestToStreamMapping[message.data[MSG_ID]] = StreamID;
                     }
                 }
                 // Set up close handler for client disconnects
-                res->On([this, StreamID]() { m_StreamMapping.erase(StreamID); });
+                InResponse->On([this, StreamID]() { m_StreamMapping.erase(StreamID); });
 
                 // handle each message
                 for (const auto& message : Messages)
@@ -300,34 +301,29 @@ StreamableHTTPServerTransport::HandlePostRequest(const HTTP_Request& req,
         }
     } catch (const exception& error) {
         // return JSON-RPC formatted error
-        JSON errorResponse = {{MSG_JSON_RPC, MSG_JSON_RPC_VERSION},
-                              {MSG_ERROR,
-                               {{MSG_CODE, Errors::ParseError},
-                                {MSG_MESSAGE, "Parse error"},
-                                {MSG_DATA, error.what()}}},
-                              {MSG_ID, nullptr}};
         // TODO: Below -> Error should have {MSG_ID, nullptr}};
         ErrorBase Error(Errors::ParseError, "Parse error", error.what());
-        res->WriteHead(HTTPStatus::BadRequest, {});
-        res->End(Error.Serialize());
-        CallOnError(error);
+        InResponse->WriteHead(HTTPStatus::BadRequest, {});
+        InResponse->End(Error.Serialize());
+        CallOnError(Error);
     }
 }
 });
 }
 
-future<void> StreamableHTTPServerTransport::HandleDeleteRequest(const HTTP_Request& req,
-                                                                shared_ptr<HTTP_Response> res) {
-    return async(launch::async, [this, req, res]() {
-        if (!ValidateSession(req, res)) { return; }
+future<void>
+StreamableHTTPServerTransport::HandleDeleteRequest(const HTTP_Request& InRequest,
+                                                   shared_ptr<HTTP_Response> InResponse) {
+    return async(launch::async, [this, InRequest, InResponse]() {
+        if (!ValidateSession(InRequest, InResponse)) { return; }
         Close().wait();
-        res->WriteHead(HTTPStatus::Ok), {});
-        res->End(MSG_EMPTY);
+        InResponse->WriteHead(HTTPStatus::Ok), {});
+        InResponse->End(MSG_EMPTY);
     });
 }
 
-bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& req,
-                                                    shared_ptr<HTTP_Response> res) {
+bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& InRequest,
+                                                    shared_ptr<HTTP_Response> InResponse) {
     if (!m_SessionIDGenerator) {
         // If the SessionIDGenerator ID is not set, the session management is disabled
         // and we don't need to validate the session ID
@@ -337,28 +333,28 @@ bool StreamableHTTPServerTransport::ValidateSession(const HTTP_Request& req,
         // If the server has not been initialized yet, reject all requests
         // TODO: Below -> Error should have {MSG_ID, nullptr}};
         ErrorBase Error(Errors::ConnectionClosed, "Bad Request: Server not initialized", nullptr);
-        res->WriteHead(HTTPStatus::BadRequest, {});
-        res->End(Error.Serialize());
+        InResponse->WriteHead(HTTPStatus::BadRequest, {});
+        InResponse->End(Error.Serialize());
         return false;
     }
 
-    auto SessionIDIt = req.Headers.find("mcp-session-id");
+    auto SessionIDIt = InRequest.Headers.find("mcp-session-id");
 
-    if (SessionIDIt == req.Headers.end()) {
+    if (SessionIDIt == InRequest.Headers.end()) {
         // Non-initialization requests without a session ID should return HTTPStatus::BadRequest Bad
         // Request
         // TODO: Below -> Error should have {MSG_ID, nullptr}};
         ErrorBase Error(Errors::ConnectionClosed, "Bad Request: Mcp-Session-Id header is required",
                         nullptr);
-        res->WriteHead(HTTPStatus::BadRequest, {});
-        res->End(Error.Serialize());
+        InResponse->WriteHead(HTTPStatus::BadRequest, {});
+        InResponse->End(Error.Serialize());
         return false;
     } else if (SessionIDIt->second != SessionID.value_or(MSG_EMPTY)) {
         // Reject requests with invalid session ID with HTTPStatus::NotFound
         // TODO: Below -> Error should have {MSG_ID, nullptr}};
         ErrorBase Error(Errors::RequestTimeout, "Session not found", nullptr);
-        res->WriteHead(HTTPStatus::NotFound, {});
-        res->End(Error.Serialize());
+        InResponse->WriteHead(HTTPStatus::NotFound, {});
+        InResponse->End(Error.Serialize());
         return false;
     }
 
@@ -523,7 +519,7 @@ future<void> StreamableHTTPClientTransport::authThenStart() {
     });
 }
 
-future<map<string, string>> StreamableHTTPClientTransport::commonHeaders() {
+future<HTTP_Headers> StreamableHTTPClientTransport::CommonHeaders() {
     return async(launch::async, [this]() {
         HTTP_Headers Headers;
 

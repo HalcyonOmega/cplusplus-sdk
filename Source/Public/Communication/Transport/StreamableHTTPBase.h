@@ -52,7 +52,6 @@ class StreamableHTTPTransportBase : public Transport {
 
     // Shared helper methods
     bool ValidateURL();
-    void ParseSSEData(const string& InData);
     void ReadLoop(); // SSE read loop for client connections
 
     // Helper that formats a SSE event string compliant with the MCP spec

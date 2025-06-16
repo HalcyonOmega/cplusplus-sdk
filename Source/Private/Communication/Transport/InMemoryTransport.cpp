@@ -40,11 +40,11 @@ string InMemoryEventStore::GenerateEventID() {
 InMemoryTransport::InMemoryTransport() : m_OtherTransport(nullptr), m_SessionID(GenerateUUID()) {}
 
 InMemoryTransport::~InMemoryTransport() {
-    Close();
     if (m_OtherTransport) {
         m_OtherTransport->Close();
         m_OtherTransport->m_OtherTransport = nullptr;
     }
+    Close();
 }
 
 future<void> InMemoryTransport::Start() {
@@ -52,17 +52,16 @@ future<void> InMemoryTransport::Start() {
     lock_guard<mutex> Lock(m_QueueMutex);
     while (!m_MessageQueue.empty()) {
         const auto& QueuedMessage = m_MessageQueue.front();
-        if (OnMessage) { OnMessage.value()(*QueuedMessage.Message, QueuedMessage.AuthInfo); }
+        CallOnMessage(*QueuedMessage.Message, QueuedMessage.AuthInfo);
         m_MessageQueue.pop();
     }
-    if (OnStart) { OnStart.value()(); }
+    CallOnStart();
 }
 
 future<void> InMemoryTransport::Close() {
-    if (auto Other = m_OtherTransport.lock()) { Other->m_OtherTransport.reset(); }
+    if (auto Other = m_OtherTransport) { Other->m_OtherTransport.reset(); }
     m_OtherTransport.reset();
-    if (OnStop) { OnStop.value()(); }
-    if (OnClose) { OnClose.value()(); }
+    CallOnClose();
 }
 
 future<void> InMemoryTransport::Send(const MessageBase& InMessage,
@@ -82,10 +81,10 @@ future<void> InMemoryTransport::Send(const MessageBase& InMessage,
 
         // Handle resumption token if provided
         if (InOptions.OnResumptionToken && InOptions.ResumptionToken) {
-            InOptions.OnResumptionToken(*InOptions.ResumptionToken);
+            InOptions.OnResumptionToken.value()(*InOptions.ResumptionToken);
         }
     } else {
-        if (OnError) { OnError.value()(ErrorBase("Not connected")); }
+        CallOnError("Not connected");
     }
 }
 
@@ -99,7 +98,7 @@ void InMemoryTransport::WriteSSEEvent(const string& InEvent, const string& InDat
 bool InMemoryTransport::Resume(const string& InResumptionToken) {
     (void)InResumptionToken;
     // In-memory transport does not support resumption
-    if (OnError) { OnError.value()("Resumption not supported by InMemoryTransport"); }
+    CallOnError("Resumption not supported by InMemoryTransport");
     return false;
 }
 

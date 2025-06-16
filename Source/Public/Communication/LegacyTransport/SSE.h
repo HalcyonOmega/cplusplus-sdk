@@ -2,11 +2,12 @@
 
 #include "Communication/Messages.h"
 #include "Core.h"
+#include "Utilities/HTTP/HTTPLayer.hpp"
 #include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
 MCP_NAMESPACE_BEGIN
 
-using HeadersInit = unordered_map<string, string>;
+using HeadersInit = HTTP_Headers;
 using EventSourceInit = unordered_map<string, string>;
 using RequestInit = unordered_map<string, variant<string, HeadersInit, bool>>;
 
@@ -29,7 +30,7 @@ struct ContentTypeResult {
 ContentTypeResult ParseContentType(const string& InContentTypeHeader);
 
 // TODO: Fix External Ref: Raw body parsing
-string GetRawBodyEquivalent(HTTP_Request* InRequest, const string& InLimit,
+string GetRawBodyEquivalent(HTTP_Request& InRequest, const string& InLimit,
                             const string& InEncoding);
 
 /**
@@ -38,12 +39,12 @@ string GetRawBodyEquivalent(HTTP_Request* InRequest, const string& InLimit,
  *
  * This transport is only available in Node.js environments.
  */
-class SSEServerTransport {
+class SSEServerTransport : public Transport {
   private:
-    optional<HTTP_Response*> m_SSEResponse;
+    optional<HTTP_Response> m_SSEResponse;
     string m_SessionID;
     string m_Endpoint;
-    HTTP_Response* m_Response;
+    HTTP_Response m_Response;
 
   public:
     /**
@@ -80,13 +81,6 @@ class SSEServerTransport {
     void Close();
 
     void Send(const MessageBase& InMessage);
-
-    /**
-     * Returns the session ID for this transport.
-     *
-     * This can be used to route incoming POST requests.
-     */
-    string GetSessionID() const;
 };
 
 // ##########################################################
@@ -98,53 +92,51 @@ class SSEServerTransport {
 class SSEError : public ErrorBase {};
 
 /**
- * Configuration options for the SSEClientTransport.
- */
-struct SSEClientTransportOptions {
-    /**
-     * An OAuth client provider to use for authentication.
-     *
-     * When an authProvider is specified and the SSE connection is started:
-     * 1. The connection is attempted with any existing access token from the authProvider.
-     * 2. If the access token has expired, the authProvider is used to refresh the token.
-     * 3. If token refresh fails or no access token exists, and auth is required,
-     * OAuthClientProvider.redirectToAuthorization is called, and an UnauthorizedError will be
-     * thrown from connect/start.
-     *
-     * After the user has finished authorizing via their user agent, and is redirected back to the
-     * MCP client application, call SSEClientTransport.finishAuth with the authorization code before
-     * retrying the connection.
-     *
-     * If an authProvider is not provided, and auth is required, an UnauthorizedError will be
-     * thrown.
-     *
-     * UnauthorizedError might also be thrown when sending any message over the SSE transport,
-     * indicating that the session has expired, and needs to be re-authed and reconnected.
-     */
-    shared_ptr<OAuthClientProvider> AuthProvider = nullptr;
-
-    /**
-     * Customizes the initial SSE request to the server (the request that begins the stream).
-     *
-     * NOTE: Setting this property will prevent an Authorization header from
-     * being automatically attached to the SSE request, if an authProvider is
-     * also given. This can be worked around by setting the Authorization header
-     * manually.
-     */
-    optional<EventSourceInit> EventSourceInit = nullopt;
-
-    /**
-     * Customizes recurring POST requests to the server.
-     */
-    optional<RequestInit> RequestInit = nullopt;
-};
-
-/**
  * Client transport for SSE: this will connect to a server using Server-Sent Events for receiving
  * messages and make separate POST requests for sending messages.
  */
 class SSEClientTransport : public Transport {
   public:
+    // Configuration options for the SSEClientTransport.
+    struct SSEClientTransportOptions {
+        /**
+         * An OAuth client provider to use for authentication.
+         *
+         * When an authProvider is specified and the SSE connection is started:
+         * 1. The connection is attempted with any existing access token from the authProvider.
+         * 2. If the access token has expired, the authProvider is used to refresh the token.
+         * 3. If token refresh fails or no access token exists, and auth is required,
+         * OAuthClientProvider.redirectToAuthorization is called, and an UnauthorizedError will be
+         * thrown from connect/start.
+         *
+         * After the user has finished authorizing via their user agent, and is redirected back to
+         * the MCP client application, call SSEClientTransport.finishAuth with the authorization
+         * code before retrying the connection.
+         *
+         * If an authProvider is not provided, and auth is required, an UnauthorizedError will be
+         * thrown.
+         *
+         * UnauthorizedError might also be thrown when sending any message over the SSE transport,
+         * indicating that the session has expired, and needs to be re-authed and reconnected.
+         */
+        shared_ptr<OAuthClientProvider> AuthProvider = nullptr;
+
+        /**
+         * Customizes the initial SSE request to the server (the request that begins the stream).
+         *
+         * NOTE: Setting this property will prevent an Authorization header from
+         * being automatically attached to the SSE request, if an authProvider is
+         * also given. This can be worked around by setting the Authorization header
+         * manually.
+         */
+        optional<EventSourceInit> EventSourceInit = nullopt;
+
+        /**
+         * Customizes recurring POST requests to the server.
+         */
+        optional<RequestInit> RequestInit = nullopt;
+    };
+
     SSEClientTransport(const URL& InURL, const optional<SSEClientTransportOptions>& InOpts)
         : _eventSource(nullptr), _endpoint(nullopt), _abortController(nullptr), _url(InURL),
           _resourceMetadataUrl(nullopt),
@@ -177,9 +169,9 @@ class SSEClientTransport : public Transport {
 
   private:
     // Private methods (exactly matching TypeScript structure)
-    future<void> m_AuthThenStart();
-    future<HeadersInit> m_CommonHeaders();
-    future<void> m_StartOrAuth();
+    future<void> AuthThenStart();
+    future<HeadersInit> CommonHeaders();
+    future<void> StartOrAuth();
 
     // TODO: Fix External Ref: Auth function
     future<AuthResult> Auth(shared_ptr<OAuthClientProvider> InAuthProvider,

@@ -1,6 +1,7 @@
 #include "Auth/Middleware/BearerAuth.h"
 
 #include "Core/Constants/MessageConstants.h"
+#include "Utilities/HTTP/HTTPLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -22,7 +23,7 @@ void MiddlewareResponse::SendJSON(const JSON& JsonData) {
     Body = JsonData;
 }
 
-string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string& HeaderName) {
+string GetHeaderCaseInsensitive(const HTTP_Headers& Headers, const string& HeaderName) {
     string LowerHeaderName = HeaderName;
     transform(LowerHeaderName.begin(), LowerHeaderName.end(), LowerHeaderName.begin(), ::tolower);
 

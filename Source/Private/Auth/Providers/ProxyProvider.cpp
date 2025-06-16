@@ -1,5 +1,8 @@
 #include "Auth/Providers/ProxyProvider.h"
 
+#include "Utilities/HTTP/HTTPLayer.hpp"
+
+
 MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Response (express equivalent)
@@ -143,7 +146,7 @@ future<AuthInfo> ProxyOAuthServerProvider::VerifyAccessToken(const string& Token
 }
 
 future<HTTP_Response> ProxyOAuthServerProvider::HttpPost(const string& Url,
-                                                         const map<string, string>& Headers,
+                                                         const HTTP_Headers& Headers,
                                                          const string& Body) {
     // TODO: Implement actual HTTP POST request
     co_return HTTP_Response{false, 500, MSG_EMPTY};

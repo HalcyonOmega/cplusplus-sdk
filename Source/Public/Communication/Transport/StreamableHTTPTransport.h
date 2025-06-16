@@ -157,7 +157,7 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     atomic<bool> m_AbortRequested;
     string m_URL;
     optional<string> m_ResourceMetadataURL;
-    map<string, string> m_RequestHeaders;
+    HTTP_Headers m_RequestHeaders;
     shared_ptr<OAuthClientProvider> m_AuthProvider;
     StreamableHTTPReconnectionOptions m_ReconnectionOptions;
     string m_Path;
@@ -170,7 +170,7 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     // Configuration options for the `StreamableHTTPClientTransport`.
     struct StreamableHTTPClientTransportOptions {
         shared_ptr<OAuthClientProvider> AuthProvider;
-        unordered_map<string, string> RequestHeaders; // RequestInit equivalent
+        HTTP_Headers RequestHeaders; // RequestInit equivalent
         StreamableHTTPReconnectionOptions ReconnectionOptions =
             DEFAULT_STREAMABLE_HTTP_RECONNECTION_OPTIONS;
         optional<string> SessionID;
@@ -186,7 +186,7 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
 
   private:
     future<void> AuthThenStart();
-    future<unordered_map<string, string>> CommonHeaders();
+    future<HTTP_Headers> CommonHeaders();
     future<void> StartOrAuthSSE(const TransportSendOptions& InOptions);
     int GetNextReconnectionDelay(int InAttempt);
     void ScheduleReconnection(const TransportSendOptions& InOptions, int InAttemptCount = 0);

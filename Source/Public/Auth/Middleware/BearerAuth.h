@@ -43,7 +43,7 @@ struct AuthenticatedRequest {
     optional<AuthInfo> Auth;
 
     // TODO: Add other request properties as needed (headers, body, etc.)
-    map<string, string> Headers;
+    HTTP_Headers Headers;
     string Method;
     string Path;
 };
@@ -53,10 +53,10 @@ struct AuthenticatedRequest {
  */
 struct MiddlewareResponse {
     HTTPStatus StatusCode = HTTPStatus::Ok;
-    map<string, string> Headers;
+    HTTP_Headers Headers;
     JSON Body;
 
-    void SetStatus(int Status);
+    void SetStatus(HTTPStatus Status);
 
     void SetHeader(const string& Key, const string& Value);
 
@@ -72,7 +72,7 @@ using MiddlewareFunction =
 /**
  * Helper function for case-insensitive header lookup
  */
-string GetHeaderCaseInsensitive(const map<string, string>& Headers, const string& HeaderName);
+string GetHeaderCaseInsensitive(const HTTP_Headers& Headers, const string& HeaderName);
 
 /**
  * Middleware that requires a valid Bearer token in the Authorization header.

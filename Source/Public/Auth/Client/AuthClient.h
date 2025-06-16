@@ -202,10 +202,9 @@ future<OAuthClientInformationFull> RegisterClientAsync(const string& Authorizati
 // Helper functions and TODO implementations
 PKCE_Challenge GeneratePKCE_Challenge();
 
-future<HTTP_Response> FetchAsync(const string& URL,
-                                 const unordered_map<string, string>& Headers = {});
+future<HTTP_Response> FetchAsync(const string& URL, const HTTP_Headers& Headers = {});
 future<HTTP_Response> FetchPostAsync(const string& URL, const string& Body,
-                                     const unordered_map<string, string>& Headers = {});
+                                     const HTTP_Headers& Headers = {});
 
 // JSON schema validation functions (replacing Zod)
 bool ValidateOAuthProtectedResourceMetadata(const JSON& Data);

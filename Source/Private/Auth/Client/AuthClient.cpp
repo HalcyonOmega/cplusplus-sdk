@@ -18,7 +18,7 @@ OAuthClientProvider::SaveClientInformation(const OAuthClientInformationFull& Cli
 
 future<AuthResult> Auth(shared_ptr<OAuthClientProvider> Provider, const AuthParams& Params);
 
-optional<string> ExtractResourceMetadataURL(const unordered_map<string, string>& ResponseHeaders);
+optional<string> ExtractResourceMetadataURL(const HTTP_Headers& ResponseHeaders);
 
 future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
     const string& ServerURL, const optional<DiscoverMetadataOptions>& Options = nullopt);
@@ -45,10 +45,9 @@ bool HTTP_Response::IsOK() const {
     return StatusCode >= 200 && StatusCode < 300;
 }
 
-future<HTTP_Response> FetchAsync(const string& URL,
-                                 const unordered_map<string, string>& Headers = {});
+future<HTTP_Response> FetchAsync(const string& URL, const HTTP_Headers& Headers = {});
 future<HTTP_Response> FetchPostAsync(const string& URL, const string& Body,
-                                     const unordered_map<string, string>& Headers = {});
+                                     const HTTP_Headers& Headers = {});
 
 // JSON schema validation functions (replacing Zod)
 bool ValidateOAuthProtectedResourceMetadata(const JSON& Data);

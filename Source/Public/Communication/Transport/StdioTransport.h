@@ -25,11 +25,8 @@ class StdioTransport : public Transport {
 
     bool Resume(const string& InResumptionToken) override;
 
-    optional<string> GetSessionID() const;
-
   private:
     void ReadLoop();
-    void ParseSSEData(const string& InData);
 
     atomic<bool> m_IsRunning;
     thread m_ReadThread;
@@ -38,7 +35,7 @@ class StdioTransport : public Transport {
 // Server transport for stdio: this communicates with a MCP client by reading from the current
 // process' stdin and writing to stdout.
 // This transport provides cross-platform stdio communication capabilities.
-class StdioServerTransport : public Transport {
+class StdioServerTransport : public StdioTransport {
   private:
     unique_ptr<ReadBuffer> m_ReadBuffer;
     atomic<bool> m_Started{false};
@@ -138,16 +135,6 @@ class StdioServerTransport : public Transport {
         }
     }
 
-    // Event handler for errors
-    void OnErrorInternal(const string& error) {
-        lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnError) {
-            // Create ErrorBase from string message
-            ErrorBase ErrorMessage = ErrorBase(Errors::InternalError, error);
-            OnError.value()(ErrorMessage);
-        }
-    }
-
     // Processes the read buffer and extracts complete messages
     void ProcessReadBuffer() {
         while (true) {
@@ -159,7 +146,7 @@ class StdioServerTransport : public Transport {
                 if (OnMessage && *messageOpt) { OnMessage.value()(*messageOpt->get(), nullopt); }
                 // Continue loop to check for more complete messages
             } catch (const exception& e) {
-                OnErrorInternal(e.what());
+                CallOnError(e.what());
                 break;
             }
         }
@@ -182,7 +169,7 @@ class StdioServerTransport : public Transport {
 
                 if (m_Stdin.eof() || m_Stdin.fail()) { break; }
             } catch (const exception& e) {
-                OnErrorInternal(e.what());
+                CallOnError(e.what());
                 break;
             }
         }
@@ -192,7 +179,7 @@ class StdioServerTransport : public Transport {
 // Client transport for stdio: this will connect to a server by spawning a process and communicating
 // with it over stdin/stdout. This transport is only available in environments that support process
 // spawning.
-class StdioClientTransport : public Transport {
+class StdioClientTransport : public StdioTransport {
   private:
     // Default Variables
     unique_ptr<ChildProcess> m_Process;

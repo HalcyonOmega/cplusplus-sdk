@@ -10,24 +10,6 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: Raw body parsing
 // TODO: Fix External Ref: Content-Type parsing
 
-void HTTP_Response::writeHead(int status_code,
-                              const optional<map<string, string>>& headers = nullopt) {
-    // TODO: Implement HTTP response header writing
-}
-
-void HTTP_Response::write(const string& data) {
-    // TODO: Implement HTTP response writing
-}
-
-void HTTP_Response::end(const optional<string>& data = nullopt) {
-    // TODO: Implement HTTP response ending
-    is_ended = true;
-}
-
-void HTTP_Response::on(const string& event, optional<function<void()>> callback) {
-    // TODO: Implement event handling
-}
-
 string URLHelper::addSessionParam(const string& endpoint, const string& session_id) {
     // TODO: Implement proper URL parameter handling like TypeScript URL class
     string separator = (endpoint.find('?') != string::npos) ? "&" : "?";
