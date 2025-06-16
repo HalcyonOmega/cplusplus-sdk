@@ -2,6 +2,7 @@
 
 #include "Auth/Types/Auth.h"
 #include "Core.h"
+#include "Poco/Net/HTTPClientSession.h"
 #include "httplib.h"
 
 MCP_NAMESPACE_BEGIN

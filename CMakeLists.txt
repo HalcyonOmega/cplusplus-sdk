@@ -173,3 +173,17 @@ install(EXPORT ${PROJECT_NAME}Targets
     NAMESPACE ${PROJECT_NAME}::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
 ) 
+
+include(FetchContent)
+
+FetchContent_Declare(
+  poco
+  GIT_REPOSITORY https://github.com/pocoproject/poco.git
+  # This is the crucial line to update:
+  GIT_TAG        poco-1.14.2-release 
+)
+
+FetchContent_MakeAvailable(poco)
+
+# Now you can link to the libraries you need as before
+target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::Foundation)
