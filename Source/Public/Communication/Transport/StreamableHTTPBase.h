@@ -8,8 +8,8 @@ MCP_NAMESPACE_BEGIN
 
 class StreamableHTTPTransportBase : public Transport {
   public:
-    // Nothing to construct – common helpers are static. Keep default ctor/dtor.
-    StreamableHTTPTransportBase() = default;
+    // Constructor that takes a URL for shared initialization
+    explicit StreamableHTTPTransportBase(const string& InURL);
     ~StreamableHTTPTransportBase() override = default;
 
 // Shared constants -----------------------------------------------------
@@ -34,12 +34,28 @@ class StreamableHTTPTransportBase : public Transport {
     virtual future<void> Close() override = 0;
     virtual future<void> Send(const MessageBase& InMessage,
                               const TransportSendOptions& InOptions = {}) override = 0;
-    virtual void WriteSSEEvent(const string& InEvent, const string& InData) override = 0;
+
+    // Shared implementations with default behavior that can be overridden
+    virtual void WriteSSEEvent(const string& InEvent, const string& InData) override;
     [[deprecated("Not yet implemented – will be supported in a future version")]]
-    virtual bool Resume(const string& InResumptionToken) override = 0;
+    virtual bool Resume(const string& InResumptionToken) override;
 
   protected:
-    // Helper that formats a SSE event string compliant with RFC 6455 rules.
+    // Shared member variables for common functionality
+    string m_URL;
+    string m_Path;
+    int m_Port;
+    unique_ptr<HTTP_Client> m_Client;
+    atomic<bool> m_IsRunning;
+    optional<string> m_SessionID;
+    thread m_ReadThread;
+
+    // Shared helper methods
+    bool ValidateURL();
+    void ParseSSEData(const string& InData);
+    void ReadLoop(); // SSE read loop for client connections
+
+    // Helper that formats a SSE event string compliant with the MCP spec
     static string FormatSSEEvent(const string& InEvent, const string& InData,
                                  const optional<string>& InID = nullopt) {
         stringstream ss;

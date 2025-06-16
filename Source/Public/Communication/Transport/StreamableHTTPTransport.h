@@ -146,13 +146,7 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
 
     // StreamableHTTPTransportBase pure virtual requirement
     future<void> Send(const MessageBase& InMessage,
-                      const TransportSendOptions& InOptions = {}) override {
-        return Send(InMessage, InOptions.RelatedRequestID);
-    }
-
-    bool Resume(const string& /*InResumptionToken*/) override {
-        return false;
-    }
+                      const TransportSendOptions& InOptions = {}) override;
 };
 
 // Client transport for Streamable HTTP: this implements the MCP Streamable HTTP transport
@@ -167,7 +161,7 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     shared_ptr<OAuthClientProvider> m_AuthProvider;
     StreamableHTTPReconnectionOptions m_ReconnectionOptions;
     string m_Path;
-    int m_Port;
+    int m_Port{};
     unique_ptr<HTTP_Client> m_Client;
     atomic<bool> m_IsRunning;
     thread m_ReadThread;
@@ -187,7 +181,8 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
         : m_AbortRequested(false), m_URL(InURL),
           m_RequestHeaders(InOptions.RequestHeaders.begin(), InOptions.RequestHeaders.end()),
           m_AuthProvider(InOptions.AuthProvider),
-          m_ReconnectionOptions(InOptions.ReconnectionOptions) {}
+          m_ReconnectionOptions(InOptions.ReconnectionOptions), m_Client(nullptr),
+          m_IsRunning(false) {}
 
   private:
     future<void> AuthThenStart();
@@ -209,17 +204,10 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     future<void> Send(const MessageBase& InMessage,
                       const TransportSendOptions& InOptions = {}) override;
 
-    future<void> Send(const vector<MessageBase>& InMessages,
-                      const TransportSendOptions& InOptions = {});
-
     // Terminates the current session by sending a DELETE request to the server.
     future<void> TerminateSession();
 
     void WriteSSEEvent(const string& InEvent, const string& InData) override;
-
-    bool Resume(const string& /*InResumptionToken*/) override {
-        return false;
-    }
 };
 
 MCP_NAMESPACE_END

@@ -92,6 +92,34 @@ class Transport {
     // the AuthInfo if the transport is authenticated.
     optional<MessageCallback> OnMessage;
 
+  protected:
+    // Helper methods to safely invoke callbacks with proper locking and null checks
+    void CallOnStart() const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnStart) { (*OnStart)(); }
+    }
+
+    void CallOnClose() const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnClose) { (*OnClose)(); }
+    }
+
+    void CallOnError(const ErrorBase& InError) const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnError) { (*OnError)(InError); }
+    }
+
+    void CallOnError(const string& InMessage) const {
+        ErrorBase Error(Errors::InternalError, InMessage);
+        CallOnError(Error);
+    }
+
+    void CallOnMessage(const MessageBase& InMessage,
+                       const optional<AuthInfo>& InAuthInfo = nullopt) const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnMessage) { (*OnMessage)(InMessage, InAuthInfo); }
+    }
+
   private:
     // The session ID generated for this connection.
     optional<string> m_SessionID;

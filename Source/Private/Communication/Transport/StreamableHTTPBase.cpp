@@ -1,165 +1,105 @@
-#include "Communication/Transport/StreamableHTTPTransport.h"
+#include "Communication/Transport/StreamableHTTPBase.h"
+
 #include "Communication/Utilities/TransportUtilities.h"
 #include "Core.h"
 #include "Core/Constants/TransportConstants.h"
+#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
 StreamableHTTPTransportBase::StreamableHTTPTransportBase(const string& InURL)
-    : m_URL(InURL), m_IsRunning(false) {
-    // Parse URL to get host and port
-    size_t protocolEnd = m_URL.find("://");
-    if (protocolEnd == string::npos) { throw runtime_error("Invalid URL format"); }
+    : m_URL(InURL), m_Port(80), m_IsRunning(false) {
+    // Parse URL to extract host, port, and path - defer error reporting to ValidateURL
+    ValidateURL();
+}
 
-    string host = url.substr(protocolEnd + 3);
+bool StreamableHTTPTransportBase::ValidateURL() {
+    // Parse URL to get host and port - handle parsing errors with callbacks rather than exceptions
+    size_t protocolEnd = m_URL.find("://");
+    if (protocolEnd == string::npos) {
+        // Invalid URL format - will be handled by validation in Start() method
+        return false;
+    }
+
+    string host = m_URL.substr(protocolEnd + 3);
     size_t pathStart = host.find('/');
     if (pathStart != string::npos) {
-        _path = host.substr(pathStart);
+        m_Path = host.substr(pathStart);
         host = host.substr(0, pathStart);
+    } else {
+        m_Path = "/"; // Default path
     }
 
     size_t portStart = host.find(':');
     if (portStart != string::npos) {
-        _port = stoi(host.substr(portStart + 1));
+        m_Port = stoi(host.substr(portStart + 1));
         host = host.substr(0, portStart);
     } else {
-        _port = 80; // Default HTTP port
+        m_Port = 80; // Default HTTP port
     }
 
-    _client = make_unique<httplib::Client>(host, _port);
-    _client->set_keep_alive(true);
-}
-
-StreamableHTTPTransportBase::~StreamableHTTPTransportBase() {
-    Close();
-}
-
-future<void> StreamableHTTPTransportBase::Start() {
-    if (_isRunning) { return; }
-
-    _isRunning = true;
-    if (_onStart) { _onStart(); }
-
-    // Start reading thread
-    _readThread = thread([this] { ReadLoop(); });
-}
-
-future<void> StreamableHTTPTransportBase::Close() {
-    if (!_isRunning) { return; }
-
-    _isRunning = false;
-    if (_readThread.joinable()) { _readThread.join(); }
-
-    if (_onStop) { _onStop(); }
-}
-
-future<void> StreamableHTTPTransportBase::Send(const MessageBase& InMessage,
-                                               const TransportSendOptions& InOptions) {
-    if (!_isRunning) {
-        if (_onError) { _onError(TRANSPORT_ERR_NOT_RUNNING); }
-        return;
-    }
-
-    try {
-        // Validate UTF-8 encoding
-        if (!TransportUtilities::IsValidUTF8(message)) {
-            if (_onError) { _onError(TRANSPORT_ERR_INVALID_UTF8); }
-            return;
-        }
-
-        // Validate JSON-RPC message format
-        if (!TransportUtilities::IsValidJSONRPC(message)) {
-            if (_onError) { _onError(TRANSPORT_ERR_INVALID_JSON_RPC); }
-            return;
-        }
-
-        // Handle resumption token if provided
-        if (options.resumptionToken && options.onResumptionToken) {
-            options.onResumptionToken(*options.resumptionToken);
-        }
-
-        // Add session ID to headers if available
-        httplib::Headers headers;
-        if (_sessionId) { headers.emplace(TSPT_SESSION_ID, *_sessionId); }
-
-        // Send message via POST request
-        auto res = _client->Post(_path, headers, message, TSPT_APP_JSON);
-        if (!res || res->status != HTTPStatus::Ok) {
-            if (_onError) {
-                _onError(TRANSPORT_ERR_HTTP_REQUEST_FAILED
-                         + (res ? to_string(res->status) : "Unknown error"));
-            }
-            return;
-        }
-
-        // Check for session ID in response headers
-        auto sessionHeader = res->get_header_value(TSPT_SESSION_ID);
-        if (!sessionHeader.empty() && !_sessionId) { _sessionId = sessionHeader; }
-    } catch (const exception& e) {
-        if (_onError) { _onError(string("Error sending message: ") + e.what()); }
-    }
+    m_Client = make_unique<HTTP_Client>(host, m_Port);
+    return true;
 }
 
 void StreamableHTTPTransportBase::WriteSSEEvent(const string& InEvent, const string& InData) {
-    string sseMessage = "event: " + InEvent + TSPT_EVENT_DELIMITER + TSPT_EVENT_DATA_PREFIX + InData
-                        + TSPT_EVENT_DELIMITER;
-    Send(sseMessage);
+    // Default implementation - subclasses can override for specific behavior
+    string SSEMessage = FormatSSEEvent(InEvent, InData);
+
+    // This is a basic implementation that could be used by client transports
+    // Server transports would override this to write to specific response streams
+    // Create a MessageBase representing the SSE data
+    MessageBase message; // Now that MessageBase is concrete, this works
+    CallOnMessage(message);
 }
 
-bool StreamableHTTPTransportBase::Resume(const string& InResumptionToken) {
-    // HTTP transport does not support resumption
-    if (_onError) { _onError("Resumption not supported by StreamableHTTPTransport"); }
+bool StreamableHTTPTransportBase::Resume(const string& /*InResumptionToken*/) {
+    // Default implementation - HTTP transport does not support resumption by default
+    CallOnError("Resumption not supported by base StreamableHTTPTransport");
     return false;
 }
 
 void StreamableHTTPTransportBase::ReadLoop() {
-    if (!_client) {
-        if (_onError) { _onError("Failed to initialize HTTP client"); }
+    if (!m_Client) {
+        CallOnError("Failed to initialize HTTP client");
         return;
     }
 
-    while (_isRunning) {
-        try {
-            // Add session ID to headers if available
-            httplib::Headers headers;
-            if (_sessionId) { headers.emplace(TSPT_SESSION_ID, *_sessionId); }
+    while (m_IsRunning) {
+        // Add session ID to headers if available
+        HTTP_Headers headers;
+        if (m_SessionID) { headers.emplace(TSPT_SESSION_ID, *m_SessionID); }
 
-            auto res = _client->Get(_path, headers, [this](const char* data, size_t len) {
-                string chunk(data, len);
-                ParseSSEData(chunk);
-                return true;
-            });
+        auto res = m_Client->Get(m_Path, headers, [this](const char* data, size_t len) {
+            string chunk(data, len);
+            ParseSSEData(chunk);
+            return true;
+        });
 
-            if (!res || res->status != HTTPStatus::Ok) {
-                if (_onError) {
-                    _onError(TRANSPORT_ERR_HTTP_REQUEST_FAILED
-                             + (res ? to_string(res->status) : "Unknown error"));
-                }
-                break;
-            }
-
-            // Check for session ID in response headers
-            auto sessionHeader = res->get_header_value(TSPT_SESSION_ID);
-            if (!sessionHeader.empty() && !_sessionId) { _sessionId = sessionHeader; }
-        } catch (const exception& e) {
-            if (_onError) { _onError(string("Error in read loop: ") + e.what()); }
+        if (!res || res->status != static_cast<int>(HTTPStatus::Ok)) {
+            CallOnError(TRANSPORT_ERR_HTTP_REQUEST_FAILED
+                        + (res ? to_string(res->status) : "Unknown error"));
             break;
         }
+
+        // Check for session ID in response headers
+        auto sessionHeader = res->get_header_value(TSPT_SESSION_ID);
+        if (!sessionHeader.empty() && !m_SessionID) { m_SessionID = sessionHeader; }
     }
 
-    if (_onClose) { _onClose(); }
+    CallOnClose();
 }
 
-void StreamableHTTPTransportBase::ParseSSEData(const string& data) {
+void StreamableHTTPTransportBase::ParseSSEData(const string& InData) {
     size_t pos = 0;
     string currentEvent;
     string currentData;
 
-    while (pos < data.length()) {
-        size_t lineEnd = data.find('\n', pos);
+    while (pos < InData.length()) {
+        size_t lineEnd = InData.find('\n', pos);
         if (lineEnd == string::npos) { break; }
 
-        string line = data.substr(pos, lineEnd - pos);
+        string line = InData.substr(pos, lineEnd - pos);
         pos = lineEnd + 1;
 
         if (line.empty() || line[0] == ':') { continue; }
@@ -169,8 +109,9 @@ void StreamableHTTPTransportBase::ParseSSEData(const string& data) {
         } else if (line.substr(0, TSPT_EVENT_DATA_PREFIX_LEN) == TSPT_EVENT_DATA_PREFIX) {
             currentData = line.substr(TSPT_EVENT_DATA_PREFIX_LEN);
         } else if (line.empty() && !currentData.empty()) {
-            // End of event
-            if (_onMessage) { _onMessage(currentData, nullptr); }
+            // End of event - create a MessageBase from the SSE data
+            MessageBase message; // Use concrete MessageBase for the parsed SSE data
+            CallOnMessage(message);
             currentEvent.clear();
             currentData.clear();
         }

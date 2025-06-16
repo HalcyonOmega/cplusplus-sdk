@@ -4,14 +4,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-enum class HTTPStatus {
-    Ok = 200,
-    BadRequest = 400,
-    Unauthorized = 401,
-    NotFound = 404,
-    MethodNotAllowed = 405,
-};
-
 // Transport Types
 static constexpr const char* TSPT_STDIO = "stdio";
 static constexpr const char* TSPT_HTTP = "http";
@@ -29,6 +21,7 @@ static constexpr const char* TSPT_APP_JSON_AND_EVENT_STREAM = "application/json,
 // Transport Event Stream Constants
 static constexpr const char* TSPT_EVENT_DELIMITER = "\n\n";
 static constexpr const char* TSPT_EVENT_DATA_PREFIX = "data: ";
+static constexpr int TSPT_EVENT_DATA_PREFIX_LEN = 6; // Length of "data: "
 
 // Transport Error Messages
 static constexpr const char* TRANSPORT_ERR_INVALID_UTF8 = "Invalid UTF-8 encoding in message";

@@ -2,42 +2,55 @@
 
 #include "Auth/Types/Auth.h"
 #include "Core.h"
+#include "httplib.h"
 
 MCP_NAMESPACE_BEGIN
 
-/* Needed Classes/Structs */
-// TODO: @HalcyonOmega Implement HTTP_Client and HTTP_Server classes.
-class HTTP_Client;
-class HTTP_Server;
+using HTTP_Client = httplib::Client;
+using HTTP_Server = httplib::Server;
+using HTTP_Headers = httplib::Headers;
+using HTTP_Result = httplib::Result;
+using HTTP_Error = httplib::Error;
+
+// HTTP status codes
+enum class HTTPStatus {
+    Ok = 200,
+    BadRequest = 400,
+    Unauthorized = 401,
+    NotFound = 404,
+    MethodNotAllowed = 405,
+    NotAcceptable = 406,
+    Conflict = 409,
+    UnsupportedMediaType = 415,
+    InternalServerError = 500
+};
 
 class HTTP_Response {
-  private:
-    int StatusCode;
-    unordered_map<string, string> Headers;
+  public:
+    HTTPStatus Status;
+    HTTP_Headers Headers;
     JSON Body;
 
-  public:
-    void SetStatus(int Status);
+    void SetStatus(HTTPStatus Status);
     void SetJSON(const JSON& Data);
-    void WriteHead(int InStatusCode,
-                   const optional<unordered_map<string, string>>& InHeaders = nullopt);
+    void WriteHead(HTTPStatus InStatus, const optional<HTTP_Headers>& InHeaders = nullopt);
     void Write(const string& InData);
     void End(const optional<string>& InData = nullopt);
     void On(const string& InEvent, optional<function<void()>> InCallback);
     bool IsOK() const;
-    future<string> text() const;
-    function<void()> flushHeaders;
-    bool closed = false;
+    future<string> Text() const;
+    function<void()> FlushHeaders;
+    bool Closed = false;
     bool IsEnded = false;
 };
 
 class HTTP_Request {
-  private:
+  public:
     JSON Body;
     shared_ptr<OAuthClientInformationFull> Client = nullptr;
     optional<AuthInfo> Auth;
     string Method;
-    unordered_map<string, string> Headers;
+    HTTP_Headers Headers;
 };
 
 using NextFunction = function<void()>;

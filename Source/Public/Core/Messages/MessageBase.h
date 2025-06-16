@@ -22,11 +22,11 @@ class MessageBase {
 
     virtual ~MessageBase() = default;
 
-    // Interface Methods
-    [[nodiscard]] virtual JSON ToJSON() const = 0;
-    [[nodiscard]] virtual unique_ptr<MessageBase> FromJSON(const JSON& InJSON) = 0;
+    // Interface Methods - concrete implementations for empty message
+    [[nodiscard]] virtual JSON ToJSON() const;
+    [[nodiscard]] virtual unique_ptr<MessageBase> FromJSON(const JSON& InJSON);
     [[nodiscard]] virtual string Serialize() const;
-    [[nodiscard]] virtual unique_ptr<MessageBase> Deserialize(string InString) = 0;
+    [[nodiscard]] virtual unique_ptr<MessageBase> Deserialize(string InString);
 };
 
 MCP_NAMESPACE_END
