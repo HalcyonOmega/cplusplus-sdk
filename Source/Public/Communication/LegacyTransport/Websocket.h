@@ -31,14 +31,6 @@ class WebSocket_Client_Transport : public Transport {
     JSON MessageToJSON(const MessageBase& InMessage) const;
 
   public:
-    // Event handlers - optional callbacks matching TypeScript interface
-    optional<function<void()>> OnClose;
-    optional<function<void(const exception&)>> OnError;
-    optional<function<void(const MessageBase&, const optional<AuthInfo>&)>> OnMessage;
-
-    // Session ID as required by Transport interface
-    optional<string> SessionID;
-
     explicit WebSocket_Client_Transport(const string& InURL) : m_URL(InURL), m_Socket(nullopt) {}
 
     future<void> Start() override;

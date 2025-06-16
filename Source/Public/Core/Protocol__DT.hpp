@@ -3,6 +3,7 @@
 #include "Auth/Types/Auth.h"
 #include "Communication/Transport/Transport.h"
 #include "Core.h"
+#include "Core/Constants/MethodConstants.h"
 #include "Core/Messages/NotificationBase.h"
 #include "Core/Messages/RequestBase.h"
 #include "Core/Messages/ResponseBase.h"
@@ -10,12 +11,10 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: @HalcyonOmega Cleanup this file
+struct AbortSignal; // TODO: @HalcyonOmega Implement This
 
 // The default request timeout, in milliseconds.
 static constexpr const int64_t DEFAULT_REQUEST_TIMEOUT_MSEC = 60000;
-
-// Callback for progress notifications.
-using ProgressCallback = function<void(const Progress&)>;
 
 // Additional initialization options.
 struct ProtocolOptions {

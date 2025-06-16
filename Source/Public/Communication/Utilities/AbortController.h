@@ -14,7 +14,7 @@ MCP_NAMESPACE_BEGIN
 //------------------------------------------------------------------------------
 class AbortController {
   private:
-    std::atomic<bool> m_Aborted{false};
+    atomic<bool> m_Aborted{false};
 
   public:
     AbortController() = default;
@@ -22,12 +22,12 @@ class AbortController {
 
     // Signals cancellation. Thread-safe.
     void Abort() {
-        m_Aborted.store(true, std::memory_order_release);
+        m_Aborted.store(true, memory_order_release);
     }
 
     // Returns true once Abort() has been invoked.
     [[nodiscard]] bool IsAborted() const {
-        return m_Aborted.load(std::memory_order_acquire);
+        return m_Aborted.load(memory_order_acquire);
     }
 };
 

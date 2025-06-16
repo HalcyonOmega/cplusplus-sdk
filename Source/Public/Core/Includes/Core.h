@@ -86,4 +86,52 @@ struct JSONSchema {
 // An opaque token used to represent a cursor for pagination.
 using Cursor = string;
 
+// TODO: @HalcyonOmega Implement proper URL class
+class URL {
+  public:
+    string Href;
+    string Origin;
+
+    URL(const string& InURLString) : Href(InURLString) {
+        // TODO: Proper URL parsing
+        Origin = InURLString; // Simplified
+    }
+
+    URL(const string& InRelative, const URL& InBase) {
+        // TODO: Proper relative URL resolution
+        Href = InBase.Href + "/" + InRelative;
+        Origin = InBase.Origin;
+    }
+};
+
+// Platform-specific environment variables to inherit by default
+#ifdef _WIN32
+const vector<string> DEFAULT_INHERITED_ENV_VARS = {
+    "APPDATA",     "HOMEDRIVE",  "HOMEPATH", "LOCALAPPDATA", "PATH",       "PROCESSOR_ARCHITECTURE",
+    "SYSTEMDRIVE", "SYSTEMROOT", "TEMP",     "USERNAME",     "USERPROFILE"};
+#else
+const vector<string> DEFAULT_INHERITED_ENV_VARS = {"HOME",  "LOGNAME", "PATH",
+                                                   "SHELL", "TERM",    "USER"};
+#endif
+
+// Returns a default environment object including only environment variables deemed safe to inherit.
+inline unordered_map<string, string> GetDefaultEnvironment() {
+    unordered_map<string, string> Env;
+
+    for (const auto& key : DEFAULT_INHERITED_ENV_VARS) {
+        const char* value = getenv(key.c_str());
+        if (value == nullptr) { continue; }
+
+        string valueStr(value);
+        if (valueStr.starts_with("()")) {
+            // Skip functions, which are a security risk.
+            continue;
+        }
+
+        Env[key] = valueStr;
+    }
+
+    return Env;
+}
+
 MCP_NAMESPACE_END

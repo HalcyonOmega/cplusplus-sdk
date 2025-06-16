@@ -3,6 +3,7 @@
 #include "Auth/Types/Auth.h"
 #include "Communication/Transport/EventStore.h"
 #include "Core.h"
+#include "Core/Types/Progress.h"
 #include "ErrorBase.h"
 #include "MessageBase.h"
 #include "RequestBase.h"
@@ -13,6 +14,15 @@ using StartCallback = function<void()>;
 using CloseCallback = function<void()>;
 using ErrorCallback = function<void(const ErrorBase&)>;
 using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
+using ProgressCallback = function<void(const ProgressNotification&)>;
+
+// TODO: @HalcyonOmega Determine if this is needed.
+// Options for starting or authenticating an SSE connection
+struct StartSSEOptions {
+    optional<string> ResumptionToken;
+    function<void(const string&)> OnResumptionToken;
+    optional<RequestID> ReplayRequestID;
+};
 
 // Transport options
 struct TransportOptions {
@@ -60,11 +70,11 @@ class Transport {
 
     // SSE event writing
     // TODO: @HalcyonOmega Should this be in the base class?
-    virtual void WriteSSEEvent(const std::string& InEvent, const std::string& InData) = 0;
+    virtual void WriteSSEEvent(const string& InEvent, const string& InData) = 0;
 
     // Note: Resumability is not yet supported by any transport implementation.
     [[deprecated("Not yet implemented - will be supported in a future version")]]
-    virtual bool Resume(const std::string& InResumptionToken) = 0;
+    virtual bool Resume(const string& InResumptionToken) = 0;
 
     optional<StartCallback> OnStart;
 
@@ -83,8 +93,8 @@ class Transport {
     // The session ID generated for this connection.
     optional<string> SessionID;
 
-    mutable mutex m_CallbackMutex; // Protects callback invocation to avoid concurrent access
-                                   // between read thread and callers.
+    mutable mutex CallbackMutex; // Protects callback invocation to avoid concurrent access
+                                 // between read thread and callers.
 };
 
 MCP_NAMESPACE_END

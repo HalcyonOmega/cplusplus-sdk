@@ -6,6 +6,10 @@
 
 MCP_NAMESPACE_BEGIN
 
+using HeadersInit = unordered_map<string, string>;
+using EventSourceInit = unordered_map<string, string>;
+using RequestInit = unordered_map<string, variant<string, HeadersInit, bool>>;
+
 // TODO: Fix External Ref: Server-Sent Events implementation
 // TODO: Fix External Ref: Raw body parsing
 // TODO: Fix External Ref: Content-Type parsing
@@ -19,7 +23,7 @@ struct URLHelper {
 // TODO: Fix External Ref: Content-Type parsing
 struct ContentTypeResult {
     string Type;
-    map<string, string> Params;
+    unordered_map<string, string> Params;
 };
 
 ContentTypeResult ParseContentType(const string& InContentTypeHeader);
@@ -39,21 +43,15 @@ class SSEServerTransport {
     optional<HTTP_Response*> m_SSEResponse;
     string m_SessionID;
     string m_Endpoint;
-    HTTP_Response* m_Res;
+    HTTP_Response* m_Response;
 
   public:
-    optional<function<void()>> OnClose;
-    optional<function<void(const Error&)>> OnError;
-    optional<function<void(const MessageBase& InMessage,
-                           const optional<map<string, AuthInfo>>& InExtra)>>
-        OnMessage;
-
     /**
      * Creates a new SSE server transport, which will direct the client to POST messages to the
      * relative or absolute URL identified by _endpoint.
      */
     SSEServerTransport(const string& InEndpoint, HTTP_Response* InResParam)
-        : m_Endpoint(InEndpoint), m_Res(InResParam), m_SSEResponse(nullopt) {
+        : m_Endpoint(InEndpoint), m_Response(InResParam), m_SSEResponse(nullopt) {
         m_SessionID = GenerateUUID();
     }
 
@@ -96,34 +94,6 @@ class SSEServerTransport {
 // ===================== CLIENT SECTION =====================
 // ##########################################################
 // ##########################################################
-
-// URL class placeholder
-// TODO: Fix External Ref: Implement proper URL class
-class URL {
-  public:
-    string Href;
-    string Origin;
-
-    URL(const string& InURLString) : href(InURLString) {
-        // TODO: Proper URL parsing
-        Origin = InURLString; // Simplified
-    }
-
-    URL(const string& InRelative, const URL& InBase) {
-        // TODO: Proper relative URL resolution
-        Href = InBase.Href + "/" + InRelative;
-        Origin = InBase.Origin;
-    }
-};
-
-// HeadersInit type equivalent
-using HeadersInit = map<string, string>;
-
-// EventSourceInit equivalent
-using EventSourceInit = map<string, string>;
-
-// RequestInit equivalent - using variant to handle different value types
-using RequestInit = map<string, variant<string, HeadersInit, bool>>;
 
 class SSEError : public ErrorBase {};
 
@@ -199,11 +169,6 @@ class SSEClientTransport : public Transport {
     shared_ptr<OAuthClientProvider> m_AuthProvider;
 
   public:
-    // Callback function types (exactly matching TypeScript)
-    function<void()> OnClose;
-    function<void(const exception& error)> OnError;
-    function<void(const MessageBase& InMessage)> OnMessage;
-
     // Public interface methods (async equivalent using futures for Promise pattern)
     future<void> Start();
     future<void> FinishAuth(const string& InAuthorizationCode);
@@ -218,10 +183,10 @@ class SSEClientTransport : public Transport {
 
     // TODO: Fix External Ref: Auth function
     future<AuthResult> Auth(shared_ptr<OAuthClientProvider> InAuthProvider,
-                            const map<string, variant<URL, string>>& InParams);
+                            const unordered_map<string, variant<URL, string>>& InParams);
 
     // TODO: Fix External Ref: extractResourceMetadataUrl function
-    optional<URL> ExtractResourceMetadataUrl(const HTTP_Response& InResponse);
+    optional<URL> ExtractResourceMetadataURL(const HTTP_Response& InResponse);
 
     // TODO: Fix External Ref: HTTP functionality
     future<HTTP_Response> Fetch(const URL& InURL, const RequestInit& InInit);

@@ -9,21 +9,21 @@ MCP_NAMESPACE_BEGIN
  * @param message The message to validate
  * @return true if the message is valid JSON-RPC format
  */
-bool IsValidJSONRPC(const std::string& message);
+bool IsValidJSONRPC(const string& message);
 
 /**
  * Validates UTF-8 encoding
  * @param message The message to validate
  * @return true if the message is valid UTF-8
  */
-bool IsValidUTF8(const std::string& message);
+bool IsValidUTF8(const string& message);
 
 /**
  * Validates protocol version
  * @param version The version string to validate
  * @return true if the version is supported
  */
-bool IsValidProtocolVersion(const std::string& version);
+bool IsValidProtocolVersion(const string& version);
 
 /**
  * Validates transport state
