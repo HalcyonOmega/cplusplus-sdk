@@ -182,8 +182,6 @@ class IMCP {
     virtual MCPTask<ResponseBase> SendRequest(const RequestBase& InRequest);
     virtual MCPTask_Void SendResponse(const ResponseBase& InResponse);
     virtual MCPTask_Void SendNotification(const NotificationBase& InNotification);
-
-    // Send typed error
     virtual MCPTask_Void SendError(const ErrorBase& InError);
 
     // === Handlers ===
@@ -195,19 +193,10 @@ class IMCP {
         return m_Callbacks;
     }
 
-    // Process incoming typed message from transport
     void HandleIncomingMessage(const MessageBase& InMessage);
-
-    // Handle specific request types - override in derived classes
     virtual MCPTask<ResponseBase> HandleRequest(const RequestBase& InRequest) = 0;
-
-    // Handle incoming response
     void HandleResponse(const ResponseBase& InResponse);
-
-    // Handle specific notification types - override in derived classes
     virtual MCPTask_Void HandleNotification(const NotificationBase& InNotification) = 0;
-
-    // Register pending request
     void RegisterPendingRequest(const string& InRequestID,
                                 function<void(const ResponseBase&)> InHandler);
 
