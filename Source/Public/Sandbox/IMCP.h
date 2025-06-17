@@ -171,6 +171,7 @@ struct ProtocolCallbacks {
     function<void(const NotificationBase&)> OnNotification;
     function<void(const RequestBase&, function<void(const ResponseBase&)>)> OnRequest;
     function<void(const ResponseBase&)> OnResponse;
+    function<void()> OnInitialized;
     function<void(const ErrorBase&)> OnProtocolError;
 };
 

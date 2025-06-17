@@ -32,6 +32,7 @@ MCP_NAMESPACE_BEGIN
 
 // Sent from the client to request a list of prompts and prompt templates the server has.
 struct ListPromptsRequest : public PaginatedRequest {
+    optional<string> Cursor = nullopt;
     ListPromptsRequest() : PaginatedRequest(MTHD_PROMPTS_LIST) {}
 };
 
