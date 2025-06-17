@@ -7,9 +7,6 @@
 
 #include "../../Core/Includes/Macros.h"
 
-#define HTTP_NAMESPACE_BEGIN namespace HTTP {
-#define HTTP_NAMESPACE_END } // namespace HTTP
-
 MCP_NAMESPACE_BEGIN
 
 // Forward declarations
@@ -269,8 +266,8 @@ class Server {
  */
 class Error {
   public:
-    Error(int errorCode, const std::string& message);
-    Error(Status status, const std::string& message);
+    Error(int ErrorCode, const std::string& Message);
+    Error(Status Status, const std::string& Message);
     ~Error();
 
     int GetErrorCode() const; // Could also return HTTP_Status if more appropriate

@@ -7,6 +7,7 @@
 
 #include "Core.h"
 #include "ErrorBase.h"
+#include "IProtocol.h"
 #include "MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
@@ -29,82 +30,145 @@ MCP_NAMESPACE_BEGIN
  */
 class ITransport {
   public:
-    /**
-     * @brief Virtual destructor.
-     */
     virtual ~ITransport() = default;
 
-    // --- Core Transport Methods ---
+    // --- Core Transport Methods (Coroutines as default, no suffix) ---
 
     /**
-     * @brief Starts the transport, establishing any necessary connections
-     *        and beginning message processing.
-     *
-     * This method may be blocking or asynchronous depending on the implementation.
-     * If asynchronous, it should initiate the connection process.
+     * @brief Starts the transport, establishing connections and beginning message processing.
+     * @return Coroutine task that completes when transport is started
      */
-    virtual void Start() = 0;
+    virtual MCPTask_Void Start() = 0;
 
     /**
-     * @brief Sends a JSON-RPC message over the transport.
-     * @param InMessage A reference to the JSON-RPC message to send.
-     *
-     * This method may be blocking or asynchronous.
+     * @brief Sends a JSON_RPC message over the transport.
+     * @param InMessage Reference to the JSON_RPC message to send
+     * @return Coroutine task that completes when message is sent
      */
-    virtual void Send(const MessageBase& InMessage) = 0;
+    virtual MCPTask_Void Send(const MessageBase& InMessage) = 0;
 
     /**
      * @brief Closes the transport connection and cleans up resources.
-     *
-     * This method should close the transport connection and clean up resources.
+     * @return Coroutine task that completes when transport is closed
      */
-    virtual void Close() = 0;
-
-  protected:
-    // --- Callbacks ---
-    // These should be set by the user of the transport (e.g., Client or Server class)
-    // via constructor.
-
-    // Type aliases for callbacks for clarity
-    using OnCloseDelegate = function<void()>;
-    using OnErrorDelegate = function<void(const ErrorBase& InError)>;
-    using OnMessageDelegate = function<void(const MessageBase& InMessage)>;
+    virtual MCPTask_Void Close() = 0;
 
     /**
-     * @brief Callback invoked when the transport connection is closed.
+     * @brief Sends raw JSON string for protocol-level operations.
+     * @param InJSON_Message Raw JSON string to send
+     * @return Coroutine task that completes when message is sent
+     */
+    virtual MCPTask_Void SendRaw(const std::string& InJSON_Message) = 0;
+
+    // --- Synchronous Methods (with Sync suffix) ---
+
+    /**
+     * @brief Synchronous version of Start() - blocks until complete
+     */
+    virtual void StartSync() = 0;
+
+    /**
+     * @brief Synchronous version of Send() - blocks until complete
+     */
+    virtual void SendSync(const MessageBase& InMessage) = 0;
+
+    /**
+     * @brief Synchronous version of Close() - blocks until complete
+     */
+    virtual void CloseSync() = 0;
+
+    /**
+     * @brief Synchronous version of SendRaw() - blocks until complete
+     */
+    virtual void SendRawSync(const std::string& InJSON_Message) = 0;
+
+    // --- Connection State Management ---
+
+    /**
+     * @brief Check if transport is currently connected and ready
+     */
+    virtual bool IsConnected() const = 0;
+
+    /**
+     * @brief Check if transport is currently starting up
+     */
+    virtual bool IsStarting() const = 0;
+
+    /**
+     * @brief Get current connection state as string for debugging
+     */
+    virtual std::string GetConnectionState() const = 0;
+
+    // --- Transport Metadata ---
+
+    /**
+     * TODO: @HalcyonOmega: Add transport type enum or update output
+     * @brief Get transport type (e.g., "stdio", "HTTP", "websocket")
+     */
+    virtual std::string GetTransportType() const = 0;
+
+    /**
+     * @brief Get optional connection information for debugging/logging
+     */
+    virtual std::optional<std::string> GetConnectionInfo() const = 0;
+
+  protected:
+    // --- Callback Types (following naming conventions) ---
+    using OnCloseDelegate = std::function<void()>;
+    using OnErrorDelegate = std::function<void(const ErrorBase& InError)>;
+    using OnMessageDelegate = std::function<void(const MessageBase& InMessage)>;
+    using OnRawMessageDelegate = std::function<void(const std::string& InRawMessage)>;
+    using OnStateChangeDelegate =
+        std::function<void(const std::string& InOldState, const std::string& InNewState)>;
+
+    /**
+     * @brief Callback invoked when transport connection is closed
      */
     OnCloseDelegate m_OnClose;
 
     /**
-     * @brief Callback invoked when a transport error occurs.
-     * @param InError The error that occurred.
+     * @brief Callback invoked when transport error occurs
      */
     OnErrorDelegate m_OnError;
 
     /**
-     * @brief Callback invoked when a JSON-RPC message is received.
-     * @param InMessage A reference to the parsed JSON-RPC message.
+     * @brief Callback invoked when JSON_RPC message is received
      */
     OnMessageDelegate m_OnMessage;
 
     /**
-     * @brief Default constructor for derived classes.
+     * @brief Callback invoked when raw JSON message is received (before parsing)
+     */
+    OnRawMessageDelegate m_OnRawMessage;
+
+    /**
+     * @brief Callback invoked when transport state changes
+     */
+    OnStateChangeDelegate m_OnStateChange;
+
+    /**
+     * @brief Default constructor for derived classes
      */
     ITransport() = default;
 
     /**
-     * @brief Constructor for derived classes to initialize callbacks.
-     * @param InOnClose Delegate for the OnClose event.
-     * @param InOnError Delegate for the OnError event.
-     * @param InOnMessage Delegate for the OnMessage event.
+     * @brief Basic constructor for derived classes to initialize core callbacks
      */
     ITransport(OnCloseDelegate InOnClose, OnErrorDelegate InOnError, OnMessageDelegate InOnMessage)
         : m_OnClose(std::move(InOnClose)), m_OnError(std::move(InOnError)),
           m_OnMessage(std::move(InOnMessage)) {}
 
+    /**
+     * @brief Enhanced constructor with all callback support
+     */
+    ITransport(OnCloseDelegate InOnClose, OnErrorDelegate InOnError, OnMessageDelegate InOnMessage,
+               OnRawMessageDelegate InOnRawMessage, OnStateChangeDelegate InOnStateChange)
+        : m_OnClose(std::move(InOnClose)), m_OnError(std::move(InOnError)),
+          m_OnMessage(std::move(InOnMessage)), m_OnRawMessage(std::move(InOnRawMessage)),
+          m_OnStateChange(std::move(InOnStateChange)) {}
+
   public:
-    // Disallow copy and move operations to prevent slicing and ensure
-    // derived classes manage their resources correctly.
+    // Disallow copy and move operations to prevent slicing
     ITransport(const ITransport&) = delete;
     ITransport& operator=(const ITransport&) = delete;
     ITransport(ITransport&&) = delete;

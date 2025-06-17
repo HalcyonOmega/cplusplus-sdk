@@ -9,10 +9,6 @@
 #include "MessageBase.h"
 #include "json.hpp"
 
-// TODO: @HalcyonOmega: Rename to JSON. Namespace collision with JSON in Core.h
-#define JSON_NAMESPACE_BEGIN namespace JSONLib {
-#define JSON_NAMESPACE_END } // namespace JSONLib
-
 MCP_NAMESPACE_BEGIN
 
 JSON_NAMESPACE_BEGIN
