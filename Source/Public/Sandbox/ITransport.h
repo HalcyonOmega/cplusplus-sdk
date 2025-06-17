@@ -1,10 +1,5 @@
 #pragma once
 
-// Standard Library
-#include <functional>
-#include <string>
-#include <utility>
-
 #include "Core.h"
 #include "ErrorBase.h"
 #include "IProtocol.h"
@@ -40,8 +35,6 @@ class ITransport {
   public:
     virtual ~ITransport() = default;
 
-    // --- Core Transport Methods (Coroutines as default, no suffix) ---
-
     /**
      * @brief Starts the transport, establishing connections and beginning message processing.
      * @return Coroutine task that completes when transport is started
@@ -68,6 +61,7 @@ class ITransport {
      */
     virtual MCPTask_Void SendRaw(const std::string& InJSON_Message) = 0;
 
+    // TODO: @HalcyonOmega: Add transport type enum and update output
     // --- Connection State Management ---
 
     /**

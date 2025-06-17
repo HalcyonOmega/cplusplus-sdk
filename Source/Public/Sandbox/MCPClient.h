@@ -20,14 +20,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Transport types for easy selection
-enum class TransportType {
-    Stdio,     // Standard input/output
-    HTTP,      // HTTP with Server-Sent Events
-    WebSocket, // WebSocket transport
-    InMemory   // In-memory transport (for testing)
-};
-
 // Forward declarations
 class MCPClientFactory;
 
@@ -217,7 +209,7 @@ class MCPClientFactory {
     CapabilityOptions m_Capabilities;
 
     // Client info
-    Implementation m_ClientInfo{"MCPClient", "1.0.0"};
+    Implementation m_ClientInfo{.Name = "MCPClient", .Version = "1.0.0"};
 
     // Session config
     SessionConfig m_SessionConfig;

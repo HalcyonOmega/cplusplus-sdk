@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Communication/Transport/Transport.h"
 #include "Core.h"
 #include "Core/Types/Progress.h"
 #include "JSONProxy.h"
@@ -26,6 +27,33 @@ struct RequestID {
 
     // Direct Getters
     [[nodiscard]] string_view ToString() const;
+};
+
+// Options that can be given per request.
+struct RequestOptions : public TransportSendOptions {
+    // If set, requests progress notifications from the remote end (if supported). When progress
+    // notifications are received, this callback will be invoked.
+    optional<ProgressCallback> OnProgress;
+
+    // Can be used to cancel an in-flight request. This will cause an AbortError to be raised from
+    // request().
+    optional<AbortSignal> Signal;
+
+    // A timeout (in milliseconds) for this request. If exceeded, an MCP_Error with code
+    // `RequestTimeout` will be raised from request().
+    //
+    // If not specified, `DEFAULT_REQUEST_TIMEOUT_MSEC` will be used as the timeout.
+    optional<int64_t> Timeout;
+
+    // If true, receiving a progress notification will reset the request timeout.
+    // This is useful for long-running operations that send periodic progress updates.
+    // Default: false
+    optional<bool> ResetTimeoutOnProgress;
+
+    // Maximum total time (in milliseconds) to wait for a response.
+    // If exceeded, an MCP_Error with code `RequestTimeout` will be raised, regardless of progress
+    // notifications. If not specified, there is no maximum total timeout.
+    optional<int64_t> MaxTotalTimeout;
 };
 
 // RequestBase {
@@ -81,6 +109,7 @@ class RequestBase : public MessageBase {
     RequestID m_ID;
     string m_Method;
     optional<unique_ptr<MessageParams>> m_Params = nullopt;
+    optional<RequestOptions> m_Options = nullopt;
 
   public:
     // Constructors
