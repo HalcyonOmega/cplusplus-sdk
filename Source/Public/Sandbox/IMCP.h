@@ -3,23 +3,16 @@
 #include <concepts>
 #include <coroutine>
 #include <functional>
-#include <future>
 #include <memory>
-#include <optional>
 #include <string>
-#include <unordered_map>
 #include <variant>
-#include <vector>
 
 #include "Core.h"
+#include "NotificationBase.h"
+#include "RequestBase.h"
+#include "ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Core types
-struct JSON_RPCRequest;
-struct JSON_RPCResponse;
-struct JSON_RPCNotification;
-struct JSON_RPCError;
 
 // Content types
 struct TextContent;
@@ -55,157 +48,224 @@ struct ModelPreferences;
 // Transport
 class ITransport;
 
-} // namespace MCP
+// Coroutine task for clean async operations
+template <typename T> struct MCPTask {
+    struct promise_type {
+        std::variant<T, std::string> m_Result;
 
-namespace MCP {
+        MCPTask get_return_object() {
+            return MCPTask{std::coroutine_handle<promise_type>::from_promise(*this)};
+        }
+
+        std::suspend_never initial_suspend() {
+            return {};
+        }
+        std::suspend_never final_suspend() noexcept {
+            return {};
+        }
+
+        void return_value(T Value)
+            requires(!std::is_void_v<T>)
+        {
+            m_Result = std::move(Value);
+        }
+
+        void return_void()
+            requires std::is_void_v<T>
+        {
+            m_Result = std::monostate{};
+        }
+
+        void unhandled_exception() {
+            m_Result = "Coroutine exception occurred";
+        }
+    };
+
+    std::coroutine_handle<promise_type> m_Handle;
+
+    MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle(Handle) {}
+
+    ~MCPTask() {
+        if (m_Handle) { m_Handle.destroy(); }
+    }
+
+    // Non-copyable, movable
+    MCPTask(const MCPTask&) = delete;
+    MCPTask& operator=(const MCPTask&) = delete;
+    MCPTask(MCPTask&& Other) noexcept : m_Handle(std::exchange(Other.m_Handle, {})) {}
+    MCPTask& operator=(MCPTask&& Other) noexcept {
+        if (this != &Other) {
+            if (m_Handle) { m_Handle.destroy(); }
+            m_Handle = std::exchange(Other.m_Handle, {});
+        }
+        return *this;
+    }
+
+    // Awaitable interface
+    bool await_ready() const {
+        return m_Handle.done();
+    }
+    void await_suspend(std::coroutine_handle<>) const {}
+
+    T await_resume() const
+        requires(!std::is_void_v<T>)
+    {
+        if (std::holds_alternative<std::string>(m_Handle.promise().m_Result)) {
+            throw std::runtime_error(std::get<std::string>(m_Handle.promise().m_Result));
+        }
+        return std::get<T>(m_Handle.promise().m_Result);
+    }
+
+    void await_resume() const
+        requires std::is_void_v<T>
+    {
+        if (std::holds_alternative<std::string>(m_Handle.promise().m_Result)) {
+            throw std::runtime_error(std::get<std::string>(m_Handle.promise().m_Result));
+        }
+    }
+};
+
+// Specialized void task
+using MCPTask_Void = MCPTask<void>;
+
+// Result wrapper for operations that may fail
+template <typename T> struct MCPResult {
+    std::variant<T, std::string> Value;
+
+    MCPResult(T&& Value) : Value(std::forward<T>(Value)) {}
+    MCPResult(const T& Value) : Value(Value) {}
+    MCPResult(const std::string& Error) : Value(Error) {}
+    MCPResult(std::string&& Error) : Value(std::move(Error)) {}
+
+    bool HasValue() const {
+        return std::holds_alternative<T>(Value);
+    }
+    bool HasError() const {
+        return std::holds_alternative<std::string>(Value);
+    }
+
+    const T& GetValue() const {
+        return std::get<T>(Value);
+    }
+    T& GetValue() {
+        return std::get<T>(Value);
+    }
+    const std::string& GetError() const {
+        return std::get<std::string>(Value);
+    }
+};
+
+// Protocol configuration with sensible defaults
+struct ProtocolConfig {
+    string ProtocolVersion = LATEST_PROTOCOL_VERSION;
+    chrono::milliseconds RequestTimeout{30000};
+    chrono::milliseconds DefaultTimeout{10000};
+    bool AllowBatchRequests{true};
+    size_t MaxConcurrentRequests{100};
+    bool EnforceStrictCapabilities{false};
+};
+
+// Protocol callbacks for message handling
+struct ProtocolCallbacks {
+    function<void(const string&)> OnError;
+    function<void(const NotificationBase&)> OnNotification;
+    function<void(const RequestBase&, function<void(const ResponseBase&)>)> OnRequest;
+    function<void(const ResponseBase&)> OnResponse;
+    function<void(const ErrorBase&)> OnProtocolError;
+};
 
 // Core Protocol Interface
 class IMCP {
   public:
     virtual ~IMCP() = default;
 
-    // Lifecycle Management
-    virtual future<InitializeResult> Initialize(const InitializeParams& params) = 0;
-    virtual future<void> Initialized() = 0;
-    virtual future<void> Shutdown() = 0;
+    /* Core Protocol Interface */
+    // === Lifecycle Management ===
+    virtual MCPTask<InitializeResult> Initialize(const InitializeParams& Params) = 0;
+    virtual MCPTask_Void Initialized() = 0;
+    virtual MCPTask_Void Shutdown() = 0;
 
-    // Connection Management
+    // === Connection Management ===
     virtual bool IsConnected() const = 0;
     virtual bool IsInitialized() const = 0;
     virtual string GetProtocolVersion() const = 0;
 
-    // Transport
-    virtual void SetTransport(unique_ptr<ITransport> transport) = 0;
-    virtual ITransport* GetTransport() const = 0;
+    // === Transport ===
+    void SetTransport(shared_ptr<ITransport> Transport) {
+        m_Transport = Transport;
+    }
+    shared_ptr<ITransport> GetTransport() const {
+        return m_Transport;
+    }
 
-    // Error Handling
-    virtual void OnError(function<void(const JSON_RPCError&)> callback) = 0;
-    virtual void OnDisconnected(function<void()> callback) = 0;
+    // === Error Handling ===
+    virtual void OnError(function<void(const ErrorBase&)> Callback) = 0;
+    virtual void OnDisconnected(function<void()> Callback) = 0;
 
-    // Ping/Utility
-    virtual future<void> Ping() = 0;
-};
+    // === Ping/Utility ===
+    virtual MCPTask_Void Ping() = 0;
 
-// Server Interface
-class IMCP_Server : public virtual IMCP {
-  public:
-    virtual ~IMCP_Server() = default;
+    /* Message Interface*/
 
-    // Tool Management
-    virtual future<vector<Tool>> ListTools(const optional<string>& cursor = {}) = 0;
-    virtual future<ToolResult> CallTool(const ToolCall& call) = 0;
+    // === Senders ===
 
-    // Tool Registration
-    virtual void RegisterTool(const Tool& tool,
-                              function<future<ToolResult>(const ToolCall&)> handler) = 0;
-    virtual void UnregisterTool(const string& toolName) = 0;
+    // Send any typed message
+    virtual MCPTask_Void SendMessage(const MessageBase& InMessage);
 
-    // Resource Management
-    virtual future<vector<Resource>> ListResources(const optional<string>& cursor = {}) = 0;
-    virtual future<vector<ResourceContent>> ReadResource(const string& uri) = 0;
-    virtual future<vector<ResourceTemplate>>
-    ListResourceTemplates(const optional<string>& cursor = {}) = 0;
+    // Send typed request and wait for typed response
+    virtual MCPTask<ResponseBase> SendRequest(const RequestBase& InRequest);
 
-    // Resource Registration
-    virtual void RegisterResource(const Resource& resource,
-                                  function<future<vector<ResourceContent>>()> provider) = 0;
-    virtual void UnregisterResource(const string& uri) = 0;
+    // Send typed response
+    virtual MCPTask_Void SendResponse(const ResponseBase& InResponse);
 
-    // Resource Subscription
-    virtual future<void> SubscribeToResource(const string& uri) = 0;
-    virtual future<void> UnsubscribeFromResource(const string& uri) = 0;
+    // Send typed notification (fire and forget)
+    virtual MCPTask_Void SendNotification(const NotificationBase& InNotification);
 
-    // Prompt Management
-    virtual future<vector<Prompt>> ListPrompts(const optional<string>& cursor = {}) = 0;
-    virtual future<PromptMessage>
-    GetPrompt(const string& name, const unordered_map<string, string>& arguments = {}) = 0;
+    // Send typed error
+    virtual MCPTask_Void SendError(const ErrorBase& InError);
 
-    // Prompt Registration
-    virtual void RegisterPrompt(
-        const Prompt& prompt,
-        function<future<PromptMessage>(const unordered_map<string, string>&)> handler) = 0;
-    virtual void UnregisterPrompt(const string& name) = 0;
+    // === Handlers ===
 
-    // Logging
-    virtual future<void> LogMessage(const string& level, const string& message,
-                                    const optional<string>& logger = {}) = 0;
+    void SetCallbacks(const ProtocolCallbacks& InCallbacks) {
+        m_Callbacks = InCallbacks;
+    }
+    const ProtocolCallbacks& GetCallbacks() const {
+        return m_Callbacks;
+    }
 
-    // Progress Tracking
-    virtual future<void> ReportProgress(const string& progressToken, double progress,
-                                        const optional<string>& total = {}) = 0;
+    // Process incoming typed message from transport
+    void HandleIncomingMessage(const MessageBase& InMessage);
 
-    // Notifications
-    virtual void OnToolListChanged(function<void()> callback) = 0;
-    virtual void OnResourceListChanged(function<void()> callback) = 0;
-    virtual void OnPromptListChanged(function<void()> callback) = 0;
-    virtual void OnResourceUpdated(function<void(const string& uri)> callback) = 0;
+    // Handle specific request types - override in derived classes
+    virtual MCPTask<ResponseBase> HandleRequest(const RequestBase& InRequest) = 0;
 
-    // Capabilities
-    virtual void SetCapabilities(const Capability& capabilities) = 0;
-    virtual Capability GetCapabilities() const = 0;
-};
+    // Handle incoming response
+    void HandleResponse(const ResponseBase& InResponse);
 
-// Client Interface
-class IMCP_Client : public virtual IMCP {
-  public:
-    virtual ~IMCP_Client() = default;
+    // Handle specific notification types - override in derived classes
+    virtual MCPTask_Void HandleNotification(const NotificationBase& InNotification) = 0;
 
-    // Tool Operations
-    virtual future<vector<Tool>> ListTools(const optional<string>& cursor = {}) = 0;
-    virtual future<ToolResult> CallTool(const ToolCall& call) = 0;
+    // Register pending request
+    void RegisterPendingRequest(const string& InRequestID,
+                                function<void(const ResponseBase&)> InHandler);
 
-    // Resource Operations
-    virtual future<vector<Resource>> ListResources(const optional<string>& cursor = {}) = 0;
-    virtual future<vector<ResourceContent>> ReadResource(const string& uri) = 0;
-    virtual future<vector<ResourceTemplate>>
-    ListResourceTemplates(const optional<string>& cursor = {}) = 0;
+    /* Configuration */
 
-    // Resource Subscription
-    virtual future<void> SubscribeToResource(const string& uri) = 0;
-    virtual future<void> UnsubscribeFromResource(const string& uri) = 0;
+    const ProtocolConfig& GetConfig() const {
+        return m_Config;
+    }
+    void SetConfig(const ProtocolConfig& InConfig) {
+        m_Config = InConfig;
+    }
 
-    // Prompt Operations
-    virtual future<vector<Prompt>> ListPrompts(const optional<string>& cursor = {}) = 0;
-    virtual future<PromptMessage>
-    GetPrompt(const string& name, const unordered_map<string, string>& arguments = {}) = 0;
+  private:
+    ProtocolConfig m_Config;
+    ProtocolCallbacks m_Callbacks;
+    shared_ptr<ITransport> m_Transport;
 
-    // Sampling (for servers to request LLM operations from clients)
-    virtual future<SamplingResult> CreateMessage(const SamplingRequest& request) = 0;
-
-    // Sampling Registration (client provides sampling capability)
-    virtual void
-    RegisterSamplingHandler(function<future<SamplingResult>(const SamplingRequest&)> handler) = 0;
-
-    // Root Directory Management
-    virtual future<vector<string>> ListRoots() = 0;
-    virtual void SetRoots(const vector<string>& roots) = 0;
-
-    // Notification Handlers
-    virtual void OnToolListChanged(function<void()> callback) = 0;
-    virtual void OnResourceListChanged(function<void()> callback) = 0;
-    virtual void OnPromptListChanged(function<void()> callback) = 0;
-    virtual void OnResourceUpdated(function<void(const string& uri)> callback) = 0;
-    virtual void OnRootsListChanged(function<void()> callback) = 0;
-
-    // Capabilities
-    virtual void SetCapabilities(const Capability& capabilities) = 0;
-    virtual Capability GetCapabilities() const = 0;
-};
-
-// Unified Interface (can act as both client and server)
-class IMCP_Host : public IMCP_Client, public IMCP_Server {
-  public:
-    virtual ~IMCP_Host() = default;
-
-    // Mode Management
-    enum class Mode { Client, Server, Bidirectional };
-
-    virtual void SetMode(Mode mode) = 0;
-    virtual Mode GetMode() const = 0;
-
-    // Connection Management for bidirectional scenarios
-    virtual future<void> ConnectAsClient(const string& serverEndpoint) = 0;
-    virtual future<void> StartAsServer(const string& bindAddress, int port) = 0;
+    RequestID m_NextRequestID;
+    queue<function<void(const ResponseBase&)>> m_PendingRequests;
+    mutex m_PendingRequestsMutex;
 };
 
 // Factory Interface
@@ -214,9 +274,8 @@ class IMCP_Factory {
     virtual ~IMCP_Factory() = default;
 
     // Factory Methods
-    virtual unique_ptr<IMCP_Client> CreateClient() = 0;
-    virtual unique_ptr<IMCP_Server> CreateServer() = 0;
-    virtual unique_ptr<IMCP_Host> CreateHost() = 0;
+    virtual unique_ptr<IClientAPI> CreateClient() = 0;
+    virtual unique_ptr<IServerAPI> CreateServer() = 0;
 
     // Transport Creation
     virtual unique_ptr<ITransport> CreateStdioTransport() = 0;
@@ -264,8 +323,8 @@ class PracticalMCP {
     virtual size_t GetActiveRequestCount() const = 0;
 
     // Security & Validation
-    virtual void SetRequestValidator(function<bool(const JSON_RPCRequest&)> validator) = 0;
-    virtual void SetResponseValidator(function<bool(const JSON_RPCResponse&)> validator) = 0;
+    virtual void SetRequestValidator(function<bool(const RequestBase&)> validator) = 0;
+    virtual void SetResponseValidator(function<bool(const ResponseBase&)> validator) = 0;
     virtual void EnableRequestLogging(bool enable, const string& logPath = "") = 0;
 
     // Advanced Transport Configuration
@@ -274,18 +333,14 @@ class PracticalMCP {
     virtual void SetKeepAliveSettings(bool enable, chrono::seconds interval) = 0;
 
     // Event System (for advanced monitoring)
-    virtual void OnRequestSent(function<void(const JSON_RPCRequest&)> callback) = 0;
-    virtual void OnResponseReceived(function<void(const JSON_RPCResponse&)> callback) = 0;
-    virtual void OnNotificationReceived(function<void(const JSON_RPCNotification&)> callback) = 0;
+    virtual void OnRequestSent(function<void(const RequestBase&)> callback) = 0;
+    virtual void OnResponseReceived(function<void(const ResponseBase&)> callback) = 0;
+    virtual void OnNotificationReceived(function<void(const NotificationBase&)> callback) = 0;
     virtual void OnConnectionStateChanged(function<void(bool connected)> callback) = 0;
 
     // Batching Support (JSON-RPC batch operations)
     virtual void EnableBatching(bool enable, size_t maxBatchSize = 10) = 0;
     virtual void FlushBatch() = 0;
-
-    // Thread Safety Options
-    enum class ThreadingModel { SingleThreaded, ThreadSafe, Async };
-    virtual void SetThreadingModel(ThreadingModel model) = 0;
 
     // Resource Management
     virtual void SetResourceCacheSize(size_t maxCacheSize) = 0;
@@ -299,18 +354,6 @@ class PracticalMCP {
 
 // Utility Functions
 namespace Utilities {
-// JSON-RPC ID generation
-string GenerateRequestID();
-
-// Content validation
-bool ValidateJSON_Schema(const string& schema, const string& data);
-
-// Error creation helpers
-JSON_RPCError CreateInvalidRequestError(const string& message);
-JSON_RPCError CreateMethodNotFoundError(const string& method);
-JSON_RPCError CreateInvalidParamsError(const string& message);
-JSON_RPCError CreateInternalError(const string& message);
-
 // Protocol version comparison
 int CompareProtocolVersions(const string& version1, const string& version2);
 bool IsVersionCompatible(const string& clientVersion, const string& serverVersion);

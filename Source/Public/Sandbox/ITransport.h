@@ -2,7 +2,7 @@
 
 #include "Core.h"
 #include "ErrorBase.h"
-#include "IProtocol.h"
+#include "IMCP.h"
 #include "MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
@@ -19,17 +19,7 @@ enum class TransportType {
  * @brief Abstract base class for MCP Transport.
  *
  * This class defines the interface for sending and receiving JSON-RPC messages
- * as per the Model Context Protocol (MCP) specification. Implementations will
- * leverage Poco::Net for the underlying communication (e.g., Stdio, HTTP/SSE).
- *
- * Derived classes are responsible for:
- * - Establishing and managing the connection (e.g., via Poco::Net::StreamSocket,
- * Poco::Net::HTTPClientSession).
- * - Serializing MCP messages to JSON-RPC strings and parsing incoming JSON-RPC strings.
- * - Invoking the OnMessage, OnError, and OnClose callbacks appropriately.
- * - Handling threading and asynchronous operations as required by the specific transport.
- *   For example, a Start() implementation might spawn a Poco::Thread to listen for incoming
- * messages. A Send() implementation might use a Poco::Net::HTTPSession to send data.
+ * as per the Model Context Protocol (MCP) specification.
  */
 class ITransport {
   public:
