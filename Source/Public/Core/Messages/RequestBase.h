@@ -2,8 +2,8 @@
 
 #include "Core.h"
 #include "Core/Types/Progress.h"
+#include "JSONProxy.h"
 #include "MessageBase.h"
-#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 

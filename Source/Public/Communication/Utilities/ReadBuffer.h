@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "Core.h"
+#include "JSONProxy.h"
 #include "MessageBase.h"
-#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Core/Types/Roles.h"
+#include "JSONProxy.h"
 #include "RequestBase.h"
 #include "ResponseBase.h"
 #include "SamplingBase.h"
-#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 

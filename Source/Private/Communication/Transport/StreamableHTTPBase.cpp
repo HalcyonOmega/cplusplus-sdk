@@ -3,7 +3,7 @@
 #include "Communication/Utilities/TransportUtilities.h"
 #include "Core.h"
 #include "Core/Constants/TransportConstants.h"
-#include "Utilities/JSON/JSONLayer.hpp"
+#include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
 

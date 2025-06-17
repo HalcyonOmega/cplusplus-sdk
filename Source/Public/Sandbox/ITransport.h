@@ -68,28 +68,6 @@ class ITransport {
      */
     virtual MCPTask_Void SendRaw(const std::string& InJSON_Message) = 0;
 
-    // --- Synchronous Methods (with Sync suffix) ---
-
-    /**
-     * @brief Synchronous version of Start() - blocks until complete
-     */
-    virtual void StartSync() = 0;
-
-    /**
-     * @brief Synchronous version of Send() - blocks until complete
-     */
-    virtual void SendSync(const MessageBase& InMessage) = 0;
-
-    /**
-     * @brief Synchronous version of Close() - blocks until complete
-     */
-    virtual void CloseSync() = 0;
-
-    /**
-     * @brief Synchronous version of SendRaw() - blocks until complete
-     */
-    virtual void SendRawSync(const std::string& InJSON_Message) = 0;
-
     // --- Connection State Management ---
 
     /**
@@ -110,10 +88,9 @@ class ITransport {
     // --- Transport Metadata ---
 
     /**
-     * TODO: @HalcyonOmega: Add transport type enum or update output
      * @brief Get transport type (e.g., "stdio", "HTTP", "websocket")
      */
-    virtual std::string GetTransportType() const = 0;
+    virtual TransportType GetTransportType() const = 0;
 
     /**
      * @brief Get optional connection information for debugging/logging
