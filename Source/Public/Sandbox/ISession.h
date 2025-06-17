@@ -2,27 +2,21 @@
 
 #include <atomic>
 #include <chrono>
-#include <coroutine>
 #include <functional>
-#include <future>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
-#include <variant>
 #include <vector>
 
 #include "Core.h"
 #include "Core/Types/Capabilities.h"
 #include "Core/Types/Implementation.h"
-#include "Core/Types/Initialization.h"
-#include "IProtocol.h"
 #include "ITransport.h"
 #include "MessageBase.h"
+#include "NotificationBase.h"
 #include "RequestBase.h"
-#include "ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -97,20 +91,21 @@ struct NegotiatedCapabilities {
     Implementation ServerInfo;
 };
 
-// Session Interface
+// Pure Session Interface - handles connection, messaging, and state management
 class ISession {
   public:
     virtual ~ISession() = default;
 
-    // === Lifecycle Management (MCP Spec Compliant) ===
+    // === Lifecycle Management ===
 
-    // Initialize the session with given capabilities
-    virtual MCPTask<InitializeResult> Initialize(const ClientCapabilities& InClientCapabilities,
-                                                 const Implementation& InClientInfo,
-                                                 shared_ptr<ITransport> InTransport) = 0;
+    // Connect with transport and start session
+    virtual MCPTask_Void Connect(shared_ptr<ITransport> InTransport) = 0;
 
-    // Graceful shutdown following MCP spec
+    // Graceful shutdown
     virtual MCPTask_Void Shutdown() = 0;
+
+    // Force disconnect (for error recovery)
+    virtual void ForceDisconnect() = 0;
 
     // === State Management ===
 
@@ -130,6 +125,17 @@ class ISession {
 
     virtual shared_ptr<ITransport> GetTransport() const = 0;
 
+    // === Message Handling ===
+
+    // Send any message
+    virtual MCPTask_Void SendMessage(const MessageBase& InMessage) = 0;
+
+    // Send request and wait for response
+    virtual MCPTask<JSON> SendRequest(const RequestBase& InRequest) = 0;
+
+    // Send notification (fire and forget)
+    virtual MCPTask_Void SendNotification(const NotificationBase& InNotification) = 0;
+
     // === Event Handling ===
 
     virtual void SetCallbacks(const SessionCallbacks& InCallbacks) = 0;
@@ -138,52 +144,17 @@ class ISession {
 
     // Send ping and get response time
     virtual MCPTask<chrono::milliseconds> Ping() = 0;
-
-    // Force disconnect (for error recovery)
-    virtual void ForceDisconnect() = 0;
 };
 
-// Client Session Interface - specific to client-side MCP sessions
-class IClientSession : public ISession {
-  public:
-    // Send the initialized notification (required after successful initialize)
-    virtual MCPTask_Void SendInitializedNotification() = 0;
-
-    // Client-specific operations
-    virtual MCPTask_Void RequestRoots() = 0;
-};
-
-// Server Session Interface - specific to server-side MCP sessions
-class IServerSession : public ISession {
-  public:
-    // Server-specific operations
-    virtual void SetInstructions(const string& InInstructions) = 0;
-    virtual optional<string> GetInstructions() const = 0;
-
-    // Handle initialize request from client
-    virtual MCPTask<InitializeResult>
-    HandleInitializeRequest(const InitializeRequest& InRequest) = 0;
-};
-
-// Session Factory
+// Session Factory - creates sessions with different configurations
 class SessionFactory {
   public:
-    // Create client session
-    static unique_ptr<IClientSession> CreateClientSession(const SessionConfig& InConfig = {});
+    // Create session with configuration
+    static unique_ptr<ISession> Create(const SessionConfig& InConfig = {});
 
-    // Create server session
-    static unique_ptr<IServerSession>
-    CreateServerSession(const ServerCapabilities& InServerCapabilities,
-                        const Implementation& InServerInfo, const SessionConfig& InConfig = {});
-
-    // Create session with custom transport and protocol
-    static unique_ptr<IClientSession>
-    CreateClientSessionWithTransport(shared_ptr<ITransport> InTransport,
-                                     const SessionConfig& InConfig = {});
-
-    static unique_ptr<IServerSession> CreateServerSessionWithTransport(
-        shared_ptr<ITransport> InTransport, const ServerCapabilities& InServerCapabilities,
-        const Implementation& InServerInfo, const SessionConfig& InConfig = {});
+    // Create session with custom transport
+    static unique_ptr<ISession> CreateWithTransport(shared_ptr<ITransport> InTransport,
+                                                    const SessionConfig& InConfig = {});
 };
 
 // Session Manager for handling multiple sessions
@@ -231,62 +202,5 @@ string ToString(SessionState InState);
 bool IsTerminalState(SessionState InState);
 bool IsActiveState(SessionState InState);
 bool IsErrorState(SessionState InState);
-
-// Session builder for fluent API
-class SessionBuilder {
-  public:
-    SessionBuilder& WithConfig(const SessionConfig& InConfig);
-    SessionBuilder& WithTransport(shared_ptr<ITransport> InTransport);
-    SessionBuilder& WithCallbacks(const SessionCallbacks& InCallbacks);
-    SessionBuilder& WithTimeout(chrono::milliseconds InTimeout);
-    SessionBuilder& WithRetryPolicy(const SessionConfig::RetryConfig& InRetry);
-
-    // Build client session
-    unique_ptr<IClientSession> BuildClient();
-
-    // Build server session
-    unique_ptr<IServerSession> BuildServer(const ServerCapabilities& InCapabilities,
-                                           const Implementation& InServerInfo);
-
-  private:
-    SessionConfig m_Config;
-    shared_ptr<ITransport> m_Transport;
-    optional<SessionCallbacks> m_Callbacks;
-};
-
-// Example usage with coroutines:
-/*
-ProtocolTask<void> ExampleClientSession() {
-    auto session = SessionFactory::CreateClientSession();
-
-    ClientCapabilities capabilities;
-    capabilities.Roots = ClientCapabilities::RootsCapability{true};
-
-    Implementation clientInfo{"MyClient", "1.0.0"};
-    auto transport = TransportFactory::CreateStdioTransport();
-    auto protocol = ProtocolFactory::CreateClientProtocol(capabilities, clientInfo);
-
-    try {
-        // Initialize with coroutines - much cleaner than callbacks!
-        auto result = co_await session->Initialize(capabilities, clientInfo, transport, protocol);
-        if (result.HasError()) {
-            co_return; // Handle error
-        }
-
-        // Send initialized notification
-        co_await session->SendInitializedNotification();
-
-        // Now we can do normal operations
-        auto pingTime = co_await session->Ping();
-
-        // Graceful shutdown
-        co_await session->Shutdown();
-
-    } catch (...) {
-        // Handle exceptions
-        session->ForceDisconnect();
-    }
-}
-*/
 
 MCP_NAMESPACE_END

@@ -12,6 +12,14 @@
 
 MCP_NAMESPACE_BEGIN
 
+// Transport types for easy selection
+enum class TransportType {
+    Stdio,     // Standard input/output
+    HTTP,      // HTTP with Server-Sent Events
+    WebSocket, // WebSocket transport
+    InMemory   // In-memory transport (for testing)
+};
+
 /**
  * @brief Abstract base class for MCP Transport.
  *
