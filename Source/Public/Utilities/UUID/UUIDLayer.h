@@ -1,23 +1,31 @@
 #pragma once
 
-#include <random> // Required for std::mt19937
+#include <Poco/UUID.h>
+#include <Poco/UUIDGenerator.h>
+
 #include <string>
 
 #include "Macros.h"
-#include "Utilities/ThirdParty/UUID/UUID.h"
 
 MCP_NAMESPACE_BEGIN
 
-// Add a static random engine for the UUID generator
-static std::mt19937& GetRandomEngine() {
-    static std::random_device RandomDevice;
-    static std::mt19937 Engine(RandomDevice());
-    return Engine;
-}
-
+/**
+ * @brief Generates a globally unique and cryptographically secure UUID.
+ *
+ * This function creates a Version 4 UUID to be used as a UUID,
+ * satisfying the requirements for uniqueness and security.
+ *
+ * @return std::string The generated UUID.
+ */
 std::string GenerateUUID() {
-    uuids::uuid_random_generator Generator(GetRandomEngine());
-    return uuids::to_string(Generator());
+    // Get the default UUID generator.
+    Poco::UUIDGenerator& Generator = Poco::UUIDGenerator::defaultGenerator();
+
+    // Create a cryptographically secure random UUID (Version 4).
+    Poco::UUID UUID = Generator.createRandom();
+
+    // Return the UUID as a string.
+    return UUID.toString();
 }
 
 MCP_NAMESPACE_END

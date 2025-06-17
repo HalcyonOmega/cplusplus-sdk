@@ -99,7 +99,8 @@ class ITransport {
      * @param InOnMessage Delegate for the OnMessage event.
      */
     ITransport(OnCloseDelegate InOnClose, OnErrorDelegate InOnError, OnMessageDelegate InOnMessage)
-        : m_OnClose(move(InOnClose)), m_OnError(move(InOnError)), m_OnMessage(move(InOnMessage)) {}
+        : m_OnClose(std::move(InOnClose)), m_OnError(std::move(InOnError)),
+          m_OnMessage(std::move(InOnMessage)) {}
 
   public:
     // Disallow copy and move operations to prevent slicing and ensure
