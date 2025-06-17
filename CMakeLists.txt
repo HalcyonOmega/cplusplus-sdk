@@ -51,6 +51,7 @@ include_directories(Source/Public)
 include_directories(Source/Public/Core/Includes)
 include_directories(Source/Public/Core/Constants)
 include_directories(Source/Public/Core/Messages)
+include_directories(Source/Public/Proxies)
 include_directories(Source/Public/Utilities/ThirdParty)
 
 # Add testing if enabled

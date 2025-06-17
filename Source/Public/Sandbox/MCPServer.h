@@ -7,6 +7,11 @@
 #include <vector>
 
 #include "Core.h"
+#include "Core/Features/Prompt/Prompts.h"
+#include "Core/Features/Resource/Resources.h"
+#include "Core/Features/Root/Roots.h"
+#include "Core/Features/Sampling/Sampling.h"
+#include "Core/Features/Tool/Tools.h"
 #include "Core/Types/Capabilities.h"
 #include "Core/Types/Implementation.h"
 #include "Core/Types/Initialization.h"
@@ -91,7 +96,7 @@ class Server {
     void OnError(function<void(const string&)> InCallback);
 
   private:
-    friend class ::MCP::MCPServerFactory;
+    friend class MCPServerFactory;
 
     // Private constructor - use MCPServer() builder
     Server(unique_ptr<ISession> InSession, ServerCapabilities InCapabilities,
@@ -131,65 +136,89 @@ class Server {
     MCPTask<vector<Root>> HandleListRoots();
 };
 
-// Beautiful, human-readable builder pattern
+// Clean factory API - builds automatically when no more chaining
 class MCPServerFactory {
   public:
-    MCPServerFactory();
+    // Required transport configuration in constructor - auto-builds if no chaining
 
-    // Transport configuration
-    MCPServerFactory& WithTransport(TransportType InType);
-    MCPServerFactory& WithTransport(shared_ptr<ITransport> InTransport);
+    // Stdio transport constructor (for process-based servers)
+    MCPServerFactory(TransportType InType);
 
-    // Stdio-specific options (for stdio transport)
-    MCPServerFactory& WithStdio();
+    // HTTP server constructor
+    MCPServerFactory(TransportType InType, const string& InHost = "localhost", int InPort = 8080);
+
+    // WebSocket server constructor
+    MCPServerFactory(TransportType InType, const string& InHost, int InPort);
+
+    // Custom transport constructor
+    MCPServerFactory(shared_ptr<ITransport> InTransport);
+
+    // === Grouped Configuration (chainable) ===
 
     // HTTP-specific options
-    MCPServerFactory& WithHTTPServer(const string& InHost = "localhost", int InPort = 8080,
-                                     bool InCORS = true);
+    struct HTTPOptions {
+        optional<string> Host;
+        optional<int> Port;
+        optional<bool> CORS;
+        optional<chrono::milliseconds> Timeout;
+        optional<size_t> MaxConnections;
+    };
+    MCPServerFactory& HTTPOptions(const HTTPOptions& InOptions);
 
     // WebSocket-specific options
-    MCPServerFactory& WithWebSocketServer(const string& InHost = "localhost", int InPort = 8080);
+    struct WebSocketOptions {
+        optional<string> Host;
+        optional<int> Port;
+        optional<chrono::milliseconds> PingInterval;
+        optional<size_t> MaxFrameSize;
+        optional<size_t> MaxConnections;
+    };
+    MCPServerFactory& WebSocketOptions(const WebSocketOptions& InOptions);
 
-    // Server capabilities
-    MCPServerFactory& WithCapabilities(const ServerCapabilities& InCapabilities);
-    MCPServerFactory& WithToolsCapability(bool InEnabled = true);
-    MCPServerFactory& WithResourcesCapability(bool InEnabled = true);
-    MCPServerFactory& WithPromptsCapability(bool InEnabled = true);
-    MCPServerFactory& WithRootsCapability(bool InEnabled = true);
-    MCPServerFactory& WithSamplingCapability(bool InEnabled = true);
-    MCPServerFactory& WithLoggingCapability(bool InEnabled = true);
+    // All capabilities grouped (defaults to all false)
+    struct CapabilityOptions {
+        bool Tools{false};
+        bool Resources{false};
+        bool Prompts{false};
+        bool Roots{false};
+        bool Sampling{false};
+        bool Logging{false};
+    };
+    MCPServerFactory& Capabilities(const CapabilityOptions& InCapabilities);
+
+    // Individual capabilities (auto-enables when called)
+    MCPServerFactory& Tools();
+    MCPServerFactory& Resources();
+    MCPServerFactory& Prompts();
+    MCPServerFactory& Roots();
+    MCPServerFactory& Sampling();
+    MCPServerFactory& Logging();
 
     // Server information
-    MCPServerFactory& WithServerInfo(const Implementation& InServerInfo);
-    MCPServerFactory& WithServerInfo(const string& InName, const string& InVersion);
+    MCPServerFactory& ServerInfo(const string& InName, const string& InVersion);
+    MCPServerFactory& Instructions(const string& InInstructions);
 
-    // Server instructions
-    MCPServerFactory& WithInstructions(const string& InInstructions);
+    // Session settings
+    MCPServerFactory& SessionOptions(chrono::milliseconds InTimeout, size_t InMaxClients = 100);
 
-    // Session configuration
-    MCPServerFactory& WithTimeout(chrono::milliseconds InTimeout);
-    MCPServerFactory& WithMaxClients(size_t InMaxClients);
-    MCPServerFactory& WithSessionConfig(const SessionConfig& InConfig);
-
-    // Build the server
-    MCP::Server Build();
+    // Auto-build when destroyed or explicitly converted
+    operator Server();
 
   private:
     // Transport settings
-    TransportType m_TransportType{TransportType::Stdio};
+    TransportType m_TransportType;
     shared_ptr<ITransport> m_CustomTransport;
 
-    // HTTP settings
-    optional<string> m_HTTPHost;
-    optional<int> m_HTTPPort;
-    optional<bool> m_HTTPCors;
+    // Transport-specific config defaults
+    string m_DefaultHost{"localhost"};
+    int m_DefaultPort{8080};
 
-    // WebSocket settings
-    optional<string> m_WebSocketHost;
-    optional<int> m_WebSocketPort;
+    // Grouped options
+    optional<HTTPOptions> m_HTTPOptions;
+    optional<WebSocketOptions> m_WebSocketOptions;
 
-    // Capabilities
-    ServerCapabilities m_Capabilities;
+    // Capabilities (defaults to all false)
+    CapabilityOptions m_Capabilities;
 
     // Server info
     Implementation m_ServerInfo{"MCPServer", "1.0.0"};
@@ -204,44 +233,44 @@ class MCPServerFactory {
     optional<size_t> m_MaxClients;
 
     shared_ptr<ITransport> CreateTransport();
+    ServerCapabilities BuildCapabilities();
 };
 
-// Global factory function
-inline MCPServerFactory MCPServer() {
-    return MCPServerFactory();
+// Global factory functions for clean API
+inline MCPServerFactory MCPServer(TransportType InType) {
+    return MCPServerFactory(InType);
 }
 
-// Example usage:
+inline MCPServerFactory MCPServer(TransportType InType, const string& InHost = "localhost",
+                                  int InPort = 8080) {
+    return MCPServerFactory(InType, InHost, InPort);
+}
+
+inline MCPServerFactory MCPServer(shared_ptr<ITransport> InTransport) {
+    return MCPServerFactory(InTransport);
+}
+
+// Example usage - much cleaner and auto-builds!
 /*
-auto server = MCPServer()
-    .WithTransport(TransportType::HTTP)
-    .WithHTTPServer("localhost", 8080)
-    .WithToolsCapability(true)
-    .WithResourcesCapability(true)
-    .WithServerInfo("MyMCPServer", "1.0.0")
-    .WithInstructions("A helpful MCP server")
-    .Build();
+// Stdio server - auto-builds after constructor
+auto server1 = MCPServer(TransportType::Stdio);
 
-// Register tools
-server.RegisterTool(
-    Tool{"calculate", "Performs mathematical calculations", ...},
-    [](const JSON& args) -> MCPTask<ToolResult> {
-        // Tool implementation
-        co_return ToolResult{...};
-    }
-);
+// HTTP server with grouped options - auto-builds after last chain
+auto server2 = MCPServer(TransportType::HTTP)
+    .HTTPOptions({.Port = 9001, .CORS = true}) // Keep default host, change port
+    .Tools()
+    .Resources()
+    .ServerInfo("MyMCPServer", "2.0.0");
 
-// Register resources
-server.RegisterResource(
-    Resource{"file://data.txt", "Data file", ...},
-    []() -> MCPTask<ResourceContents> {
-        // Resource implementation
-        co_return ResourceContents{...};
-    }
-);
+// With capabilities grouped
+auto server3 = MCPServer(TransportType::WebSocket, "0.0.0.0", 8080)
+    .Capabilities({.Tools = true, .Resources = true, .Prompts = false})
+    .Instructions("A helpful MCP server")
+    .SessionOptions(chrono::seconds(30), 10);
 
-// Start server
-co_await server.Start();
+// Register and start (server built automatically)
+server1.RegisterTool(myTool, myToolHandler);
+co_await server1.Start();
 */
 
 MCP_NAMESPACE_END

@@ -7,9 +7,9 @@
 MCP_NAMESPACE_BEGIN
 
 RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
-    return [AllowedMethods](HTTP_Request& Req, HTTP_Response& Res, NextFunction Next) {
-        // Note: Assuming HTTP_Request has Method property - needs to be defined in shared header
-        // TODO: Add HTTP_Request::Method property definition in shared middleware types
+    return [AllowedMethods](HTTP::Request& Req, HTTP::Response& Res, NextFunction Next) {
+        // Note: Assuming HTTP::Request has Method property - needs to be defined in shared header
+        // TODO: Add HTTP::Request::Method property definition in shared middleware types
 
         // Check if the request method is in the allowed methods list
         bool IsMethodAllowed = false;
@@ -36,9 +36,10 @@ RequestHandler AllowedMethods(const vector<string>& AllowedMethods) {
             AllowHeader += AllowedMethods[i];
         }
 
-        // Set response exactly like original: res.status(HTTPStatus::MethodNotAllowed).set('Allow',
+        // Set response exactly like original:
+        // res.status(HTTP::Status::MethodNotAllowed).set('Allow',
         // ...).json(error.toResponseObject())
-        Res.SetStatus(HTTPStatus::MethodNotAllowed);
+        Res.SetStatus(HTTP::Status::MethodNotAllowed);
         Res.SetHeader("Allow", AllowHeader);
         Res.SetJSON(Error.ToResponseObject());
     };

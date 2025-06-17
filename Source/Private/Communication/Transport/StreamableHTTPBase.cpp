@@ -38,7 +38,7 @@ bool StreamableHTTPTransportBase::ValidateURL() {
         m_Port = 80; // Default HTTP port
     }
 
-    m_Client = make_unique<HTTP_Client>(Host, m_Port);
+    m_Client = make_unique<HTTP::Client>(Host, m_Port);
     return true;
 }
 
@@ -67,7 +67,7 @@ void StreamableHTTPTransportBase::ReadLoop() {
 
     while (m_IsRunning) {
         // Add session ID to headers if available
-        HTTP_Headers Headers;
+        HTTP::Headers Headers;
         if (m_SessionID) { Headers.emplace(TSPT_SESSION_ID, *m_SessionID); }
 
         auto Response = m_Client->Get(m_Path, Headers, [this](const char* Data, size_t Len) {
@@ -76,7 +76,7 @@ void StreamableHTTPTransportBase::ReadLoop() {
             return true;
         });
 
-        if (!Response || Response->Status != static_cast<int>(HTTPStatus::Ok)) {
+        if (!Response || Response->Status != static_cast<int>(HTTP::Status::Ok)) {
             CallOnError(TRANSPORT_ERR_HTTP_REQUEST_FAILED
                         + (Response ? to_string(Response->Status) : "Unknown error"));
             break;

@@ -2,8 +2,8 @@
 
 #include "Auth/Client/AuthClient.h"
 #include "Core.h"
+#include "HTTPProxy.h"
 #include "StreamableHTTPBase.h"
-#include "Utilities/HTTP/HTTPLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -28,8 +28,8 @@ MCP_NAMESPACE_BEGIN
  * In stateful mode:
  * - Session ID is generated and included in response headers
  * - Session ID is always included in initialization responses
- * - Requests with invalid session IDs are rejected with HTTPStatus::NotFound Not Found
- * - Non-initialization requests without a session ID are rejected with HTTPStatus::BadRequest Bad
+ * - Requests with invalid session IDs are rejected with HTTP::Status::NotFound Not Found
+ * - Non-initialization requests without a session ID are rejected with HTTP::Status::BadRequest Bad
  * Request
  * - State is maintained in-memory (connections, message history)
  *
@@ -42,7 +42,7 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     // when SessionID is not set (nullopt), it means the transport is in stateless mode
     optional<function<string()>> m_SessionIDGenerator;
     bool m_Started = false;
-    unordered_map<string, shared_ptr<HTTP_Response>> m_StreamMapping;
+    unordered_map<string, shared_ptr<HTTP::Response>> m_StreamMapping;
     map<RequestID, string> m_RequestToStreamMapping;
     map<RequestID, MessageBase> m_RequestResponseMap;
     bool m_Initialized = false;
@@ -56,7 +56,7 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     string m_URL;
     string m_Path;
     int m_Port;
-    unique_ptr<HTTP_Client> m_Client;
+    unique_ptr<HTTP::Client> m_Client;
     atomic<bool> m_IsRunning;
     thread m_ReadThread;
     // TODO: End of TODO
@@ -103,20 +103,22 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     future<void> Start() override;
 
     // Handles an incoming HTTP request, whether GET or POST
-    future<void> HandleRequest(const HTTP_Request& InRequest, shared_ptr<HTTP_Response> InResponse,
+    future<void> HandleRequest(const HTTP::Request& InRequest,
+                               shared_ptr<HTTP::Response> InResponse,
                                const optional<JSON>& InParsedBody = nullopt);
 
   private:
     // Handles GET requests for SSE stream
-    future<void> HandleGetRequest(const HTTP_Request& InRequest,
-                                  shared_ptr<HTTP_Response> InResponse);
+    future<void> HandleGetRequest(const HTTP::Request& InRequest,
+                                  shared_ptr<HTTP::Response> InResponse);
 
     // Replays events that would have been sent after the specified event ID
     // Only used when resumability is enabled
-    future<void> ReplayEvents(const string& InLastEventID, shared_ptr<HTTP_Response> InResponse);
+    future<void> ReplayEvents(const string& InLastEventID, shared_ptr<HTTP::Response> InResponse);
 
-    // Internal helper used by the server implementation to send events to a HTTP_Response
-    bool WriteSSEEventToResponse(shared_ptr<HTTP_Response> InResponse, const MessageBase& InMessage,
+    // Internal helper used by the server implementation to send events to a HTTP::Response
+    bool WriteSSEEventToResponse(shared_ptr<HTTP::Response> InResponse,
+                                 const MessageBase& InMessage,
                                  const optional<string>& InEventID = nullopt);
 
     // Transport interface requirement – not used directly by server (server pushes via response)
@@ -126,20 +128,20 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     }
 
     // Handles unsupported requests (PUT, PATCH, etc.)
-    future<void> HandleUnsupportedRequest(shared_ptr<HTTP_Response> InResponse);
+    future<void> HandleUnsupportedRequest(shared_ptr<HTTP::Response> InResponse);
 
     // Handles POST requests containing JSON-RPC messages
-    future<void> HandlePostRequest(const HTTP_Request& InRequest,
-                                   shared_ptr<HTTP_Response> InResponse,
+    future<void> HandlePostRequest(const HTTP::Request& InRequest,
+                                   shared_ptr<HTTP::Response> InResponse,
                                    const optional<JSON>& InParsedBody = nullopt);
 
     // Handles DELETE requests to terminate sessions
-    future<void> HandleDeleteRequest(const HTTP_Request& InRequest,
-                                     shared_ptr<HTTP_Response> InResponse);
+    future<void> HandleDeleteRequest(const HTTP::Request& InRequest,
+                                     shared_ptr<HTTP::Response> InResponse);
 
     // Validates session ID for non-initialization requests
     // Returns true if the session is valid, false otherwise
-    bool ValidateSession(const HTTP_Request& InRequest, shared_ptr<HTTP_Response> InResponse);
+    bool ValidateSession(const HTTP::Request& InRequest, shared_ptr<HTTP::Response> InResponse);
 
   public:
     future<void> Close() override;
@@ -157,12 +159,12 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     atomic<bool> m_AbortRequested;
     string m_URL;
     optional<string> m_ResourceMetadataURL;
-    HTTP_Headers m_RequestHeaders;
+    HTTP::Headers m_RequestHeaders;
     shared_ptr<OAuthClientProvider> m_AuthProvider;
     StreamableHTTPReconnectionOptions m_ReconnectionOptions;
     string m_Path;
     int m_Port{};
-    unique_ptr<HTTP_Client> m_Client;
+    unique_ptr<HTTP::Client> m_Client;
     atomic<bool> m_IsRunning;
     thread m_ReadThread;
 
@@ -170,7 +172,7 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
     // Configuration options for the `StreamableHTTPClientTransport`.
     struct StreamableHTTPClientTransportOptions {
         shared_ptr<OAuthClientProvider> AuthProvider;
-        HTTP_Headers RequestHeaders; // RequestInit equivalent
+        HTTP::Headers RequestHeaders; // RequestInit equivalent
         StreamableHTTPReconnectionOptions ReconnectionOptions =
             DEFAULT_STREAMABLE_HTTP_RECONNECTION_OPTIONS;
         optional<string> SessionID;
@@ -186,7 +188,7 @@ class StreamableHTTPClientTransport : public StreamableHTTPTransportBase {
 
   private:
     future<void> AuthThenStart();
-    future<HTTP_Headers> CommonHeaders();
+    future<HTTP::Headers> CommonHeaders();
     future<void> StartOrAuthSSE(const TransportSendOptions& InOptions);
     int GetNextReconnectionDelay(int InAttempt);
     void ScheduleReconnection(const TransportSendOptions& InOptions, int InAttemptCount = 0);

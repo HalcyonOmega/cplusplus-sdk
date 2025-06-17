@@ -107,8 +107,8 @@ class ProxyOAuthServerProvider : public OAuthServerProvider {
     future<AuthInfo> VerifyAccessToken(const string& InToken) const;
 
   private:
-    static future<HTTP_Response> HTTP_Post(const string& InUrl, const HTTP_Headers& InHeaders,
-                                           const string& InBody);
+    static future<HTTP::Response> HTTP_Post(const string& InUrl, const HTTP::Headers& InHeaders,
+                                            const string& InBody);
 
     static string BuildFormEncodedBody(const map<string, string>& InParams);
 

@@ -1,7 +1,6 @@
 #include "Auth/Providers/ProxyProvider.h"
 
-#include "Utilities/HTTP/HTTPLayer.hpp"
-
+#include "HTTPProxy.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -145,11 +144,11 @@ future<AuthInfo> ProxyOAuthServerProvider::VerifyAccessToken(const string& Token
     co_return co_await _VerifyAccessToken(Token);
 }
 
-future<HTTP_Response> ProxyOAuthServerProvider::HttpPost(const string& Url,
-                                                         const HTTP_Headers& Headers,
-                                                         const string& Body) {
+future<HTTP::Response> ProxyOAuthServerProvider::HttpPost(const string& Url,
+                                                          const HTTP::Headers& Headers,
+                                                          const string& Body) {
     // TODO: Implement actual HTTP POST request
-    co_return HTTP_Response{false, 500, MSG_EMPTY};
+    co_return HTTP::Response{false, 500, MSG_EMPTY};
 }
 
 string ProxyOAuthServerProvider::BuildFormEncodedBody(const map<string, string>& Params) {

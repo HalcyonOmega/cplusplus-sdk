@@ -93,7 +93,7 @@ MiddlewareResult TokenHandler::ApplyMiddleware(const JSON& RequestBody, const JS
     // 2. Method restriction (allowedMethods equivalent)
     if (Method != MTHD_POST) {
         result.ShouldContinue = false;
-        result.StatusCode = HTTPStatus::MethodNotAllowed;
+        result.StatusCode = HTTP::Status::MethodNotAllowed;
         result.ErrorResponse = "Method Not Allowed";
         return result;
     }
@@ -173,7 +173,7 @@ Task<JSON> TokenHandler::HandleRequestAsync(const JSON& RequestBody, const JSON&
                 "The grant type is not supported by this authorization server.");
         }
     } catch (const OAuthError& Error) {
-        ResponseStatus = (Error.GetType() == "ServerError") ? "500" : "HTTPStatus::BadRequest";
+        ResponseStatus = (Error.GetType() == "ServerError") ? "500" : "HTTP::Status::BadRequest";
         co_return Error.ToResponseObject();
     } catch (const exception& Error) {
         // Log unexpected error (equivalent to console.error)

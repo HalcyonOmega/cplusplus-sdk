@@ -5,17 +5,9 @@
 #include <utility>
 #include <vector>
 
-#include "../../Core/Includes/Macros.h"
+#include "Macros.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward declarations
-class HTTP_Headers;
-class HTTP_Request;
-class HTTP_Response;
-class HTTP_Client;
-class HTTP_Server;
-class HTTP_Error;
 
 HTTP_NAMESPACE_BEGIN
 
@@ -282,5 +274,38 @@ class Error {
 };
 
 HTTP_NAMESPACE_END
+
+// TODO: Cleanup old classes
+class HTTP_Response {
+  public:
+    HTTP::Status Status;
+    HTTP::Headers Headers;
+    JSON Body;
+
+    void SetStatus(HTTP::Status Status);
+    void SetJSON(const JSON& Data);
+    void WriteHead(HTTP::Status InStatus, const optional<HTTP::Headers>& InHeaders = nullopt);
+    void Write(const string& InData);
+    void End(const optional<string>& InData = nullopt);
+    void On(const string& InEvent, optional<function<void()>> InCallback);
+    bool IsOK() const;
+    future<string> Text() const;
+    function<void()> FlushHeaders;
+    bool Closed = false;
+    bool IsEnded = false;
+};
+
+class HTTP_Request {
+  public:
+    JSON Body;
+    shared_ptr<OAuthClientInformationFull> Client = nullptr;
+    optional<AuthInfo> Auth;
+    string Method;
+    HTTP::Headers Headers;
+};
+
+using NextFunction = function<void()>;
+using RequestHandler = function<future<void>(HTTP_Request&, HTTP_Response&, NextFunction)>;
+// TODO: End old classes
 
 MCP_NAMESPACE_END

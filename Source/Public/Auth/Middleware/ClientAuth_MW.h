@@ -68,7 +68,8 @@ struct AuthenticationTask {
     }
 };
 
-AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlewareOptions& InOptions,
-                                               HTTP_Request& InRequest, HTTP_Response& InResponse);
+AuthenticationTask
+AuthenticateClientCoroutine(const ClientAuthenticationMiddlewareOptions& InOptions,
+                            HTTP::Request& InRequest, HTTP::Response& InResponse);
 
 MCP_NAMESPACE_END

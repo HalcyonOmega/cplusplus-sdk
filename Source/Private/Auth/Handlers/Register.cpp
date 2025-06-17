@@ -100,7 +100,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
     auto rateLimitConfig = options.RateLimit;
     bool rateLimitDisabled = options.RateLimitDisabled;
 
-    return [=](const HTTP_Request& req, HTTP_Response& res) -> task<void> {
+    return [=](const HTTP::Request& req, HTTP::Response& res) -> task<void> {
         // Set cache control header
         res.SetHeader("Cache-Control", "no-store");
 
@@ -151,7 +151,7 @@ RequestHandler ClientRegistrationHandler(const ClientRegistrationHandlerOptions&
 
         } catch (const OAuthError& error) {
             auto serverError = dynamic_cast<const ServerError*>(&error);
-            int status = serverError ? 500 : HTTPStatus::BadRequest;
+            int status = serverError ? 500 : HTTP::Status::BadRequest;
             res.Status(status);
             res.SendJSON(error.ToResponseObject());
         } catch (const exception& error) {

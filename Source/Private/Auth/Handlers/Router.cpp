@@ -264,13 +264,13 @@ RequestHandler MetadataHandler(const JSON& Metadata) {
             Response[MSG_ERROR] = "method_not_allowed";
             Response["error_description"] =
                 "The method " + Method + " is not allowed for this endpoint";
-            Response[MSG_STATUS] = HTTPStatus::MethodNotAllowed;
+            Response[MSG_STATUS] = HTTP::Status::MethodNotAllowed;
             Response[MSG_HEADERS] = JSON{{"Allow", MTHD_GET}};
             return;
         }
 
         Response = Metadata;
-        Response[MSG_STATUS] = HTTPStatus::Ok;
+        Response[MSG_STATUS] = HTTP::Status::Ok;
     };
 }
 

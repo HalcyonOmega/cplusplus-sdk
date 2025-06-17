@@ -7,6 +7,11 @@
 #include <vector>
 
 #include "Core.h"
+#include "Core/Features/Prompt/Prompts.h"
+#include "Core/Features/Resource/Resources.h"
+#include "Core/Features/Root/Roots.h"
+#include "Core/Features/Sampling/Sampling.h"
+#include "Core/Features/Tool/Tools.h"
 #include "Core/Types/Capabilities.h"
 #include "Core/Types/Implementation.h"
 #include "Core/Types/Initialization.h"
@@ -14,6 +19,14 @@
 #include "ITransport.h"
 
 MCP_NAMESPACE_BEGIN
+
+// Transport types for easy selection
+enum class TransportType {
+    Stdio,     // Standard input/output
+    HTTP,      // HTTP with Server-Sent Events
+    WebSocket, // WebSocket transport
+    InMemory   // In-memory transport (for testing)
+};
 
 // Forward declarations
 class MCPClientFactory;
@@ -90,7 +103,7 @@ class Client {
     void OnDisconnected(function<void()> InCallback);
 
   private:
-    friend class ::MCP::MCPClientFactory;
+    friend class MCPClientFactory;
 
     // Private constructor - use MCPClient() builder
     Client(unique_ptr<ISession> InSession, ClientCapabilities InCapabilities,
@@ -114,64 +127,94 @@ class Client {
     optional<function<void()>> m_OnDisconnected;
 };
 
-// Beautiful, human-readable builder pattern
+// Clean factory API - builds automatically when no more chaining
 class MCPClientFactory {
   public:
-    MCPClientFactory();
+    // Required transport configuration in constructor - auto-builds if no chaining
 
-    // Transport configuration
-    MCPClientFactory& WithTransport(TransportType InType);
-    MCPClientFactory& WithTransport(shared_ptr<ITransport> InTransport);
+    // Stdio transport constructor
+    MCPClientFactory(TransportType InType, const string& InCommand,
+                     const vector<string>& InArgs = {});
 
-    // Stdio-specific options
-    MCPClientFactory& WithStdioCommand(const string& InCommand);
-    MCPClientFactory& WithStdioArgs(const vector<string>& InArgs);
+    // HTTP transport constructor
+    MCPClientFactory(TransportType InType, const string& InEndpoint);
+
+    // WebSocket transport constructor
+    MCPClientFactory(TransportType InType, const string& InURL);
+
+    // Custom transport constructor
+    MCPClientFactory(shared_ptr<ITransport> InTransport);
+
+    // === Grouped Configuration (chainable) ===
 
     // HTTP-specific options
-    MCPClientFactory& WithHTTPEndpoint(const string& InURL);
-    MCPClientFactory& WithHTTPHeaders(const JSON& InHeaders);
+    struct HTTPOptions {
+        optional<JSON> Headers;
+        optional<chrono::milliseconds> Timeout;
+        optional<size_t> MaxRetries;
+    };
+    MCPClientFactory& HTTPOptions(const HTTPOptions& InOptions);
+
+    // Stdio-specific options
+    struct StdioOptions {
+        optional<chrono::milliseconds> ProcessTimeout;
+        optional<string> WorkingDirectory;
+        optional<map<string, string>> Environment;
+    };
+    MCPClientFactory& StdioOptions(const StdioOptions& InOptions);
 
     // WebSocket-specific options
-    MCPClientFactory& WithWebSocketURL(const string& InURL);
+    struct WebSocketOptions {
+        optional<JSON> Headers;
+        optional<chrono::milliseconds> PingInterval;
+        optional<size_t> MaxFrameSize;
+    };
+    MCPClientFactory& WebSocketOptions(const WebSocketOptions& InOptions);
 
-    // Client capabilities
-    MCPClientFactory& WithCapabilities(const ClientCapabilities& InCapabilities);
-    MCPClientFactory& WithToolsCapability(bool InEnabled = true);
-    MCPClientFactory& WithResourcesCapability(bool InEnabled = true);
-    MCPClientFactory& WithPromptsCapability(bool InEnabled = true);
-    MCPClientFactory& WithRootsCapability(bool InEnabled = true);
-    MCPClientFactory& WithSamplingCapability(bool InEnabled = true);
+    // All capabilities grouped (defaults to all false)
+    struct CapabilityOptions {
+        bool Tools{false};
+        bool Resources{false};
+        bool Prompts{false};
+        bool Roots{false};
+        bool Sampling{false};
+    };
+    MCPClientFactory& Capabilities(const CapabilityOptions& InCapabilities);
+
+    // Individual capabilities (auto-enables when called)
+    MCPClientFactory& Tools();
+    MCPClientFactory& Resources();
+    MCPClientFactory& Prompts();
+    MCPClientFactory& Roots();
+    MCPClientFactory& Sampling();
 
     // Client information
-    MCPClientFactory& WithClientInfo(const Implementation& InClientInfo);
-    MCPClientFactory& WithClientInfo(const string& InName, const string& InVersion);
+    MCPClientFactory& ClientInfo(const string& InName, const string& InVersion);
 
-    // Session configuration
-    MCPClientFactory& WithTimeout(chrono::milliseconds InTimeout);
-    MCPClientFactory& WithRetries(size_t InMaxRetries);
-    MCPClientFactory& WithSessionConfig(const SessionConfig& InConfig);
+    // Session settings
+    MCPClientFactory& SessionOptions(chrono::milliseconds InTimeout, size_t InMaxRetries = 3);
 
-    // Build the client
-    MCP::Client Build();
+    // Auto-build when destroyed or explicitly converted
+    operator Client();
 
   private:
     // Transport settings
-    TransportType m_TransportType{TransportType::Stdio};
+    TransportType m_TransportType;
     shared_ptr<ITransport> m_CustomTransport;
 
-    // Stdio settings
-    optional<string> m_StdioCommand;
-    optional<vector<string>> m_StdioArgs;
+    // Transport-specific config
+    string m_StdioCommand;
+    vector<string> m_StdioArgs;
+    string m_HTTPEndpoint;
+    string m_WebSocketURL;
 
-    // HTTP settings
-    optional<string> m_HTTPEndpoint;
-    optional<JSON> m_HTTPHeaders;
+    // Grouped options
+    optional<HTTPOptions> m_HTTPOptions;
+    optional<StdioOptions> m_StdioOptions;
+    optional<WebSocketOptions> m_WebSocketOptions;
 
-    // WebSocket settings
-    optional<string> m_WebSocketURL;
-
-    // Capabilities
-    ClientCapabilities m_Capabilities;
+    // Capabilities (defaults to all false)
+    CapabilityOptions m_Capabilities;
 
     // Client info
     Implementation m_ClientInfo{"MCPClient", "1.0.0"};
@@ -180,31 +223,43 @@ class MCPClientFactory {
     SessionConfig m_SessionConfig;
 
     shared_ptr<ITransport> CreateTransport();
+    ClientCapabilities BuildCapabilities();
 };
 
-// Global factory function for the beautiful API
-inline MCPClientFactory MCPClient() {
-    return MCPClientFactory();
+// Global factory functions for clean API
+inline MCPClientFactory MCPClient(TransportType InType, const string& InCommand,
+                                  const vector<string>& InArgs = {}) {
+    return MCPClientFactory(InType, InCommand, InArgs);
 }
 
-// Example usage:
+inline MCPClientFactory MCPClient(TransportType InType, const string& InEndpoint) {
+    return MCPClientFactory(InType, InEndpoint);
+}
+
+inline MCPClientFactory MCPClient(shared_ptr<ITransport> InTransport) {
+    return MCPClientFactory(InTransport);
+}
+
+// Example usage - much cleaner and auto-builds!
 /*
-auto client = MCPClient()
-    .WithTransport(TransportType::Stdio)
-    .WithStdioCommand("my-mcp-server")
-    .WithToolsCapability(true)
-    .WithResourcesCapability(true)
-    .WithClientInfo("MyApp", "1.0.0")
-    .Build();
+// Stdio client - auto-builds after constructor
+auto client1 = MCPClient(TransportType::Stdio, "my-mcp-server");
 
-// Connect and use
-co_await client.Connect();
-co_await client.Initialize();
+// HTTP client with grouped options - auto-builds after last chain
+auto client2 = MCPClient(TransportType::HTTP, "https://api.example.com/mcp")
+    .HTTPOptions({.Headers = {{"Authorization", "Bearer token"}}, .Timeout = chrono::seconds(30)})
+    .Tools()
+    .Resources();
 
-auto tools = co_await client.ListTools();
-auto result = co_await client.CallTool("my_tool", {{"param", "value"}});
+// With capabilities grouped
+auto client3 = MCPClient(TransportType::WebSocket, "wss://server.com/mcp")
+    .Capabilities({.Tools = true, .Resources = true, .Prompts = false})
+    .ClientInfo("MyApp", "2.0.0");
 
-co_await client.Disconnect();
+// Connect and use (client built automatically)
+co_await client1.Connect();
+co_await client1.Initialize();
+auto tools = co_await client1.ListTools();
 */
 
 MCP_NAMESPACE_END

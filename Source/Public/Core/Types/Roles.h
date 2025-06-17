@@ -1,7 +1,7 @@
 #pragma once
 
+#include "JSONProxy.h"
 #include "Macros.h"
-#include "Utilities/JSON/JSONLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 

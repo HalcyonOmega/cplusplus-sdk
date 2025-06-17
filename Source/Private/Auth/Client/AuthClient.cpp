@@ -18,7 +18,7 @@ OAuthClientProvider::SaveClientInformation(const OAuthClientInformationFull& Cli
 
 future<AuthResult> Auth(shared_ptr<OAuthClientProvider> Provider, const AuthParams& Params);
 
-optional<string> ExtractResourceMetadataURL(const HTTP_Headers& ResponseHeaders);
+optional<string> ExtractResourceMetadataURL(const HTTP::Headers& ResponseHeaders);
 
 future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
     const string& ServerURL, const optional<DiscoverMetadataOptions>& Options = nullopt);
@@ -41,13 +41,13 @@ future<OAuthClientInformationFull> RegisterClientAsync(const string& Authorizati
 
 PKCE_Challenge GeneratePKCE_Challenge();
 
-bool HTTP_Response::IsOK() const {
+bool HTTP::Response::IsOK() const {
     return StatusCode >= 200 && StatusCode < 300;
 }
 
-future<HTTP_Response> FetchAsync(const string& URL, const HTTP_Headers& Headers = {});
-future<HTTP_Response> FetchPostAsync(const string& URL, const string& Body,
-                                     const HTTP_Headers& Headers = {});
+future<HTTP::Response> FetchAsync(const string& URL, const HTTP::Headers& Headers = {});
+future<HTTP::Response> FetchPostAsync(const string& URL, const string& Body,
+                                      const HTTP::Headers& Headers = {});
 
 // JSON schema validation functions (replacing Zod)
 bool ValidateOAuthProtectedResourceMetadata(const JSON& Data);

@@ -12,7 +12,7 @@ RequestHandler MetadataHandler(const MetadataType& Metadata) {
     Router.Use(AllowedMethods({MTHD_GET}));
 
     Router.Get("/", [Metadata](const Request& Req, Response& Res) {
-        Res.Status(HTTPStatus::Ok).JSON(Metadata);
+        Res.Status(HTTP::Status::Ok).JSON(Metadata);
     });
 
     return Router;

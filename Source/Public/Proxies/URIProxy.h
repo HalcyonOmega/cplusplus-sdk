@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Poco/URI.h>
+
 #include "Core.h"
 #include "URITemplate.h"
 

@@ -4,11 +4,11 @@
 
 MCP_NAMESPACE_BEGIN
 
-void HTTP_Response::SetStatus(int Status) {
+void HTTP::Response::SetStatus(int Status) {
     StatusCode = Status;
 }
 
-void HTTP_Response::SetJSON(const JSON& Data) {
+void HTTP::Response::SetJSON(const JSON& Data) {
     Body = Data;
 }
 
@@ -33,7 +33,7 @@ ClientAuthenticatedRequestValidation::Validate(const JSON& Body) {
 
 // Main middleware function (matches original TypeScript authenticateClient)
 RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& Options) {
-    return [Options](HTTP_Request& Request, HTTP_Response& Response,
+    return [Options](HTTP::Request& Request, HTTP::Response& Response,
                      NextFunction Next) -> future<void> {
         auto Promise = make_shared<promise<void>>();
         auto FutureResult = Promise->get_future();
@@ -42,7 +42,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
             auto ValidationResult = ClientAuthenticatedRequestValidation::Validate(Request.Body);
             if (!ValidationResult()) {
                 InvalidRequestError Error("Invalid request format");
-                Response.SetStatus(HTTPStatus::BadRequest);
+                Response.SetStatus(HTTP::Status::BadRequest);
                 Response.SetJSON(Error.ToResponseObject());
                 Promise->set_value();
                 return FutureResult;
@@ -59,7 +59,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
                     try {
                         if (!Client) {
                             InvalidClientError Error("Invalid client_id");
-                            Response.SetStatus(HTTPStatus::BadRequest);
+                            Response.SetStatus(HTTP::Status::BadRequest);
                             Response.SetJSON(Error.ToResponseObject());
                             Promise->set_value();
                             return;
@@ -70,7 +70,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
                             // Check if client_secret is required but not provided
                             if (!ClientSecret()) {
                                 InvalidClientError Error("Client secret is required");
-                                Response.SetStatus(HTTPStatus::BadRequest);
+                                Response.SetStatus(HTTP::Status::BadRequest);
                                 Response.SetJSON(Error.ToResponseObject());
                                 Promise->set_value();
                                 return;
@@ -79,7 +79,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
                             // Check if client_secret matches
                             if (Client->ClientSecret != ClientSecret.value()) {
                                 InvalidClientError Error("Invalid client_secret");
-                                Response.SetStatus(HTTPStatus::BadRequest);
+                                Response.SetStatus(HTTP::Status::BadRequest);
                                 Response.SetJSON(Error.ToResponseObject());
                                 Promise->set_value();
                                 return;
@@ -92,7 +92,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
                                              chrono::system_clock::now().time_since_epoch())
                                              .count()) {
                                 InvalidClientError Error("Client secret has expired");
-                                Response.SetStatus(HTTPStatus::BadRequest);
+                                Response.SetStatus(HTTP::Status::BadRequest);
                                 Response.SetJSON(Error.ToResponseObject());
                                 Promise->set_value();
                                 return;
@@ -106,12 +106,12 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
 
                     } catch (const OAuthError& Error) {
                         // Determine status code based on error type
-                        HTTPStatus Status = HTTPStatus::BadRequest;
+                        HTTP::Status Status = HTTP::Status::BadRequest;
                         try {
                             const ServerError& ServerErr = dynamic_cast<const ServerError&>(Error);
                             Status = 500;
                         } catch (const bad_cast&) {
-                            // Not a ServerError, keep status as HTTPStatus::BadRequest
+                            // Not a ServerError, keep status as HTTP::Status::BadRequest
                         }
 
                         Response.SetStatus(Status);
@@ -145,7 +145,7 @@ RequestHandler AuthenticateClient(const ClientAuthenticationMiddlewareOptions& O
 
 // Alternative coroutine implementation (optional)
 AuthenticationTask AuthenticateClientCoroutine(const ClientAuthenticationMiddlewareOptions& Options,
-                                               HTTP_Request& Request, HTTP_Response& Response) {
+                                               HTTP::Request& Request, HTTP::Response& Response) {
     // TODO: This would need a more complex coroutine implementation
     // For now, keeping it simple
     co_return false;

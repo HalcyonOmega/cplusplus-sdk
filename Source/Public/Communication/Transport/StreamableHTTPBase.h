@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core.h"
+#include "HTTPProxy.h"
 #include "Transport.h"
-#include "Utilities/HTTP/HTTPLayer.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -45,7 +45,7 @@ class StreamableHTTPTransportBase : public Transport {
     string m_URL;
     string m_Path;
     int m_Port;
-    unique_ptr<HTTP_Client> m_Client;
+    unique_ptr<HTTP::Client> m_Client;
     atomic<bool> m_IsRunning;
     optional<string> m_SessionID;
     thread m_ReadThread;

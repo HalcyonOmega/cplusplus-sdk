@@ -180,7 +180,7 @@ class TokenHandler {
     struct MiddlewareResult {
         bool ShouldContinue = true;
         string ErrorResponse;
-        HTTPStatus StatusCode = HTTPStatus::Ok;
+        HTTP::Status StatusCode = HTTP::Status::Ok;
         JSON Headers;
     };
 

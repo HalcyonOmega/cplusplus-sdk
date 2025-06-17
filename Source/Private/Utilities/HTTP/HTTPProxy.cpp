@@ -1,4 +1,4 @@
-#include "../../../Public/Utilities/HTTP/HTTPProxy.h"
+#include "HTTPProxy.h"
 
 // Poco::Net main headers
 #include <Poco/Context.h>
@@ -62,11 +62,11 @@ static HTTP_Version FromPocoVersion(const std::string& pocoVersion) {
     return HTTP_Version::HTTP_1_1;
 }
 
-static Poco::Net::HTTPResponse::HTTPStatus ToPocoStatus(HTTP_Status status) {
-    return static_cast<Poco::Net::HTTPResponse::HTTPStatus>(static_cast<int>(status));
+static Poco::Net::HTTPResponse::HTTP::Status ToPocoStatus(HTTP_Status status) {
+    return static_cast<Poco::Net::HTTPResponse::HTTP::Status>(static_cast<int>(status));
 }
 
-static HTTP_Status FromPocoStatus(Poco::Net::HTTPResponse::HTTPStatus pocoStatus) {
+static HTTP_Status FromPocoStatus(Poco::Net::HTTPResponse::HTTP::Status pocoStatus) {
     auto intStatus = static_cast<int>(pocoStatus);
     switch (intStatus) {
         case 100: return HTTP_Status::CONTINUE_100;
@@ -116,7 +116,7 @@ static HTTP_Status FromPocoStatus(Poco::Net::HTTPResponse::HTTPStatus pocoStatus
 
 // --- PImpl Struct Definitions ---
 
-class HTTP_Headers::HeadersImpl {
+class HTTP::Headers::HeadersImpl {
   public:
     Poco::Net::NameValueCollection pocoHeaders;
 };

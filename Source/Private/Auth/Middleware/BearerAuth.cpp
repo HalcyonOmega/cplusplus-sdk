@@ -1,7 +1,7 @@
 #include "Auth/Middleware/BearerAuth.h"
 
 #include "Core/Constants/MessageConstants.h"
-#include "Utilities/HTTP/HTTPLayer.hpp"
+#include "HTTPProxy.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -11,7 +11,7 @@ MCP_NAMESPACE_BEGIN
 // TODO: Fix External Ref: ServerError
 // TODO: Fix External Ref: OAuthTokenVerifier
 
-void MiddlewareResponse::SetStatus(HTTPStatus Status) {
+void MiddlewareResponse::SetStatus(HTTP::Status Status) {
     StatusCode = Status;
 }
 
@@ -23,7 +23,7 @@ void MiddlewareResponse::SendJSON(const JSON& JsonData) {
     Body = JsonData;
 }
 
-string GetHeaderCaseInsensitive(const HTTP_Headers& Headers, const string& HeaderName) {
+string GetHeaderCaseInsensitive(const HTTP::Headers& Headers, const string& HeaderName) {
     string LowerHeaderName = HeaderName;
     transform(LowerHeaderName.begin(), LowerHeaderName.end(), LowerHeaderName.begin(), ::tolower);
 
@@ -112,7 +112,7 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
                                 + "\", error_description=\"" + Error.GetMessage() + "\"";
             }
             Response.SetHeader("WWW-Authenticate", WWW_AuthValue);
-            Response.SetStatus(HTTPStatus::Unauthorized);
+            Response.SetStatus(HTTP::Status::Unauthorized);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const InsufficientScopeError& Error) {
             string WWW_AuthValue;
@@ -131,7 +131,7 @@ MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options)
             Response.SetStatus(500);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const OAuthError& Error) {
-            Response.SetStatus(HTTPStatus::BadRequest);
+            Response.SetStatus(HTTP::Status::BadRequest);
             Response.SendJSON(Error.ToResponseObject());
         } catch (const exception& Error) {
             // Log unexpected error

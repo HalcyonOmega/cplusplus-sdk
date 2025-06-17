@@ -25,7 +25,7 @@ ContentTypeResult parseContentType(const string& content_type_header) {
 }
 
 // TODO: Fix External Ref: Raw body parsing
-string getRawBodyEquivalent(HTTP_Request* req, const string& limit, const string& encoding) {
+string getRawBodyEquivalent(HTTP::Request* req, const string& limit, const string& encoding) {
     // TODO: Implement raw body parsing with size limit
     throw runtime_error("Raw body parsing not implemented");
 }
@@ -39,7 +39,7 @@ void start() {
     map<string, string> headers = {{TSPT_CONTENT_TYPE, TSPT_TEXT_EVENT_STREAM},
                                    {"Cache-Control", "no-cache, no-transform"},
                                    {"Connection", "keep-alive"}};
-    res->writeHead(HTTPStatus::Ok, headers);
+    res->writeHead(HTTP::Status::Ok, headers);
 
     // Send the endpoint event
     // Use a dummy base URL because this._endpoint is relative.
@@ -57,7 +57,7 @@ void start() {
     });
 }
 
-void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
+void handlePostMessage(HTTP::Request* req, HTTP::Response* res_param,
                        const optional<JSON>& parsedBody = nullopt) {
     if (!_sseResponse()) {
         string message = "SSE connection not established";
@@ -90,7 +90,7 @@ void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
             body = JSON::parse(rawBody);
         }
     } catch (const exception& error) {
-        res_param->writeHead(HTTPStatus::BadRequest);
+        res_param->writeHead(HTTP::Status::BadRequest);
         res_param->end(error.what());
         if (onerror()) { onerror.value()(Error(error.what())); }
         return;
@@ -101,7 +101,7 @@ void handlePostMessage(HTTP_Request* req, HTTP_Response* res_param,
         if (authInfo()) { extra = map<string, AuthInfo>{{"authInfo", authInfo.value()}}; }
         handleMessage(body, extra);
     } catch (const exception&) {
-        res_param->writeHead(HTTPStatus::BadRequest);
+        res_param->writeHead(HTTP::Status::BadRequest);
         res_param->end("Invalid message: " + body.dump());
         return;
     }
@@ -155,7 +155,7 @@ string sessionId() const {
 // ##########################################################
 // ##########################################################
 
-future<string> HTTP_Response::text() const {
+future<string> HTTP::Response::text() const {
     return async(launch::async, [this]() { return body; });
 }
 
@@ -219,7 +219,7 @@ future<void> SSEClientTransport::_startOrAuth() {
         // _abortController = new AbortController();
 
         // _eventSource->onerror = [this](const ErrorBase& event) {
-        //     if (event.code == HTTPStatus::Unauthorized && _authProvider) {
+        //     if (event.code == HTTP::Status::Unauthorized && _authProvider) {
         //         return _authThenStart();
         //     }
         //
@@ -345,10 +345,10 @@ future<void> SSEClientTransport::send(const MessageBase& message) {
             init[MSG_BODY] = string("{}"); // JSON::stringify(message);
             // TODO: Fix External Ref: signal: _abortController?.signal
 
-            HTTP_Response response = fetch(_endpoint.value(), init).get();
+            HTTP::Response response = fetch(_endpoint.value(), init).get();
 
             if (!response.ok) {
-                if (response.status == HTTPStatus::Unauthorized && _authProvider) {
+                if (response.status == HTTP::Status::Unauthorized && _authProvider) {
                     _resourceMetadataUrl = extractResourceMetadataUrl(response);
 
                     map<string, variant<URL, string>> authParams;
@@ -389,17 +389,17 @@ future<AuthResult> SSEClientTransport::auth(shared_ptr<OAuthClientProvider> auth
     });
 }
 
-future<HTTP_Response> SSEClientTransport::fetch(const URL& url, const RequestInit& init) {
-    return async(launch::async, [=]() -> HTTP_Response {
+future<HTTP::Response> SSEClientTransport::fetch(const URL& url, const RequestInit& init) {
+    return async(launch::async, [=]() -> HTTP::Response {
         // TODO: Fix External Ref: Actual HTTP implementation
-        HTTP_Response response;
-        response.status = HTTPStatus::Ok;
+        HTTP::Response response;
+        response.status = HTTP::Status::Ok;
         response.ok = true;
         return response;
     });
 }
 
-optional<URL> SSEClientTransport::extractResourceMetadataUrl(const HTTP_Response& response) {
+optional<URL> SSEClientTransport::extractResourceMetadataUrl(const HTTP::Response& response) {
     // TODO: Fix External Ref: Extract from response headers
     return nullopt;
 }

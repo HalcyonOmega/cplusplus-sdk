@@ -36,7 +36,8 @@ struct OAuthServerProvider {
      * an optional `error_description` query parameter.
      */
     virtual future<void> Authorize(const OAuthClientInformationFull& InClient,
-                                   const AuthorizationParams& InParams, HTTP_Response& InResponse) = 0;
+                                   const AuthorizationParams& InParams,
+                                   HTTP::Response& InResponse) = 0;
 
     /**
      * Returns the `codeChallenge` that was used when the indicated authorization began.

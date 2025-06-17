@@ -2,12 +2,12 @@
 
 #include "Communication/Messages.h"
 #include "Core.h"
-#include "Utilities/HTTP/HTTPLayer.hpp"
+#include "HTTPProxy.h"
 #include "Utilities/ThirdParty/UUID/UUIDLayer.h"
 
 MCP_NAMESPACE_BEGIN
 
-using HeadersInit = HTTP_Headers;
+using HeadersInit = HTTP::Headers;
 using EventSourceInit = unordered_map<string, string>;
 using RequestInit = unordered_map<string, variant<string, HeadersInit, bool>>;
 
@@ -30,7 +30,7 @@ struct ContentTypeResult {
 ContentTypeResult ParseContentType(const string& InContentTypeHeader);
 
 // TODO: Fix External Ref: Raw body parsing
-string GetRawBodyEquivalent(HTTP_Request& InRequest, const string& InLimit,
+string GetRawBodyEquivalent(HTTP::Request& InRequest, const string& InLimit,
                             const string& InEncoding);
 
 /**
@@ -41,17 +41,17 @@ string GetRawBodyEquivalent(HTTP_Request& InRequest, const string& InLimit,
  */
 class SSEServerTransport : public Transport {
   private:
-    optional<HTTP_Response> m_SSEResponse;
+    optional<HTTP::Response> m_SSEResponse;
     string m_SessionID;
     string m_Endpoint;
-    HTTP_Response m_Response;
+    HTTP::Response m_Response;
 
   public:
     /**
      * Creates a new SSE server transport, which will direct the client to POST messages to the
      * relative or absolute URL identified by _endpoint.
      */
-    SSEServerTransport(const string& InEndpoint, HTTP_Response* InResParam)
+    SSEServerTransport(const string& InEndpoint, HTTP::Response* InResParam)
         : m_Endpoint(InEndpoint), m_Response(InResParam), m_SSEResponse(nullopt) {
         m_SessionID = GenerateUUID();
     }
@@ -68,7 +68,7 @@ class SSEServerTransport : public Transport {
      *
      * This should be called when a POST request is made to send a message to the server.
      */
-    void HandlePostMessage(HTTP_Request* InRequest, HTTP_Response* InResponse,
+    void HandlePostMessage(HTTP::Request* InRequest, HTTP::Response* InResponse,
                            const optional<JSON>& InParsedBody = nullopt);
 
     /**
@@ -178,10 +178,10 @@ class SSEClientTransport : public Transport {
                             const unordered_map<string, variant<URL, string>>& InParams);
 
     // TODO: Fix External Ref: extractResourceMetadataUrl function
-    optional<URL> ExtractResourceMetadataURL(const HTTP_Response& InResponse);
+    optional<URL> ExtractResourceMetadataURL(const HTTP::Response& InResponse);
 
     // TODO: Fix External Ref: HTTP functionality
-    future<HTTP_Response> Fetch(const URL& InURL, const RequestInit& InInit);
+    future<HTTP::Response> Fetch(const URL& InURL, const RequestInit& InInit);
 };
 
 MCP_NAMESPACE_END

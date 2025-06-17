@@ -4,7 +4,7 @@ MCP_NAMESPACE_BEGIN
 
 // TODO: Fix External Ref: Express RequestHandler equivalent
 // TODO: Fix External Ref: RateLimit functionality
-// TODO: Fix External Ref: Nate - HTTP_Request and HTTP_Response
+// TODO: Fix External Ref: Nate - HTTP::Request and HTTP::Response
 
 bool ClientAuthorizationParams::Validate(const map<string, string>& Params,
                                          ClientAuthorizationParams& Output, string& ErrorBase) {
@@ -105,8 +105,8 @@ vector<string> AuthorizationHandler::SplitString(const string& Str, char Delimit
     return Result;
 }
 
-Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP_Response& Response,
-                                               const string& ClientIp) {
+Task<void> AuthorizationHandler::HandleRequest(const HTTP::Request& Request,
+                                               HTTP::Response& Response, const string& ClientIp) {
     Response.SetHeader("Cache-Control", "no-store");
 
     // Check rate limiting if enabled
@@ -156,7 +156,7 @@ Task<void> AuthorizationHandler::HandleRequest(const HTTP_Request& Request, HTTP
         }
 
     } catch (const OAuthError& Error) {
-        int Status = (typeid(Error) == typeid(ServerError)) ? 500 : HTTPStatus::BadRequest;
+        int Status = (typeid(Error) == typeid(ServerError)) ? 500 : HTTP::Status::BadRequest;
         Response.Status(Status);
         Response.JsonResponse(Error.ToResponseObject());
         co_return;

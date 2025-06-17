@@ -30,10 +30,10 @@ class CLI {
     static void LogError(const string& InError);
 
     // HTTP server handlers
-    static void HandleSSEConnection(HTTP_Request& InRequest, HTTP_Response& InResponse);
-    static void HandlePostMessage(HTTP_Request& InRequest, HTTP_Response& InResponse);
+    static void HandleSSEConnection(HTTP::Request& InRequest, HTTP::Response& InResponse);
+    static void HandlePostMessage(HTTP::Request& InRequest, HTTP::Response& InResponse);
 
     // Static members for server state
     static vector<shared_ptr<MCP::Server>> m_ActiveServers;
-    static shared_ptr<HTTP_Server> m_HTTPServer;
+    static shared_ptr<HTTP::Server> m_HTTPServer;
 };

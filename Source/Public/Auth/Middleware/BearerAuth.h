@@ -43,7 +43,7 @@ struct AuthenticatedRequest {
     optional<AuthInfo> Auth;
 
     // TODO: Add other request properties as needed (headers, body, etc.)
-    HTTP_Headers Headers;
+    HTTP::Headers Headers;
     string Method;
     string Path;
 };
@@ -52,11 +52,11 @@ struct AuthenticatedRequest {
  * Response context for middleware
  */
 struct MiddlewareResponse {
-    HTTPStatus StatusCode = HTTPStatus::Ok;
-    HTTP_Headers Headers;
+    HTTP::Status StatusCode = HTTP::Status::Ok;
+    HTTP::Headers Headers;
     JSON Body;
 
-    void SetStatus(HTTPStatus Status);
+    void SetStatus(HTTP::Status Status);
 
     void SetHeader(const string& Key, const string& Value);
 
@@ -72,7 +72,7 @@ using MiddlewareFunction =
 /**
  * Helper function for case-insensitive header lookup
  */
-string GetHeaderCaseInsensitive(const HTTP_Headers& Headers, const string& HeaderName);
+string GetHeaderCaseInsensitive(const HTTP::Headers& Headers, const string& HeaderName);
 
 /**
  * Middleware that requires a valid Bearer token in the Authorization header.
@@ -81,7 +81,7 @@ string GetHeaderCaseInsensitive(const HTTP_Headers& Headers, const string& Heade
  * request object.
  *
  * If ResourceMetadataUrl is provided, it will be included in the WWW-Authenticate header
- * for HTTPStatus::Unauthorized responses as per the OAuth 2.0 Protected Resource Metadata spec.
+ * for HTTP::Status::Unauthorized responses as per the OAuth 2.0 Protected Resource Metadata spec.
  */
 MiddlewareFunction RequireBearerAuth(const BearerAuthMiddlewareOptions& Options);
 

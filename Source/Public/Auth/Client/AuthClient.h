@@ -2,7 +2,7 @@
 
 #include "Auth/Types/Auth.h"
 #include "Core.h"
-#include "Utilities/HTTP/HTTPLayer.hpp"
+#include "HTTPProxy.h"
 
 // TODO: Fix External Ref: pkce-challenge (PKCE challenge generation)
 // TODO: Fix External Ref: MCP_LATEST_PROTOCOL_VERSION from "../types.js"
@@ -158,7 +158,7 @@ optional<string> ExtractResourceMetadataURL(const unordered_map<string, string>&
 /**
  * Looks up RFC 9728 OAuth 2.0 Protected Resource Metadata.
  *
- * If the server returns a HTTPStatus::NotFound for the well-known endpoint, this function will
+ * If the server returns a HTTP::Status::NotFound for the well-known endpoint, this function will
  * throw an exception. Any other errors will be thrown as exceptions.
  */
 future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsync(
@@ -167,7 +167,7 @@ future<OAuthProtectedResourceMetadata> DiscoverOAuthProtectedResourceMetadataAsy
 /**
  * Looks up RFC 8414 OAuth 2.0 Authorization Server Metadata.
  *
- * If the server returns a HTTPStatus::NotFound for the well-known endpoint, this function will
+ * If the server returns a HTTP::Status::NotFound for the well-known endpoint, this function will
  * return `nullopt`. Any other errors will be thrown as exceptions.
  */
 future<optional<OAuthMetadata>>
@@ -202,9 +202,9 @@ future<OAuthClientInformationFull> RegisterClientAsync(const string& Authorizati
 // Helper functions and TODO implementations
 PKCE_Challenge GeneratePKCE_Challenge();
 
-future<HTTP_Response> FetchAsync(const string& URL, const HTTP_Headers& Headers = {});
-future<HTTP_Response> FetchPostAsync(const string& URL, const string& Body,
-                                     const HTTP_Headers& Headers = {});
+future<HTTP::Response> FetchAsync(const string& URL, const HTTP::Headers& Headers = {});
+future<HTTP::Response> FetchPostAsync(const string& URL, const string& Body,
+                                      const HTTP::Headers& Headers = {});
 
 // JSON schema validation functions (replacing Zod)
 bool ValidateOAuthProtectedResourceMetadata(const JSON& Data);
