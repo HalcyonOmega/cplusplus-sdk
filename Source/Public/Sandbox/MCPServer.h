@@ -87,8 +87,6 @@ class Server {
            WebSocketServerOptions InWSOptions);
 
     // Internal components (hidden from user)
-    unique_ptr<ISession> m_Session;
-    shared_ptr<IProtocol> m_Protocol;
     shared_ptr<ITransport> m_Transport;
 
     // Configuration
@@ -103,11 +101,6 @@ class Server {
     unordered_map<string, function<MCPTask<JSON>(const JSON&)>> m_ToolHandlers;
     unordered_map<string, function<MCPTask<string>()>> m_ResourceHandlers;
     unordered_map<string, function<MCPTask<string>(const JSON&)>> m_PromptHandlers;
-
-    // Callbacks
-    optional<function<void(const string&)>> m_OnClientConnected;
-    optional<function<void(const string&)>> m_OnClientDisconnected;
-    optional<function<void(const string&)>> m_OnError;
 
     // Internal setup
     void SetupTransport();

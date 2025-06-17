@@ -8,45 +8,13 @@
 #include <variant>
 
 #include "Core.h"
+#include "Core/Types/Initialization.h"
+#include "ITransport.h"
 #include "NotificationBase.h"
 #include "RequestBase.h"
 #include "ResponseBase.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Content types
-struct TextContent;
-struct ImageContent;
-struct AudioContent;
-struct ResourceContent;
-
-// MCP types
-struct Capability;
-struct ClientInfo;
-struct ServerInfo;
-struct InitializeParams;
-struct InitializeResult;
-
-// Tool types
-struct Tool;
-struct ToolCall;
-struct ToolResult;
-
-// Resource types
-struct Resource;
-struct ResourceTemplate;
-
-// Prompt types
-struct Prompt;
-struct PromptMessage;
-
-// Sampling types
-struct SamplingRequest;
-struct SamplingResult;
-struct ModelPreferences;
-
-// Transport
-class ITransport;
 
 // Coroutine task for clean async operations
 template <typename T> struct MCPTask {
@@ -182,7 +150,7 @@ class IMCP {
 
     /* Core Protocol Interface */
     // === Lifecycle Management ===
-    virtual MCPTask<InitializeResult> Initialize(const InitializeParams& Params) = 0;
+    virtual MCPTask<InitializeResult> Initialize(const InitializeRequest& InRequest) = 0;
     virtual MCPTask_Void Initialized() = 0;
     virtual MCPTask_Void Shutdown() = 0;
 
@@ -210,16 +178,9 @@ class IMCP {
 
     // === Senders ===
 
-    // Send any typed message
     virtual MCPTask_Void SendMessage(const MessageBase& InMessage);
-
-    // Send typed request and wait for typed response
     virtual MCPTask<ResponseBase> SendRequest(const RequestBase& InRequest);
-
-    // Send typed response
     virtual MCPTask_Void SendResponse(const ResponseBase& InResponse);
-
-    // Send typed notification (fire and forget)
     virtual MCPTask_Void SendNotification(const NotificationBase& InNotification);
 
     // Send typed error
@@ -267,27 +228,6 @@ class IMCP {
     RequestID m_NextRequestID;
     queue<function<void(const ResponseBase&)>> m_PendingRequests;
     mutex m_PendingRequestsMutex;
-};
-
-// Factory Interface
-class IMCP_Factory {
-  public:
-    virtual ~IMCP_Factory() = default;
-
-    // Factory Methods
-    virtual unique_ptr<IClientAPI> CreateClient() = 0;
-    virtual unique_ptr<IServerAPI> CreateServer() = 0;
-
-    // Transport Creation
-    virtual unique_ptr<ITransport> CreateStdioTransport() = 0;
-    virtual unique_ptr<ITransport> CreateHTTPTransport(const string& endpoint) = 0;
-    virtual unique_ptr<ITransport> CreateWebSocketTransport(const string& endpoint) = 0;
-    virtual unique_ptr<ITransport> CreateInMemoryTransport() = 0;
-
-    // Protocol Version Support
-    virtual vector<string> GetSupportedProtocolVersions() const = 0;
-    virtual string GetLatestProtocolVersion() const = 0;
-    virtual bool IsProtocolVersionSupported(const string& version) const = 0;
 };
 
 // Content Type Concepts

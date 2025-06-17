@@ -81,9 +81,6 @@ class Client {
     // Get server capabilities (after initialization)
     optional<ServerCapabilities> GetServerCapabilities() const;
 
-    // Get session statistics
-    SessionStats GetStats() const;
-
     // === Event Handling ===
 
     // Set callbacks for various events
@@ -101,7 +98,6 @@ class Client {
     Client(unique_ptr<ISession> InSession, ClientCapabilities InCapabilities,
            Implementation InClientInfo, shared_ptr<ITransport> InTransport);
 
-    unique_ptr<ISession> m_Session;
     ClientCapabilities m_Capabilities;
     Implementation m_ClientInfo;
     shared_ptr<ITransport> m_Transport;
