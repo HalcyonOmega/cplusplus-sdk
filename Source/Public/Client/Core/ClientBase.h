@@ -66,9 +66,6 @@ class IClientAPI {
  *
  * The client will automatically begin the initialization flow with the server when Connect() is
  * called.
- *
- * To use with custom types, extend the base Request/Notification/Result types and pass them as type
- * parameters.
  */
 class ClientBase : public IClientAPI, public IMCP {
   public:

@@ -79,6 +79,24 @@ class Server {
     void OnClientDisconnected(function<void(const string&)> InCallback);
     void OnError(function<void(const string&)> InCallback);
 
+    // TODO: @HalcyonOmega Simple Server API
+    MCPTask<PingResponse> RequestPing(const PingRequest& InRequest = {});
+
+    MCPTask<CreateMessageResponse> RequestCreateMessage(const CreateMessageRequest& InRequest = {});
+
+    MCPTask<ListRootsResponse> RequestListRoots(const ListRootsRequest& InRequest = {});
+
+    MCPTask_Void NotifyLoggingMessage(const LoggingMessageNotification& InMessage);
+
+    MCPTask_Void NotifyResourceUpdated(const ResourceUpdatedNotification& InMessage);
+
+    MCPTask_Void NotifyResourceListChanged(const ResourceListChangedNotification& InMessage);
+
+    MCPTask_Void NotifyToolListChanged(const ToolListChangedNotification& InMessage);
+
+    MCPTask_Void NotifyPromptListChanged(const PromptListChangedNotification& InMessage);
+    // TODO: @HalcyonOmega End Simple Server API
+
   private:
     friend class MCPServerBuilder;
 
