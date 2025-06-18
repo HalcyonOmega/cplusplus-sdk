@@ -7,8 +7,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-JSON_NAMESPACE_BEGIN
-
 // Concept: checks if a type is a nlohmann::basic_json specialization
 // (modern C++20 replacement for std::enable_if used by nlohmann macros).
 template <typename T>
@@ -95,7 +93,5 @@ inline std::unique_ptr<MessageBase> DeserializeMessage(const string& /*InMessage
     // subclass. Currently returns nullptr so callers can detect "no message".
     return nullptr;
 }
-
-JSON_NAMESPACE_END
 
 MCP_NAMESPACE_END

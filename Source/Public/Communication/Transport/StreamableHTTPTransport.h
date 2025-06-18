@@ -58,7 +58,6 @@ class StreamableHTTPServerTransport : public StreamableHTTPTransportBase {
     int m_Port;
     unique_ptr<HTTP::Client> m_Client;
     atomic<bool> m_IsRunning;
-    thread m_ReadThread;
     // TODO: End of TODO
 
   public:

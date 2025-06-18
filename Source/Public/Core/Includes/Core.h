@@ -7,7 +7,9 @@
 #include <array>
 #include <atomic>
 #include <codecvt>
+#include <concepts>
 #include <condition_variable>
+#include <coroutine>
 #include <functional>
 #include <future>
 #include <locale>

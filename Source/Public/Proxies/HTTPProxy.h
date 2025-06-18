@@ -137,7 +137,6 @@ class Request {
     Version GetVersion() const;
 
   private:
-    // According to memory: private members 'm_'.
     Method m_Method;
     std::string m_URI;
     Version m_Version;
@@ -178,7 +177,6 @@ class Response {
     Version GetVersion() const;
 
   private:
-    // According to memory: private members 'm_'.
     Status m_Status;
     std::string m_ReasonPhrase;
     Version m_Version;

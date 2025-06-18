@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../TransportPseudoCode.h"
+#include "../ITransport.h"
 #include "Core.h"
 
 // Poco Net includes
@@ -22,100 +22,41 @@
 
 MCP_NAMESPACE_BEGIN
 
-// SSE Event structure for Server-Sent Events
-struct SSEEvent {
-    std::string ID;
-    std::string Type;
-    std::string Data;
-    std::optional<int> Retry;
-
-    SSEEvent() = default;
-    SSEEvent(const std::string& InData) : Data(InData) {}
-};
-
-// SSE Stream wrapper for Poco streams
-class SSEStream {
-  private:
-    std::unique_ptr<std::istream> m_Stream;
-    bool m_IsOpen;
-
-  public:
-    SSEStream(std::unique_ptr<std::istream> InStream)
-        : m_Stream(std::move(InStream)), m_IsOpen(true) {}
-
-    ~SSEStream() {
-        Close();
-    }
-
-    bool IsOpen() const {
-        return m_IsOpen && m_Stream && m_Stream->good();
-    }
-
-    void Close() {
-        m_IsOpen = false;
-        m_Stream.reset();
-    }
-
-    MCPTask_Void ReadEvent() {
-        SSEEvent Event;
-        std::string Line;
-
-        while (IsOpen() && std::getline(*m_Stream, Line)) {
-            if (Line.empty()) {
-                // Empty line signals end of event
-                co_return Event;
-            }
-
-            if (Line.starts_with("id:")) {
-                Event.ID = Line.substr(3);
-            } else if (Line.starts_with("event:")) {
-                Event.Type = Line.substr(6);
-            } else if (Line.starts_with("data:")) {
-                if (!Event.Data.empty()) Event.Data += "\n";
-                Event.Data += Line.substr(5);
-            } else if (Line.starts_with("retry:")) {
-                Event.Retry = std::stoi(Line.substr(6));
-            }
-        }
-
-        co_return Event;
-    }
-};
-
+// TODO: @HalcyonOmega Should Session Management be in base transport?
 // Session management for HTTP transport
 struct MCPSession {
-    std::string SessionID;
-    std::chrono::system_clock::time_point CreatedAt;
-    std::chrono::system_clock::time_point LastActivity;
+    string SessionID;
+    chrono::system_clock::time_point CreatedAt;
+    chrono::system_clock::time_point LastActivity;
     bool IsActive;
 
-    MCPSession(const std::string& InSessionID)
-        : SessionID(InSessionID), CreatedAt(std::chrono::system_clock::now()),
-          LastActivity(std::chrono::system_clock::now()), IsActive(true) {}
-};
-
-// HTTP Transport Configuration
-struct HTTPTransportConfig {
-    std::string Host = "localhost";
-    int Port = 8080;
-    std::string MCPEndpoint = "/mcp";
-    bool UseSSL = false;
-    std::chrono::seconds RequestTimeout = std::chrono::seconds(30);
-    bool ValidateOrigin = true;
-    std::vector<std::string> AllowedOrigins;
+    MCPSession(const string& InSessionID)
+        : SessionID(InSessionID), CreatedAt(chrono::system_clock::now()),
+          LastActivity(chrono::system_clock::now()), IsActive(true) {}
 };
 
 // Streamable HTTP Transport Implementation using Poco::Net
 class StreamableHTTPTransport : public ITransport {
+    // HTTP Transport Configuration
+    struct HTTPTransportConfig {
+        string Host = "localhost";
+        int Port = 8080;
+        string MCPEndpoint = "/mcp";
+        bool UseSSL = false;
+        chrono::seconds RequestTimeout = chrono::seconds(30);
+        bool ValidateOrigin = true;
+        vector<string> AllowedOrigins;
+    };
+
   private:
     HTTPTransportConfig m_Config;
-    std::optional<MCPSession> m_Session;
-    std::unique_ptr<Poco::Net::HTTPClientSession> m_HTTPSession;
-    std::unique_ptr<SSEStream> m_SSEStream;
-    std::function<void(const MessageBase&)> m_MessageHandler;
-    std::function<void(const std::string&)> m_ErrorHandler;
+    optional<MCPSession> m_Session;
+    unique_ptr<Poco::Net::HTTPClientSession> m_HTTPSession;
+    unique_ptr<SSEStream> m_SSEStream;
+    function<void(const MessageBase&)> m_MessageHandler;
+    function<void(const string&)> m_ErrorHandler;
     bool m_IsConnected;
-    std::string m_LastEventID;
+    string m_LastEventID;
 
   public:
     StreamableHTTPTransport(const HTTPTransportConfig& InConfig)
@@ -126,10 +67,10 @@ class StreamableHTTPTransport : public ITransport {
             // Create HTTP session using Poco
             if (m_Config.UseSSL) {
                 m_HTTPSession =
-                    std::make_unique<Poco::Net::HTTPSClientSession>(m_Config.Host, m_Config.Port);
+                    make_unique<Poco::Net::HTTPSClientSession>(m_Config.Host, m_Config.Port);
             } else {
                 m_HTTPSession =
-                    std::make_unique<Poco::Net::HTTPClientSession>(m_Config.Host, m_Config.Port);
+                    make_unique<Poco::Net::HTTPClientSession>(m_Config.Host, m_Config.Port);
             }
 
             m_HTTPSession->setTimeout(Poco::Timespan(m_Config.RequestTimeout.count(), 0));
@@ -143,7 +84,7 @@ class StreamableHTTPTransport : public ITransport {
             if (m_ErrorHandler) {
                 m_ErrorHandler("Failed to connect HTTP transport: " + Ex.displayText());
             }
-            throw std::runtime_error("HTTP connection failed: " + Ex.displayText());
+            throw runtime_error("HTTP connection failed: " + Ex.displayText());
         }
 
         co_return;
@@ -175,9 +116,7 @@ class StreamableHTTPTransport : public ITransport {
     }
 
     MCPTask_Void SendMessage(const MessageBase& InMessage) override {
-        if (!m_IsConnected || !m_HTTPSession) {
-            throw std::runtime_error("Transport not connected");
-        }
+        if (!m_IsConnected || !m_HTTPSession) { throw runtime_error("Transport not connected"); }
 
         try {
             Poco::Net::HTTPRequest Request = CreatePOSTRequest(InMessage);
@@ -189,7 +128,7 @@ class StreamableHTTPTransport : public ITransport {
             co_await ProcessHTTPResponse(Response, InMessage);
         } catch (const Poco::Exception& Ex) {
             if (m_ErrorHandler) { m_ErrorHandler("HTTP request failed: " + Ex.displayText()); }
-            throw std::runtime_error("HTTP request failed: " + Ex.displayText());
+            throw runtime_error("HTTP request failed: " + Ex.displayText());
         }
 
         co_return;
@@ -202,9 +141,7 @@ class StreamableHTTPTransport : public ITransport {
     }
 
     MCPTask_Void ListenForServerMessages() {
-        if (!m_IsConnected || !m_HTTPSession) {
-            throw std::runtime_error("Transport not connected");
-        }
+        if (!m_IsConnected || !m_HTTPSession) { throw runtime_error("Transport not connected"); }
 
         try {
             Poco::Net::HTTPRequest GetRequest = CreateGETRequest();
@@ -213,12 +150,11 @@ class StreamableHTTPTransport : public ITransport {
             AddLastEventIDHeader(GetRequest);
 
             Poco::Net::HTTPResponse Response;
-            std::istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
+            istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
 
             if (Response.getStatus() == Poco::Net::HTTPResponse::HTTP_OK
                 && Response.getContentType() == "text/event-stream") {
-                m_SSEStream = std::make_unique<SSEStream>(
-                    std::make_unique<std::istream>(ResponseStream.rdbuf()));
+                m_SSEStream = make_unique<SSEStream>(make_unique<istream>(ResponseStream.rdbuf()));
 
                 while (m_SSEStream && m_SSEStream->IsOpen()) {
                     SSEEvent Event = co_await m_SSEStream->ReadEvent();
@@ -232,18 +168,18 @@ class StreamableHTTPTransport : public ITransport {
         co_return;
     }
 
-    void SetMessageHandler(std::function<void(const MessageBase&)> InHandler) override {
+    void SetMessageHandler(function<void(const MessageBase&)> InHandler) override {
         m_MessageHandler = InHandler;
     }
 
-    void SetErrorHandler(std::function<void(const std::string&)> InHandler) override {
+    void SetErrorHandler(function<void(const string&)> InHandler) override {
         m_ErrorHandler = InHandler;
     }
 
     bool IsConnected() const override {
         return m_IsConnected;
     }
-    std::string GetTransportType() const override {
+    string GetTransportType() const override {
         return "streamable-http";
     }
 
@@ -257,7 +193,7 @@ class StreamableHTTPTransport : public ITransport {
 
         // Extract session ID from response headers
         if (Response.has("Mcp-Session-Id")) {
-            std::string SessionID = Response.get("Mcp-Session-Id");
+            string SessionID = Response.get("Mcp-Session-Id");
             m_Session = MCPSession(SessionID);
         }
 
@@ -295,13 +231,13 @@ class StreamableHTTPTransport : public ITransport {
     MCPTask_Void SendHTTPRequest(Poco::Net::HTTPRequest& InRequest,
                                  Poco::Net::HTTPResponse& OutResponse,
                                  const MessageBase& InMessage) {
-        std::string JsonData = SerializeToJSON(InMessage);
+        string JsonData = SerializeToJSON(InMessage);
         InRequest.setContentLength(JsonData.length());
 
-        std::ostream& RequestStream = m_HTTPSession->sendRequest(InRequest);
+        ostream& RequestStream = m_HTTPSession->sendRequest(InRequest);
         RequestStream << JsonData;
 
-        std::istream& ResponseStream = m_HTTPSession->receiveResponse(OutResponse);
+        istream& ResponseStream = m_HTTPSession->receiveResponse(OutResponse);
 
         co_return;
     }
@@ -326,14 +262,14 @@ class StreamableHTTPTransport : public ITransport {
             co_return;
         }
 
-        std::string ContentType = InResponse.getContentType();
+        string ContentType = InResponse.getContentType();
 
         if (ContentType == "application/json") {
             // Single JSON response
-            std::istream& ResponseStream =
+            istream& ResponseStream =
                 m_HTTPSession->receiveResponse(const_cast<Poco::Net::HTTPResponse&>(InResponse));
 
-            std::string ResponseBody;
+            string ResponseBody;
             Poco::StreamCopier::copyToString(ResponseStream, ResponseBody);
 
             MessageBase Response = DeserializeFromJSON(ResponseBody);
@@ -353,9 +289,9 @@ class StreamableHTTPTransport : public ITransport {
 
                 MessageBase Message = DeserializeFromJSON(InEvent.Data);
                 if (m_MessageHandler) { m_MessageHandler(Message); }
-            } catch (const std::exception& Ex) {
+            } catch (const exception& Ex) {
                 if (m_ErrorHandler) {
-                    m_ErrorHandler("Failed to parse SSE message: " + std::string(Ex.what()));
+                    m_ErrorHandler("Failed to parse SSE message: " + string(Ex.what()));
                 }
             }
         }
@@ -392,8 +328,8 @@ class StreamableHTTPTransport : public ITransport {
 
     void HandleHTTPError(const Poco::Net::HTTPResponse& InResponse) {
         if (m_ErrorHandler) {
-            std::string ErrorMsg = "HTTP Error " + std::to_string(InResponse.getStatus()) + ": "
-                                   + InResponse.getReason();
+            string ErrorMsg =
+                "HTTP Error " + to_string(InResponse.getStatus()) + ": " + InResponse.getReason();
             m_ErrorHandler(ErrorMsg);
         }
     }

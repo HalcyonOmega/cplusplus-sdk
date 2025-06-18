@@ -729,14 +729,8 @@ class ServerBase : public IServerAPI, public IMCP {
     }
 
   public:
-    // Resource registration methods
     RegisteredResource Resource(const string& Name, const string& URI,
-                                const ReadResourceCallback& Callback) {
-        return Resource(Name, URI, nullopt, Callback);
-    }
-
-    RegisteredResource Resource(const string& Name, const string& URI,
-                                const optional<ResourceMetadata>& Metadata,
+                                const optional<ResourceMetadata>& Metadata = nullopt,
                                 const ReadResourceCallback& Callback) {
         if (m_RegisteredResources.find(URI) != m_RegisteredResources.end()) {
             throw runtime_error("Resource " + URI + " is already registered");
@@ -756,12 +750,7 @@ class ServerBase : public IServerAPI, public IMCP {
     }
 
     RegisteredResourceTemplate Resource(const string& Name, const ResourceTemplate& Tmpl,
-                                        const ReadResourceTemplateCallback& Callback) {
-        return Resource(Name, Tmpl, nullopt, Callback);
-    }
-
-    RegisteredResourceTemplate Resource(const string& Name, const ResourceTemplate& Tmpl,
-                                        const optional<ResourceMetadata>& Metadata,
+                                        const optional<ResourceMetadata>& Metadata = nullopt,
                                         const ReadResourceTemplateCallback& Callback) {
         if (m_RegisteredResourceTemplates.find(Name) != m_RegisteredResourceTemplates.end()) {
             throw runtime_error("Resource template " + Name + " is already registered");

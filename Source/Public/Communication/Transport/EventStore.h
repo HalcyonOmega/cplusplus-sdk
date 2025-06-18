@@ -9,6 +9,7 @@ MCP_NAMESPACE_BEGIN
 class EventStore {
   public:
     virtual ~EventStore() = default;
+
     /**
      * Stores an event for later retrieval
      * @param InStreamID ID of the stream the event belongs to

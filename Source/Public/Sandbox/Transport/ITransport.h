@@ -7,24 +7,57 @@
 // Poco Net includes
 #include <Poco/Event.h>
 #include <Poco/Exception.h>
-#include <Poco/Net/HTTPClientSession.h>
-#include <Poco/Net/HTTPRequest.h>
-#include <Poco/Net/HTTPRequestHandler.h>
-#include <Poco/Net/HTTPRequestHandlerFactory.h>
-#include <Poco/Net/HTTPResponse.h>
-#include <Poco/Net/HTTPSClientSession.h>
-#include <Poco/Net/HTTPServer.h>
 #include <Poco/Net/NetException.h>
 #include <Poco/Net/ServerSocket.h>
-#include <Poco/Pipe.h>
-#include <Poco/PipeStream.h>
-#include <Poco/Process.h>
 #include <Poco/Runnable.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/Thread.h>
 #include <Poco/URI.h>
 
 MCP_NAMESPACE_BEGIN
+
+using OnCloseDelegate = std::function<void()>;
+using OnErrorDelegate = std::function<void(const ErrorBase& InError)>;
+using OnMessageDelegate = std::function<void(const MessageBase& InMessage)>;
+using OnRawMessageDelegate = std::function<void(const std::string& InRawMessage)>;
+using OnStateChangeDelegate =
+    std::function<void(const std::string& InOldState, const std::string& InNewState)>;
+
+// TODO: @HalcyonOmega Begin Direct Translated Code
+using StartCallback = function<void()>;
+using CloseCallback = function<void()>;
+using ErrorCallback = function<void(const ErrorBase&)>;
+using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
+using ProgressCallback = function<void(const ProgressNotification&)>;
+
+// Transport options
+struct TransportOptions {
+    optional<string> ResumptionToken;
+    optional<string> LastEventID;
+    shared_ptr<EventStore> EventStore;
+};
+
+// Options for sending a JSON-RPC message.
+struct TransportSendOptions {
+    // If present, `RelatedRequestID` is used to indicate to the transport which incoming request to
+    // associate this outgoing message with.
+    optional<RequestID> RelatedRequestID;
+
+    // The resumption token used to continue long-running requests that were interrupted.
+    // This allows clients to reconnect and continue from where they left off, if supported by the
+    // transport.
+    optional<string> ResumptionToken;
+
+    // A callback that is invoked when the resumption token changes, if supported by the transport.
+    // This allows clients to persist the latest token for potential reconnection.
+    optional<function<void(const string& /* Token */)>> OnResumptionToken;
+
+    // Optional authentication information to forward to the peer transport. This allows
+    // in-process tests to exercise authenticated message flows without needing a full
+    // authentication pipeline.
+    optional<AuthInfo> AuthInfo;
+};
+// TODO: @HalcyonOmega End Direct Translated Code
 
 // Transport types for easy selection
 enum class TransportType {
@@ -57,14 +90,83 @@ class ITransport {
     virtual bool IsConnected() const = 0;
     virtual TransportType GetTransportType() const = 0;
 
+    // TODO: @HalcyonOmega Begin Direct Translated Code
+    // Getters
+    optional<string> GetSessionID() const {
+        return m_SessionID;
+    }
+
+    // Note: Resumability is not yet supported by any transport implementation.
+    [[deprecated("Not yet implemented - will be supported in a future version")]]
+    virtual bool Resume(const string& InResumptionToken) = 0;
+
+    optional<StartCallback> OnStart;
+
+    // Callback for when the connection is closed for any reason. This should be invoked when
+    // Close() is called as well.
+    optional<CloseCallback> OnClose;
+
+    // Callback for when an error occurs. Note that errors are not necessarily fatal; they are used
+    // for reporting any kind of exceptional condition out of band.
+    optional<ErrorCallback> OnError;
+
+    // Callback for when a message (request or response) is received over the connection. Includes
+    // the AuthInfo if the transport is authenticated.
+    optional<MessageCallback> OnMessage;
+
+  protected:
+    // Helper methods to safely invoke callbacks with proper locking and null checks
+    void CallOnStart() const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnStart) { (*OnStart)(); }
+    }
+
+    void CallOnClose() const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnClose) { (*OnClose)(); }
+    }
+
+    void CallOnError(const ErrorBase& InError) const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnError) { (*OnError)(InError); }
+    }
+
+    void CallOnError(const string& InMessage) const {
+        ErrorBase Error(Errors::InternalError, InMessage);
+        CallOnError(Error);
+    }
+
+    void CallOnMessage(const MessageBase& InMessage,
+                       const optional<AuthInfo>& InAuthInfo = nullopt) const {
+        lock_guard<mutex> lock(m_CallbackMutex);
+        if (OnMessage) { (*OnMessage)(InMessage, InAuthInfo); }
+    }
+
+  private:
+    // The session ID generated for this connection.
+    optional<string> m_SessionID;
+
+    mutable mutex m_CallbackMutex; // Protects callback invocation to avoid concurrent access
+
+  public:
+    // Starts processing messages on the transport, including any connection steps that might need
+    // to be taken. This method should only be called after callbacks are installed, or else
+    // messages may be lost. NOTE: This method should not be called explicitly when using Client,
+    // Server, or Protocol classes, as they will implicitly call Start().
+    virtual future<void> Start() = 0;
+
+    // Closes the connection.
+    virtual future<void> Close() = 0;
+
+    // Sends a JSON-RPC message (request or response). If present, `relatedRequestID` is used to
+    // indicate to the transport which incoming request to associate this outgoing message with.
+    // TODO: @HalcyonOmega Should the TransportSendOptions be optional?
+    virtual future<void> Send(const MessageBase& InMessage,
+                              const TransportSendOptions& InOptions = {}) = 0;
+    // TODO: @HalcyonOmega End Direct Translated Code
+
   protected:
     // --- Callback Types (following naming conventions) ---
-    using OnCloseDelegate = std::function<void()>;
-    using OnErrorDelegate = std::function<void(const ErrorBase& InError)>;
-    using OnMessageDelegate = std::function<void(const MessageBase& InMessage)>;
-    using OnRawMessageDelegate = std::function<void(const std::string& InRawMessage)>;
-    using OnStateChangeDelegate =
-        std::function<void(const std::string& InOldState, const std::string& InNewState)>;
 
     OnCloseDelegate m_OnClose;
     OnErrorDelegate m_OnError;

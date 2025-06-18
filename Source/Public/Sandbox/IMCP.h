@@ -1,18 +1,11 @@
 #pragma once
 
-#include <concepts>
-#include <coroutine>
-#include <functional>
-#include <memory>
-#include <string>
-#include <variant>
-
 #include "Core.h"
 #include "Core/Types/Initialization.h"
-#include "ITransport.h"
 #include "NotificationBase.h"
 #include "RequestBase.h"
 #include "ResponseBase.h"
+#include "Transport/ITransport.h"
 
 MCP_NAMESPACE_BEGIN
 
