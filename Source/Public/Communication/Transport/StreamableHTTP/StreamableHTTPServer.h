@@ -20,23 +20,6 @@ using IncomingMessage = Poco::Net::HTTPServerRequest;
 using ServerResponse = Poco::Net::HTTPServerResponse;
 using SessionInitializedCallback = function<MCPTask_Void(const string& InSessionID)>;
 
-/**
- * Interface for resumability support via event storage
- */
-class IEventStore {
-    /**
-     * Stores an event for later retrieval
-     * @param InStreamID ID of the stream the event belongs to
-     * @param InMessage The JSON-RPC message to store
-     * @returns The generated event ID for the stored event
-     */
-    MCPTask<string> StoreEvent(string InStreamID, JSONRPCMessage InMessage);
-
-    MCPTask<string> ReplayEventsAfter(
-        string LastEventID,
-        function<MCPTask_Void(const string& InEventID, const JSONRPCMessage& InMessage)> InSend);
-};
-
 class StreamableHTTPServer : public ITransport {
   public:
     // === ITransport Implementation ===
@@ -94,7 +77,7 @@ class StreamableHTTPServer : public ITransport {
   private:
     MCPTask_Void HandleGetRequest(IncomingMessage& InRequest, ServerResponse& InResponse);
     MCPTask_Void ReplayEvents(string InLastEventID, ServerResponse& InResponse);
-    bool WriteSSEEvent(ServerResponse& InResponse, const JSONRPCMessage& InMessage,
+    bool WriteSSEEvent(ServerResponse& InResponse, const MessageBase& InMessage,
                        const optional<string>& InEventID = nullopt);
     MCPTask_Void HandleUnsupportedRequest(ServerResponse& InResponse);
     MCPTask_Void HandlePostRequest(IncomingMessage& InRequest, ServerResponse& InResponse,
@@ -109,7 +92,7 @@ class StreamableHTTPServer : public ITransport {
     bool m_EnableJSONResponse = false;
     std::map<string, ServerResponse> m_StreamMapping;
     std::map<RequestID, string> m_RequestToStreamMapping;
-    std::map<RequestID, JSONRPCMessage> m_RequestResponseMap;
+    std::map<RequestID, MessageBase> m_RequestResponseMap;
     string m_StandaloneSSEStreamID = "_GET_stream";
     function<optional<string>()> m_SessionIDGenerator;
     optional<IEventStore> m_EventStore;

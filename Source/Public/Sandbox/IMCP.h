@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Core.h"
+#include "Communication/Transport/ITransport.h"
 #include "Core/Types/Initialization.h"
+#include "Macros.h"
 #include "NotificationBase.h"
 #include "RequestBase.h"
 #include "ResponseBase.h"
-#include "Transport/ITransport.h"
 #include "Utilities/Async/MCPTask.h"
 
 MCP_NAMESPACE_BEGIN

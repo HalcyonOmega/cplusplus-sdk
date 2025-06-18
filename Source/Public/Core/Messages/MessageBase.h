@@ -1,11 +1,19 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <string_view>
 
-#include "Core.h"
+#include "Macros.h"
 #include "MessageConstants.h"
 
+class JSON;
+
 MCP_NAMESPACE_BEGIN
+
+using std::string;
+using std::string_view;
+using std::unique_ptr;
 
 struct MessageParams {
     [[nodiscard]] virtual string Serialize() const;

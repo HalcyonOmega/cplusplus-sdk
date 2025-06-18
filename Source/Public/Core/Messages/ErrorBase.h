@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core.h"
 #include "ErrorConstants.h"
+#include "Macros.h"
 #include "MessageBase.h"
 #include "RequestBase.h"
 

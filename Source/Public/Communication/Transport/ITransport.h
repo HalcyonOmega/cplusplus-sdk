@@ -1,11 +1,27 @@
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <optional>
+
 #include "Auth/Types/Auth.h"
-#include "Core.h"
+#include "Communication/Utilities/AbortController.h"
 #include "ErrorBase.h"
-#include "MessageBase.h"
-#include "Sandbox/IMCP.h"
+#include "Macros.h"
 #include "Utilities/Async/MCPTask.h"
+
+class IEventStore;
+struct ProgressNotification;
+class MessageBase;
+
+using std::function;
+using std::mutex;
+using std::nullopt;
+using std::optional;
+using std::shared_ptr;
+using std::string;
+
+class ErrorBase;
 
 MCP_NAMESPACE_BEGIN
 
@@ -20,7 +36,7 @@ using ProgressCallback = function<MCPTask_Void(const ProgressNotification&)>;
 struct TransportOptions {
     optional<string> ResumptionToken;
     optional<string> LastEventID;
-    shared_ptr<EventStore> EventStore;
+    shared_ptr<IEventStore> EventStore;
 };
 
 // Options for sending a JSON-RPC message.
@@ -42,6 +58,33 @@ struct TransportSendOptions {
     // in-process tests to exercise authenticated message flows without needing a full
     // authentication pipeline.
     optional<AuthInfo> AuthInfo;
+};
+
+// Options that can be given per request.
+struct RequestOptions : public TransportSendOptions {
+    // If set, requests progress notifications from the remote end (if supported). When progress
+    // notifications are received, this callback will be invoked.
+    optional<ProgressCallback> OnProgress;
+
+    // Can be used to cancel an in-flight request. This will cause an AbortError to be raised from
+    // request().
+    optional<AbortSignal> Signal;
+
+    // A timeout (in milliseconds) for this request. If exceeded, an MCP_Error with code
+    // `RequestTimeout` will be raised from request().
+    //
+    // If not specified, `DEFAULT_REQUEST_TIMEOUT_MSEC` will be used as the timeout.
+    optional<int64_t> Timeout;
+
+    // If true, receiving a progress notification will reset the request timeout.
+    // This is useful for long-running operations that send periodic progress updates.
+    // Default: false
+    optional<bool> ResetTimeoutOnProgress;
+
+    // Maximum total time (in milliseconds) to wait for a response.
+    // If exceeded, an MCP_Error with code `RequestTimeout` will be raised, regardless of progress
+    // notifications. If not specified, there is no maximum total timeout.
+    optional<int64_t> MaxTotalTimeout;
 };
 
 // TODO: @HalcyonOmega End Direct Translated Code
@@ -85,6 +128,13 @@ class ITransport {
      * associate this outgoing message with.
      */
     virtual MCPTask_Void SendMessage(const MessageBase& InMessage) = 0;
+
+    // State management
+    virtual bool IsConnected() const = 0;
+
+    // Note: Resumability is not yet supported by any transport implementation.
+    [[deprecated("Not yet implemented - will be supported in a future version")]]
+    virtual bool Resume(const string& InResumptionToken) = 0;
 
     /**
      * The session ID generated for this connection.
