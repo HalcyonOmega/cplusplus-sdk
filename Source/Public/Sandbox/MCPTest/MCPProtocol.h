@@ -1,0 +1,272 @@
+#pragma once
+
+#include <functional>
+#include <future>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+#include <unordered_set>
+
+#include "ITransport.h"
+#include "MCPMessages.h"
+#include "MCPTask.h"
+#include "MCPTypes.h"
+
+// Protocol state
+enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, Shutdown };
+
+// Base protocol handler
+class MCPProtocol {
+  public:
+    explicit MCPProtocol(std::unique_ptr<ITransport> InTransport);
+    virtual ~MCPProtocol();
+
+    // Lifecycle
+    MCPTaskVoid Start();
+    MCPTaskVoid Shutdown();
+    bool IsInitialized() const {
+        return m_State == MCPProtocolState::Initialized;
+    }
+    MCPProtocolState GetState() const {
+        return m_State;
+    }
+
+    // Core protocol operations
+    MCPTask<InitializeResult> Initialize(const std::string& InProtocolVersion,
+                                         const ClientCapabilities& InCapabilities,
+                                         const Implementation& InClientInfo);
+    MCPTaskVoid SendInitialized();
+    MCPTask<JSONValue> Ping();
+
+    // Message sending utilities
+    template <typename TRequest>
+    MCPTask<typename TRequest::ResponseType::ResultType> SendRequest(const TRequest& InRequest);
+
+    template <typename TResponse>
+    MCPTaskVoid SendResponse(const std::string& InRequestID, const TResponse& InResponse);
+
+    template <typename TNotification>
+    MCPTaskVoid SendNotification(const TNotification& InNotification);
+
+    // Error handling
+    MCPTaskVoid SendError(const std::string& InRequestID, int64_t InCode,
+                          const std::string& InMessage, const JSONValue& InData = {});
+
+    // Event handlers
+    using RequestHandlerFunc = std::function<MCPTaskVoid(
+        const std::string& InMethod, const JSONValue& InParams, const std::string& InRequestID)>;
+    using ResponseHandlerFunc =
+        std::function<void(const JSONValue& InResult, const std::string& InRequestID)>;
+    using NotificationHandlerFunc =
+        std::function<void(const std::string& InMethod, const JSONValue& InParams)>;
+    using ErrorHandlerFunc = std::function<void(const std::string& InError)>;
+
+    void SetRequestHandler(RequestHandlerFunc InHandler) {
+        m_RequestHandler = InHandler;
+    }
+    void SetResponseHandler(ResponseHandlerFunc InHandler) {
+        m_ResponseHandler = InHandler;
+    }
+    void SetNotificationHandler(NotificationHandlerFunc InHandler) {
+        m_NotificationHandler = InHandler;
+    }
+    void SetErrorHandler(ErrorHandlerFunc InHandler) {
+        m_ErrorHandler = InHandler;
+    }
+
+    // Transport access
+    ITransport* GetTransport() const {
+        return m_Transport.get();
+    }
+
+  protected:
+    virtual void OnInitializeRequest(const InitializeRequest& InRequest,
+                                     const std::string& InRequestID) = 0;
+    virtual void OnInitializedNotification() = 0;
+    virtual MCPTaskVoid HandleRequest(const std::string& InMethod, const JSONValue& InParams,
+                                      const std::string& InRequestID);
+    virtual void HandleResponse(const JSONValue& InResult, const std::string& InRequestID);
+    virtual void HandleNotification(const std::string& InMethod, const JSONValue& InParams);
+    virtual void HandleError(const std::string& InError);
+
+    void SetState(MCPProtocolState InNewState);
+
+    MCPProtocolState m_State;
+    std::unique_ptr<ITransport> m_Transport;
+
+  private:
+    void SetupTransportHandlers();
+    void OnTransportMessage(const std::string& InRawMessage);
+    void OnTransportRequest(const std::string& InMethod, const nlohmann::json& InParams,
+                            const std::string& InRequestID);
+    void OnTransportResponse(const nlohmann::json& InResult, const std::string& InRequestID);
+    void OnTransportNotification(const std::string& InMethod, const nlohmann::json& InParams);
+    void OnTransportError(const std::string& InError);
+    void OnTransportStateChange(TransportState InOldState, TransportState InNewState);
+
+    // Event handlers
+    RequestHandlerFunc m_RequestHandler;
+    ResponseHandlerFunc m_ResponseHandler;
+    NotificationHandlerFunc m_NotificationHandler;
+    ErrorHandlerFunc m_ErrorHandler;
+
+    // Request tracking
+    struct PendingResponse {
+        std::string RequestID;
+        std::promise<JSONValue> Promise;
+        std::chrono::steady_clock::time_point StartTime;
+    };
+
+    std::unordered_map<std::string, std::unique_ptr<PendingResponse>> m_PendingResponses;
+    mutable std::mutex m_ResponsesMutex;
+};
+
+// Client protocol handler
+class MCPClient : public MCPProtocol {
+  public:
+    explicit MCPClient(std::unique_ptr<ITransport> InTransport);
+
+    // Client-specific operations
+    MCPTask<ListToolsResult> ListTools();
+    MCPTask<CallToolResult>
+    CallTool(const std::string& InName,
+             const std::unordered_map<std::string, JSONValue>& InArguments = {});
+
+    MCPTask<ListPromptsResult> ListPrompts();
+    MCPTask<GetPromptResult>
+    GetPrompt(const std::string& InName,
+              const std::unordered_map<std::string, std::string>& InArguments = {});
+
+    MCPTask<ListResourcesResult> ListResources();
+    MCPTask<ReadResourceResult> ReadResource(const std::string& InURI);
+    MCPTaskVoid Subscribe(const std::string& InURI);
+    MCPTaskVoid Unsubscribe(const std::string& InURI);
+
+    MCPTask<ListRootsResult> ListRoots();
+    MCPTaskVoid SetLoggingLevel(LoggingLevel InLevel);
+
+    MCPTask<CompleteResult> Complete(const std::string& InRefType, const std::string& InRefURI,
+                                     const std::string& InArgName, const std::string& InArgValue);
+
+    // Sampling (for servers that want to sample via client)
+    MCPTask<CreateMessageResult>
+    CreateMessage(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
+                  const std::string& InSystemPrompt = "",
+                  const std::string& InIncludeContext = "none", double InTemperature = 0.7,
+                  const std::vector<std::string>& InStopSequences = {},
+                  const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
+
+  protected:
+    void OnInitializeRequest(const InitializeRequest& InRequest,
+                             const std::string& InRequestID) override;
+    void OnInitializedNotification() override;
+
+  private:
+    ServerCapabilities m_ServerCapabilities;
+    Implementation m_ServerInfo;
+};
+
+// Server protocol handler
+class MCPServer : public MCPProtocol {
+  public:
+    explicit MCPServer(std::unique_ptr<ITransport> InTransport, const Implementation& InServerInfo,
+                       const ServerCapabilities& InCapabilities);
+
+    // Tool management
+    void RegisterTool(
+        const Tool& InTool,
+        std::function<MCPTask<CallToolResult>(const std::unordered_map<std::string, JSONValue>&)>
+            InHandler);
+    void UnregisterTool(const std::string& InName);
+    MCPTaskVoid NotifyToolListChanged();
+
+    // Prompt management
+    void RegisterPrompt(
+        const Prompt& InPrompt,
+        std::function<MCPTask<GetPromptResult>(const std::unordered_map<std::string, std::string>&)>
+            InHandler);
+    void UnregisterPrompt(const std::string& InName);
+    MCPTaskVoid NotifyPromptListChanged();
+
+    // Resource management
+    void RegisterResource(const Resource& InResource,
+                          std::function<MCPTask<ReadResourceResult>()> InHandler);
+    void RegisterResourceTemplate(
+        const ResourceTemplate& InTemplate,
+        std::function<MCPTask<ReadResourceResult>(const std::string&)> InHandler);
+    void UnregisterResource(const std::string& InURI);
+    MCPTaskVoid NotifyResourceListChanged();
+    MCPTaskVoid NotifyResourceUpdated(const std::string& InURI);
+
+    // Root management
+    void RegisterRoot(const Root& InRoot);
+    void UnregisterRoot(const std::string& InURI);
+    MCPTaskVoid NotifyRootsListChanged();
+
+    // Logging
+    MCPTaskVoid LogMessage(LoggingLevel InLevel, const std::string& InLogger,
+                           const JSONValue& InData);
+
+    // Sampling requests (servers can request sampling from clients)
+    MCPTask<CreateMessageResult>
+    RequestSampling(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
+                    const std::string& InSystemPrompt = "",
+                    const std::string& InIncludeContext = "none", double InTemperature = 0.7,
+                    const std::vector<std::string>& InStopSequences = {},
+                    const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
+
+    // Progress reporting
+    MCPTaskVoid ReportProgress(const std::string& InRequestID, double InProgress,
+                               int64_t InTotal = -1);
+    MCPTaskVoid CancelRequest(const std::string& InRequestID, const std::string& InReason = "");
+
+  protected:
+    void OnInitializeRequest(const InitializeRequest& InRequest,
+                             const std::string& InRequestID) override;
+    void OnInitializedNotification() override;
+    MCPTaskVoid HandleRequest(const std::string& InMethod, const JSONValue& InParams,
+                              const std::string& InRequestID) override;
+
+  private:
+    Implementation m_ServerInfo;
+    ServerCapabilities m_ServerCapabilities;
+    ClientCapabilities m_ClientCapabilities;
+
+    // Tool handlers
+    struct ToolHandler {
+        Tool ToolInfo;
+        std::function<MCPTask<CallToolResult>(const std::unordered_map<std::string, JSONValue>&)>
+            Handler;
+    };
+    std::unordered_map<std::string, ToolHandler> m_Tools;
+
+    // Prompt handlers
+    struct PromptHandler {
+        Prompt PromptInfo;
+        std::function<MCPTask<GetPromptResult>(const std::unordered_map<std::string, std::string>&)>
+            Handler;
+    };
+    std::unordered_map<std::string, PromptHandler> m_Prompts;
+
+    // Resource handlers
+    struct ResourceHandler {
+        Resource ResourceInfo;
+        std::function<MCPTask<ReadResourceResult>()> Handler;
+    };
+    std::unordered_map<std::string, ResourceHandler> m_Resources;
+
+    struct ResourceTemplateHandler {
+        ResourceTemplate TemplateInfo;
+        std::function<MCPTask<ReadResourceResult>(const std::string&)> Handler;
+    };
+    std::unordered_map<std::string, ResourceTemplateHandler> m_ResourceTemplates;
+
+    // Root storage
+    std::unordered_map<std::string, Root> m_Roots;
+
+    // Subscription management
+    std::unordered_map<std::string, std::unordered_set<std::string>>
+        m_Subscriptions; // URI -> Set of client IDs
+
+    mutable std::mutex m_HandlersMutex;
+};
