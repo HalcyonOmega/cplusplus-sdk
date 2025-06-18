@@ -6,6 +6,9 @@
 
 MCP_NAMESPACE_BEGIN
 
+// TODO: @HalcyonOmega Cleanup this file
+struct AbortSignal; // TODO: @HalcyonOmega Implement This
+
 //------------------------------------------------------------------------------
 // AbortController
 // Mirrors the semantics of the WHATWG / Node.js AbortController. It owns an
