@@ -1,6 +1,9 @@
 #pragma once
 
+#include "../ITransport.h"
 #include "Core.h"
+#include "HTTPProxy.h"
+#include "Poco/Net/HTTPServerRequest.h"
 #include "Sandbox/IMCP.h"
 #include "StreamableHTTPBase.h"
 
@@ -13,202 +16,113 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Forward declarations
-class StreamableHTTPRequestHandler;
-class StreamableHTTPRequestHandlerFactory;
+using IncomingMessage = Poco::Net::HTTPServerRequest;
+using ServerResponse = Poco::Net::HTTPServerResponse;
 
-// Configuration options for HTTP server transport
-struct HTTPServerConfig {
-    string Host{"localhost"};
-    int Port{8080};
-    string BasePath{"/"};
-    bool EnableResumability{false};
-    bool EnableStatefulMode{true};
-    std::chrono::milliseconds SessionTimeout{300000}; // 5 minutes
-    int MaxConcurrentConnections{100};
-    int ThreadPoolSize{10};
-    bool EnableCORS{false};
-    vector<string> AllowedOrigins;
-    shared_ptr<EventStore> EventStore;
-    bool EnableHTTPS{false};
-    string CertificatePath;
-    string PrivateKeyPath;
+/**
+ * Interface for resumability support via event storage
+ */
+class IEventStore {
+    /**
+     * Stores an event for later retrieval
+     * @param InStreamID ID of the stream the event belongs to
+     * @param InMessage The JSON-RPC message to store
+     * @returns The generated event ID for the stored event
+     */
+    MCPTask<string> StoreEvent(string InStreamID, JSONRPCMessage InMessage);
+
+    MCPTask<string> ReplayEventsAfter(
+        string LastEventID,
+        function<MCPTask_Void(const string& InEventID, const JSONRPCMessage& InMessage)> InSend);
 };
 
-// Server implementation of Streamable HTTP transport
-// Handles server-specific transport behavior only
-class StreamableHTTPServer : public StreamableHTTPBase {
+class StreamableHTTPServer : public ITransport {
   public:
-    explicit StreamableHTTPServer(const HTTPServerConfig& InConfig);
-    virtual ~StreamableHTTPServer() = default;
+    // === ITransport Implementation ===
+    MCPTask_Void Connect() override;
+    MCPTask_Void Disconnect() override;
+    MCPTask_Void SendMessage(const MessageBase& InMessage) override;
+    // === End ITransport Implementation ===
 
-    // === Server-Specific Operations ===
-
-    /**
-     * Starts HTTP server to accept connections
-     * Initializes server socket and begins listening for requests
-     */
-    virtual MCPTask_Void StartHTTPServer();
-
-    /**
-     * Stops HTTP server
-     * Gracefully shuts down server and closes all client connections
-     */
-    virtual MCPTask_Void StopHTTPServer();
+    MCPTask_Void HandleRequest(IncomingMessage& InRequest, ServerResponse& InResponse,
+                               optional<AuthInfo> InAuthInfo = nullopt,
+                               optional<any> InParsedBody = nullopt);
 
     /**
-     * Server-specific connection handling
-     * Manages incoming HTTP connections and creates request handlers
+     * Configuration options for StreamableHTTPServerTransport
      */
-    virtual MCPTask_Void HandleIncomingConnection();
+    struct Options {
+        using SessionInitializedCallback = function<void(const string& /* SessionID */)>;
 
-    // === Server Connection Management ===
+        /**
+         * Function that generates a session ID for the transport.
+         * The session ID SHOULD be globally unique and cryptographically secure (e.g., a securely
+         * generated UUID, a JWT, or a cryptographic hash)
+         *
+         * Return undefined to disable session management.
+         */
+        function<optional<string>()> SessionIDGenerator;
 
-    /**
-     * Handles multiple client sessions
-     * Manages session lifecycle for all connected clients
-     */
-    virtual void ManageServerSessions();
+        /**
+         * A callback for session initialization events
+         * This is called when the server initializes a new session.
+         * Useful in cases when you need to register multiple mcp sessions
+         * and need to keep track of them.
+         * @param sessionId The generated session ID
+         */
+        optional<SessionInitializedCallback> OnSessionInitialized;
 
-    /**
-     * Server-side cleanup when client disconnects
-     * Removes session data and releases resources
-     */
-    virtual MCPTask_Void HandleClientDisconnection(const string& InSessionID);
+        /**
+         * If true, the server will return JSON responses instead of starting an SSE stream.
+         * This can be useful for simple request/response scenarios without streaming.
+         * Default is false (SSE streams are preferred).
+         */
+        optional<bool> EnableJSONResponse;
 
-    /**
-     * Sends message to connected clients
-     * Supports both unicast (specific session) and broadcast scenarios
-     */
-    virtual MCPTask_Void BroadcastToClients(const MessageBase& InMessage,
-                                            const optional<string>& InTargetSessionID = nullopt);
-
-    // === Server Request Routing ===
-
-    /**
-     * Routes requests to base class handlers
-     * Determines appropriate handler based on HTTP method and path
-     */
-    virtual MCPTask_Void RouteIncomingRequest(const Poco::Net::HTTPRequest& InRequest,
-                                              Poco::Net::HTTPResponse& OutResponse);
-
-    /**
-     * Decides between JSON response or SSE stream
-     * Based on message type and client capabilities
-     */
-    virtual string DetermineResponseType(const MessageBase& InMessage);
-
-    // === Configuration Access ===
-
-    /**
-     * Gets the current server configuration
-     */
-    const HTTPServerConfig& GetConfig() const {
-        return m_Config;
-    }
-
-    /**
-     * Updates server configuration (requires restart)
-     */
-    void UpdateConfig(const HTTPServerConfig& InNewConfig);
-
-    /**
-     * Gets current connection statistics
-     */
-    struct ConnectionStats {
-        int ActiveConnections{0};
-        int TotalSessions{0};
-        std::chrono::steady_clock::time_point ServerStartTime;
-        map<string, std::chrono::steady_clock::time_point> SessionLastActivity;
+        /**
+         * Event store for resumability support
+         * If provided, resumability will be enabled, allowing clients to reconnect and resume
+         * messages
+         */
+        optional<EventStore> EventStore;
     };
-    ConnectionStats GetConnectionStats() const;
 
-  protected:
-    // === Protected Server Methods ===
-
-    /**
-     * Creates and configures server socket
-     */
-    virtual unique_ptr<Poco::Net::ServerSocket> CreateServerSocket();
-
-    /**
-     * Creates request handler factory for incoming requests
-     */
-    virtual unique_ptr<Poco::Net::HTTPRequestHandlerFactory> CreateRequestHandlerFactory();
-
-    /**
-     * Manages session expiration and cleanup
-     */
-    virtual void CleanupExpiredSessions();
-
-    /**
-     * Validates incoming request for server requirements
-     */
-    virtual bool ValidateIncomingRequest(const Poco::Net::HTTPRequest& InRequest);
-
-    /**
-     * Creates new session for connecting client
-     */
-    virtual string CreateClientSession(const Poco::Net::HTTPRequest& InRequest);
-
-    /**
-     * Removes client session and associated resources
-     */
-    virtual void RemoveClientSession(const string& InSessionID);
+    StreamableHTTPServer(const Options& InOptions)
+        : m_EnableJSONResponse(InOptions.EnableJSONResponse.value_or(false)),
+          m_SessionIDGenerator(InOptions.SessionIDGenerator),
+          m_OnSessionInitialized(InOptions.OnSessionInitialized),
+          m_EventStore(InOptions.EventStore) {};
 
   private:
-    // === Member Variables ===
+    MCPTask_Void HandleGetRequest(IncomingMessage& InRequest, ServerResponse& InResponse);
+    MCPTask_Void ReplayEvents(string InLastEventID, ServerResponse& InResponse);
+    bool WriteSSEEvent(ServerResponse& InResponse, const JSONRPCMessage& InMessage,
+                       const optional<string>& InEventID = nullopt);
+    MCPTask_Void HandleUnsupportedRequest(ServerResponse& InResponse);
+    MCPTask_Void HandlePostRequest(IncomingMessage& InRequest, ServerResponse& InResponse,
+                                   optional<AuthInfo> InAuthInfo = nullopt,
+                                   optional<any> InParsedBody = nullopt);
+    MCPTask_Void HandleDeleteRequest(IncomingMessage& InRequest, ServerResponse& InResponse);
+    bool ValidateSession(IncomingMessage& InRequest, ServerResponse& InResponse);
 
-    // Server configuration
-    HTTPServerConfig m_Config;
+    // When SessionID is not set (undefined), it means the transport is in stateless mode
+    bool m_Started = false;
+    bool m_Initialized = false;
+    bool m_EnableJSONResponse = false;
+    optional<string> m_SessionID;
+    std::map<string, ServerResponse> m_StreamMapping;
+    std::map<RequestID, string> m_RequestToStreamMapping;
+    std::map<RequestID, JSONRPCMessage> m_RequestResponseMap;
+    string m_StandaloneSSEStreamID = "_GET_stream";
+    function<optional<string>()> m_SessionIDGenerator;
+    optional<EventStore> m_EventStore;
+    optional<SessionInitializedCallback> m_OnSessionInitialized;
 
-    // HTTP server components
-    unique_ptr<Poco::Net::HTTPServer> m_HTTPServer;
-    unique_ptr<Poco::Net::ServerSocket> m_ServerSocket;
-    unique_ptr<Poco::Net::HTTPRequestHandlerFactory> m_HandlerFactory;
-
-    // Session management
-    map<string, std::chrono::steady_clock::time_point> m_ClientSessions;
-    map<string, unique_ptr<std::ostream>> m_SSEStreams; // Session ID -> SSE stream
-
-    // Server state
-    bool m_IsRunning{false};
-    std::chrono::steady_clock::time_point m_ServerStartTime;
-    std::atomic<int> m_ActiveConnections{0};
-
-    // Session cleanup
-    std::thread m_SessionCleanupThread;
-    std::atomic<bool> m_ShouldStopCleanup{false};
-
-    // Thread synchronization
-    mutable std::mutex m_SessionsMutex;
-    mutable std::mutex m_StreamsMutex;
-    mutable std::mutex m_ConfigMutex;
-    mutable std::mutex m_StatsMutex;
-};
-
-// HTTP Request Handler for MCP messages
-class StreamableHTTPRequestHandler : public Poco::Net::HTTPRequestHandler {
-  public:
-    explicit StreamableHTTPRequestHandler(StreamableHTTPServer& InServer);
-
-    void handleRequest(Poco::Net::HTTPServerRequest& InRequest,
-                       Poco::Net::HTTPServerResponse& OutResponse) override;
-
-  private:
-    StreamableHTTPServer& m_Server;
-};
-
-// Request Handler Factory for creating request handlers
-class StreamableHTTPRequestHandlerFactory : public Poco::Net::HTTPRequestHandlerFactory {
-  public:
-    explicit StreamableHTTPRequestHandlerFactory(StreamableHTTPServer& InServer);
-
-    Poco::Net::HTTPRequestHandler*
-    createRequestHandler(const Poco::Net::HTTPServerRequest& InRequest) override;
-
-  private:
-    StreamableHTTPServer& m_Server;
+    // Callbacks
+    optional<ConnectCallback> m_ConnectCallback;
+    optional<DisconnectCallback> m_DisconnectCallback;
+    optional<ErrorCallback> m_ErrorCallback;
+    optional<MessageCallback> m_MessageCallback;
 };
 
 MCP_NAMESPACE_END

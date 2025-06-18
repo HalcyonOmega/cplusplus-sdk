@@ -149,6 +149,10 @@ class StreamableHTTPClient : public ITransport {
     optional<RequestInit> m_RequestInit;
     optional<OAuthClientProvider> m_AuthProvider;
     optional<string> m_SessionID;
+    optional<ConnectCallback> m_ConnectCallback;
+    optional<DisconnectCallback> m_DisconnectCallback;
+    optional<ErrorCallback> m_ErrorCallback;
+    optional<MessageCallback> m_MessageCallback;
 
     MCPTask_Void AuthThenStart();
     MCPTask<HTTP::Headers> CommonHeaders();

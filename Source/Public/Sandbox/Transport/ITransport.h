@@ -19,11 +19,11 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: @HalcyonOmega Begin Direct Translated Code
-using ConnectCallback = function<void()>;
-using DisconnectCallback = function<void()>;
-using ErrorCallback = function<void(const ErrorBase&)>;
-using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
-using ProgressCallback = function<void(const ProgressNotification&)>;
+using ConnectCallback = function<MCPTask_Void()>;
+using DisconnectCallback = function<MCPTask_Void()>;
+using ErrorCallback = function<MCPTask_Void(const ErrorBase&)>;
+using MessageCallback = function<MCPTask_Void(const MessageBase&, const optional<AuthInfo>&)>;
+using ProgressCallback = function<MCPTask_Void(const ProgressNotification&)>;
 
 // Transport options
 struct TransportOptions {
