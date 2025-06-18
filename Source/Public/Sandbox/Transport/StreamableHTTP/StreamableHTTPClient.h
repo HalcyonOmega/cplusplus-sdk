@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../ITransport.h"
+#include "Auth/Client/AuthClient.h"
 #include "Auth/Providers/Provider.h"
+#include "Communication/Utilities/AbortController.h"
 #include "Core.h"
 #include "Proxies/URIProxy.h"
 #include "Sandbox/IMCP.h"
@@ -17,6 +19,9 @@
 #include <utility>
 
 MCP_NAMESPACE_BEGIN
+
+// TODO: @HalcyonOmega No great subsitution for these from typescript. Reconsider implementation.
+using RequestInit = Poco::Net::HTTPRequest;
 
 // TODO: @HalcyonOmega Begin Direct Translated Code
 /**
@@ -142,24 +147,28 @@ class StreamableHTTPClient : public ITransport {
           m_SessionID(InOptions.SessionID) {};
 
   private:
+    MCPTask_Void AuthThenStart();
+    MCPTask<HTTP::Headers> CommonHeaders();
+    MCPTask_Void StartOrAuthSSE(const StartSSEOptions& InOptions);
+    int GetNextReconnectionDelay(int InAttemptCount);
+    void ScheduleReconnection(const StartSSEOptions& InOptions, int InAttemptCount = 0);
+    void HandleSSEStream(std::istream& InStream, const StartSSEOptions& InOptions);
+
     URL m_URL;
     StreamableHTTPReconnectionOptions m_ReconnectionOptions;
     optional<AbortController> m_AbortController;
     optional<URL> m_ResourceMetadataURL;
     optional<RequestInit> m_RequestInit;
     optional<OAuthClientProvider> m_AuthProvider;
+
+    // === ITransport Members ===
     optional<string> m_SessionID;
+
+    // Callbacks
     optional<ConnectCallback> m_ConnectCallback;
     optional<DisconnectCallback> m_DisconnectCallback;
     optional<ErrorCallback> m_ErrorCallback;
     optional<MessageCallback> m_MessageCallback;
-
-    MCPTask_Void AuthThenStart();
-    MCPTask<HTTP::Headers> CommonHeaders();
-    MCPTask_Void StartOrAuthSSE(const StartSSEOptions& InOptions);
-    int GetNextReconnectionDelay(int InAttemptCount);
-    void ScheduleReconnection(const StartSSEOptions& InOptions, int InAttemptCount = 0);
-    void HandleSSEStream(std::istream* InStream, const StartSSEOptions& InOptions);
 };
 
 MCP_NAMESPACE_END

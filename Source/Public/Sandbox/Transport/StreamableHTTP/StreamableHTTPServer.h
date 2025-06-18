@@ -18,6 +18,7 @@ MCP_NAMESPACE_BEGIN
 
 using IncomingMessage = Poco::Net::HTTPServerRequest;
 using ServerResponse = Poco::Net::HTTPServerResponse;
+using SessionInitializedCallback = function<MCPTask_Void(const string& InSessionID)>;
 
 /**
  * Interface for resumability support via event storage
@@ -52,8 +53,6 @@ class StreamableHTTPServer : public ITransport {
      * Configuration options for StreamableHTTPServerTransport
      */
     struct Options {
-        using SessionInitializedCallback = function<void(const string& /* SessionID */)>;
-
         /**
          * Function that generates a session ID for the transport.
          * The session ID SHOULD be globally unique and cryptographically secure (e.g., a securely
@@ -89,9 +88,8 @@ class StreamableHTTPServer : public ITransport {
 
     StreamableHTTPServer(const Options& InOptions)
         : m_EnableJSONResponse(InOptions.EnableJSONResponse.value_or(false)),
-          m_SessionIDGenerator(InOptions.SessionIDGenerator),
-          m_OnSessionInitialized(InOptions.OnSessionInitialized),
-          m_EventStore(InOptions.EventStore) {};
+          m_SessionIDGenerator(InOptions.SessionIDGenerator), m_EventStore(InOptions.EventStore),
+          m_OnSessionInitialized(InOptions.OnSessionInitialized) {};
 
   private:
     MCPTask_Void HandleGetRequest(IncomingMessage& InRequest, ServerResponse& InResponse);
@@ -109,14 +107,16 @@ class StreamableHTTPServer : public ITransport {
     bool m_Started = false;
     bool m_Initialized = false;
     bool m_EnableJSONResponse = false;
-    optional<string> m_SessionID;
     std::map<string, ServerResponse> m_StreamMapping;
     std::map<RequestID, string> m_RequestToStreamMapping;
     std::map<RequestID, JSONRPCMessage> m_RequestResponseMap;
     string m_StandaloneSSEStreamID = "_GET_stream";
     function<optional<string>()> m_SessionIDGenerator;
-    optional<EventStore> m_EventStore;
+    optional<IEventStore> m_EventStore;
     optional<SessionInitializedCallback> m_OnSessionInitialized;
+
+    // === ITransport Members ===
+    optional<string> m_SessionID;
 
     // Callbacks
     optional<ConnectCallback> m_ConnectCallback;
