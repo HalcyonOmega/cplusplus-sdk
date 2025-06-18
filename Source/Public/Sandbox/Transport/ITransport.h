@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Auth/Types/Auth.h"
 #include "Core.h"
 #include "ErrorBase.h"
 #include "MessageBase.h"
+#include "Sandbox/IMCP.h"
 
 // Poco Net includes
 #include <Poco/Event.h>
@@ -16,16 +18,9 @@
 
 MCP_NAMESPACE_BEGIN
 
-using OnCloseDelegate = std::function<void()>;
-using OnErrorDelegate = std::function<void(const ErrorBase& InError)>;
-using OnMessageDelegate = std::function<void(const MessageBase& InMessage)>;
-using OnRawMessageDelegate = std::function<void(const std::string& InRawMessage)>;
-using OnStateChangeDelegate =
-    std::function<void(const std::string& InOldState, const std::string& InNewState)>;
-
 // TODO: @HalcyonOmega Begin Direct Translated Code
-using StartCallback = function<void()>;
-using CloseCallback = function<void()>;
+using ConnectCallback = function<void()>;
+using DisconnectCallback = function<void()>;
 using ErrorCallback = function<void(const ErrorBase&)>;
 using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
 using ProgressCallback = function<void(const ProgressNotification&)>;
@@ -74,37 +69,41 @@ enum class TransportType {
  */
 class ITransport {
   public:
-    virtual ~ITransport() = default;
-
-    // Core transport operations
+    /**
+     * Starts processing messages on the transport, including any connection steps that might need
+     * to be taken.
+     *
+     * This method should only be called after callbacks are installed, or else messages may be
+     * lost.
+     *
+     * NOTE: This method should not be called explicitly when using Client, Server, or Protocol
+     * classes, as they will implicitly call start().
+     */
     virtual MCPTask_Void Connect() = 0;
+
+    /**
+     * Closes the connection.
+     */
     virtual MCPTask_Void Disconnect() = 0;
+
+    /**
+     * Sends a JSON-RPC message (request or response).
+     *
+     * If present, `relatedRequestId` is used to indicate to the transport which incoming request to
+     * associate this outgoing message with.
+     */
     virtual MCPTask_Void SendMessage(const MessageBase& InMessage) = 0;
-    virtual MCPTask_Void SendBatch(const JSONRPCBatch& InBatch) = 0;
 
-    // Message reception callbacks
-    virtual void SetMessageHandler(std::function<void(const MessageBase&)> InHandler) = 0;
-    virtual void SetErrorHandler(std::function<void(const std::string&)> InHandler) = 0;
+    /**
+     * The session ID generated for this connection.
+     */
+    optional<string> SessionID;
 
-    // State management
-    virtual bool IsConnected() const = 0;
-    virtual TransportType GetTransportType() const = 0;
-
-    // TODO: @HalcyonOmega Begin Direct Translated Code
-    // Getters
-    optional<string> GetSessionID() const {
-        return m_SessionID;
-    }
-
-    // Note: Resumability is not yet supported by any transport implementation.
-    [[deprecated("Not yet implemented - will be supported in a future version")]]
-    virtual bool Resume(const string& InResumptionToken) = 0;
-
-    optional<StartCallback> OnStart;
+    optional<ConnectCallback> OnConnect;
 
     // Callback for when the connection is closed for any reason. This should be invoked when
     // Close() is called as well.
-    optional<CloseCallback> OnClose;
+    optional<DisconnectCallback> OnDisconnect;
 
     // Callback for when an error occurs. Note that errors are not necessarily fatal; they are used
     // for reporting any kind of exceptional condition out of band.
@@ -116,14 +115,14 @@ class ITransport {
 
   protected:
     // Helper methods to safely invoke callbacks with proper locking and null checks
-    void CallOnStart() const {
+    void CallOnConnect() const {
         lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnStart) { (*OnStart)(); }
+        if (OnConnect) { (*OnConnect)(); }
     }
 
-    void CallOnClose() const {
+    void CallOnDisconnect() const {
         lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnClose) { (*OnClose)(); }
+        if (OnDisconnect) { (*OnDisconnect)(); }
     }
 
     void CallOnError(const ErrorBase& InError) const {
@@ -143,46 +142,7 @@ class ITransport {
     }
 
   private:
-    // The session ID generated for this connection.
-    optional<string> m_SessionID;
-
     mutable mutex m_CallbackMutex; // Protects callback invocation to avoid concurrent access
-
-  public:
-    // Starts processing messages on the transport, including any connection steps that might need
-    // to be taken. This method should only be called after callbacks are installed, or else
-    // messages may be lost. NOTE: This method should not be called explicitly when using Client,
-    // Server, or Protocol classes, as they will implicitly call Start().
-    virtual future<void> Start() = 0;
-
-    // Closes the connection.
-    virtual future<void> Close() = 0;
-
-    // Sends a JSON-RPC message (request or response). If present, `relatedRequestID` is used to
-    // indicate to the transport which incoming request to associate this outgoing message with.
-    // TODO: @HalcyonOmega Should the TransportSendOptions be optional?
-    virtual future<void> Send(const MessageBase& InMessage,
-                              const TransportSendOptions& InOptions = {}) = 0;
-    // TODO: @HalcyonOmega End Direct Translated Code
-
-  protected:
-    // --- Callback Types (following naming conventions) ---
-
-    OnCloseDelegate m_OnClose;
-    OnErrorDelegate m_OnError;
-    OnMessageDelegate m_OnMessage;
-    OnStateChangeDelegate m_OnStateChange;
-
-    ITransport() = default;
-
-    ITransport(OnCloseDelegate InOnClose, OnErrorDelegate InOnError, OnMessageDelegate InOnMessage)
-        : m_OnClose(std::move(InOnClose)), m_OnError(std::move(InOnError)),
-          m_OnMessage(std::move(InOnMessage)) {}
-
-    ITransport(OnCloseDelegate InOnClose, OnErrorDelegate InOnError, OnMessageDelegate InOnMessage,
-               OnStateChangeDelegate InOnStateChange)
-        : m_OnClose(std::move(InOnClose)), m_OnError(std::move(InOnError)),
-          m_OnMessage(std::move(InOnMessage)), m_OnStateChange(std::move(InOnStateChange)) {}
 
   public:
     // Disallow copy and move operations to prevent slicing
@@ -190,6 +150,10 @@ class ITransport {
     ITransport& operator=(const ITransport&) = delete;
     ITransport(ITransport&&) = delete;
     ITransport& operator=(ITransport&&) = delete;
+    virtual ~ITransport() = default;
+
+  protected:
+    ITransport() = default;
 };
 
 MCP_NAMESPACE_END
