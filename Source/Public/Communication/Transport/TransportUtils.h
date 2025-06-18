@@ -1,8 +1,12 @@
 #pragma once
 
-#include "Core.h"
+#include <functional>
+#include <string>
+
+#include "Macros.h"
 
 MCP_NAMESPACE_BEGIN
+
 /**
  * @brief Abstract base class for MCP Transport.
  *
