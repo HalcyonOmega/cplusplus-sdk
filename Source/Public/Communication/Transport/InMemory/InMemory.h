@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Communication/Transport/EventStore.h"
 #include "Communication/Transport/ITransport.h"
 #include "Macros.h"
 

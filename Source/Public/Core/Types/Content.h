@@ -1,10 +1,22 @@
 #pragma once
 
-#include "Core.h"
 #include "Core/Types/Annotations.h"
+#include "Macros.h"
 #include "MessageConstants.h"
+#include "Proxies/URIProxy.h"
 
 MCP_NAMESPACE_BEGIN
+
+// TODO: @HalcyonOmega Are these concepts needed?
+// Content Type Concepts
+template <typename T>
+concept MCPContent = requires(T Type) {
+    { Type.GetType() } -> convertible_to<string>;
+    { Type.GetData() } -> convertible_to<string>;
+};
+
+template <typename T>
+concept MCPHandler = requires(T Type) { is_invocable_v<T>; };
 
 struct Content {
     string Type;                       // The type of content.

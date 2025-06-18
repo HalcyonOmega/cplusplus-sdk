@@ -46,10 +46,10 @@ class NotificationBase : public MessageBase {
     [[nodiscard]] optional<const MessageParams*> GetParams() const;
 
     // MessageBase Overrides
-    [[nodiscard]] JSON ToJSON() const override;
-    [[nodiscard]] unique_ptr<MessageBase> FromJSON(const JSON& InJSON) override;
-    [[nodiscard]] string Serialize() const override;
-    [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
+    // [[nodiscard]] JSON ToJSON() const override;
+    // [[nodiscard]] unique_ptr<MessageBase> FromJSON(const JSON& InJSON) override;
+    // [[nodiscard]] string Serialize() const override;
+    // [[nodiscard]] unique_ptr<MessageBase> Deserialize(string InString) override;
 };
 
 bool IsNotificationBase(const JSON& value) {
@@ -82,19 +82,19 @@ bool IsNotificationBase(const JSON& value) {
 // };
 
 struct Notification {
-    struct NotificationParams {
-        struct NotificationParamsMeta {
+    struct Params {
+        struct Meta {
             AdditionalProperties AdditionalProperties;
         };
 
-        optional<NotificationParamsMeta>
+        optional<Meta>
             Meta; // This parameter name is reserved by MCP to allow
                   // clients and servers to attach additional metadata to their notifications.
         AdditionalProperties AdditionalProperties;
     };
 
     string Method;
-    optional<NotificationParams> Params;
+    optional<Params> Params;
 };
 
 MCP_NAMESPACE_END

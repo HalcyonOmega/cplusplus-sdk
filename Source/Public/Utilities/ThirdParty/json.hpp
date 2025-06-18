@@ -11069,7 +11069,7 @@ class binary_reader {
                                           concat("expected length specification (0xA0-0xBF, "
                                                  "0xD9-0xDB); last byte: 0x",
                                                  last_token),
-                                          "string"
+                                          "string"),
                         nullptr));
             }
         }
@@ -11316,8 +11316,8 @@ class binary_reader {
         }
         return sax->parse_error(
             chars_read, last_token,
-            parse_error::create(113, chars_read,
-                                exception_message(input_format, message, "string"), nullptr));
+            parse_error::create(113, chars_read, exception_message(input_format, message, "string"),
+                                nullptr));
     }
 
     /*!
@@ -11630,7 +11630,7 @@ class binary_reader {
                         nullptr));
             }
 
-            if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(input_format, MSG_TYPE))) { return false; }
+            if (JSON_HEDLEY_UNLIKELY(!unexpect_eof(input_format, "type"))) { return false; }
 
             get_ignore_noop();
             if (JSON_HEDLEY_UNLIKELY(current != '#')) {
@@ -11873,7 +11873,7 @@ class binary_reader {
                     chars_read, last_token,
                     parse_error::create(
                         112, chars_read,
-                        exception_message(input_format, "invalid byte: 0x" + last_token, MSG_TYPE),
+                        exception_message(input_format, "invalid byte: 0x" + last_token, "type"),
                         nullptr));
             }
 
@@ -11949,7 +11949,7 @@ class binary_reader {
                     exception_message(
                         input_format,
                         "BJData object does not support ND-array size in optimized format",
-                        MSG_OBJECT),
+                        "object"),
                     nullptr));
         }
 
@@ -12704,7 +12704,7 @@ template <typename BasicJsonType, typename InputAdapterType> class parser {
                 return sax->parse_error(
                     m_lexer.get_position(), m_lexer.get_token_string(),
                     parse_error::create(101, m_lexer.get_position(),
-                                        exception_message(token_type::end_array, MSG_ARRAY),
+                                        exception_message(token_type::end_array, "array"),
                                         nullptr));
             }
 
@@ -12762,8 +12762,7 @@ template <typename BasicJsonType, typename InputAdapterType> class parser {
             return sax->parse_error(
                 m_lexer.get_position(), m_lexer.get_token_string(),
                 parse_error::create(101, m_lexer.get_position(),
-                                    exception_message(token_type::end_object, MSG_OBJECT),
-                                    nullptr));
+                                    exception_message(token_type::end_object, "object"), nullptr));
         }
     }
 

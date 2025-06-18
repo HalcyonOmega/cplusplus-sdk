@@ -60,7 +60,7 @@ struct ProgressToken {
 // An out-of-band notification used to inform the receiver of a progress update for a long-running
 // request.
 struct ProgressNotification : public NotificationBase {
-    struct ProgressNotificationParams : public Notification::NotificationParams {
+    struct Params : public Notification::Params {
         ProgressToken
             ProgressToken; // The progress token which was given in the initial request, used to
                            // associate this notification with the request that is proceeding.
@@ -71,7 +71,7 @@ struct ProgressNotification : public NotificationBase {
         optional<string> Message; // An optional message describing the current progress.
 
         // TODO: @HalcyonOmega - Is this the best way to handle additional properties?
-        ProgressNotificationParams() {
+        Params() {
             AdditionalProperties = {{MSG_PROGRESS_TOKEN, ProgressToken},
                                     {MSG_PROGRESS, Progress},
                                     {MSG_TOTAL, Total},
@@ -79,7 +79,7 @@ struct ProgressNotification : public NotificationBase {
         }
     };
 
-    ProgressNotificationParams Params;
+    Params Params;
 
     ProgressNotification() : NotificationBase(MTHD_NOTIFICATIONS_PROGRESS) {}
 };

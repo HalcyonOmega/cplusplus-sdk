@@ -6,13 +6,14 @@
 
 #include "Auth/Types/Auth.h"
 #include "Communication/Utilities/AbortController.h"
-#include "ErrorBase.h"
 #include "Macros.h"
+#include "RequestID.h"
 #include "Utilities/Async/MCPTask.h"
 
 class IEventStore;
 struct ProgressNotification;
 class MessageBase;
+class ErrorBase;
 
 using std::function;
 using std::mutex;
@@ -21,16 +22,14 @@ using std::optional;
 using std::shared_ptr;
 using std::string;
 
-class ErrorBase;
-
 MCP_NAMESPACE_BEGIN
 
 // TODO: @HalcyonOmega Begin Direct Translated Code
-using ConnectCallback = function<MCPTask_Void()>;
-using DisconnectCallback = function<MCPTask_Void()>;
-using ErrorCallback = function<MCPTask_Void(const ErrorBase&)>;
-using MessageCallback = function<MCPTask_Void(const MessageBase&, const optional<AuthInfo>&)>;
-using ProgressCallback = function<MCPTask_Void(const ProgressNotification&)>;
+using ConnectCallback = function<void()>;
+using DisconnectCallback = function<void()>;
+using ErrorCallback = function<void(const ErrorBase&)>;
+using MessageCallback = function<void(const MessageBase&, const optional<AuthInfo>&)>;
+using ProgressCallback = function<void(const ProgressNotification&)>;
 
 // Transport options
 struct TransportOptions {
@@ -157,31 +156,12 @@ class ITransport {
 
   protected:
     // Helper methods to safely invoke callbacks with proper locking and null checks
-    void CallOnConnect() const {
-        lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnConnect) { (*OnConnect)(); }
-    }
-
-    void CallOnDisconnect() const {
-        lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnDisconnect) { (*OnDisconnect)(); }
-    }
-
-    void CallOnError(const ErrorBase& InError) const {
-        lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnError) { (*OnError)(InError); }
-    }
-
-    void CallOnError(const string& InMessage) const {
-        ErrorBase Error(Errors::InternalError, InMessage);
-        CallOnError(Error);
-    }
-
+    void CallOnConnect() const;
+    void CallOnDisconnect() const;
+    void CallOnError(const ErrorBase& InError) const;
+    void CallOnError(const string& InMessage) const;
     void CallOnMessage(const MessageBase& InMessage,
-                       const optional<AuthInfo>& InAuthInfo = nullopt) const {
-        lock_guard<mutex> lock(m_CallbackMutex);
-        if (OnMessage) { (*OnMessage)(InMessage, InAuthInfo); }
-    }
+                       const optional<AuthInfo>& InAuthInfo = nullopt) const;
 
   private:
     mutable mutex m_CallbackMutex; // Protects callback invocation to avoid concurrent access

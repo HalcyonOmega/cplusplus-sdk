@@ -4,10 +4,9 @@
 #include <string>
 #include <string_view>
 
+#include "Core.h"
 #include "Macros.h"
 #include "MessageConstants.h"
-
-class JSON;
 
 MCP_NAMESPACE_BEGIN
 
@@ -17,7 +16,7 @@ using std::unique_ptr;
 
 struct MessageParams {
     [[nodiscard]] virtual string Serialize() const;
-    virtual MessageParams Deserialize(string InString) = 0;
+    virtual MessageParams Deserialize(string InString);
 };
 
 class MessageBase {

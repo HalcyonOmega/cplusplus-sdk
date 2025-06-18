@@ -7,7 +7,7 @@
 MCP_NAMESPACE_BEGIN
 
 // TODO: @HalcyonOmega Cleanup this file
-struct AbortSignal; // TODO: @HalcyonOmega Implement This
+struct AbortSignal {}; // TODO: @HalcyonOmega Implement This
 
 //------------------------------------------------------------------------------
 // AbortController

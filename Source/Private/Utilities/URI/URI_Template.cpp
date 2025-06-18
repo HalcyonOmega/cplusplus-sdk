@@ -1,5 +1,5 @@
-#include "Constants.h"
-#include "Utilities/URI/URITemplate.h"
+#include "MessageConstants.h"
+#include "Proxies/URITemplate.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -252,9 +252,9 @@ string URITemplate::EncodeValue(const string& value, const string& operatorChar)
 }
 
 string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variables) const {
-    if (part.operatorChar == "?" || part.operatorChar == "&") {
+    if (part.m_OperatorChar == "?" || part.m_OperatorChar == "&") {
         vector<string> pairs;
-        for (const auto& name : part.names) {
+        for (const auto& name : part.m_Names) {
             auto it = variables.find(name);
             if (it == variables.end()) continue;
 
@@ -263,7 +263,7 @@ string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variab
                 const auto& values = get<vector<string>>(it->second);
                 vector<string> encodedValues;
                 for (const auto& v : values) {
-                    encodedValues.push_back(EncodeValue(v, part.operatorChar));
+                    encodedValues.push_back(EncodeValue(v, part.m_OperatorChar));
                 }
                 encoded = MSG_EMPTY;
                 for (size_t i = 0; i < encodedValues.size(); i++) {
@@ -271,13 +271,13 @@ string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variab
                     encoded += encodedValues[i];
                 }
             } else {
-                encoded = EncodeValue(get<string>(it->second), part.operatorChar);
+                encoded = EncodeValue(get<string>(it->second), part.m_OperatorChar);
             }
             pairs.push_back(name + "=" + encoded);
         }
 
         if (pairs.empty()) return MSG_EMPTY;
-        string separator = part.operatorChar == "?" ? "?" : "&";
+        string separator = part.m_OperatorChar == "?" ? "?" : "&";
         string result = separator;
         for (size_t i = 0; i < pairs.size(); i++) {
             if (i > 0) result += "&";
@@ -286,9 +286,9 @@ string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variab
         return result;
     }
 
-    if (part.names.size() > 1) {
+    if (part.m_Names.size() > 1) {
         vector<string> values;
-        for (const auto& name : part.names) {
+        for (const auto& name : part.m_Names) {
             auto it = variables.find(name);
             if (it != variables.end()) {
                 if (holds_alternative<vector<string>>(it->second)) {
@@ -308,7 +308,7 @@ string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variab
         return result;
     }
 
-    auto it = variables.find(part.name);
+    auto it = variables.find(part.m_Name);
     if (it == variables.end()) return MSG_EMPTY;
 
     vector<string> values;
@@ -319,7 +319,7 @@ string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variab
     }
 
     vector<string> encoded;
-    for (const auto& v : values) { encoded.push_back(EncodeValue(v, part.operatorChar)); }
+    for (const auto& v : values) { encoded.push_back(EncodeValue(v, part.m_OperatorChar)); }
 
     string result;
     for (size_t i = 0; i < encoded.size(); i++) {
@@ -327,20 +327,20 @@ string URITemplate::ExpandPart(const TemplatePart& part, const Variables& variab
         result += encoded[i];
     }
 
-    if (part.operatorChar == MSG_EMPTY) {
+    if (part.m_OperatorChar == MSG_EMPTY) {
         return result;
-    } else if (part.operatorChar == "+") {
+    } else if (part.m_OperatorChar == "+") {
         return result;
-    } else if (part.operatorChar == "#") {
+    } else if (part.m_OperatorChar == "#") {
         return "#" + result;
-    } else if (part.operatorChar == ".") {
+    } else if (part.m_OperatorChar == ".") {
         string dotResult = ".";
         for (size_t i = 0; i < encoded.size(); i++) {
             if (i > 0) dotResult += ".";
             dotResult += encoded[i];
         }
         return dotResult;
-    } else if (part.operatorChar == "/") {
+    } else if (part.m_OperatorChar == "/") {
         string slashResult = "/";
         for (size_t i = 0; i < encoded.size(); i++) {
             if (i > 0) slashResult += "/";
@@ -368,30 +368,30 @@ vector<pair<string, string>> URITemplate::PartToRegExp(const TemplatePart& part)
     vector<pair<string, string>> patterns;
 
     // Validate variable name length for matching
-    for (const auto& name : part.names) {
+    for (const auto& name : part.m_Names) {
         ValidateLength(name, MAX_VARIABLE_LENGTH, "Variable name");
     }
 
-    if (part.operatorChar == "?" || part.operatorChar == "&") {
-        for (size_t i = 0; i < part.names.size(); i++) {
-            const string& name = part.names[i];
-            string prefix = (i == 0) ? "\\" + part.operatorChar : "&";
+    if (part.m_OperatorChar == "?" || part.m_OperatorChar == "&") {
+        for (size_t i = 0; i < part.m_Names.size(); i++) {
+            const string& name = part.m_Names[i];
+            string prefix = (i == 0) ? "\\" + part.m_OperatorChar : "&";
             patterns.emplace_back(prefix + EscapeRegExp(name) + "=([^&]+)", name);
         }
         return patterns;
     }
 
     string pattern;
-    const string& name = part.name;
+    const string& name = part.m_Name;
 
-    if (part.operatorChar == MSG_EMPTY) {
-        pattern = part.exploded ? "([^/]+(?:,[^/]+)*)" : "([^/,]+)";
-    } else if (part.operatorChar == "+" || part.operatorChar == "#") {
+    if (part.m_OperatorChar == MSG_EMPTY) {
+        pattern = part.m_Exploded ? "([^/]+(?:,[^/]+)*)" : "([^/,]+)";
+    } else if (part.m_OperatorChar == "+" || part.m_OperatorChar == "#") {
         pattern = "(.+)";
-    } else if (part.operatorChar == ".") {
+    } else if (part.m_OperatorChar == ".") {
         pattern = "\\.([^/,]+)";
-    } else if (part.operatorChar == "/") {
-        pattern = "/" + (part.exploded ? "([^/]+(?:,[^/]+)*)" : "([^/,]+)");
+    } else if (part.m_OperatorChar == "/") {
+        pattern = "/" + (part.m_Exploded ? "([^/]+(?:,[^/]+)*)" : "([^/,]+)");
     } else {
         pattern = "([^/]+)";
     }
