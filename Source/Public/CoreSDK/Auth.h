@@ -6,15 +6,18 @@
 #include <unordered_map>
 
 #include "MCPTask.h"
+#include "Macros.h"
 #include "json.hpp"
 
 // TODO: @HalcyonOmega - Is this using proper Poco auth?
 
 // Forward declarations
 namespace Poco::Net {
-class HTTPSClientSession;
+class HTTPClientSession;
 class HTTPServerRequest;
 } // namespace Poco::Net
+
+MCP_NAMESPACE_BEGIN
 
 // Authorization result
 struct AuthResult {
@@ -58,7 +61,7 @@ class OAuth2AuthProvider : public MCPAuthProvider {
     bool IsMethodAllowed(const std::string& InMethod, const std::vector<std::string>& InScopes);
 
     OAuth2Config m_Config;
-    std::shared_ptr<Poco::Net::HTTPSClientSession> m_AuthSession;
+    std::shared_ptr<Poco::Net::HTTPClientSession> m_AuthSession;
 
     // Token cache for performance
     struct CachedToken {
@@ -90,3 +93,5 @@ class AuthUtils {
     static bool IsPublicMethod(const std::string& InMethod);
     static std::vector<std::string> GetRequiredScopes(const std::string& InMethod);
 };
+
+MCP_NAMESPACE_END

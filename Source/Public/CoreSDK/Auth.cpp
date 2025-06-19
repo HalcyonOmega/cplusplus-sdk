@@ -1,8 +1,8 @@
 #include "Auth.h"
 
+#include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
-#include <Poco/Net/HTTPSClientSession.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/URI.h>
@@ -11,12 +11,15 @@
 #include <chrono>
 #include <mutex>
 #include <sstream>
+#include <unordered_set>
+
+MCP_NAMESPACE_BEGIN
 
 // OAuth2AuthProvider Implementation
 OAuth2AuthProvider::OAuth2AuthProvider(const OAuth2Config& InConfig) : m_Config(InConfig) {
     Poco::URI authURI(m_Config.AuthServerURL);
     m_AuthSession =
-        std::make_shared<Poco::Net::HTTPSClientSession>(authURI.getHost(), authURI.getPort());
+        std::make_shared<Poco::Net::HTTPClientSession>(authURI.getHost(), authURI.getPort());
     m_AuthSession->setTimeout(Poco::Timespan(30, 0)); // 30 seconds
 }
 
@@ -266,3 +269,5 @@ std::vector<std::string> AuthUtils::GetRequiredScopes(const std::string& InMetho
 
     return {}; // No specific scopes required
 }
+
+MCP_NAMESPACE_END

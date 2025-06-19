@@ -3,14 +3,16 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
-#include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
 #include "MCPTask.h"
+#include "Macros.h"
 
 // TODO: @HalcyonOmega - Is this used? Does this facilitate the MCP spec?
+
+MCP_NAMESPACE_BEGIN
 
 // Circuit breaker states
 enum class CircuitBreakerState { Closed, Open, HalfOpen };
@@ -89,3 +91,5 @@ class FailedOperationCleanup {
     std::unordered_map<std::string, std::function<void()>> m_CleanupTasks;
     mutable std::mutex m_CleanupMutex;
 };
+
+MCP_NAMESPACE_END

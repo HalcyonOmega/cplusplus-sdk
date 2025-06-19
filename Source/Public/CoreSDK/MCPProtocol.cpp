@@ -2,6 +2,8 @@
 
 #include "MCPMessages.h"
 
+MCP_NAMESPACE_BEGIN
+
 // MCPProtocol Implementation
 MCPProtocol::MCPProtocol(std::shared_ptr<ITransport> InTransport) : m_Transport(InTransport) {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
@@ -269,3 +271,5 @@ std::string MCPProtocol::GenerateRequestID() {
     uint64_t counter = m_RequestCounter.fetch_add(1);
     return "req_" + std::to_string(counter);
 }
+
+MCP_NAMESPACE_END

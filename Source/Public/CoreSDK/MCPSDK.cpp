@@ -7,6 +7,8 @@
 #include "JSONSchemaValidator.h"
 #include "StdioTransport.h"
 
+MCP_NAMESPACE_BEGIN
+
 // MCPClient Implementation
 MCPClient::MCPClient(TransportType InTransportType, std::unique_ptr<TransportOptions> InOptions)
     : m_TransportType(InTransportType), m_TransportOptions(std::move(InOptions)) {
@@ -1014,3 +1016,5 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
         throw;
     }
 }
+
+MCP_NAMESPACE_END

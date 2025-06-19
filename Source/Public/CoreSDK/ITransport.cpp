@@ -1,8 +1,8 @@
 #include "ITransport.h"
 
-#include <iomanip>
-#include <random>
 #include <sstream>
+
+MCP_NAMESPACE_BEGIN
 
 // ITransport implementation
 std::string ITransport::GenerateRequestID() const {
@@ -135,12 +135,14 @@ nlohmann::json ExtractParams(const nlohmann::json& InMessage) {
 
 nlohmann::json ExtractResult(const nlohmann::json& InMessage) {
     if (InMessage.contains("result")) { return InMessage["result"]; }
-    return nlohmann::json::null();
+    return nullptr;
 }
 
 nlohmann::json ExtractError(const nlohmann::json& InMessage) {
     if (InMessage.contains("error")) { return InMessage["error"]; }
-    return nlohmann::json::null();
+    return nullptr;
 }
 
 } // namespace MessageUtils
+
+MCP_NAMESPACE_END

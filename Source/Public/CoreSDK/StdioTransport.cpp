@@ -5,8 +5,9 @@
 
 #include <chrono>
 #include <iostream>
-#include <sstream>
 #include <thread>
+
+MCP_NAMESPACE_BEGIN
 
 // StdioTransport Implementation
 StdioTransport::StdioTransport(const StdioTransportOptions& InOptions) : m_Options(InOptions) {
@@ -590,3 +591,5 @@ void StdioServerTransport::HandleError(const std::string& InError) {
 std::unique_ptr<ITransport> CreateStdioTransportImpl(const StdioTransportOptions& InOptions) {
     return std::make_unique<StdioTransport>(InOptions);
 }
+
+MCP_NAMESPACE_END

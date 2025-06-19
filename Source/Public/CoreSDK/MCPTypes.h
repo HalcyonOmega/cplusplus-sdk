@@ -6,13 +6,24 @@
 #include <variant>
 #include <vector>
 
+#include "JSONProxy.h"
+#include "Macros.h"
 #include "json.hpp"
 
-// Wrapper macro for enum JSON serialization (follows codebase convention)
-#define DEFINE_ENUM_JSON(EnumType, ...) NLOHMANN_JSON_SERIALIZE_ENUM(EnumType, __VA_ARGS__)
+
+MCP_NAMESPACE_BEGIN
 
 using JSONValue = nlohmann::json;
 using RequestID = std::variant<std::string, int64_t>;
+
+// Error structure
+struct MCPError {
+    int64_t Code;
+    std::string Message;
+    std::optional<JSONValue> Data;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MCPError, Code, Message, Data)
 
 // Role enumeration
 enum class Role { User, Assistant };
@@ -234,9 +245,19 @@ struct ServerCapabilities {
 
 // JSON serialization for all capability types
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RootsCapability, ListChanged)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SamplingCapability)
+// Use inline JSON serialization for empty structs
+inline void to_json(nlohmann::json& j, const SamplingCapability&) {
+    j = nlohmann::json::object();
+}
+inline void from_json(const nlohmann::json&, SamplingCapability&) {}
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExperimentalCapability, Features)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(LoggingCapability)
+
+// Use inline JSON serialization for empty structs
+inline void to_json(nlohmann::json& j, const LoggingCapability&) {
+    j = nlohmann::json::object();
+}
+inline void from_json(const nlohmann::json&, LoggingCapability&) {}
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PromptsCapability, ListChanged)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResourcesCapability, Subscribe, ListChanged)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ToolsCapability, ListChanged)
@@ -251,3 +272,5 @@ struct Implementation {
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Implementation, Name, Version)
+
+MCP_NAMESPACE_END

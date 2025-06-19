@@ -13,6 +13,9 @@
 #include "MCPMessages.h"
 #include "MCPTask.h"
 #include "MCPTypes.h"
+#include "Macros.h"
+
+MCP_NAMESPACE_BEGIN
 
 // Protocol state
 enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, Shutdown };
@@ -300,3 +303,5 @@ class MCPServer : public MCPProtocol {
         m_ResourceSubscriptions; // URI -> Set of client IDs
     mutable std::mutex m_ResourceSubscriptionsMutex;
 };
+
+MCP_NAMESPACE_END

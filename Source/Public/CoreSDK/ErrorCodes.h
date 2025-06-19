@@ -2,7 +2,11 @@
 
 #include <cstdint>
 
+#include "Macros.h"
+
 // TODO: @HalcyonOmega - Is this used? Does this facilitate the MCP spec?
+
+MCP_NAMESPACE_BEGIN
 
 // MCP Standard Error Codes
 // Following JSON-RPC 2.0 and MCP Specification (2025-03-26)
@@ -56,3 +60,5 @@ constexpr const char* RATE_LIMIT_EXCEEDED = "Rate limit exceeded";
 constexpr const char* SCHEMA_VALIDATION_ERROR = "Schema validation error";
 constexpr const char* CANCELLED = "Request cancelled";
 } // namespace MCPErrorMessages
+
+MCP_NAMESPACE_END

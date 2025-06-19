@@ -1,16 +1,16 @@
-#include <fstream>
+#pragma once
+
 #include <iostream>
-#include <regex>
 
 #include "MCPSDK.h"
 #include "SimpleMCPAPI.h"
 
 // Example 1: Simple MCP Server with Tools
-MCPTaskVoid ExampleServer() {
+MCP::MCPTaskVoid ExampleServer() {
     std::cout << "Starting MCP Server Example..." << std::endl;
 
     // Create a simple MCP server using stdio transport
-    SimpleMCPServer server;
+    MCP::SimpleMCPServer server;
 
     // Add a simple calculator tool
     server.AddTool("calculator", "Performs basic mathematical operations",

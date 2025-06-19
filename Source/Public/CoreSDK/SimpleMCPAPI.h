@@ -1,17 +1,19 @@
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "MCPTask.h"
+#include "Macros.h"
 #include "json.hpp"
 
 // Forward declarations
 class MCPClient;
 class MCPServer;
+
+MCP_NAMESPACE_BEGIN
 
 // Basic types needed for the simple API
 struct ToolResult {
@@ -243,3 +245,5 @@ std::unique_ptr<IMCPResource> CreateResource(const std::string& InURI, const std
 
     return std::make_unique<LambdaResource>(InURI, InName, InFunction);
 }
+
+MCP_NAMESPACE_END

@@ -10,9 +10,13 @@
 
 #include "MCPMessages.h"
 #include "MCPTask.h"
+#include "Macros.h"
 #include "json.hpp"
 
+
 // TODO: @HalcyonOmega - Is this used? Does this facilitate the MCP spec?
+
+MCP_NAMESPACE_BEGIN
 
 // Batch request result
 struct BatchRequestResult {
@@ -256,3 +260,5 @@ class BatchProcessorFactory {
     static std::unique_ptr<StreamingBatchProcessor>
     CreateStreamingProcessor(JSONRPCBatchProcessor::RequestProcessor InProcessor);
 };
+
+MCP_NAMESPACE_END

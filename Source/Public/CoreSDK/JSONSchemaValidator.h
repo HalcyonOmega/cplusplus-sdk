@@ -5,11 +5,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ErrorCodes.h"
 #include "MCPTypes.h"
+#include "Macros.h"
 #include "json.hpp"
 
 // TODO: @HalcyonOmega - Shouldn't these be built into Nlohmann::json?
+
+MCP_NAMESPACE_BEGIN
 
 // JSON Schema Validator for MCP Tool Input Validation
 // Following MCP Specification (2025-03-26)
@@ -103,3 +105,5 @@ class JSONSchemaValidator {
                                                       const JSONSchema& InSchema,
                                                       const std::string& InPath);
 };
+
+MCP_NAMESPACE_END

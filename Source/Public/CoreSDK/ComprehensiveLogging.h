@@ -4,14 +4,15 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
-#include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
+#include "Macros.h"
 #include "json.hpp"
 
 // TODO: @HalcyonOmega - Is this used? Does this facilitate the MCP spec?
+
+MCP_NAMESPACE_BEGIN
 
 // Log levels
 enum class LogLevel { TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4, FATAL = 5 };
@@ -245,3 +246,5 @@ class PerformanceLogTimer {
 #define PERF_TIMER(operation) PerformanceLogTimer _perfTimer(operation)
 #define PERF_TIMER_WITH_CONTEXT(operation, context)                                                \
     PerformanceLogTimer _perfTimer(operation, context)
+
+MCP_NAMESPACE_END

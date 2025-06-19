@@ -18,13 +18,15 @@
 #include <chrono>
 #include <future>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "ITransport.h"
+#include "Macros.h"
 
 // Forward declarations
 class HTTPTransportClient;
 class HTTPTransportServer;
+
+MCP_NAMESPACE_BEGIN
 
 // HTTP Client Transport
 class HTTPTransportClient : public ITransport, public Poco::Runnable {
@@ -187,3 +189,5 @@ class HTTPTransportServer : public ITransport {
 
     std::atomic<uint64_t> m_ClientCounter{0};
 };
+
+MCP_NAMESPACE_END

@@ -20,8 +20,13 @@
 // User-friendly API
 #include "SimpleMCPAPI.h"
 
+// Macros
+#include "Macros.h"
+
 // Forward declarations
 class ProgressTracker;
+
+MCP_NAMESPACE_BEGIN
 
 // Progress tracking class for long-running operations
 class ProgressTracker {
@@ -36,6 +41,8 @@ class ProgressTracker {
     std::shared_ptr<MCPProtocol> m_Protocol;
     std::atomic<bool> m_IsComplete{false};
 };
+
+MCP_NAMESPACE_END
 
 /*
 USAGE EXAMPLES:

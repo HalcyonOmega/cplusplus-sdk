@@ -2,6 +2,10 @@
 
 #include <thread>
 
+#include "json.hpp"
+
+MCP_NAMESPACE_BEGIN
+
 // CircuitBreaker template implementations
 template <typename TResult>
 MCPTask<TResult> CircuitBreaker<TResult>::Execute(std::function<MCPTask<TResult>()> InOperation) {
@@ -183,3 +187,5 @@ template MCPTask<nlohmann::json> RetryExecutor::ExecuteWithRetry<nlohmann::json>
 template MCPTask<bool>
 RetryExecutor::ExecuteWithRetry<bool>(std::function<MCPTask<bool>()> InOperation,
                                       const RetryPolicy& InPolicy);
+
+MCP_NAMESPACE_END

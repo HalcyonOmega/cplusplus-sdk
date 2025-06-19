@@ -6,10 +6,7 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/URI.h>
 
-#include <chrono>
-#include <future>
-#include <sstream>
-#include <thread>
+MCP_NAMESPACE_BEGIN
 
 // HTTPTransportClient Implementation
 HTTPTransportClient::HTTPTransportClient(const HTTPTransportOptions& InOptions)
@@ -820,3 +817,5 @@ MCPTaskVoid HTTPTransportServer::StreamMessagesToClient(const std::string& InCli
 std::unique_ptr<ITransport> CreateHTTPTransportImpl(const HTTPTransportOptions& InOptions) {
     return std::make_unique<HTTPTransportClient>(InOptions);
 }
+
+MCP_NAMESPACE_END

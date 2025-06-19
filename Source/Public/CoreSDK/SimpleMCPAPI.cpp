@@ -1,5 +1,7 @@
 #include "SimpleMCPAPI.h"
 
+MCP_NAMESPACE_BEGIN
+
 // SimpleMCPClient Implementation
 SimpleMCPClient::SimpleMCPClient(const std::string& InCommand,
                                  const std::vector<std::string>& InArguments) {
@@ -370,3 +372,5 @@ ResourceReadResponse CreateTextResourceResponse(const std::string& InText,
     response.Contents.push_back(content);
     return response;
 }
+
+MCP_NAMESPACE_END

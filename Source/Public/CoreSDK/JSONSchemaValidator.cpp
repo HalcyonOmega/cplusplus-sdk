@@ -4,6 +4,8 @@
 #include <format>
 #include <ranges>
 
+MCP_NAMESPACE_BEGIN
+
 JSONSchemaValidator::ValidationResult
 JSONSchemaValidator::ValidateAgainstSchema(const nlohmann::json& InData,
                                            const JSONSchema& InSchema) {
@@ -187,3 +189,5 @@ std::string JSONSchemaValidator::GetJSONType(const nlohmann::json& InData) {
 
     return "unknown";
 }
+
+MCP_NAMESPACE_END

@@ -9,12 +9,15 @@
 #include <vector>
 
 #include "MCPTask.h"
+#include "Macros.h"
 #include "json.hpp"
 
 // Forward declarations
 struct RequestBase;
 struct ResponseBase;
 struct NotificationBase;
+
+MCP_NAMESPACE_BEGIN
 
 // Transport events
 enum class TransportState { Disconnected, Connecting, Connected, Error };
@@ -129,3 +132,5 @@ nlohmann::json ExtractParams(const nlohmann::json& InMessage);
 nlohmann::json ExtractResult(const nlohmann::json& InMessage);
 nlohmann::json ExtractError(const nlohmann::json& InMessage);
 } // namespace MessageUtils
+
+MCP_NAMESPACE_END

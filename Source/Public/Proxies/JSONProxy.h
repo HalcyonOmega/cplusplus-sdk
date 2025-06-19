@@ -1,8 +1,6 @@
 #pragma once
 
-#include <memory>
-
-#include "MessageBase.h"
+#include "Macros.h"
 #include "json.hpp"
 
 MCP_NAMESPACE_BEGIN
@@ -76,22 +74,5 @@ concept IsEnumType = std::is_enum_v<EnumerationType>;
             enumValue = std::ranges::begin(enumMappings)->first;                                   \
         }                                                                                          \
     }
-
-// -----------------------------------------------------------------------------
-// Helper wrappers for message (de)serialisation. At this stage they delegate to
-// the virtual Serialize/Deserialize methods on MessageBase. A more elaborate
-// factory will be introduced once concrete message subclasses are wired in.
-// -----------------------------------------------------------------------------
-
-inline string SerializeMessage(const MessageBase& InMessage) {
-    // TODO: @HalcyonOmega Implement JSON serialization.
-    return InMessage.Serialize();
-}
-
-inline std::unique_ptr<MessageBase> DeserializeMessage(const string& /*InMessage*/) {
-    // TODO: @HalcyonOmega Implement JSON parsing and dispatch to the correct MessageBase
-    // subclass. Currently returns nullptr so callers can detect "no message".
-    return nullptr;
-}
 
 MCP_NAMESPACE_END

@@ -7,6 +7,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "Macros.h"
+
+MCP_NAMESPACE_BEGIN
+
 // Template coroutine type for MCP SDK
 template <typename T = void> class MCPTask {
   public:
@@ -30,9 +34,8 @@ template <typename T = void> class MCPTask {
         }
 
         template <typename U>
-        void return_value(U&& InValue)
-            requires std::convertible_to<U, T>
-        {
+            requires(!std::same_as<T, void> && std::convertible_to<U, T>)
+        void return_value(U&& InValue) {
             m_Value = std::forward<U>(InValue);
         }
 
@@ -174,3 +177,5 @@ template <> class MCPTask<void> {
 };
 
 using MCPTaskVoid = MCPTask<void>;
+
+MCP_NAMESPACE_END

@@ -8,9 +8,12 @@
 #include <unordered_map>
 
 #include "MCPTask.h"
+#include "Macros.h"
 #include "json.hpp"
 
 // TODO: @HalcyonOmega - Is this used? Does this facilitate the MCP spec?
+
+MCP_NAMESPACE_BEGIN
 
 // Object pool for message reuse
 template <typename T> class ObjectPool {
@@ -238,3 +241,5 @@ class PerformanceTimer {
     bool m_Success = false;
     bool m_Finished = false;
 };
+
+MCP_NAMESPACE_END

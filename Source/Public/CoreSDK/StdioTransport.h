@@ -7,11 +7,12 @@
 #include <Poco/Runnable.h>
 #include <Poco/Thread.h>
 
-#include <queue>
-#include <sstream>
-#include <thread>
+#include <future>
 
 #include "ITransport.h"
+#include "Macros.h"
+
+MCP_NAMESPACE_BEGIN
 
 class StdioTransport : public ITransport, public Poco::Runnable {
   public:
@@ -134,3 +135,5 @@ class StdioServerTransport : public ITransport, public Poco::Runnable {
     mutable Poco::Mutex m_RequestsMutex;
     mutable Poco::Mutex m_WriteMutex;
 };
+
+MCP_NAMESPACE_END

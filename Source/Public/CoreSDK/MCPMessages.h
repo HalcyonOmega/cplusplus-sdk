@@ -5,7 +5,10 @@
 #include <variant>
 
 #include "MCPTypes.h"
+#include "Macros.h"
 #include "json.hpp"
+
+MCP_NAMESPACE_BEGIN
 
 // Base message types
 struct MessageBase {
@@ -21,7 +24,7 @@ struct RequestBase : MessageBase {
 struct ResponseBase : MessageBase {
     RequestID ID;
     std::optional<JSONValue> Result;
-    std::optional<struct MCPError> Error;
+    std::optional<MCPError> Error;
 };
 
 struct NotificationBase : MessageBase {
@@ -29,14 +32,7 @@ struct NotificationBase : MessageBase {
     std::optional<JSONValue> Params;
 };
 
-// Error structure
-struct MCPError {
-    int64_t Code;
-    std::string Message;
-    std::optional<JSONValue> Data;
-};
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MCPError, Code, Message, Data)
+// Error structure is defined in MCPTypes.h
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RequestBase, JSONRPCVersion, ID, Method, Params)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResponseBase, JSONRPCVersion, ID, Result, Error)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(NotificationBase, JSONRPCVersion, Method, Params)
@@ -507,3 +503,5 @@ using AnyNotification =
                  ResourceListChangedNotification, ResourceUpdatedNotification,
                  PromptListChangedNotification, ToolListChangedNotification,
                  RootsListChangedNotification, LoggingMessageNotification>;
+
+MCP_NAMESPACE_END
