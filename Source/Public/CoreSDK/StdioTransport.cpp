@@ -129,7 +129,8 @@ MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
     co_await WriteMessage(request);
 
     // Wait for response with timeout
-    auto status = future.wait_for(std::chrono::seconds(30));
+    static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
+    auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
     if (status == std::future_status::timeout) {
         Poco::Mutex::ScopedLock lock(m_RequestsMutex);
         m_PendingRequests.erase(requestID);
@@ -200,6 +201,8 @@ void StdioTransport::run() {
 }
 
 void StdioTransport::ProcessIncomingData() {
+    static constexpr std::chrono::milliseconds DEFAULT_SLEEP_FOR{10};
+
     std::string line;
     while (!m_ShouldStop) {
         try {
@@ -207,7 +210,7 @@ void StdioTransport::ProcessIncomingData() {
                 std::getline(*m_StdoutStream, line);
                 if (!line.empty()) { ProcessLine(line); }
             } else {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_FOR));
             }
         } catch (const std::exception& e) {
             if (!m_ShouldStop) {
@@ -426,7 +429,8 @@ MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMeth
     co_await WriteMessage(request);
 
     // Wait for response with timeout
-    auto status = future.wait_for(std::chrono::seconds(30));
+    static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30000};
+    auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
     if (status == std::future_status::timeout) {
         Poco::Mutex::ScopedLock lock(m_RequestsMutex);
         m_PendingRequests.erase(requestID);
@@ -532,16 +536,16 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
             std::string requestID = MessageUtils::ExtractRequestID(message);
 
             Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-            auto it = m_PendingRequests.find(requestID);
-            if (it != m_PendingRequests.end()) {
+            auto Iterator = m_PendingRequests.find(requestID);
+            if (Iterator != m_PendingRequests.end()) {
                 if (message.contains("result")) {
-                    it->second->Promise.set_value(message["result"].dump());
+                    Iterator->second->Promise.set_value(message["result"].dump());
                 } else {
                     std::string errorMsg = message["error"]["message"].get<std::string>();
-                    it->second->Promise.set_exception(
+                    Iterator->second->Promise.set_exception(
                         std::make_exception_ptr(std::runtime_error(errorMsg)));
                 }
-                m_PendingRequests.erase(it);
+                m_PendingRequests.erase(Iterator);
                 return;
             }
         }

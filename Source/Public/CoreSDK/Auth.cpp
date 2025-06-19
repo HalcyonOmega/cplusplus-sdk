@@ -17,12 +17,14 @@
 
 MCP_NAMESPACE_BEGIN
 
+static constexpr short DEFAULT_AUTH_SESSION_TIMEOUT{30}; // 30 seconds
+
 // OAuth2AuthProvider Implementation
 OAuth2AuthProvider::OAuth2AuthProvider(const OAuth2Config& InConfig) : m_Config(InConfig) {
     Poco::URI authURI(m_Config.AuthServerURL);
     m_AuthSession =
         std::make_shared<Poco::Net::HTTPClientSession>(authURI.getHost(), authURI.getPort());
-    m_AuthSession->setTimeout(Poco::Timespan(30, 0)); // 30 seconds
+    m_AuthSession->setTimeout(Poco::Timespan(DEFAULT_AUTH_SESSION_TIMEOUT, 0));
 }
 
 OAuth2AuthProvider::~OAuth2AuthProvider() = default;
@@ -236,9 +238,12 @@ MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string&
 
 // AuthUtils Implementation
 std::optional<std::string> AuthUtils::ExtractBearerToken(Poco::Net::HTTPServerRequest& InRequest) {
+    static constexpr short BEARER_TOKEN_PREFIX_LENGTH{7};
     std::string authHeader = InRequest.get("Authorization", "");
 
-    if (authHeader.substr(0, 7) == "Bearer ") { return authHeader.substr(7); }
+    if (authHeader.substr(0, BEARER_TOKEN_PREFIX_LENGTH) == "Bearer ") {
+        return authHeader.substr(BEARER_TOKEN_PREFIX_LENGTH);
+    }
 
     return std::nullopt;
 }

@@ -46,12 +46,18 @@ struct StdioTransportOptions : TransportOptions {
 };
 
 struct HTTPTransportOptions : TransportOptions {
-    std::string Host = "localhost";
-    uint16_t Port = 8080;
-    std::string Path = "/mcp";
+    static constexpr std::chrono::milliseconds DEFAULT_CONNECT_TIMEOUT{5000};
+    static constexpr std::chrono::milliseconds DEFAULT_REQUEST_TIMEOUT{30000};
+    static constexpr std::string_view DEFAULT_HOST{"localhost"};
+    static constexpr uint16_t DEFAULT_PORT{8080};
+    static constexpr std::string_view DEFAULT_PATH{"/mcp"};
+
     bool UseHTTPS = false;
-    std::chrono::milliseconds ConnectTimeout{5000};
-    std::chrono::milliseconds RequestTimeout{30000};
+    uint16_t Port = DEFAULT_PORT;
+    std::string Host = std::string{DEFAULT_HOST};
+    std::string Path = std::string{DEFAULT_PATH};
+    std::chrono::milliseconds ConnectTimeout{DEFAULT_CONNECT_TIMEOUT};
+    std::chrono::milliseconds RequestTimeout{DEFAULT_REQUEST_TIMEOUT};
 };
 
 // Transport interface

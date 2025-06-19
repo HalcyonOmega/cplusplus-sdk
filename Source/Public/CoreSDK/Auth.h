@@ -23,6 +23,8 @@ class HTTPServerRequest;
 
 MCP_NAMESPACE_BEGIN
 
+static constexpr int DEFAULT_TOKEN_CACHE_TIMEOUT{300}; // 5 minute default
+
 // Authorization result
 struct AuthResult {
     bool IsAuthorized = false;
@@ -38,7 +40,7 @@ struct OAuth2Config {
     std::string ClientSecret;
     std::string Scope;
     bool ValidateSSL = true;
-    Poco::Timespan TokenCacheTimeout{5 * 60, 0}; // 5 minutes
+    Poco::Timespan TokenCacheTimeout{DEFAULT_TOKEN_CACHE_TIMEOUT, 0};
 };
 
 // Base authorization provider interface

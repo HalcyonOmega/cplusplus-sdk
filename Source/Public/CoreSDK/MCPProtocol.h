@@ -16,6 +16,7 @@
 #include "Macros.h"
 
 MCP_NAMESPACE_BEGIN
+static constexpr double DEFAULT_TEMPERATURE{0.7};
 
 // Protocol state
 enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, Shutdown };
@@ -158,12 +159,14 @@ class MCPClient : public MCPProtocol {
                                      const std::string& InArgName, const std::string& InArgValue);
 
     // Sampling (for servers that want to sample via client)
-    MCPTask<CreateMessageResult>
-    CreateMessage(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
-                  const std::string& InSystemPrompt = "",
-                  const std::string& InIncludeContext = "none", double InTemperature = 0.7,
-                  const std::vector<std::string>& InStopSequences = {},
-                  const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
+    MCPTask<CreateMessageResult> CreateMessage(const std::vector<SamplingMessage>& InMessages,
+                                               int64_t InMaxTokens,
+                                               const std::string& InSystemPrompt = "",
+                                               const std::string& InIncludeContext = "none",
+                                               double InTemperature = DEFAULT_TEMPERATURE,
+                                               const std::vector<std::string>& InStopSequences = {},
+                                               const ModelPreferences& InModelPrefs = {},
+                                               const JSONValue& InMetadata = {});
 
   protected:
     void OnInitializeRequest(const InitializeRequest& InRequest,
@@ -220,7 +223,8 @@ class MCPServer : public MCPProtocol {
     MCPTask<CreateMessageResult>
     RequestSampling(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
                     const std::string& InSystemPrompt = "",
-                    const std::string& InIncludeContext = "none", double InTemperature = 0.7,
+                    const std::string& InIncludeContext = "none",
+                    double InTemperature = DEFAULT_TEMPERATURE,
                     const std::vector<std::string>& InStopSequences = {},
                     const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
 
