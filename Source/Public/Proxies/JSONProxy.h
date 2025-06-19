@@ -1,14 +1,22 @@
 #pragma once
 
+#include <optional>
+#include <type_traits>
+
 #include "Macros.h"
 #include "json.hpp"
 
 MCP_NAMESPACE_BEGIN
 
 // Concept: checks if a type is a nlohmann::basic_json specialization
-// (modern C++20 replacement for std::enable_if used by nlohmann macros).
 template <typename T>
 concept IsBasicJSON = nlohmann::detail::is_basic_json<T>::value;
+
+// Concept: checks if a type is a specialization of std::optional
+template <typename T> struct is_optional : std::false_type {};
+template <typename T> struct is_optional<std::optional<T>> : std::true_type {};
+template <typename T>
+concept IsOptional = is_optional<T>::value;
 
 // -----------------------------------------------------------------------------
 // Custom JSON serialization macros with key renaming support
@@ -27,11 +35,25 @@ concept IsBasicJSON = nlohmann::detail::is_basic_json<T>::value;
         __VA_ARGS__                                                                                \
     }
 
-// Helper macros for the WITH_KEYS version
-#define TO_JSON(member, key) json[key] = obj.member;
+// Helper macros that handle serialization and deserialization.
+#define TO_JSON(member, key)                                                                       \
+    if constexpr (IsOptional<decltype(obj.member)>) {                                              \
+        if (obj.member.has_value()) { json[key] = *obj.member; }                                   \
+    } else {                                                                                       \
+        json[key] = obj.member;                                                                    \
+    }
+
 #define FROM_JSON(member, key)                                                                     \
-    if (json.contains(key)) json.at(key).get_to(obj.member);
-#define JKEY(member, key) TO_JSON(member, key) FROM_JSON(member, key)
+    if constexpr (IsOptional<decltype(obj.member)>) {                                              \
+        if (json.contains(key)) { json.at(key).get_to(obj.member); }                               \
+    } else {                                                                                       \
+        json.at(key).get_to(obj.member);                                                           \
+    }
+
+// User-facing macro for aliasing members.
+#define KEY(member, key)                                                                           \
+    TO_JSON(member, key)                                                                           \
+    FROM_JSON(member, key)
 
 // -----------------------------------------------------------------------------
 // Enum serialization with C++20 features and longer parameter names

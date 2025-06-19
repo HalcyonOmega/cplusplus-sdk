@@ -23,8 +23,8 @@ struct RequestBase : MessageBase {
 
 struct ResponseBase : MessageBase {
     RequestID ID;
-    std::optional<JSONValue> Result;
     std::optional<MCPError> Error;
+    std::optional<JSONValue> Result;
 };
 
 struct NotificationBase : MessageBase {
@@ -43,11 +43,12 @@ struct InitializeRequest : RequestBase {
         std::string ProtocolVersion;
         ClientCapabilities Capabilities;
         Implementation ClientInfo;
-    } RequestParams;
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(InitializeParams, ProtocolVersion, Capabilities, ClientInfo)
+    };
 
     InitializeRequest() {
         Method = "initialize";
-        Params = RequestParams;
+        Params = InitializeParams{};
     }
 };
 
