@@ -27,8 +27,8 @@ class MCPProtocol {
     virtual ~MCPProtocol();
 
     // Lifecycle
-    MCPTaskVoid Start();
-    MCPTaskVoid Shutdown();
+    MCPTask_Void Start();
+    MCPTask_Void Shutdown();
     bool IsInitialized() const {
         return m_State == MCPProtocolState::Initialized;
     }
@@ -40,7 +40,7 @@ class MCPProtocol {
     MCPTask<InitializeResult> Initialize(const std::string& InProtocolVersion,
                                          const ClientCapabilities& InCapabilities,
                                          const Implementation& InClientInfo);
-    MCPTaskVoid SendInitialized();
+    MCPTask_Void SendInitialized();
     MCPTask<JSONValue> Ping();
 
     // Protocol version validation
@@ -52,17 +52,17 @@ class MCPProtocol {
     MCPTask<typename TRequest::ResponseType::ResultType> SendRequest(const TRequest& InRequest);
 
     template <typename TResponse>
-    MCPTaskVoid SendResponse(const std::string& InRequestID, const TResponse& InResponse);
+    MCPTask_Void SendResponse(const std::string& InRequestID, const TResponse& InResponse);
 
     template <typename TNotification>
-    MCPTaskVoid SendNotification(const TNotification& InNotification);
+    MCPTask_Void SendNotification(const TNotification& InNotification);
 
     // Error handling
-    MCPTaskVoid SendError(const std::string& InRequestID, int64_t InCode,
-                          const std::string& InMessage, const JSONValue& InData = {});
+    MCPTask_Void SendError(const std::string& InRequestID, int64_t InCode,
+                           const std::string& InMessage, const JSONValue& InData = {});
 
     // Event handlers
-    using RequestHandlerFunc = std::function<MCPTaskVoid(
+    using RequestHandlerFunc = std::function<MCPTask_Void(
         const std::string& InMethod, const JSONValue& InParams, const std::string& InRequestID)>;
     using ResponseHandlerFunc =
         std::function<void(const JSONValue& InResult, const std::string& InRequestID)>;
@@ -92,8 +92,8 @@ class MCPProtocol {
     virtual void OnInitializeRequest(const InitializeRequest& InRequest,
                                      const std::string& InRequestID) = 0;
     virtual void OnInitializedNotification() = 0;
-    virtual MCPTaskVoid HandleRequest(const std::string& InMethod, const JSONValue& InParams,
-                                      const std::string& InRequestID);
+    virtual MCPTask_Void HandleRequest(const std::string& InMethod, const JSONValue& InParams,
+                                       const std::string& InRequestID);
     virtual void HandleResponse(const JSONValue& InResult, const std::string& InRequestID);
     virtual void HandleNotification(const std::string& InMethod, const JSONValue& InParams);
     virtual void HandleError(const std::string& InError);
@@ -148,11 +148,11 @@ class MCPClient : public MCPProtocol {
 
     MCPTask<ListResourcesResult> ListResources();
     MCPTask<ReadResourceResult> ReadResource(const std::string& InURI);
-    MCPTaskVoid Subscribe(const std::string& InURI);
-    MCPTaskVoid Unsubscribe(const std::string& InURI);
+    MCPTask_Void Subscribe(const std::string& InURI);
+    MCPTask_Void Unsubscribe(const std::string& InURI);
 
     MCPTask<ListRootsResult> ListRoots();
-    MCPTaskVoid SetLoggingLevel(LoggingLevel InLevel);
+    MCPTask_Void SetLoggingLevel(LoggingLevel InLevel);
 
     MCPTask<CompleteResult> Complete(const std::string& InRefType, const std::string& InRefURI,
                                      const std::string& InArgName, const std::string& InArgValue);
@@ -187,7 +187,7 @@ class MCPServer : public MCPProtocol {
         std::function<MCPTask<CallToolResult>(const std::unordered_map<std::string, JSONValue>&)>
             InHandler);
     void UnregisterTool(const std::string& InName);
-    MCPTaskVoid NotifyToolListChanged();
+    MCPTask_Void NotifyToolListChanged();
 
     // Prompt management
     void RegisterPrompt(
@@ -195,7 +195,7 @@ class MCPServer : public MCPProtocol {
         std::function<MCPTask<GetPromptResult>(const std::unordered_map<std::string, std::string>&)>
             InHandler);
     void UnregisterPrompt(const std::string& InName);
-    MCPTaskVoid NotifyPromptListChanged();
+    MCPTask_Void NotifyPromptListChanged();
 
     // Resource management
     void RegisterResource(const Resource& InResource,
@@ -204,17 +204,17 @@ class MCPServer : public MCPProtocol {
         const ResourceTemplate& InTemplate,
         std::function<MCPTask<ReadResourceResult>(const std::string&)> InHandler);
     void UnregisterResource(const std::string& InURI);
-    MCPTaskVoid NotifyResourceListChanged();
-    MCPTaskVoid NotifyResourceUpdated(const std::string& InURI);
+    MCPTask_Void NotifyResourceListChanged();
+    MCPTask_Void NotifyResourceUpdated(const std::string& InURI);
 
     // Root management
     void RegisterRoot(const Root& InRoot);
     void UnregisterRoot(const std::string& InURI);
-    MCPTaskVoid NotifyRootsListChanged();
+    MCPTask_Void NotifyRootsListChanged();
 
     // Logging
-    MCPTaskVoid LogMessage(LoggingLevel InLevel, const std::string& InLogger,
-                           const JSONValue& InData);
+    MCPTask_Void LogMessage(LoggingLevel InLevel, const std::string& InLogger,
+                            const JSONValue& InData);
 
     // Sampling requests (servers can request sampling from clients)
     MCPTask<CreateMessageResult>
@@ -225,16 +225,16 @@ class MCPServer : public MCPProtocol {
                     const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
 
     // Progress reporting
-    MCPTaskVoid ReportProgress(const std::string& InRequestID, double InProgress,
-                               int64_t InTotal = -1);
-    MCPTaskVoid CancelRequest(const std::string& InRequestID, const std::string& InReason = "");
+    MCPTask_Void ReportProgress(const std::string& InRequestID, double InProgress,
+                                int64_t InTotal = -1);
+    MCPTask_Void CancelRequest(const std::string& InRequestID, const std::string& InReason = "");
 
   protected:
     void OnInitializeRequest(const InitializeRequest& InRequest,
                              const std::string& InRequestID) override;
     void OnInitializedNotification() override;
-    MCPTaskVoid HandleRequest(const std::string& InMethod, const JSONValue& InParams,
-                              const std::string& InRequestID) override;
+    MCPTask_Void HandleRequest(const std::string& InMethod, const JSONValue& InParams,
+                               const std::string& InRequestID) override;
 
   private:
     Implementation m_ServerInfo;
@@ -293,15 +293,29 @@ class MCPServer : public MCPProtocol {
         const std::string& InRequestID);
 
     // Resource subscription management
-    MCPTaskVoid NotifyResourceSubscribers(const std::string& InURI);
+    MCPTask_Void NotifyResourceSubscribers(const std::string& InURI);
     std::string GetCurrentClientID() const;
-    MCPTaskVoid SendNotificationToClient(const std::string& InClientID,
-                                         const ResourceUpdatedNotification& InNotification);
+    MCPTask_Void SendNotificationToClient(const std::string& InClientID,
+                                          const ResourceUpdatedNotification& InNotification);
 
     // Updated subscription management with client tracking
     std::unordered_map<std::string, std::set<std::string>>
         m_ResourceSubscriptions; // URI -> Set of client IDs
     mutable std::mutex m_ResourceSubscriptionsMutex;
+};
+
+// Progress tracking class for long-running operations
+class ProgressTracker {
+  public:
+    ProgressTracker(const std::string& InRequestID, std::shared_ptr<MCPProtocol> InProtocol);
+
+    MCPTask_Void UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
+    MCPTask_Void CompleteProgress();
+
+  private:
+    std::string m_RequestID;
+    std::shared_ptr<MCPProtocol> m_Protocol;
+    std::atomic<bool> m_IsComplete{false};
 };
 
 MCP_NAMESPACE_END

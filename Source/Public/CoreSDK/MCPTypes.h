@@ -10,7 +10,6 @@
 #include "Macros.h"
 #include "json.hpp"
 
-
 MCP_NAMESPACE_BEGIN
 
 using JSONValue = nlohmann::json;

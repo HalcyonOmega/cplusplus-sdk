@@ -60,21 +60,21 @@ class ITransport {
     virtual ~ITransport() = default;
 
     // Connection management
-    virtual MCPTaskVoid Start() = 0;
-    virtual MCPTaskVoid Stop() = 0;
+    virtual MCPTask_Void Start() = 0;
+    virtual MCPTask_Void Stop() = 0;
     virtual bool IsConnected() const = 0;
     virtual TransportState GetState() const = 0;
 
     // Message sending
     virtual MCPTask<std::string> SendRequest(const std::string& InMethod,
                                              const nlohmann::json& InParams) = 0;
-    virtual MCPTaskVoid SendResponse(const std::string& InRequestID,
-                                     const nlohmann::json& InResult) = 0;
-    virtual MCPTaskVoid SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                          const std::string& InErrorMessage,
-                                          const nlohmann::json& InErrorData = {}) = 0;
-    virtual MCPTaskVoid SendNotification(const std::string& InMethod,
-                                         const nlohmann::json& InParams = {}) = 0;
+    virtual MCPTask_Void SendResponse(const std::string& InRequestID,
+                                      const nlohmann::json& InResult) = 0;
+    virtual MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
+                                           const std::string& InErrorMessage,
+                                           const nlohmann::json& InErrorData = {}) = 0;
+    virtual MCPTask_Void SendNotification(const std::string& InMethod,
+                                          const nlohmann::json& InParams = {}) = 0;
 
     // Event handlers
     virtual void SetMessageHandler(MessageHandler InHandler) = 0;

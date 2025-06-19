@@ -24,7 +24,7 @@ HTTPTransportClient::~HTTPTransportClient() {
     }
 }
 
-MCPTaskVoid HTTPTransportClient::Start() {
+MCPTask_Void HTTPTransportClient::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
         throw std::runtime_error("Transport already started or in progress");
     }
@@ -46,7 +46,7 @@ MCPTaskVoid HTTPTransportClient::Start() {
     co_return;
 }
 
-MCPTaskVoid HTTPTransportClient::Stop() {
+MCPTask_Void HTTPTransportClient::Stop() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -110,17 +110,17 @@ MCPTask<std::string> HTTPTransportClient::SendRequest(const std::string& InMetho
     co_return future.get();
 }
 
-MCPTaskVoid HTTPTransportClient::SendResponse(const std::string& InRequestID,
-                                              const nlohmann::json& InResult) {
+MCPTask_Void HTTPTransportClient::SendResponse(const std::string& InRequestID,
+                                               const nlohmann::json& InResult) {
     nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await SendHTTPMessage(response);
 }
 
-MCPTaskVoid HTTPTransportClient::SendErrorResponse(const std::string& InRequestID,
-                                                   int64_t InErrorCode,
-                                                   const std::string& InErrorMessage,
-                                                   const nlohmann::json& InErrorData) {
+MCPTask_Void HTTPTransportClient::SendErrorResponse(const std::string& InRequestID,
+                                                    int64_t InErrorCode,
+                                                    const std::string& InErrorMessage,
+                                                    const nlohmann::json& InErrorData) {
     nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
@@ -130,8 +130,8 @@ MCPTaskVoid HTTPTransportClient::SendErrorResponse(const std::string& InRequestI
     co_await SendHTTPMessage(response);
 }
 
-MCPTaskVoid HTTPTransportClient::SendNotification(const std::string& InMethod,
-                                                  const nlohmann::json& InParams) {
+MCPTask_Void HTTPTransportClient::SendNotification(const std::string& InMethod,
+                                                   const nlohmann::json& InParams) {
     nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
@@ -173,7 +173,7 @@ void HTTPTransportClient::run() {
     StartSSEConnection();
 }
 
-MCPTaskVoid HTTPTransportClient::ConnectToServer() {
+MCPTask_Void HTTPTransportClient::ConnectToServer() {
     try {
         Poco::Mutex::ScopedLock lock(m_ConnectionMutex);
 
@@ -215,7 +215,7 @@ MCPTaskVoid HTTPTransportClient::ConnectToServer() {
     co_return;
 }
 
-MCPTaskVoid HTTPTransportClient::SendHTTPMessage(const nlohmann::json& InMessage) {
+MCPTask_Void HTTPTransportClient::SendHTTPMessage(const nlohmann::json& InMessage) {
     if (!m_HTTPSession) { throw std::runtime_error("HTTP session not initialized"); }
 
     try {
@@ -391,7 +391,7 @@ HTTPTransportServer::~HTTPTransportServer() {
     }
 }
 
-MCPTaskVoid HTTPTransportServer::Start() {
+MCPTask_Void HTTPTransportServer::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
         throw std::runtime_error("Transport already started");
     }
@@ -424,7 +424,7 @@ MCPTaskVoid HTTPTransportServer::Start() {
     co_return;
 }
 
-MCPTaskVoid HTTPTransportServer::Stop() {
+MCPTask_Void HTTPTransportServer::Stop() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -506,17 +506,17 @@ MCPTask<std::string> HTTPTransportServer::SendRequest(const std::string& InMetho
     co_return future.get();
 }
 
-MCPTaskVoid HTTPTransportServer::SendResponse(const std::string& InRequestID,
-                                              const nlohmann::json& InResult) {
+MCPTask_Void HTTPTransportServer::SendResponse(const std::string& InRequestID,
+                                               const nlohmann::json& InResult) {
     nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await SendToSSEClients(response);
 }
 
-MCPTaskVoid HTTPTransportServer::SendErrorResponse(const std::string& InRequestID,
-                                                   int64_t InErrorCode,
-                                                   const std::string& InErrorMessage,
-                                                   const nlohmann::json& InErrorData) {
+MCPTask_Void HTTPTransportServer::SendErrorResponse(const std::string& InRequestID,
+                                                    int64_t InErrorCode,
+                                                    const std::string& InErrorMessage,
+                                                    const nlohmann::json& InErrorData) {
     nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
@@ -526,8 +526,8 @@ MCPTaskVoid HTTPTransportServer::SendErrorResponse(const std::string& InRequestI
     co_await SendToSSEClients(response);
 }
 
-MCPTaskVoid HTTPTransportServer::SendNotification(const std::string& InMethod,
-                                                  const nlohmann::json& InParams) {
+MCPTask_Void HTTPTransportServer::SendNotification(const std::string& InMethod,
+                                                   const nlohmann::json& InParams) {
     nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
@@ -688,7 +688,7 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID) {
     }
 }
 
-MCPTaskVoid HTTPTransportServer::SendToSSEClients(const nlohmann::json& InMessage) {
+MCPTask_Void HTTPTransportServer::SendToSSEClients(const nlohmann::json& InMessage) {
     Poco::Mutex::ScopedLock lock(m_ClientsMutex);
 
     std::string messageStr = "data: " + InMessage.dump() + "\n\n";
@@ -772,7 +772,7 @@ std::string HTTPTransportServer::GenerateUniqueClientID() const {
     return GenerateClientID();
 }
 
-MCPTaskVoid
+MCPTask_Void
 HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRequest,
                                               Poco::Net::HTTPServerResponse& InResponse) {
     // Set SSE headers
@@ -793,7 +793,7 @@ HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRe
     co_await StreamMessagesToClient(clientID);
 }
 
-MCPTaskVoid HTTPTransportServer::StreamMessagesToClient(const std::string& InClientID) {
+MCPTask_Void HTTPTransportServer::StreamMessagesToClient(const std::string& InClientID) {
     try {
         while (true) {
             {

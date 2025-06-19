@@ -89,7 +89,7 @@ class SimpleMCPClient {
 
     // Connection management
     MCPTask<bool> Connect();
-    MCPTaskVoid Disconnect();
+    MCPTask_Void Disconnect();
     bool IsConnected() const;
 
     // Tool operations
@@ -125,7 +125,7 @@ class SimpleMCPServer {
 
     // Server lifecycle
     MCPTask<bool> Start();
-    MCPTaskVoid Stop();
+    MCPTask_Void Stop();
     bool IsRunning() const;
 
     // Tool management

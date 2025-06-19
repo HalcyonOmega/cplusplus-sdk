@@ -20,20 +20,20 @@ class StdioTransport : public ITransport, public Poco::Runnable {
     ~StdioTransport() override;
 
     // ITransport interface
-    MCPTaskVoid Start() override;
-    MCPTaskVoid Stop() override;
+    MCPTask_Void Start() override;
+    MCPTask_Void Stop() override;
     bool IsConnected() const override;
     TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
                                      const nlohmann::json& InParams) override;
-    MCPTaskVoid SendResponse(const std::string& InRequestID,
-                             const nlohmann::json& InResult) override;
-    MCPTaskVoid SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                  const std::string& InErrorMessage,
-                                  const nlohmann::json& InErrorData = {}) override;
-    MCPTaskVoid SendNotification(const std::string& InMethod,
-                                 const nlohmann::json& InParams = {}) override;
+    MCPTask_Void SendResponse(const std::string& InRequestID,
+                              const nlohmann::json& InResult) override;
+    MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
+                                   const std::string& InErrorMessage,
+                                   const nlohmann::json& InErrorData = {}) override;
+    MCPTask_Void SendNotification(const std::string& InMethod,
+                                  const nlohmann::json& InParams = {}) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -51,7 +51,7 @@ class StdioTransport : public ITransport, public Poco::Runnable {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    MCPTaskVoid WriteMessage(const nlohmann::json& InMessage);
+    MCPTask_Void WriteMessage(const nlohmann::json& InMessage);
     void HandleError(const std::string& InError);
     void Cleanup();
 
@@ -86,20 +86,20 @@ class StdioServerTransport : public ITransport, public Poco::Runnable {
     ~StdioServerTransport() override;
 
     // ITransport interface
-    MCPTaskVoid Start() override;
-    MCPTaskVoid Stop() override;
+    MCPTask_Void Start() override;
+    MCPTask_Void Stop() override;
     bool IsConnected() const override;
     TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
                                      const nlohmann::json& InParams) override;
-    MCPTaskVoid SendResponse(const std::string& InRequestID,
-                             const nlohmann::json& InResult) override;
-    MCPTaskVoid SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                  const std::string& InErrorMessage,
-                                  const nlohmann::json& InErrorData = {}) override;
-    MCPTaskVoid SendNotification(const std::string& InMethod,
-                                 const nlohmann::json& InParams = {}) override;
+    MCPTask_Void SendResponse(const std::string& InRequestID,
+                              const nlohmann::json& InResult) override;
+    MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
+                                   const std::string& InErrorMessage,
+                                   const nlohmann::json& InErrorData = {}) override;
+    MCPTask_Void SendNotification(const std::string& InMethod,
+                                  const nlohmann::json& InParams = {}) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -117,7 +117,7 @@ class StdioServerTransport : public ITransport, public Poco::Runnable {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    MCPTaskVoid WriteMessage(const nlohmann::json& InMessage);
+    MCPTask_Void WriteMessage(const nlohmann::json& InMessage);
     void HandleError(const std::string& InError);
 
     Poco::Thread m_ReadThread;

@@ -24,8 +24,8 @@ SimpleMCPClient::SimpleMCPClient(const std::string& InHost, uint16_t InPort,
 
 SimpleMCPClient::~SimpleMCPClient() = default;
 
-MCPTaskVoid SimpleMCPClient::Connect(const std::string& InClientName,
-                                     const std::string& InClientVersion) {
+MCPTask_Void SimpleMCPClient::Connect(const std::string& InClientName,
+                                      const std::string& InClientVersion) {
     MCPClientInfo clientInfo;
     clientInfo.Name = InClientName;
     clientInfo.Version = InClientVersion;
@@ -33,7 +33,7 @@ MCPTaskVoid SimpleMCPClient::Connect(const std::string& InClientName,
     co_await m_Client->Connect(clientInfo);
 }
 
-MCPTaskVoid SimpleMCPClient::Disconnect() {
+MCPTask_Void SimpleMCPClient::Disconnect() {
     co_await m_Client->Disconnect();
 }
 
@@ -70,11 +70,11 @@ MCPTask<ResourceReadResponse> SimpleMCPClient::ReadResource(const std::string& I
     co_return co_await m_Client->ReadResource(InResourceURI);
 }
 
-MCPTaskVoid SimpleMCPClient::SubscribeToResource(const std::string& InResourceURI) {
+MCPTask_Void SimpleMCPClient::SubscribeToResource(const std::string& InResourceURI) {
     co_await m_Client->SubscribeToResource(InResourceURI);
 }
 
-MCPTaskVoid SimpleMCPClient::UnsubscribeFromResource(const std::string& InResourceURI) {
+MCPTask_Void SimpleMCPClient::UnsubscribeFromResource(const std::string& InResourceURI) {
     co_await m_Client->UnsubscribeFromResource(InResourceURI);
 }
 
@@ -128,8 +128,8 @@ SimpleMCPServer::SimpleMCPServer(uint16_t InPort, const std::string& InPath) {
 
 SimpleMCPServer::~SimpleMCPServer() = default;
 
-MCPTaskVoid SimpleMCPServer::Start(const std::string& InServerName,
-                                   const std::string& InServerVersion) {
+MCPTask_Void SimpleMCPServer::Start(const std::string& InServerName,
+                                    const std::string& InServerVersion) {
     MCPServerInfo serverInfo;
     serverInfo.Name = InServerName;
     serverInfo.Version = InServerVersion;
@@ -137,7 +137,7 @@ MCPTaskVoid SimpleMCPServer::Start(const std::string& InServerName,
     co_await m_Server->Start(serverInfo);
 }
 
-MCPTaskVoid SimpleMCPServer::Stop() {
+MCPTask_Void SimpleMCPServer::Stop() {
     co_await m_Server->Stop();
 }
 
@@ -180,16 +180,16 @@ void SimpleMCPServer::AddResource(const std::string& InURI, const std::string& I
     m_Server->AddResource(InURI, resource, InHandler);
 }
 
-MCPTaskVoid SimpleMCPServer::NotifyResourceUpdated(const std::string& InURI) {
+MCPTask_Void SimpleMCPServer::NotifyResourceUpdated(const std::string& InURI) {
     co_await m_Server->NotifyResourceUpdated(InURI);
 }
 
-MCPTaskVoid SimpleMCPServer::SendProgress(const std::string& InProgressToken, double InProgress,
-                                          double InTotal) {
+MCPTask_Void SimpleMCPServer::SendProgress(const std::string& InProgressToken, double InProgress,
+                                           double InTotal) {
     co_await m_Server->SendProgress(InProgressToken, InProgress, InTotal);
 }
 
-MCPTaskVoid SimpleMCPServer::SendLog(LoggingLevel InLevel, const std::string& InMessage) {
+MCPTask_Void SimpleMCPServer::SendLog(LoggingLevel InLevel, const std::string& InMessage) {
     co_await m_Server->SendLog(InLevel, InMessage);
 }
 

@@ -6,7 +6,7 @@
 #include "SimpleMCPAPI.h"
 
 // Example 1: Simple MCP Server with Tools
-MCP::MCPTaskVoid ExampleServer() {
+MCP::MCPTask_Void ExampleServer() {
     std::cout << "Starting MCP Server Example..." << std::endl;
 
     // Create a simple MCP server using stdio transport
@@ -126,7 +126,7 @@ auto tools = client.ListTools();
 }
 
 // Example 2: MCP Client connecting to a server
-MCPTaskVoid ExampleClient() {
+MCPTask_Void ExampleClient() {
     std::cout << "Starting MCP Client Example..." << std::endl;
 
     // Create a client connecting to a stdio process
@@ -216,7 +216,7 @@ MCPTaskVoid ExampleClient() {
 }
 
 // Example 3: HTTP Transport Server
-MCPTaskVoid ExampleHTTPServer() {
+MCPTask_Void ExampleHTTPServer() {
     std::cout << "Starting HTTP MCP Server Example..." << std::endl;
 
     // Create HTTP server on port 8080
@@ -272,7 +272,7 @@ MCPTaskVoid ExampleHTTPServer() {
 }
 
 // Example 4: HTTP Transport Client
-MCPTaskVoid ExampleHTTPClient() {
+MCPTask_Void ExampleHTTPClient() {
     std::cout << "Starting HTTP MCP Client Example..." << std::endl;
 
     // Create HTTP client connecting to localhost:8080
@@ -316,7 +316,7 @@ MCPTaskVoid ExampleHTTPClient() {
 }
 
 // Example 5: Advanced Server with Sampling
-MCPTaskVoid ExampleAdvancedServer() {
+MCPTask_Void ExampleAdvancedServer() {
     std::cout << "Starting Advanced MCP Server Example..." << std::endl;
 
     SimpleMCPServer server;
@@ -383,7 +383,7 @@ MCPTaskVoid ExampleAdvancedServer() {
 }
 
 // Main function to run all examples
-MCPTaskVoid RunAllExamples() {
+MCPTask_Void RunAllExamples() {
     std::cout << "=== MCP C++ SDK Examples ===" << std::endl;
 
     try {

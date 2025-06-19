@@ -9,8 +9,6 @@
 #include "Macros.h"
 #include "json.hpp"
 
-// TODO: @HalcyonOmega - Shouldn't these be built into Nlohmann::json?
-
 MCP_NAMESPACE_BEGIN
 
 // JSON Schema Validator for MCP Tool Input Validation

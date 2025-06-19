@@ -24,7 +24,7 @@ StdioTransport::~StdioTransport() {
     }
 }
 
-MCPTaskVoid StdioTransport::Start() {
+MCPTask_Void StdioTransport::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
         throw std::runtime_error("Transport already started or in progress");
     }
@@ -72,7 +72,7 @@ MCPTaskVoid StdioTransport::Start() {
     co_return;
 }
 
-MCPTaskVoid StdioTransport::Stop() {
+MCPTask_Void StdioTransport::Stop() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -139,16 +139,16 @@ MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
     co_return future.get();
 }
 
-MCPTaskVoid StdioTransport::SendResponse(const std::string& InRequestID,
-                                         const nlohmann::json& InResult) {
+MCPTask_Void StdioTransport::SendResponse(const std::string& InRequestID,
+                                          const nlohmann::json& InResult) {
     nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await WriteMessage(response);
 }
 
-MCPTaskVoid StdioTransport::SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                              const std::string& InErrorMessage,
-                                              const nlohmann::json& InErrorData) {
+MCPTask_Void StdioTransport::SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
+                                               const std::string& InErrorMessage,
+                                               const nlohmann::json& InErrorData) {
     nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
@@ -158,8 +158,8 @@ MCPTaskVoid StdioTransport::SendErrorResponse(const std::string& InRequestID, in
     co_await WriteMessage(response);
 }
 
-MCPTaskVoid StdioTransport::SendNotification(const std::string& InMethod,
-                                             const nlohmann::json& InParams) {
+MCPTask_Void StdioTransport::SendNotification(const std::string& InMethod,
+                                              const nlohmann::json& InParams) {
     nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
@@ -269,7 +269,7 @@ void StdioTransport::ProcessLine(const std::string& InLine) {
     }
 }
 
-MCPTaskVoid StdioTransport::WriteMessage(const nlohmann::json& InMessage) {
+MCPTask_Void StdioTransport::WriteMessage(const nlohmann::json& InMessage) {
     if (!m_StdinStream || !IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     try {
@@ -339,7 +339,7 @@ StdioServerTransport::~StdioServerTransport() {
     }
 }
 
-MCPTaskVoid StdioServerTransport::Start() {
+MCPTask_Void StdioServerTransport::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
         throw std::runtime_error("Transport already started");
     }
@@ -363,7 +363,7 @@ MCPTaskVoid StdioServerTransport::Start() {
     co_return;
 }
 
-MCPTaskVoid StdioServerTransport::Stop() {
+MCPTask_Void StdioServerTransport::Stop() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -436,17 +436,17 @@ MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMeth
     co_return future.get();
 }
 
-MCPTaskVoid StdioServerTransport::SendResponse(const std::string& InRequestID,
-                                               const nlohmann::json& InResult) {
+MCPTask_Void StdioServerTransport::SendResponse(const std::string& InRequestID,
+                                                const nlohmann::json& InResult) {
     nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await WriteMessage(response);
 }
 
-MCPTaskVoid StdioServerTransport::SendErrorResponse(const std::string& InRequestID,
-                                                    int64_t InErrorCode,
-                                                    const std::string& InErrorMessage,
-                                                    const nlohmann::json& InErrorData) {
+MCPTask_Void StdioServerTransport::SendErrorResponse(const std::string& InRequestID,
+                                                     int64_t InErrorCode,
+                                                     const std::string& InErrorMessage,
+                                                     const nlohmann::json& InErrorData) {
     nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
@@ -456,8 +456,8 @@ MCPTaskVoid StdioServerTransport::SendErrorResponse(const std::string& InRequest
     co_await WriteMessage(response);
 }
 
-MCPTaskVoid StdioServerTransport::SendNotification(const std::string& InMethod,
-                                                   const nlohmann::json& InParams) {
+MCPTask_Void StdioServerTransport::SendNotification(const std::string& InMethod,
+                                                    const nlohmann::json& InParams) {
     nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
@@ -567,7 +567,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
     }
 }
 
-MCPTaskVoid StdioServerTransport::WriteMessage(const nlohmann::json& InMessage) {
+MCPTask_Void StdioServerTransport::WriteMessage(const nlohmann::json& InMessage) {
     try {
         Poco::Mutex::ScopedLock lock(m_WriteMutex);
 
