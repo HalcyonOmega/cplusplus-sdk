@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Poco/Net/HTTPCredentials.h>
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -7,6 +9,8 @@
 
 #include "MCPTask.h"
 #include "Macros.h"
+#include "Poco/Timespan.h"
+#include "Poco/Timestamp.h"
 #include "json.hpp"
 
 // TODO: @HalcyonOmega - Is this using proper Poco auth?
@@ -34,7 +38,7 @@ struct OAuth2Config {
     std::string ClientSecret;
     std::string Scope;
     bool ValidateSSL = true;
-    std::chrono::seconds TokenCacheTimeout{300}; // 5 minutes default
+    Poco::Timespan TokenCacheTimeout{5 * 60, 0}; // 5 minutes
 };
 
 // Base authorization provider interface
@@ -66,7 +70,7 @@ class OAuth2AuthProvider : public MCPAuthProvider {
     // Token cache for performance
     struct CachedToken {
         AuthResult Result;
-        std::chrono::steady_clock::time_point CachedAt;
+        Poco::Timestamp CachedAt;
     };
     std::unordered_map<std::string, CachedToken> m_TokenCache;
     mutable std::mutex m_CacheMutex;

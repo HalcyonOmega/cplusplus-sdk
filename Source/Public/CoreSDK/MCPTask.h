@@ -1,22 +1,19 @@
 #pragma once
 
-#include <concepts>
 #include <coroutine>
-#include <exception>
-#include <memory>
-#include <type_traits>
+#include <stdexcept>
+#include <string>
 #include <utility>
+#include <variant>
 
 #include "Macros.h"
 
 MCP_NAMESPACE_BEGIN
 
-// Template coroutine type for MCP SDK
-template <typename T = void> class MCPTask {
-  public:
+// Coroutine task for clean async operations
+template <typename T> struct MCPTask {
     struct promise_type {
-        T m_Value{};
-        std::exception_ptr m_Exception{};
+        std::variant<T, std::string> m_Result;
 
         MCPTask get_return_object() {
             return MCPTask{std::coroutine_handle<promise_type>::from_promise(*this)};
@@ -25,157 +22,72 @@ template <typename T = void> class MCPTask {
         std::suspend_never initial_suspend() {
             return {};
         }
-        std::suspend_always final_suspend() noexcept {
+        std::suspend_never final_suspend() noexcept {
             return {};
         }
 
-        void unhandled_exception() {
-            m_Exception = std::current_exception();
-        }
-
-        template <typename U>
-            requires(!std::same_as<T, void> && std::convertible_to<U, T>)
-        void return_value(U&& InValue) {
-            m_Value = std::forward<U>(InValue);
+        void return_value(T Value)
+            requires(!std::is_void_v<T>)
+        {
+            m_Result = std::move(Value);
         }
 
         void return_void()
-            requires std::same_as<T, void>
-        {}
-    };
-
-    using HandleType = std::coroutine_handle<promise_type>;
-
-    MCPTask(HandleType InHandle) : m_Handle(InHandle) {}
-
-    MCPTask(const MCPTask&) = delete;
-    MCPTask& operator=(const MCPTask&) = delete;
-
-    MCPTask(MCPTask&& InOther) noexcept : m_Handle(std::exchange(InOther.m_Handle, {})) {}
-    MCPTask& operator=(MCPTask&& InOther) noexcept {
-        if (this != &InOther) {
-            if (m_Handle) m_Handle.destroy();
-            m_Handle = std::exchange(InOther.m_Handle, {});
-        }
-        return *this;
-    }
-
-    ~MCPTask() {
-        if (m_Handle) m_Handle.destroy();
-    }
-
-    bool IsReady() const {
-        return m_Handle && m_Handle.done();
-    }
-
-    T GetResult() {
-        if (!m_Handle) throw std::runtime_error("Invalid task handle");
-
-        if (m_Handle.promise().m_Exception) std::rethrow_exception(m_Handle.promise().m_Exception);
-
-        if constexpr (!std::same_as<T, void>) { return std::move(m_Handle.promise().m_Value); }
-    }
-
-    auto operator co_await() {
-        struct Awaiter {
-            HandleType m_Handle;
-
-            bool await_ready() {
-                return m_Handle.done();
-            }
-            void await_suspend(std::coroutine_handle<>) {}
-            T await_resume() {
-                if (m_Handle.promise().m_Exception)
-                    std::rethrow_exception(m_Handle.promise().m_Exception);
-
-                if constexpr (!std::same_as<T, void>) {
-                    return std::move(m_Handle.promise().m_Value);
-                }
-            }
-        };
-
-        return Awaiter{m_Handle};
-    }
-
-  private:
-    HandleType m_Handle;
-};
-
-// Specialization for void
-template <> class MCPTask<void> {
-  public:
-    struct promise_type {
-        std::exception_ptr m_Exception{};
-
-        MCPTask get_return_object() {
-            return MCPTask{std::coroutine_handle<promise_type>::from_promise(*this)};
-        }
-
-        std::suspend_never initial_suspend() {
-            return {};
-        }
-        std::suspend_always final_suspend() noexcept {
-            return {};
+            requires std::is_void_v<T>
+        {
+            m_Result = std::monostate{};
         }
 
         void unhandled_exception() {
-            m_Exception = std::current_exception();
+            m_Result = "Coroutine exception occurred";
         }
-
-        void return_void() {}
     };
 
-    using HandleType = std::coroutine_handle<promise_type>;
+    std::coroutine_handle<promise_type> m_Handle;
 
-    MCPTask(HandleType InHandle) : m_Handle(InHandle) {}
+    MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle(Handle) {}
 
+    ~MCPTask() {
+        if (m_Handle) { m_Handle.destroy(); }
+    }
+
+    // Non-copyable, movable
     MCPTask(const MCPTask&) = delete;
     MCPTask& operator=(const MCPTask&) = delete;
-
-    MCPTask(MCPTask&& InOther) noexcept : m_Handle(std::exchange(InOther.m_Handle, {})) {}
-    MCPTask& operator=(MCPTask&& InOther) noexcept {
-        if (this != &InOther) {
-            if (m_Handle) m_Handle.destroy();
-            m_Handle = std::exchange(InOther.m_Handle, {});
+    MCPTask(MCPTask&& Other) noexcept : m_Handle(std::exchange(Other.m_Handle, {})) {}
+    MCPTask& operator=(MCPTask&& Other) noexcept {
+        if (this != &Other) {
+            if (m_Handle) { m_Handle.destroy(); }
+            m_Handle = std::exchange(Other.m_Handle, {});
         }
         return *this;
     }
 
-    ~MCPTask() {
-        if (m_Handle) m_Handle.destroy();
+    // Awaitable interface
+    bool await_ready() const {
+        return m_Handle.done();
+    }
+    void await_suspend(std::coroutine_handle<> /*unused*/) const {}
+
+    T await_resume() const
+        requires(!std::is_void_v<T>)
+    {
+        if (std::holds_alternative<std::string>(m_Handle.promise().m_Result)) {
+            throw std::runtime_error(std::get<std::string>(m_Handle.promise().m_Result));
+        }
+        return std::get<T>(m_Handle.promise().m_Result);
     }
 
-    bool IsReady() const {
-        return m_Handle && m_Handle.done();
+    void await_resume() const
+        requires std::is_void_v<T>
+    {
+        if (std::holds_alternative<std::string>(m_Handle.promise().m_Result)) {
+            throw std::runtime_error(std::get<std::string>(m_Handle.promise().m_Result));
+        }
     }
-
-    void GetResult() {
-        if (!m_Handle) throw std::runtime_error("Invalid task handle");
-
-        if (m_Handle.promise().m_Exception) std::rethrow_exception(m_Handle.promise().m_Exception);
-    }
-
-    auto operator co_await() {
-        struct Awaiter {
-            HandleType m_Handle;
-
-            bool await_ready() {
-                return m_Handle.done();
-            }
-            void await_suspend(std::coroutine_handle<>) {}
-            void await_resume() {
-                if (m_Handle.promise().m_Exception)
-                    std::rethrow_exception(m_Handle.promise().m_Exception);
-            }
-        };
-
-        return Awaiter{m_Handle};
-    }
-
-  private:
-    HandleType m_Handle;
 };
 
-using MCPTaskVoid = MCPTask<void>;
+// Specialized void task
+using MCPTask_Void = MCPTask<void>;
 
 MCP_NAMESPACE_END

@@ -1,14 +1,16 @@
 #include "Auth.h"
 
 #include <Poco/Net/HTTPClientSession.h>
+#include <Poco/Net/HTTPCredentials.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/StreamCopier.h>
+#include <Poco/Timespan.h>
+#include <Poco/Timestamp.h>
 #include <Poco/URI.h>
 
 #include <algorithm>
-#include <chrono>
 #include <mutex>
 #include <sstream>
 #include <unordered_set>
@@ -32,9 +34,8 @@ MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
             std::lock_guard<std::mutex> lock(m_CacheMutex);
             auto iter = m_TokenCache.find(InToken);
             if (iter != m_TokenCache.end()) {
-                auto now = std::chrono::steady_clock::now();
-                auto age =
-                    std::chrono::duration_cast<std::chrono::seconds>(now - iter->second.CachedAt);
+                Poco::Timestamp now;
+                Poco::Timespan age = now - iter->second.CachedAt;
 
                 if (age < m_Config.TokenCacheTimeout) {
                     co_return iter->second.Result.IsAuthorized;
@@ -64,7 +65,7 @@ MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
                     if (!item.empty()) { cached.Result.Scopes.push_back(item); }
                 }
             }
-            cached.CachedAt = std::chrono::steady_clock::now();
+            cached.CachedAt = Poco::Timestamp();
             m_TokenCache[InToken] = cached;
         }
 
@@ -134,10 +135,10 @@ OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
                                        authURI.getPathAndQuery());
         request.setContentType("application/x-www-form-urlencoded");
 
-        // Add authorization header for client credentials
-        std::string credentials = m_Config.ClientID + ":" + m_Config.ClientSecret;
-        // In production, use proper base64 encoding
-        request.set("Authorization", "Basic " + credentials);
+        // Add authorization header using Poco HTTPCredentials for proper Basic auth
+        Poco::Net::HTTPCredentials credentials(m_Config.ClientID, m_Config.ClientSecret);
+        Poco::Net::HTTPResponse dummyResponse; // Needed for authenticate method signature
+        credentials.authenticate(request, dummyResponse);
 
         std::string body = "token=" + InToken;
         request.setContentLength(body.length());
