@@ -130,7 +130,7 @@ struct CallToolRequest : RequestBase {
 };
 
 struct CallToolResult {
-    std::vector<Content> CallContent;
+    std::vector<Content> Content;
     std::optional<bool> IsError;
     std::optional<JSONValue> Meta;
 };
@@ -144,7 +144,7 @@ struct CallToolResponse : ResponseBase {
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CallToolRequest::CallToolParams, Name, Arguments)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CallToolResult, CallContent, IsError, Meta)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CallToolResult, Content, IsError, Meta)
 
 // Prompt-related messages
 struct ListPromptsRequest : RequestBase {
@@ -199,8 +199,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GetPromptResult, Description, Me
 
 // Resource-related messages
 struct ListResourcesRequest : RequestBase {
+    struct ListResourcesParams {
+        std::optional<std::string>
+            Cursor; // Added missing Cursor parameter for pagination (MCP 2025-03-26)
+    } RequestParams;
+
     ListResourcesRequest() {
         Method = "resources/list";
+        Params = RequestParams;
     }
 };
 
@@ -218,6 +224,7 @@ struct ListResourcesResponse : ResponseBase {
     }
 };
 
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListResourcesRequest::ListResourcesParams, Cursor)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListResourcesResult, Resources, NextCursor, Meta)
 
 struct ReadResourceRequest : RequestBase {

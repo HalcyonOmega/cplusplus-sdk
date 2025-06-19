@@ -2,7 +2,7 @@
 
 // MCP SDK - Complete Model Context Protocol Implementation
 // Version: 1.0.0
-// Specification: 2024-11-05
+// Specification: 2025-03-26 (Updated for latest MCP spec)
 
 // Core components
 #include "MCPMessages.h"
@@ -19,6 +19,23 @@
 
 // User-friendly API
 #include "SimpleMCPAPI.h"
+
+// Forward declarations
+class ProgressTracker;
+
+// Progress tracking class for long-running operations
+class ProgressTracker {
+  public:
+    ProgressTracker(const std::string& InRequestID, std::shared_ptr<MCPProtocol> InProtocol);
+
+    MCPTaskVoid UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
+    MCPTaskVoid CompleteProgress();
+
+  private:
+    std::string m_RequestID;
+    std::shared_ptr<MCPProtocol> m_Protocol;
+    std::atomic<bool> m_IsComplete{false};
+};
 
 /*
 USAGE EXAMPLES:
@@ -175,4 +192,9 @@ ITransport (Abstraction)
 StdioTransport | HTTPTransport
     ↓
 Poco | System APIs
+*/
+
+/*
+Advanced Protocol Usage Example:
+See examples below in the file for how to use MCPServer
 */

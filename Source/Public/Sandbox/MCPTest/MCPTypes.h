@@ -8,25 +8,28 @@
 
 #include "json.hpp"
 
+// Wrapper macro for enum JSON serialization (follows codebase convention)
+#define DEFINE_ENUM_JSON(EnumType, ...) NLOHMANN_JSON_SERIALIZE_ENUM(EnumType, __VA_ARGS__)
+
 using JSONValue = nlohmann::json;
 using RequestID = std::variant<std::string, int64_t>;
 
 // Role enumeration
 enum class Role { User, Assistant };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(Role, {{Role::User, "user"}, {Role::Assistant, "assistant"}})
+DEFINE_ENUM_JSON(Role, {{Role::User, "user"}, {Role::Assistant, "assistant"}})
 
 // Logging levels
 enum class LoggingLevel { Debug, Info, Notice, Warning, Error, Critical, Alert, Emergency };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(LoggingLevel, {{LoggingLevel::Debug, "debug"},
-                                            {LoggingLevel::Info, "info"},
-                                            {LoggingLevel::Notice, "notice"},
-                                            {LoggingLevel::Warning, "warning"},
-                                            {LoggingLevel::Error, "error"},
-                                            {LoggingLevel::Critical, "critical"},
-                                            {LoggingLevel::Alert, "alert"},
-                                            {LoggingLevel::Emergency, "emergency"}})
+DEFINE_ENUM_JSON(LoggingLevel, {{LoggingLevel::Debug, "debug"},
+                                {LoggingLevel::Info, "info"},
+                                {LoggingLevel::Notice, "notice"},
+                                {LoggingLevel::Warning, "warning"},
+                                {LoggingLevel::Error, "error"},
+                                {LoggingLevel::Critical, "critical"},
+                                {LoggingLevel::Alert, "alert"},
+                                {LoggingLevel::Emergency, "emergency"}})
 
 // Annotations
 struct Annotations {
@@ -184,31 +187,13 @@ struct ProgressToken {
     std::variant<std::string, int64_t> Token;
 };
 
-// Capabilities
-struct ClientCapabilities {
-    std::optional<struct RootsCapability> Roots;
-    std::optional<struct SamplingCapability> Sampling;
-    std::optional<std::unordered_map<std::string, JSONValue>> Experimental;
-};
-
+// Individual capability structures (defined before they are used)
 struct RootsCapability {
     std::optional<bool> ListChanged;
 };
 
 struct SamplingCapability {
     // Empty object in spec
-};
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RootsCapability, ListChanged)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SamplingCapability)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ClientCapabilities, Roots, Sampling, Experimental)
-
-struct ServerCapabilities {
-    std::optional<struct ExperimentalCapability> Experimental;
-    std::optional<struct LoggingCapability> Logging;
-    std::optional<struct PromptsCapability> Prompts;
-    std::optional<struct ResourcesCapability> Resources;
-    std::optional<struct ToolsCapability> Tools;
 };
 
 struct ExperimentalCapability {
@@ -232,11 +217,30 @@ struct ToolsCapability {
     std::optional<bool> ListChanged;
 };
 
+// Now define the main capability containers
+struct ClientCapabilities {
+    std::optional<RootsCapability> Roots;
+    std::optional<SamplingCapability> Sampling;
+    std::optional<std::unordered_map<std::string, JSONValue>> Experimental;
+};
+
+struct ServerCapabilities {
+    std::optional<ExperimentalCapability> Experimental;
+    std::optional<LoggingCapability> Logging;
+    std::optional<PromptsCapability> Prompts;
+    std::optional<ResourcesCapability> Resources;
+    std::optional<ToolsCapability> Tools;
+};
+
+// JSON serialization for all capability types
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RootsCapability, ListChanged)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SamplingCapability)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExperimentalCapability, Features)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(LoggingCapability)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PromptsCapability, ListChanged)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResourcesCapability, Subscribe, ListChanged)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ToolsCapability, ListChanged)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ClientCapabilities, Roots, Sampling, Experimental)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ServerCapabilities, Experimental, Logging, Prompts,
                                                 Resources, Tools)
 

@@ -15,6 +15,8 @@
 #include <Poco/Thread.h>
 #include <Poco/ThreadPool.h>
 
+#include <chrono>
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -143,9 +145,13 @@ class HTTPTransportServer : public ITransport {
     // Server-specific methods
     void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest,
                            Poco::Net::HTTPServerResponse& InResponse);
+    MCPTaskVoid HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRequest,
+                                         Poco::Net::HTTPServerResponse& InResponse);
     void RegisterSSEClient(const std::string& InClientID,
                            Poco::Net::HTTPServerResponse& InResponse);
     void UnregisterSSEClient(const std::string& InClientID);
+    MCPTaskVoid StreamMessagesToClient(const std::string& InClientID);
+    std::string GenerateUniqueClientID() const;
 
   private:
     MCPTaskVoid SendToSSEClients(const nlohmann::json& InMessage);

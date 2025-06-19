@@ -4,6 +4,8 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -37,6 +39,10 @@ class MCPProtocol {
                                          const Implementation& InClientInfo);
     MCPTaskVoid SendInitialized();
     MCPTask<JSONValue> Ping();
+
+    // Protocol version validation
+    static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS;
+    void ValidateProtocolVersion(const std::string& InVersion) const;
 
     // Message sending utilities
     template <typename TRequest>
@@ -269,4 +275,28 @@ class MCPServer : public MCPProtocol {
         m_Subscriptions; // URI -> Set of client IDs
 
     mutable std::mutex m_HandlersMutex;
+
+    // New additions for compliance fixes
+
+    // Pagination helper methods
+    std::string EncodeCursor(size_t InIndex) const;
+    size_t DecodeCursor(const std::string& InCursor) const;
+    static constexpr size_t DEFAULT_PAGE_SIZE = 100;
+
+    // Progress tracking and tool execution
+    MCPTask<ToolCallResponse> ExecuteToolWithProgress(
+        const Tool& InTool,
+        const std::optional<std::unordered_map<std::string, nlohmann::json>>& InArguments,
+        const std::string& InRequestID);
+
+    // Resource subscription management
+    MCPTaskVoid NotifyResourceSubscribers(const std::string& InURI);
+    std::string GetCurrentClientID() const;
+    MCPTaskVoid SendNotificationToClient(const std::string& InClientID,
+                                         const ResourceUpdatedNotification& InNotification);
+
+    // Updated subscription management with client tracking
+    std::unordered_map<std::string, std::set<std::string>>
+        m_ResourceSubscriptions; // URI -> Set of client IDs
+    mutable std::mutex m_ResourceSubscriptionsMutex;
 };

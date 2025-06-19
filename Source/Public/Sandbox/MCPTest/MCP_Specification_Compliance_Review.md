@@ -1,24 +1,14 @@
 # MCP Specification Compliance Review Prompt
 
 ## Task Overview
-You are an expert AI agent tasked with conducting a comprehensive compliance review of a C++ Model Context Protocol (MCP) SDK implementation against the official MCP specification (2024-11-05 revision). Your goal is to identify any gaps, deviations, or non-compliance issues in the framework.
+You are an expert AI agent tasked with conducting a comprehensive compliance review of a C++ Model Context Protocol (MCP) SDK implementation against the official MCP specification (2025-03-26 revision). Your goal is to identify any gaps, deviations, or non-compliance issues in the framework.
 
 ## Framework to Review
-The C++ MCP SDK framework consists of the following files in `Source/Public/Sandbox/MCPTest/`:
-- `MCPTask.h` - C++20 coroutine task system
-- `MCPTypes.h` - Core MCP data structures and types
-- `MCPMessages.h` - All MCP message types and structures
-- `ITransport.h` - Transport abstraction layer
-- `StdioTransport.h` - Stdio transport implementation
-- `HTTPTransport.h` - StreamableHTTP transport implementation
-- `MCPProtocol.h` - Core protocol handlers (Client/Server)
-- `SimpleMCPAPI.h` - User-friendly wrapper API
-- `MCPSDK.h` - Main SDK header with examples
-- `README.md` - Documentation and usage examples
+The C++ MCP SDK framework consists of files in `Source/Public/Sandbox/MCPTest/`. DO NOT REVIEW OR ATTEMPT TO REFERENCE ANY FILES OUTSIDE OF THIS DIRECTORY.
 
 ## MCP Specification Reference
-Use the official Model Context Protocol specification (2024-11-05) as your compliance baseline:
-- https://modelcontextprotocol.io/specification/2024-11-05/
+Use the official Model Context Protocol specification (2025-03-26) as your compliance baseline:
+- https://modelcontextprotocol.io/specification/2025-03-26/
 - Focus on: Basic Protocol, Transports, Client Features, Server Features
 - Key areas: Messages, Lifecycle, Capabilities, Tools, Prompts, Resources, Sampling, Roots
 
