@@ -1,0 +1,176 @@
+#pragma once
+
+#include "NotificationBase.h"
+#include "PromptBase.h"
+#include "RequestBase.h"
+#include "ResponseBase.h"
+
+MCP_NAMESPACE_BEGIN
+
+// ListPromptsRequest {
+//   MSG_DESCRIPTION : "Sent from the client to request a list of prompts and "
+//                   "prompt templates the server has.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_LIST, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CURSOR : {
+//               MSG_DESCRIPTION :
+//                   "An opaque token representing the current pagination "
+//                   "position.\nIf provided, the server should return "
+//                   "results starting after this cursor.",
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// Sent from the client to request a list of prompts and prompt templates the server has.
+struct ListPromptsRequest : public PaginatedRequest {
+    optional<string> Cursor = nullopt;
+    ListPromptsRequest() : PaginatedRequest(MTHD_PROMPTS_LIST) {}
+};
+
+// ListPromptsResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a prompts/list request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//                           "position after the last returned result.\nIf "
+//                           "present, there may be more results available.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_PROMPTS :
+//             {MSG_ITEMS : {"$ref" : "#/definitions/Prompt"}, MSG_TYPE : MSG_ARRAY}
+//       },
+//         MSG_REQUIRED : [MSG_PROMPTS],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// The server's response to a prompts/list request from the client.
+struct ListPromptsResult : public PaginatedResult {
+    vector<Prompt> Prompts;
+};
+
+// GetPromptRequest {
+//   MSG_DESCRIPTION : "Used by the client to get a prompt provided by the
+//   server.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_GET, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_ARGUMENTS : {
+//               MSG_ADDITIONAL_PROPERTIES : {MSG_TYPE : MSG_STRING},
+//               MSG_DESCRIPTION : "Arguments to use for templating the prompt.",
+//               MSG_TYPE : MSG_OBJECT
+//             },
+//             MSG_NAME : {
+//               MSG_DESCRIPTION : "The name of the prompt or prompt template.",
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_REQUIRED : [MSG_NAME],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// Used by the client to get a prompt provided by the server.
+struct GetPromptRequest : public RequestBase {
+    struct GetPromptRequestParams {
+        string Name;                           // The name of the prompt or prompt template.
+        optional<AdditionalStrings> Arguments; // Arguments to use for templating the prompt.
+    };
+
+    GetPromptRequestParams Params;
+
+    GetPromptRequest() : RequestBase(MTHD_PROMPTS_GET) {}
+};
+
+// GetPromptResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a prompts/get request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION : "An optional description for the prompt.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         "messages" : {
+//           MSG_ITEMS : {"$ref" : "#/definitions/PromptMessage"},
+//           MSG_TYPE : MSG_ARRAY
+//         }
+//       },
+//         MSG_REQUIRED : ["messages"],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// The server's response to a prompts/get request from the client.
+struct GetPromptResult : public Result {
+    optional<string> Description;   // An optional description for the prompt.
+    vector<PromptMessage> Messages; // A list of prompt messages.
+};
+
+// PromptListChangedNotification {
+//   MSG_DESCRIPTION : "An optional notification from the server to the client, "
+//                   "informing it that the list of prompts it offers has "
+//                   "changed. This may be issued by servers without any "
+//                   "previous subscription from the client.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD :
+//             {MSG_CONST : MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED, MSG_TYPE :
+//             MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
+//               allow "
+//                               "clients and servers to attach additional "
+//                               "metadata to their notifications.",
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// An optional notification from the server to the client, informing it that the list of prompts it
+// offers has changed. This may be issued by servers without any previous subscription from the
+// client.
+struct PromptListChangedNotification : public NotificationBase {
+    PromptListChangedNotification() : NotificationBase(MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED) {}
+};
+
+MCP_NAMESPACE_END

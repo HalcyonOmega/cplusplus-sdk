@@ -1,0 +1,28 @@
+CompileFlags:
+  # Use compile_commands.json for all flags, but ensure C++20 is used by clangd.
+  Remove: 
+    - "-std=*"  # Remove any std flags from compile commands
+  Add:
+    - "-std=c++20"
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+Hover:
+  ShowAKA: true
+
+Completion:
+  AllScopes: true
+
+Diagnostics:
+  ClangTidy:
+    Add: 
+      - "modernize-*"
+      - "readability-*"
+    Remove:
+      - "modernize-use-trailing-return-type" 
