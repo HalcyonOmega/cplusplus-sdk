@@ -56,37 +56,45 @@ struct NotificationBase : MessageBase {
 
 // Initialize request/response
 struct InitializeRequest : RequestBase {
-    struct InitializeParams {
+    struct InitializeRequestParams {
         std::string ProtocolVersion;
         ClientCapabilities Capabilities;
         Implementation ClientInfo;
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(InitializeParams, ProtocolVersion, Capabilities, ClientInfo)
+
+        JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "ProtocolVersion")
+        JKEY(CAPABILITIESKEY, Capabilities, "Capabilities")
+        JKEY(CLIENTINFOKEY, ClientInfo, "ClientInfo")
+
+        DEFINE_TYPE_JSON(InitializeRequestParams, PROTOCOLVERSIONKEY, CAPABILITIESKEY,
+                         CLIENTINFOKEY)
     };
 
     InitializeRequest() {
         Method = "initialize";
-        Params = InitializeParams{};
+        Params = InitializeRequestParams{};
     }
-};
-
-struct InitializeResult {
-    std::string ProtocolVersion;
-    ServerCapabilities Capabilities;
-    Implementation ServerInfo;
-    std::optional<JSONValue> Meta;
 };
 
 struct InitializeResponse : ResponseBase {
-    InitializeResult ResponseResult;
+    struct InitializeResult {
+        std::string ProtocolVersion;
+        ServerCapabilities Capabilities;
+        Implementation ServerInfo;
+        std::optional<JSONValue> Meta;
+
+        JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "ProtocolVersion")
+        JKEY(CAPABILITIESKEY, Capabilities, "Capabilities")
+        JKEY(SERVERINFOKEY, ServerInfo, "ServerInfo")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(InitializeResult, PROTOCOLVERSIONKEY, CAPABILITIESKEY, SERVERINFOKEY,
+                         METAKEY)
+    };
 
     InitializeResponse() {
-        Result = ResponseResult;
+        Result = InitializeResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InitializeRequest, Method, Params)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InitializeResult, ProtocolVersion, Capabilities,
-                                                ServerInfo, Meta)
 
 // Initialized notification
 struct InitializedNotification : NotificationBase {
@@ -115,54 +123,56 @@ struct ListToolsRequest : RequestBase {
     }
 };
 
-struct ListToolsResult {
-    std::vector<Tool> Tools;
-    std::optional<JSONValue> Meta;
-
-    JKEY(TOOLSKEY, Tools, "tools")
-    JKEY(METAKEY, Meta, "_meta")
-
-    DEFINE_TYPE_JSON(ListToolsResult, TOOLSKEY, METAKEY)
-};
-
 struct ListToolsResponse : ResponseBase {
-    ListToolsResult ResponseResult;
+    struct ListToolsResult {
+        std::vector<Tool> Tools;
+        std::optional<JSONValue> Meta;
+
+        JKEY(TOOLSKEY, Tools, "tools")
+        JKEY(METAKEY, Meta, "_meta")
+
+        DEFINE_TYPE_JSON(ListToolsResult, TOOLSKEY, METAKEY)
+    };
 
     ListToolsResponse() {
-        Result = ResponseResult;
+        Result = ListToolsResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListToolsResult, Tools, Meta)
 
 struct CallToolRequest : RequestBase {
     struct CallToolParams {
         std::string Name;
         std::optional<std::unordered_map<std::string, JSONValue>> Arguments;
-    } RequestParams;
+
+        JKEY(NAMEKEY, Name, "Name")
+        JKEY(ARGUMENTSKEY, Arguments, "Arguments")
+
+        DEFINE_TYPE_JSON(CallToolParams, NAMEKEY, ARGUMENTSKEY)
+    };
 
     CallToolRequest() {
         Method = "tools/call";
-        Params = RequestParams;
+        Params = CallToolParams{};
     }
-};
-
-struct CallToolResult {
-    std::vector<Content> Content;
-    std::optional<bool> IsError;
-    std::optional<JSONValue> Meta;
 };
 
 struct CallToolResponse : ResponseBase {
-    CallToolResult ResponseResult;
+    struct CallToolResult {
+        std::vector<Content> Content;
+        std::optional<bool> IsError;
+        std::optional<JSONValue> Meta;
+
+        JKEY(CONTENTKEY, Content, "Content")
+        JKEY(ISERRORKEY, IsError, "IsError")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(CallToolResult, CONTENTKEY, ISERRORKEY, METAKEY)
+    };
 
     CallToolResponse() {
-        Result = ResponseResult;
+        Result = CallToolResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CallToolRequest::CallToolParams, Name, Arguments)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CallToolResult, Content, IsError, Meta)
 
 // Prompt-related messages
 struct ListPromptsRequest : RequestBase {
@@ -171,132 +181,152 @@ struct ListPromptsRequest : RequestBase {
     }
 };
 
-struct ListPromptsResult {
-    std::vector<Prompt> Prompts;
-    std::optional<JSONValue> Meta;
-};
-
 struct ListPromptsResponse : ResponseBase {
-    ListPromptsResult ResponseResult;
+    struct ListPromptsResult {
+        std::vector<Prompt> Prompts;
+        std::optional<JSONValue> Meta;
+
+        JKEY(PROMPTSKEY, Prompts, "Prompts")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(ListPromptsResult, PROMPTSKEY, METAKEY)
+    };
 
     ListPromptsResponse() {
-        Result = ResponseResult;
+        Result = ListPromptsResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListPromptsResult, Prompts, Meta)
 
 struct GetPromptRequest : RequestBase {
     struct GetPromptParams {
         std::string Name;
         std::optional<std::unordered_map<std::string, std::string>> Arguments;
-    } RequestParams;
+
+        JKEY(NAMEKEY, Name, "Name")
+        JKEY(ARGUMENTSKEY, Arguments, "Arguments")
+
+        DEFINE_TYPE_JSON(GetPromptParams, NAMEKEY, ARGUMENTSKEY)
+    };
 
     GetPromptRequest() {
         Method = "prompts/get";
-        Params = RequestParams;
+        Params = GetPromptParams{};
     }
-};
-
-struct GetPromptResult {
-    std::optional<std::string> Description;
-    std::vector<Content> Messages;
-    std::optional<JSONValue> Meta;
 };
 
 struct GetPromptResponse : ResponseBase {
-    GetPromptResult ResponseResult;
+    struct GetPromptResult {
+        std::optional<std::string> Description;
+        std::vector<Content> Messages;
+        std::optional<JSONValue> Meta;
+
+        JKEY(DESCRIPTIONKEY, Description, "Description")
+        JKEY(MESSAGESKEY, Messages, "Messages")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(GetPromptResult, DESCRIPTIONKEY, MESSAGESKEY, METAKEY)
+    };
 
     GetPromptResponse() {
-        Result = ResponseResult;
+        Result = GetPromptResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GetPromptRequest::GetPromptParams, Name, Arguments)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GetPromptResult, Description, Messages, Meta)
 
 // Resource-related messages
 struct ListResourcesRequest : RequestBase {
     struct ListResourcesParams {
-        std::optional<std::string>
-            Cursor; // Added missing Cursor parameter for pagination (MCP 2025-03-26)
-    } RequestParams;
+        std::optional<std::string> Cursor;
+
+        JKEY(CURSORKEY, Cursor, "Cursor")
+
+        DEFINE_TYPE_JSON(ListResourcesParams, CURSORKEY)
+    };
 
     ListResourcesRequest() {
         Method = "resources/list";
-        Params = RequestParams;
+        Params = ListResourcesParams{};
     }
-};
-
-struct ListResourcesResult {
-    std::vector<Resource> Resources;
-    std::optional<std::string> NextCursor;
-    std::optional<JSONValue> Meta;
 };
 
 struct ListResourcesResponse : ResponseBase {
-    ListResourcesResult ResponseResult;
+    struct ListResourcesResult {
+        std::vector<Resource> Resources;
+        std::optional<std::string> NextCursor;
+        std::optional<JSONValue> Meta;
+
+        JKEY(RESOURCESKEY, Resources, "Resources")
+        JKEY(NEXTCURSORKEY, NextCursor, "NextCursor")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(ListResourcesResult, RESOURCESKEY, NEXTCURSORKEY, METAKEY)
+    };
 
     ListResourcesResponse() {
-        Result = ResponseResult;
+        Result = ListResourcesResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListResourcesRequest::ListResourcesParams, Cursor)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListResourcesResult, Resources, NextCursor, Meta)
 
 struct ReadResourceRequest : RequestBase {
     struct ReadResourceParams {
         std::string URI;
-    } RequestParams;
+
+        JKEY(URIKEY, URI, "URI")
+
+        DEFINE_TYPE_JSON(ReadResourceParams, URIKEY)
+    };
 
     ReadResourceRequest() {
         Method = "resources/read";
-        Params = RequestParams;
+        Params = ReadResourceParams{};
     }
-};
-
-struct ReadResourceResult {
-    std::vector<Content> Contents;
-    std::optional<JSONValue> Meta;
 };
 
 struct ReadResourceResponse : ResponseBase {
-    ReadResourceResult ResponseResult;
+    struct ReadResourceResult {
+        std::vector<Content> Contents;
+        std::optional<JSONValue> Meta;
+
+        JKEY(CONTENTSKEY, Contents, "Contents")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(ReadResourceResult, CONTENTSKEY, METAKEY)
+    };
 
     ReadResourceResponse() {
-        Result = ResponseResult;
+        Result = ReadResourceResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReadResourceRequest::ReadResourceParams, URI)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReadResourceResult, Contents, Meta)
 
 // Subscribe/Unsubscribe
 struct SubscribeRequest : RequestBase {
     struct SubscribeParams {
         std::string URI;
-    } RequestParams;
+
+        JKEY(URIKEY, URI, "URI")
+
+        DEFINE_TYPE_JSON(SubscribeParams, URIKEY)
+    };
 
     SubscribeRequest() {
         Method = "resources/subscribe";
-        Params = RequestParams;
+        Params = SubscribeParams{};
     }
 };
 
 struct UnsubscribeRequest : RequestBase {
     struct UnsubscribeParams {
         std::string URI;
-    } RequestParams;
+
+        JKEY(URIKEY, URI, "URI")
+
+        DEFINE_TYPE_JSON(UnsubscribeParams, URIKEY)
+    };
 
     UnsubscribeRequest() {
         Method = "resources/unsubscribe";
-        Params = RequestParams;
+        Params = UnsubscribeParams{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SubscribeRequest::SubscribeParams, URI)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UnsubscribeRequest::UnsubscribeParams, URI)
 
 // Sampling-related messages
 struct CreateMessageRequest : RequestBase {
@@ -309,34 +339,47 @@ struct CreateMessageRequest : RequestBase {
         std::optional<std::vector<std::string>> StopSequences;
         std::optional<ModelPreferences> ModelPrefs;
         std::optional<JSONValue> Metadata;
-    } RequestParams;
+
+        JKEY(MESSAGESKEY, Messages, "Messages")
+        JKEY(MAXTOKENSKEY, MaxTokens, "MaxTokens")
+        JKEY(SYSTEMPROMPTKEY, SystemPrompt, "SystemPrompt")
+        JKEY(INCLUDECONTEXTKEY, IncludeContext, "IncludeContext")
+        JKEY(TEMPERATUREKEY, Temperature, "Temperature")
+        JKEY(STOPSEQUENCESKEY, StopSequences, "StopSequences")
+        JKEY(MODELPREFSKEY, ModelPrefs, "ModelPrefs")
+        JKEY(METADATAKEY, Metadata, "Metadata")
+
+        DEFINE_TYPE_JSON(CreateMessageParams, MESSAGESKEY, MAXTOKENSKEY, SYSTEMPROMPTKEY,
+                         INCLUDECONTEXTKEY, TEMPERATUREKEY, STOPSEQUENCESKEY, MODELPREFSKEY,
+                         METADATAKEY)
+    };
 
     CreateMessageRequest() {
         Method = "sampling/createMessage";
-        Params = RequestParams;
+        Params = CreateMessageParams{};
     }
-};
-
-struct CreateMessageResult {
-    std::string Model;
-    Role ResponseRole;
-    Content ResponseContent;
-    std::optional<JSONValue> Meta;
 };
 
 struct CreateMessageResponse : ResponseBase {
-    CreateMessageResult ResponseResult;
+    struct CreateMessageResult {
+        std::string Model;
+        Role ResponseRole;
+        Content ResponseContent;
+        std::optional<JSONValue> Meta;
+
+        JKEY(MODELKEY, Model, "Model")
+        JKEY(RESPONSEROLEKEY, ResponseRole, "ResponseRole")
+        JKEY(RESPONSECONTENTKEY, ResponseContent, "ResponseContent")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(CreateMessageResult, MODELKEY, RESPONSEROLEKEY, RESPONSECONTENTKEY,
+                         METAKEY)
+    };
 
     CreateMessageResponse() {
-        Result = ResponseResult;
+        Result = CreateMessageResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CreateMessageRequest::CreateMessageParams, Messages,
-                                                MaxTokens, SystemPrompt, IncludeContext,
-                                                Temperature, StopSequences, ModelPrefs, Metadata)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CreateMessageResult, Model, ResponseRole,
-                                                ResponseContent, Meta)
 
 // Roots-related messages
 struct ListRootsRequest : RequestBase {
@@ -345,50 +388,56 @@ struct ListRootsRequest : RequestBase {
     }
 };
 
-struct ListRootsResult {
-    std::vector<Root> Roots;
-    std::optional<JSONValue> Meta;
-};
-
 struct ListRootsResponse : ResponseBase {
-    ListRootsResult ResponseResult;
+    struct ListRootsResult {
+        std::vector<Root> Roots;
+        std::optional<JSONValue> Meta;
+
+        JKEY(ROOTSKEY, Roots, "Roots")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(ListRootsResult, ROOTSKEY, METAKEY)
+    };
 
     ListRootsResponse() {
-        Result = ResponseResult;
+        Result = ListRootsResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ListRootsResult, Roots, Meta)
 
 // Logging messages
 struct SetLevelRequest : RequestBase {
     struct SetLevelParams {
         LoggingLevel Level;
-    } RequestParams;
+
+        JKEY(LEVELKEY, Level, "Level")
+
+        DEFINE_TYPE_JSON(SetLevelParams, LEVELKEY)
+    };
 
     SetLevelRequest() {
         Method = "logging/setLevel";
-        Params = RequestParams;
+        Params = SetLevelParams{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SetLevelRequest::SetLevelParams, Level)
 
 struct LoggingMessageNotification : NotificationBase {
     struct LoggingParams {
         LoggingLevel Level;
         std::string Logger;
         JSONValue Data;
-    } NotificationParams;
+
+        JKEY(LEVELKEY, Level, "Level")
+        JKEY(LOGGERKEY, Logger, "Logger")
+        JKEY(DATAKEY, Data, "Data")
+
+        DEFINE_TYPE_JSON(LoggingParams, LEVELKEY, LOGGERKEY, DATAKEY)
+    };
 
     LoggingMessageNotification() {
         Method = "notifications/message";
-        Params = NotificationParams;
+        Params = LoggingParams{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(LoggingMessageNotification::LoggingParams, Level,
-                                                Logger, Data)
 
 // Progress notification
 struct ProgressNotification : NotificationBase {
@@ -396,32 +445,37 @@ struct ProgressNotification : NotificationBase {
         RequestID ProgressRequestID;
         double Progress; // 0-1
         std::optional<int64_t> Total;
-    } NotificationParams;
+
+        JKEY(PROGRESSREQUESTIDKEY, ProgressRequestID, "ProgressRequestID")
+        JKEY(PROGRESSKEY, Progress, "Progress")
+        JKEY(TOTALKEY, Total, "Total")
+
+        DEFINE_TYPE_JSON(ProgressParams, PROGRESSREQUESTIDKEY, PROGRESSKEY, TOTALKEY)
+    };
 
     ProgressNotification() {
         Method = "notifications/progress";
-        Params = NotificationParams;
+        Params = ProgressParams{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ProgressNotification::ProgressParams,
-                                                ProgressRequestID, Progress, Total)
 
 // Cancellation notification
 struct CancelledNotification : NotificationBase {
     struct CancelledParams {
         RequestID CancelRequestID;
         std::optional<std::string> Reason;
-    } NotificationParams;
+
+        JKEY(CANCELREQUESTIDKEY, CancelRequestID, "CancelRequestID")
+        JKEY(REASONKEY, Reason, "Reason")
+
+        DEFINE_TYPE_JSON(CancelledParams, CANCELREQUESTIDKEY, REASONKEY)
+    };
 
     CancelledNotification() {
         Method = "notifications/cancelled";
-        Params = NotificationParams;
+        Params = CancelledParams{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CancelledNotification::CancelledParams,
-                                                CancelRequestID, Reason)
 
 // Change notifications
 struct ResourceListChangedNotification : NotificationBase {
@@ -433,11 +487,15 @@ struct ResourceListChangedNotification : NotificationBase {
 struct ResourceUpdatedNotification : NotificationBase {
     struct ResourceUpdatedParams {
         std::string URI;
-    } NotificationParams;
+
+        JKEY(URIKEY, URI, "URI")
+
+        DEFINE_TYPE_JSON(ResourceUpdatedParams, URIKEY)
+    };
 
     ResourceUpdatedNotification() {
         Method = "notifications/resources/updated";
-        Params = NotificationParams;
+        Params = ResourceUpdatedParams{};
     }
 };
 
@@ -459,54 +517,66 @@ struct RootsListChangedNotification : NotificationBase {
     }
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResourceUpdatedNotification::ResourceUpdatedParams,
-                                                URI)
-
 // Completion request/response
 struct CompleteRequest : RequestBase {
     struct CompleteParams {
         struct CompletionRef {
             std::string Type; // "ref/prompt" or "ref/resource"
             std::string URI;
+
+            JKEY(TYPEKEY, Type, "Type")
+            JKEY(URIKEY, URI, "URI")
+
+            DEFINE_TYPE_JSON(CompletionRef, TYPEKEY, URIKEY)
         } CompletionReference;
 
         struct CompletionArgument {
             std::string Name;
             std::string Value;
+
+            JKEY(NAMEKEY, Name, "Name")
+            JKEY(VALUEKEY, Value, "Value")
+
+            DEFINE_TYPE_JSON(CompletionArgument, NAMEKEY, VALUEKEY)
         } Argument;
-    } RequestParams;
+
+        JKEY(COMPLETIONREFERENCEKEY, CompletionReference, "CompletionReference")
+        JKEY(ARGUMENTKEY, Argument, "Argument")
+
+        DEFINE_TYPE_JSON(CompleteParams, COMPLETIONREFERENCEKEY, ARGUMENTKEY)
+    };
 
     CompleteRequest() {
         Method = "completion/complete";
-        Params = RequestParams;
+        Params = CompleteParams{};
     }
-};
-
-struct CompleteResult {
-    struct Completion {
-        std::vector<std::string> Values;
-        std::optional<int64_t> Total;
-        std::optional<bool> HasMore;
-    } CompletionData;
-    std::optional<JSONValue> Meta;
 };
 
 struct CompleteResponse : ResponseBase {
-    CompleteResult ResponseResult;
+    struct CompleteResult {
+        struct Completion {
+            std::vector<std::string> Values;
+            std::optional<int64_t> Total;
+            std::optional<bool> HasMore;
+
+            JKEY(VALUESKEY, Values, "Values")
+            JKEY(TOTALKEY, Total, "Total")
+            JKEY(HASMOREKEY, HasMore, "HasMore")
+
+            DEFINE_TYPE_JSON(Completion, VALUESKEY, TOTALKEY, HASMOREKEY)
+        } CompletionData;
+        std::optional<JSONValue> Meta;
+
+        JKEY(COMPLETIONDATAKEY, CompletionData, "CompletionData")
+        JKEY(METAKEY, Meta, "Meta")
+
+        DEFINE_TYPE_JSON(CompleteResult, COMPLETIONDATAKEY, METAKEY)
+    };
 
     CompleteResponse() {
-        Result = ResponseResult;
+        Result = CompleteResult{};
     }
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CompleteRequest::CompleteParams::CompletionRef,
-                                                Type, URI)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CompleteRequest::CompleteParams::CompletionArgument,
-                                                Name, Value)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CompleteRequest::CompleteParams,
-                                                CompletionReference, Argument)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CompleteResult::Completion, Values, Total, HasMore)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CompleteResult, CompletionData, Meta)
 
 // Union types for polymorphic handling
 using AnyRequest =
