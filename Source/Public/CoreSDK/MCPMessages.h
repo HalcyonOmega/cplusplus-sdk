@@ -4,10 +4,10 @@
 #include <string>
 #include <variant>
 
-#include "JSONProxy.h"
+#include "../Macros.h"
+#include "../Proxies/JSONProxy.h"
+#include "../Utilities/ThirdParty/json.hpp"
 #include "MCPTypes.h"
-#include "Macros.h"
-#include "json.hpp"
 
 MCP_NAMESPACE_BEGIN
 

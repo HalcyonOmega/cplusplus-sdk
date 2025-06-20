@@ -3,8 +3,8 @@
 #include <optional>
 #include <type_traits>
 
-#include "Macros.h"
-#include "json.hpp"
+#include "../Macros.h"
+#include "../Utilities/ThirdParty/json.hpp"
 
 MCP_NAMESPACE_BEGIN
 
@@ -14,7 +14,9 @@ concept IsBasicJSON = nlohmann::detail::is_basic_json<T>::value;
 
 // Concept: checks if a type is a specialization of std::optional
 template <typename T>
-concept IsOptional = requires(T Type) { std::same_as<T, std::optional<typename T::value_type>>; };
+concept IsOptional = requires { typename T::value_type; } && requires {
+    requires std::same_as<T, std::optional<typename T::value_type>>;
+};
 
 // -----------------------------------------------------------------------------
 // Custom JSON serialization macros with key renaming support
@@ -88,6 +90,7 @@ concept IsOptional = requires(T Type) { std::same_as<T, std::optional<typename T
     friend void from_json(const BasicJSONType& JSON_J, Type& JSON_T) {                             \
         __VA_ARGS__                                                                                \
     }
+
 // -----------------------------------------------------------------------------
 // Enum serialization with C++20 features and longer parameter names
 // -----------------------------------------------------------------------------
