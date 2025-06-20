@@ -55,6 +55,10 @@ concept IsOptional = requires { typename T::value_type; } && requires {
     DEFINE_TO_JSON(Type, APPLY_TO_JSON_KEYS(__VA_ARGS__))                                          \
     DEFINE_FROM_JSON(Type, APPLY_FROM_JSON_KEYS(__VA_ARGS__))
 
+#define DEFINE_TYPE_JSON_DERIVED(Type, BaseType, ...)                                              \
+    DEFINE_TO_JSON_DERIVED(Type, BaseType, APPLY_TO_JSON_KEYS(__VA_ARGS__))                        \
+    DEFINE_FROM_JSON_DERIVED(Type, BaseType, APPLY_FROM_JSON_KEYS(__VA_ARGS__))
+
 // Helper macros to apply operations to all JKEY tokens
 #define APPLY_TO_JSON_KEYS(...) FOR_EACH_JKEY(USE_JKEY_TO_JSON, __VA_ARGS__)
 #define APPLY_FROM_JSON_KEYS(...) FOR_EACH_JKEY(USE_JKEY_FROM_JSON, __VA_ARGS__)
@@ -88,6 +92,22 @@ concept IsOptional = requires { typename T::value_type; } && requires {
     template <typename BasicJSONType>                                                              \
         requires IsBasicJSON<BasicJSONType>                                                        \
     friend void from_json(const BasicJSONType& JSON_J, Type& JSON_T) {                             \
+        __VA_ARGS__                                                                                \
+    }
+
+#define DEFINE_TO_JSON_DERIVED(Type, BaseType, ...)                                                \
+    template <typename BasicJSONType>                                                              \
+        requires IsBasicJSON<BasicJSONType>                                                        \
+    friend void to_json(BasicJSONType& JSON_J, const Type& JSON_T) {                               \
+        to_json(JSON_J, static_cast<const BaseType&>(JSON_T));                                     \
+        __VA_ARGS__                                                                                \
+    }
+
+#define DEFINE_FROM_JSON_DERIVED(Type, BaseType, ...)                                              \
+    template <typename BasicJSONType>                                                              \
+        requires IsBasicJSON<BasicJSONType>                                                        \
+    friend void from_json(const BasicJSONType& JSON_J, Type& JSON_T) {                             \
+        from_json(JSON_J, static_cast<BaseType&>(JSON_T));                                         \
         __VA_ARGS__                                                                                \
     }
 

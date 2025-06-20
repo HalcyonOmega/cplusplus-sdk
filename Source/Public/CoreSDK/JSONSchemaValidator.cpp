@@ -1,8 +1,8 @@
 #include "JSONSchemaValidator.h"
 
 #include <algorithm>
-#include <format>
 #include <ranges>
+#include <string>
 
 MCP_NAMESPACE_BEGIN
 
@@ -19,9 +19,9 @@ JSONSchemaValidator::ValidateRecursive(const nlohmann::json& InData, const JSONS
 
     // Check basic type matching
     if (!IsValidType(InData, InSchema.Type)) {
-        result.AddError(std::format("Type mismatch at {}: expected '{}', got '{}'",
-                                    InPath.empty() ? "root" : std::string(InPath), InSchema.Type,
-                                    GetJSONType(InData)));
+        const std::string path = InPath.empty() ? "root" : std::string(InPath);
+        result.AddError("Type mismatch at " + path + ": expected '" + InSchema.Type + "', got '"
+                        + GetJSONType(InData) + "'");
         return result;
     }
 
@@ -74,7 +74,7 @@ JSONSchemaValidator::ValidateObjectType(const nlohmann::json& InData, const JSON
     if (InSchema.Required.has_value()) {
         for (const auto& requiredProp : *InSchema.Required) {
             if (!InData.contains(requiredProp)) {
-                result.AddError(std::format("Missing required property: '{}'", requiredProp));
+                result.AddError("Missing required property: '" + requiredProp + "'");
             }
         }
     }
@@ -91,8 +91,8 @@ JSONSchemaValidator::ValidateObjectType(const nlohmann::json& InData, const JSON
                 if (propSchema.contains("type")) {
                     const std::string expectedType = propSchema.at("type").get<std::string>();
                     if (!IsValidType(value, expectedType)) {
-                        result.AddError(std::format("Property '{}': expected type '{}', got '{}'",
-                                                    key, expectedType, GetJSONType(value)));
+                        result.AddError("Property '" + key + "': expected type '" + expectedType
+                                        + "', got '" + GetJSONType(value) + "'");
                     }
                 }
             }

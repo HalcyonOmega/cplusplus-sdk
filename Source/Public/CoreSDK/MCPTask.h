@@ -16,7 +16,8 @@ template <typename T> struct MCPTask;
 // Primary template for coroutine tasks that return a value
 template <typename T> struct MCPTask {
     struct promise_type {
-        std::variant<T, std::string> m_Result;
+        T m_Result;
+        std::optional<std::string> m_Exception;
 
         [[nodiscard]] MCPTask get_return_object() {
             return MCPTask{std::coroutine_handle<promise_type>::from_promise(*this)};
@@ -34,7 +35,7 @@ template <typename T> struct MCPTask {
         }
 
         void unhandled_exception() {
-            m_Result = "Coroutine exception occurred";
+            m_Exception = "Coroutine exception occurred";
         }
     };
 

@@ -29,7 +29,7 @@ struct RequestBase : MessageBase {
     JKEY(METHODKEY, Method, "method")
     JKEY(PARAMSKEY, Params, "params")
 
-    DEFINE_TYPE_JSON(RequestBase, IDKEY, METHODKEY, PARAMSKEY)
+    DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 };
 
 struct ResponseBase : MessageBase {
@@ -41,7 +41,7 @@ struct ResponseBase : MessageBase {
     JKEY(RESULTKEY, Result, "result")
     JKEY(ERRORKEY, Error, "error")
 
-    DEFINE_TYPE_JSON(ResponseBase, IDKEY, RESULTKEY, ERRORKEY)
+    DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY, ERRORKEY)
 };
 
 struct NotificationBase : MessageBase {
@@ -51,7 +51,7 @@ struct NotificationBase : MessageBase {
     JKEY(METHODKEY, Method, "method")
     JKEY(PARAMSKEY, Params, "params")
 
-    DEFINE_TYPE_JSON(NotificationBase, METHODKEY, PARAMSKEY)
+    DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 };
 
 // Initialize request/response
@@ -120,7 +120,7 @@ struct ListToolsResult {
     std::optional<JSONValue> Meta;
 
     JKEY(TOOLSKEY, Tools, "tools")
-    JKEY(METAKEY, Meta, "_meta") // Uses default key "Meta"
+    JKEY(METAKEY, Meta, "_meta")
 
     DEFINE_TYPE_JSON(ListToolsResult, TOOLSKEY, METAKEY)
 };

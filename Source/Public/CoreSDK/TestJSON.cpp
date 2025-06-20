@@ -1,6 +1,5 @@
 #include <iostream>
 #include <optional>
-#include <variant>
 
 #include "../Proxies/JSONProxy.h"
 
@@ -37,7 +36,7 @@ struct RequestBase : MessageBase {
     JKEY(METHODKEY, Method, "method")
     JKEY(PARAMSKEY, Params, "params")
 
-    DEFINE_TYPE_JSON(RequestBase, IDKEY, METHODKEY, PARAMSKEY)
+    DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 };
 
 struct ResponseBase : MessageBase {

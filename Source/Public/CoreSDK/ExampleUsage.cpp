@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include "MCPSDK.h"
 #include "SimpleMCPAPI.h"
 
 // Example 1: Simple MCP Server with Tools
