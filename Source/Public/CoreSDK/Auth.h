@@ -47,20 +47,20 @@ struct OAuth2Config {
 class MCPAuthProvider {
   public:
     virtual ~MCPAuthProvider() = default;
-    virtual MCPTask<bool> ValidateToken(const std::string& InToken) = 0;
-    virtual MCPTask<AuthResult> AuthorizeRequest(const std::string& InMethod,
-                                                 const std::string& InToken) = 0;
+    [[nodiscard]] virtual MCPTask<bool> ValidateToken(const std::string& InToken) = 0;
+    [[nodiscard]] virtual MCPTask<AuthResult> AuthorizeRequest(const std::string& InMethod,
+                                                               const std::string& InToken) = 0;
 };
 
 // OAuth 2.1 authorization provider
-class OAuth2AuthProvider : public MCPAuthProvider {
+class OAuth2AuthProvider final : public MCPAuthProvider {
   public:
     explicit OAuth2AuthProvider(const OAuth2Config& InConfig);
-    ~OAuth2AuthProvider() override;
+    ~OAuth2AuthProvider() noexcept override;
 
-    MCPTask<bool> ValidateToken(const std::string& InToken) override;
-    MCPTask<AuthResult> AuthorizeRequest(const std::string& InMethod,
-                                         const std::string& InToken) override;
+    [[nodiscard]] MCPTask<bool> ValidateToken(const std::string& InToken) override;
+    [[nodiscard]] MCPTask<AuthResult> AuthorizeRequest(const std::string& InMethod,
+                                                       const std::string& InToken) override;
 
   private:
     MCPTask<nlohmann::json> ValidateTokenWithAuthServer(const std::string& InToken);
@@ -79,14 +79,14 @@ class OAuth2AuthProvider : public MCPAuthProvider {
 };
 
 // Simple Bearer token provider (for development/testing)
-class BearerTokenAuthProvider : public MCPAuthProvider {
+class BearerTokenAuthProvider final : public MCPAuthProvider {
   public:
     explicit BearerTokenAuthProvider(
         const std::unordered_map<std::string, std::vector<std::string>>& InValidTokens);
 
-    MCPTask<bool> ValidateToken(const std::string& InToken) override;
-    MCPTask<AuthResult> AuthorizeRequest(const std::string& InMethod,
-                                         const std::string& InToken) override;
+    [[nodiscard]] MCPTask<bool> ValidateToken(const std::string& InToken) override;
+    [[nodiscard]] MCPTask<AuthResult> AuthorizeRequest(const std::string& InMethod,
+                                                       const std::string& InToken) override;
 
   private:
     std::unordered_map<std::string, std::vector<std::string>> m_ValidTokens; // token -> scopes
@@ -95,9 +95,10 @@ class BearerTokenAuthProvider : public MCPAuthProvider {
 // Authorization utilities
 class AuthUtils {
   public:
-    static std::optional<std::string> ExtractBearerToken(Poco::Net::HTTPServerRequest& InRequest);
-    static bool IsPublicMethod(const std::string& InMethod);
-    static std::vector<std::string> GetRequiredScopes(const std::string& InMethod);
+    [[nodiscard]] static std::optional<std::string>
+    ExtractBearerToken(Poco::Net::HTTPServerRequest& InRequest);
+    [[nodiscard]] static bool IsPublicMethod(const std::string& InMethod);
+    [[nodiscard]] static std::vector<std::string> GetRequiredScopes(const std::string& InMethod);
 };
 
 MCP_NAMESPACE_END

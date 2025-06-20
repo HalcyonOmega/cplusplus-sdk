@@ -14,51 +14,46 @@ JSONSchemaValidator::ValidateAgainstSchema(const nlohmann::json& InData,
 
 JSONSchemaValidator::ValidationResult
 JSONSchemaValidator::ValidateRecursive(const nlohmann::json& InData, const JSONSchema& InSchema,
-                                       const std::string& InPath) {
+                                       std::string_view InPath) {
     ValidationResult result;
 
     // Check basic type matching
     if (!IsValidType(InData, InSchema.Type)) {
         result.AddError(std::format("Type mismatch at {}: expected '{}', got '{}'",
-                                    InPath.empty() ? "root" : InPath, InSchema.Type,
+                                    InPath.empty() ? "root" : std::string(InPath), InSchema.Type,
                                     GetJSONType(InData)));
         return result;
     }
 
     // Type-specific validation
     if (InSchema.Type == "object") {
-        auto objectResult = ValidateObjectType(InData, InSchema);
-        if (!objectResult.IsValid) {
+        if (auto objectResult = ValidateObjectType(InData, InSchema); !objectResult.IsValid) {
             for (const auto& error : objectResult.Errors) {
-                result.AddError(InPath.empty() ? error : InPath + "." + error);
+                result.AddError(InPath.empty() ? error : std::string(InPath) + "." + error);
             }
         }
     } else if (InSchema.Type == "array") {
-        auto arrayResult = ValidateArrayType(InData, InSchema);
-        if (!arrayResult.IsValid) {
+        if (auto arrayResult = ValidateArrayType(InData, InSchema); !arrayResult.IsValid) {
             for (const auto& error : arrayResult.Errors) {
-                result.AddError(InPath.empty() ? error : InPath + "." + error);
+                result.AddError(InPath.empty() ? error : std::string(InPath) + "." + error);
             }
         }
     } else if (InSchema.Type == "string") {
-        auto stringResult = ValidateStringType(InData, InSchema);
-        if (!stringResult.IsValid) {
+        if (auto stringResult = ValidateStringType(InData, InSchema); !stringResult.IsValid) {
             for (const auto& error : stringResult.Errors) {
-                result.AddError(InPath.empty() ? error : InPath + "." + error);
+                result.AddError(InPath.empty() ? error : std::string(InPath) + "." + error);
             }
         }
     } else if (InSchema.Type == "number" || InSchema.Type == "integer") {
-        auto numberResult = ValidateNumberType(InData, InSchema);
-        if (!numberResult.IsValid) {
+        if (auto numberResult = ValidateNumberType(InData, InSchema); !numberResult.IsValid) {
             for (const auto& error : numberResult.Errors) {
-                result.AddError(InPath.empty() ? error : InPath + "." + error);
+                result.AddError(InPath.empty() ? error : std::string(InPath) + "." + error);
             }
         }
     } else if (InSchema.Type == "boolean") {
-        auto boolResult = ValidateBooleanType(InData, InSchema);
-        if (!boolResult.IsValid) {
+        if (auto boolResult = ValidateBooleanType(InData, InSchema); !boolResult.IsValid) {
             for (const auto& error : boolResult.Errors) {
-                result.AddError(InPath.empty() ? error : InPath + "." + error);
+                result.AddError(InPath.empty() ? error : std::string(InPath) + "." + error);
             }
         }
     }
@@ -94,7 +89,7 @@ JSONSchemaValidator::ValidateObjectType(const nlohmann::json& InData, const JSON
 
                 // Basic type checking for property values
                 if (propSchema.contains("type")) {
-                    std::string expectedType = propSchema.at("type").get<std::string>();
+                    const std::string expectedType = propSchema.at("type").get<std::string>();
                     if (!IsValidType(value, expectedType)) {
                         result.AddError(std::format("Property '{}': expected type '{}', got '{}'",
                                                     key, expectedType, GetJSONType(value)));
@@ -108,7 +103,8 @@ JSONSchemaValidator::ValidateObjectType(const nlohmann::json& InData, const JSON
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateArrayType(const nlohmann::json& InData, const JSONSchema& InSchema) {
+JSONSchemaValidator::ValidateArrayType(const nlohmann::json& InData,
+                                       const JSONSchema& /*InSchema*/) {
     ValidationResult result;
 
     if (!InData.is_array()) {
@@ -123,7 +119,8 @@ JSONSchemaValidator::ValidateArrayType(const nlohmann::json& InData, const JSONS
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateStringType(const nlohmann::json& InData, const JSONSchema& InSchema) {
+JSONSchemaValidator::ValidateStringType(const nlohmann::json& InData,
+                                        const JSONSchema& /*InSchema*/) {
     ValidationResult result;
 
     if (!InData.is_string()) {
@@ -158,7 +155,8 @@ JSONSchemaValidator::ValidateNumberType(const nlohmann::json& InData, const JSON
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateBooleanType(const nlohmann::json& InData, const JSONSchema& InSchema) {
+JSONSchemaValidator::ValidateBooleanType(const nlohmann::json& InData,
+                                         const JSONSchema& /*InSchema*/) {
     ValidationResult result;
 
     if (!InData.is_boolean()) { result.AddError("Expected boolean type"); }
@@ -166,26 +164,26 @@ JSONSchemaValidator::ValidateBooleanType(const nlohmann::json& InData, const JSO
     return result;
 }
 
-bool JSONSchemaValidator::IsValidType(const nlohmann::json& InData, const std::string& InType) {
-    if (InType == "object") return InData.is_object();
-    if (InType == "array") return InData.is_array();
-    if (InType == "string") return InData.is_string();
-    if (InType == "number") return InData.is_number();
-    if (InType == "integer") return InData.is_number_integer();
-    if (InType == "boolean") return InData.is_boolean();
-    if (InType == "null") return InData.is_null();
+bool JSONSchemaValidator::IsValidType(const nlohmann::json& InData, std::string_view InType) {
+    if (InType == "object") { return InData.is_object(); }
+    if (InType == "array") { return InData.is_array(); }
+    if (InType == "string") { return InData.is_string(); }
+    if (InType == "number") { return InData.is_number(); }
+    if (InType == "integer") { return InData.is_number_integer(); }
+    if (InType == "boolean") { return InData.is_boolean(); }
+    if (InType == "null") { return InData.is_null(); }
 
     return false;
 }
 
 std::string JSONSchemaValidator::GetJSONType(const nlohmann::json& InData) {
-    if (InData.is_object()) return "object";
-    if (InData.is_array()) return "array";
-    if (InData.is_string()) return "string";
-    if (InData.is_number_integer()) return "integer";
-    if (InData.is_number()) return "number";
-    if (InData.is_boolean()) return "boolean";
-    if (InData.is_null()) return "null";
+    if (InData.is_object()) { return "object"; }
+    if (InData.is_array()) { return "array"; }
+    if (InData.is_string()) { return "string"; }
+    if (InData.is_number_integer()) { return "integer"; }
+    if (InData.is_number()) { return "number"; }
+    if (InData.is_boolean()) { return "boolean"; }
+    if (InData.is_null()) { return "null"; }
 
     return "unknown";
 }

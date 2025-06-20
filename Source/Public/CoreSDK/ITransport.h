@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "MCPTask.h"
@@ -36,11 +37,11 @@ using StateChangeHandler =
 
 // Transport options for different transport types
 struct TransportOptions {
-    virtual ~TransportOptions() = default;
+    virtual ~TransportOptions() noexcept = default;
 };
 
 struct StdioTransportOptions : TransportOptions {
-    bool UseStderr = false;
+    bool UseStderr{false};
     std::string Command;
     std::vector<std::string> Arguments;
 };
@@ -68,12 +69,12 @@ class ITransport {
     // Connection management
     virtual MCPTask_Void Start() = 0;
     virtual MCPTask_Void Stop() = 0;
-    virtual bool IsConnected() const = 0;
-    virtual TransportState GetState() const = 0;
+    [[nodiscard]] virtual bool IsConnected() const = 0;
+    [[nodiscard]] virtual TransportState GetState() const = 0;
 
     // Message sending
-    virtual MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                             const nlohmann::json& InParams) = 0;
+    [[nodiscard]] virtual MCPTask<std::string> SendRequest(const std::string& InMethod,
+                                                           const nlohmann::json& InParams) = 0;
     virtual MCPTask_Void SendResponse(const std::string& InRequestID,
                                       const nlohmann::json& InResult) = 0;
     virtual MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
@@ -91,15 +92,15 @@ class ITransport {
     virtual void SetStateChangeHandler(StateChangeHandler InHandler) = 0;
 
     // Utility
-    virtual std::string GetConnectionInfo() const = 0;
+    [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
   protected:
     // Helper methods for derived classes
-    std::string GenerateRequestID() const;
-    bool IsValidJSONRPC(const nlohmann::json& InMessage) const;
+    [[nodiscard]] std::string GenerateRequestID() const;
+    [[nodiscard]] bool IsValidJSONRPC(const nlohmann::json& InMessage) const;
     void TriggerStateChange(TransportState InNewState);
 
-    TransportState m_CurrentState = TransportState::Disconnected;
+    TransportState m_CurrentState{TransportState::Disconnected};
 
     // Event handlers
     MessageHandler m_MessageHandler;
@@ -118,25 +119,27 @@ enum class TransportType { Stdio, StreamableHTTP };
 
 class TransportFactory {
   public:
-    static std::unique_ptr<ITransport> CreateTransport(TransportType InType,
-                                                       std::unique_ptr<TransportOptions> InOptions);
+    [[nodiscard]] static std::unique_ptr<ITransport>
+    CreateTransport(TransportType InType, std::unique_ptr<TransportOptions> InOptions);
 
     // Convenience factory methods
-    static std::unique_ptr<ITransport> CreateStdioTransport(const StdioTransportOptions& InOptions);
-    static std::unique_ptr<ITransport> CreateHTTPTransport(const HTTPTransportOptions& InOptions);
+    [[nodiscard]] static std::unique_ptr<ITransport>
+    CreateStdioTransport(const StdioTransportOptions& InOptions);
+    [[nodiscard]] static std::unique_ptr<ITransport>
+    CreateHTTPTransport(const HTTPTransportOptions& InOptions);
 };
 
 // Helper functions for message parsing
 namespace MessageUtils {
-std::optional<nlohmann::json> ParseJSONMessage(const std::string& InRawMessage);
-bool IsRequest(const nlohmann::json& InMessage);
-bool IsResponse(const nlohmann::json& InMessage);
-bool IsNotification(const nlohmann::json& InMessage);
-std::string ExtractMethod(const nlohmann::json& InMessage);
-std::string ExtractRequestID(const nlohmann::json& InMessage);
-nlohmann::json ExtractParams(const nlohmann::json& InMessage);
-nlohmann::json ExtractResult(const nlohmann::json& InMessage);
-nlohmann::json ExtractError(const nlohmann::json& InMessage);
+[[nodiscard]] std::optional<nlohmann::json> ParseJSONMessage(const std::string& InRawMessage);
+[[nodiscard]] bool IsRequest(const nlohmann::json& InMessage);
+[[nodiscard]] bool IsResponse(const nlohmann::json& InMessage);
+[[nodiscard]] bool IsNotification(const nlohmann::json& InMessage);
+[[nodiscard]] std::string ExtractMethod(const nlohmann::json& InMessage);
+[[nodiscard]] std::string ExtractRequestID(const nlohmann::json& InMessage);
+[[nodiscard]] nlohmann::json ExtractParams(const nlohmann::json& InMessage);
+[[nodiscard]] nlohmann::json ExtractResult(const nlohmann::json& InMessage);
+[[nodiscard]] nlohmann::json ExtractError(const nlohmann::json& InMessage);
 } // namespace MessageUtils
 
 MCP_NAMESPACE_END

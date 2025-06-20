@@ -1,13 +1,12 @@
 #pragma once
 
-#include <Poco/Mutex.h>
 #include <Poco/Pipe.h>
 #include <Poco/PipeStream.h>
 #include <Poco/Process.h>
-#include <Poco/Runnable.h>
-#include <Poco/Thread.h>
 
 #include <future>
+#include <mutex>
+#include <thread>
 
 #include "ITransport.h"
 #include "Macros.h"
@@ -15,10 +14,10 @@
 
 MCP_NAMESPACE_BEGIN
 
-class StdioTransport : public ITransport, public Poco::Runnable {
+class StdioTransport : public ITransport {
   public:
     explicit StdioTransport(const StdioTransportOptions& InOptions);
-    ~StdioTransport() override;
+    ~StdioTransport() noexcept override;
 
     // ITransport interface
     MCPTask_Void Start() override;
@@ -46,8 +45,7 @@ class StdioTransport : public ITransport, public Poco::Runnable {
     std::string GetConnectionInfo() const override;
 
   protected:
-    // Poco::Runnable interface
-    void run() override;
+    void ReaderThread(std::stop_token InStopToken);
 
   private:
     void ProcessIncomingData();
@@ -65,8 +63,7 @@ class StdioTransport : public ITransport, public Poco::Runnable {
     std::unique_ptr<Poco::PipeInputStream> m_StdoutStream;
     std::unique_ptr<Poco::PipeInputStream> m_StderrStream;
 
-    Poco::Thread m_ReadThread;
-    std::atomic<bool> m_ShouldStop{false};
+    std::jthread m_ReadThread;
     std::string m_Buffer;
 
     // Response tracking
@@ -77,14 +74,14 @@ class StdioTransport : public ITransport, public Poco::Runnable {
     };
 
     std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable Poco::Mutex m_RequestsMutex;
-    mutable Poco::Mutex m_WriteMutex;
+    mutable std::mutex m_RequestsMutex;
+    mutable std::mutex m_WriteMutex;
 };
 
-class StdioServerTransport : public ITransport, public Poco::Runnable {
+class StdioServerTransport : public ITransport {
   public:
     StdioServerTransport();
-    ~StdioServerTransport() override;
+    ~StdioServerTransport() noexcept override;
 
     // ITransport interface
     MCPTask_Void Start() override;
@@ -112,8 +109,7 @@ class StdioServerTransport : public ITransport, public Poco::Runnable {
     std::string GetConnectionInfo() const override;
 
   protected:
-    // Poco::Runnable interface
-    void run() override;
+    void ReaderThread(std::stop_token InStopToken);
 
   private:
     void ProcessIncomingData();
@@ -121,8 +117,7 @@ class StdioServerTransport : public ITransport, public Poco::Runnable {
     MCPTask_Void WriteMessage(const nlohmann::json& InMessage);
     void HandleError(const std::string& InError);
 
-    Poco::Thread m_ReadThread;
-    std::atomic<bool> m_ShouldStop{false};
+    std::jthread m_ReadThread;
     std::string m_Buffer;
 
     // Response tracking
@@ -133,8 +128,8 @@ class StdioServerTransport : public ITransport, public Poco::Runnable {
     };
 
     std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable Poco::Mutex m_RequestsMutex;
-    mutable Poco::Mutex m_WriteMutex;
+    mutable std::mutex m_RequestsMutex;
+    mutable std::mutex m_WriteMutex;
 };
 
 MCP_NAMESPACE_END

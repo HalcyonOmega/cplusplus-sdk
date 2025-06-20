@@ -6,15 +6,15 @@ MCP_NAMESPACE_BEGIN
 
 // ITransport implementation
 std::string ITransport::GenerateRequestID() const {
-    uint64_t counter = m_RequestCounter.fetch_add(1);
+    const uint64_t counter = m_RequestCounter.fetch_add(1);
 
     // Create a more unique ID by combining timestamp and counter
-    auto now = std::chrono::steady_clock::now();
-    auto timestamp = now.time_since_epoch().count();
+    const auto now = std::chrono::steady_clock::now();
+    const auto timestamp = now.time_since_epoch().count();
 
-    std::stringstream ss;
-    ss << "req_" << std::hex << timestamp << "_" << std::hex << counter;
-    return ss.str();
+    std::stringstream StrStream;
+    StrStream << "req_" << std::hex << timestamp << "_" << std::hex << counter;
+    return StrStream.str();
 }
 
 bool ITransport::IsValidJSONRPC(const nlohmann::json& InMessage) const {
@@ -42,7 +42,7 @@ bool ITransport::IsValidJSONRPC(const nlohmann::json& InMessage) const {
 }
 
 void ITransport::TriggerStateChange(TransportState InNewState) {
-    TransportState oldState = m_CurrentState;
+    const TransportState oldState = m_CurrentState;
     m_CurrentState = InNewState;
 
     if (m_StateChangeHandler && oldState != InNewState) {
@@ -56,16 +56,18 @@ TransportFactory::CreateTransport(TransportType InType,
                                   std::unique_ptr<TransportOptions> InOptions) {
     switch (InType) {
         case TransportType::Stdio: {
-            auto stdioOptions = dynamic_cast<StdioTransportOptions*>(InOptions.get());
-            if (!stdioOptions) {
+            auto* StdioOptions = dynamic_cast<StdioTransportOptions*>(InOptions.get());
+            if (StdioOptions == nullptr) {
                 throw std::invalid_argument("Invalid options for stdio transport");
             }
-            return CreateStdioTransport(*stdioOptions);
+            return CreateStdioTransport(*StdioOptions);
         }
         case TransportType::StreamableHTTP: {
-            auto httpOptions = dynamic_cast<HTTPTransportOptions*>(InOptions.get());
-            if (!httpOptions) { throw std::invalid_argument("Invalid options for HTTP transport"); }
-            return CreateHTTPTransport(*httpOptions);
+            auto* HTTPOptions = dynamic_cast<HTTPTransportOptions*>(InOptions.get());
+            if (HTTPOptions == nullptr) {
+                throw std::invalid_argument("Invalid options for HTTP transport");
+            }
+            return CreateHTTPTransport(*HTTPOptions);
         }
         default: throw std::invalid_argument("Unsupported transport type");
     }
@@ -92,22 +94,8 @@ namespace MessageUtils {
 
 std::optional<nlohmann::json> ParseJSONMessage(const std::string& InRawMessage) {
     try {
-        auto json = nlohmann::json::parse(InRawMessage);
-        return json;
+        return nlohmann::json::parse(InRawMessage);
     } catch (const nlohmann::json::parse_error&) { return std::nullopt; }
-}
-
-bool IsRequest(const nlohmann::json& InMessage) {
-    return InMessage.contains("method") && InMessage.contains("id");
-}
-
-bool IsResponse(const nlohmann::json& InMessage) {
-    return InMessage.contains("id") && (InMessage.contains("result") || InMessage.contains("error"))
-           && !InMessage.contains("method");
-}
-
-bool IsNotification(const nlohmann::json& InMessage) {
-    return InMessage.contains("method") && !InMessage.contains("id");
 }
 
 std::string ExtractMethod(const nlohmann::json& InMessage) {
@@ -119,11 +107,8 @@ std::string ExtractMethod(const nlohmann::json& InMessage) {
 
 std::string ExtractRequestID(const nlohmann::json& InMessage) {
     if (InMessage.contains("id")) {
-        if (InMessage["id"].is_string()) {
-            return InMessage["id"].get<std::string>();
-        } else if (InMessage["id"].is_number()) {
-            return std::to_string(InMessage["id"].get<int64_t>());
-        }
+        if (InMessage["id"].is_string()) { return InMessage["id"].get<std::string>(); }
+        if (InMessage["id"].is_number()) { return std::to_string(InMessage["id"].get<int64_t>()); }
     }
     return "";
 }
@@ -131,16 +116,6 @@ std::string ExtractRequestID(const nlohmann::json& InMessage) {
 nlohmann::json ExtractParams(const nlohmann::json& InMessage) {
     if (InMessage.contains("params")) { return InMessage["params"]; }
     return nlohmann::json::object();
-}
-
-nlohmann::json ExtractResult(const nlohmann::json& InMessage) {
-    if (InMessage.contains("result")) { return InMessage["result"]; }
-    return nullptr;
-}
-
-nlohmann::json ExtractError(const nlohmann::json& InMessage) {
-    if (InMessage.contains("error")) { return InMessage["error"]; }
-    return nullptr;
 }
 
 } // namespace MessageUtils

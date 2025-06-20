@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 #include "Macros.h"
 
@@ -38,27 +39,27 @@ constexpr int64_t CANCELLED = -32015;
 
 // Error message constants
 namespace MCPErrorMessages {
-constexpr const char* PARSE_ERROR = "Parse error";
-constexpr const char* INVALID_REQUEST = "Invalid Request";
-constexpr const char* METHOD_NOT_FOUND = "Method not found";
-constexpr const char* INVALID_PARAMS = "Invalid params";
-constexpr const char* INTERNAL_ERROR = "Internal error";
+constexpr std::string_view PARSE_ERROR = "Parse error";
+constexpr std::string_view INVALID_REQUEST = "Invalid Request";
+constexpr std::string_view METHOD_NOT_FOUND = "Method not found";
+constexpr std::string_view INVALID_PARAMS = "Invalid params";
+constexpr std::string_view INTERNAL_ERROR = "Internal error";
 
-constexpr const char* TOOL_NOT_FOUND = "Tool not found";
-constexpr const char* TOOL_EXECUTION_ERROR = "Tool execution error";
-constexpr const char* RESOURCE_NOT_FOUND = "Resource not found";
-constexpr const char* RESOURCE_ACCESS_ERROR = "Resource access error";
-constexpr const char* PROMPT_NOT_FOUND = "Prompt not found";
-constexpr const char* PROMPT_EXECUTION_ERROR = "Prompt execution error";
-constexpr const char* INITIALIZATION_ERROR = "Initialization error";
-constexpr const char* CAPABILITY_MISMATCH = "Capability mismatch";
-constexpr const char* TRANSPORT_ERROR = "Transport error";
-constexpr const char* PROTOCOL_VERSION_MISMATCH = "Protocol version mismatch";
-constexpr const char* AUTHENTICATION_ERROR = "Authentication error";
-constexpr const char* AUTHORIZATION_ERROR = "Authorization error";
-constexpr const char* RATE_LIMIT_EXCEEDED = "Rate limit exceeded";
-constexpr const char* SCHEMA_VALIDATION_ERROR = "Schema validation error";
-constexpr const char* CANCELLED = "Request cancelled";
+constexpr std::string_view TOOL_NOT_FOUND = "Tool not found";
+constexpr std::string_view TOOL_EXECUTION_ERROR = "Tool execution error";
+constexpr std::string_view RESOURCE_NOT_FOUND = "Resource not found";
+constexpr std::string_view RESOURCE_ACCESS_ERROR = "Resource access error";
+constexpr std::string_view PROMPT_NOT_FOUND = "Prompt not found";
+constexpr std::string_view PROMPT_EXECUTION_ERROR = "Prompt execution error";
+constexpr std::string_view INITIALIZATION_ERROR = "Initialization error";
+constexpr std::string_view CAPABILITY_MISMATCH = "Capability mismatch";
+constexpr std::string_view TRANSPORT_ERROR = "Transport error";
+constexpr std::string_view PROTOCOL_VERSION_MISMATCH = "Protocol version mismatch";
+constexpr std::string_view AUTHENTICATION_ERROR = "Authentication error";
+constexpr std::string_view AUTHORIZATION_ERROR = "Authorization error";
+constexpr std::string_view RATE_LIMIT_EXCEEDED = "Rate limit exceeded";
+constexpr std::string_view SCHEMA_VALIDATION_ERROR = "Schema validation error";
+constexpr std::string_view CANCELLED = "Request cancelled";
 } // namespace MCPErrorMessages
 
 MCP_NAMESPACE_END

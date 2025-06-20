@@ -68,12 +68,7 @@ This section focuses on adopting modern C++20 features to improve code safety, r
 - **Suggestion**: Replace the manually defined operators with a single defaulted three-way comparison operator: `auto operator<=>(const MyClass&) const = default;`. You may also need to implement `operator==`.
 - **Why**: The "spaceship operator" reduces boilerplate code significantly, as the compiler can generate all six relational operators from it.
 
-### 2.5. Use `std::format` for String Formatting
-- **Check**: Scan for usage of C-style `printf`, `sprintf`, etc., or complex string concatenations using `std::stringstream`.
-- **Suggestion**: Replace with `std::format`.
-- **Why**: `std::format` provides a type-safe, extensible, and efficient mechanism for string formatting that is more readable and less error-prone than its predecessors.
-
-### 2.6. Use `constinit` for Compile-Time Constant Initialization
+### 2.7. Use `constinit` for Compile-Time Constant Initialization
 - **Check**: Look for global or static variables that are `const` and initialized with a constant expression, but whose initialization is not guaranteed to happen at compile-time.
 - **Suggestion**: Mark them with `constinit` to enforce static initialization.
 - **Why**: `constinit` guarantees that a variable's initialization happens at compile time, avoiding potential static initialization order fiasco issues and ensuring the variable is ready before any dynamic initialization begins.

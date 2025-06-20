@@ -1,5 +1,7 @@
 #include "MCPProtocol.h"
 
+#include <string_view>
+
 #include "MCPMessages.h"
 
 MCP_NAMESPACE_BEGIN
@@ -9,25 +11,24 @@ MCPProtocol::MCPProtocol(std::shared_ptr<ITransport> InTransport) : m_Transport(
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetRequestHandler([this](const std::string& InMethod,
-                                          const nlohmann::json& InParams,
-                                          const std::string& InRequestID) {
+    m_Transport->SetRequestHandler([this](std::string_view InMethod, const nlohmann::json& InParams,
+                                          std::string_view InRequestID) {
         HandleIncomingRequest(InMethod, InParams, InRequestID);
     });
 
     m_Transport->SetResponseHandler(
-        [this](const std::string& InResponseData) { HandleIncomingResponse(InResponseData); });
+        [this](std::string_view InResponseData) { HandleIncomingResponse(InResponseData); });
 
     m_Transport->SetNotificationHandler(
-        [this](const std::string& InMethod, const nlohmann::json& InParams) {
+        [this](std::string_view InMethod, const nlohmann::json& InParams) {
             HandleIncomingNotification(InMethod, InParams);
         });
 
     m_Transport->SetErrorHandler(
-        [this](const std::string& InError) { HandleTransportError(InError); });
+        [this](std::string_view InError) { HandleTransportError(InError); });
 }
 
-MCPProtocol::~MCPProtocol() {
+MCPProtocol::~MCPProtocol() noexcept {
     if (m_IsInitialized) {
         try {
             Shutdown().GetResult();
@@ -106,42 +107,41 @@ bool MCPProtocol::IsInitialized() const {
     return m_IsInitialized;
 }
 
-MCPTask<nlohmann::json> MCPProtocol::SendRequest(const std::string& InMethod,
+MCPTask<nlohmann::json> MCPProtocol::SendRequest(std::string_view InMethod,
                                                  const nlohmann::json& InParams) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_return co_await SendRequestImpl(InMethod, InParams);
 }
 
-MCPTask_Void MCPProtocol::SendResponse(const std::string& InRequestID,
+MCPTask_Void MCPProtocol::SendResponse(std::string_view InRequestID,
                                        const nlohmann::json& InResult) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_await m_Transport->SendResponse(InRequestID, InResult);
 }
 
-MCPTask_Void MCPProtocol::SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                            const std::string& InErrorMessage,
+MCPTask_Void MCPProtocol::SendErrorResponse(std::string_view InRequestID, int64_t InErrorCode,
+                                            std::string_view InErrorMessage,
                                             const nlohmann::json& InErrorData) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_await m_Transport->SendErrorResponse(InRequestID, InErrorCode, InErrorMessage, InErrorData);
 }
 
-MCPTask_Void MCPProtocol::SendNotification(const std::string& InMethod,
+MCPTask_Void MCPProtocol::SendNotification(std::string_view InMethod,
                                            const nlohmann::json& InParams) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_await SendNotificationImpl(InMethod, InParams);
 }
 
-void MCPProtocol::SetRequestHandler(const std::string& InMethod, RequestHandler InHandler) {
+void MCPProtocol::SetRequestHandler(std::string_view InMethod, RequestHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
     m_RequestHandlers[InMethod] = InHandler;
 }
 
-void MCPProtocol::SetNotificationHandler(const std::string& InMethod,
-                                         NotificationHandler InHandler) {
+void MCPProtocol::SetNotificationHandler(std::string_view InMethod, NotificationHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
     m_NotificationHandlers[InMethod] = InHandler;
 }
@@ -166,7 +166,7 @@ const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
     return m_ServerInfo;
 }
 
-MCPTask<nlohmann::json> MCPProtocol::SendRequestImpl(const std::string& InMethod,
+MCPTask<nlohmann::json> MCPProtocol::SendRequestImpl(std::string_view InMethod,
                                                      const nlohmann::json& InParams) {
     std::string requestID = GenerateRequestID();
 
@@ -198,13 +198,13 @@ MCPTask<nlohmann::json> MCPProtocol::SendRequestImpl(const std::string& InMethod
     }
 }
 
-MCPTask_Void MCPProtocol::SendNotificationImpl(const std::string& InMethod,
+MCPTask_Void MCPProtocol::SendNotificationImpl(std::string_view InMethod,
                                                const nlohmann::json& InParams) {
     co_await m_Transport->SendNotification(InMethod, InParams);
 }
 
-void MCPProtocol::HandleIncomingRequest(const std::string& InMethod, const nlohmann::json& InParams,
-                                        const std::string& InRequestID) {
+void MCPProtocol::HandleIncomingRequest(std::string_view InMethod, const nlohmann::json& InParams,
+                                        std::string_view InRequestID) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
         auto handler = m_RequestHandlers.find(InMethod);
@@ -221,7 +221,7 @@ void MCPProtocol::HandleIncomingRequest(const std::string& InMethod, const nlohm
     }
 }
 
-void MCPProtocol::HandleIncomingResponse(const std::string& InResponseData) {
+void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
     try {
         auto response = nlohmann::json::parse(InResponseData);
 
@@ -249,7 +249,7 @@ void MCPProtocol::HandleIncomingResponse(const std::string& InResponseData) {
     }
 }
 
-void MCPProtocol::HandleIncomingNotification(const std::string& InMethod,
+void MCPProtocol::HandleIncomingNotification(std::string_view InMethod,
                                              const nlohmann::json& InParams) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
@@ -263,8 +263,8 @@ void MCPProtocol::HandleIncomingNotification(const std::string& InMethod,
     }
 }
 
-void MCPProtocol::HandleTransportError(const std::string& InError) {
-    if (m_ErrorHandler) { m_ErrorHandler("Transport error: " + InError); }
+void MCPProtocol::HandleTransportError(std::string_view InError) {
+    if (m_ErrorHandler) { m_ErrorHandler("Transport error: " + std::string(InError)); }
 }
 
 std::string MCPProtocol::GenerateRequestID() {

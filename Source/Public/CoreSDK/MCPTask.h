@@ -18,7 +18,7 @@ template <typename T> struct MCPTask {
     struct promise_type {
         std::variant<T, std::string> m_Result;
 
-        MCPTask get_return_object() {
+        [[nodiscard]] MCPTask get_return_object() {
             return MCPTask{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
@@ -40,7 +40,7 @@ template <typename T> struct MCPTask {
 
     std::coroutine_handle<promise_type> m_Handle;
 
-    explicit MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle(Handle) {}
+    explicit MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle{Handle} {}
 
     ~MCPTask() {
         if (m_Handle) { m_Handle.destroy(); }
@@ -49,7 +49,7 @@ template <typename T> struct MCPTask {
     // Non-copyable, movable
     MCPTask(const MCPTask&) = delete;
     MCPTask& operator=(const MCPTask&) = delete;
-    MCPTask(MCPTask&& Other) noexcept : m_Handle(std::exchange(Other.m_Handle, {})) {}
+    MCPTask(MCPTask&& Other) noexcept : m_Handle{std::exchange(Other.m_Handle, {})} {}
     MCPTask& operator=(MCPTask&& Other) noexcept {
         if (this != &Other) {
             if (m_Handle) { m_Handle.destroy(); }
@@ -59,12 +59,12 @@ template <typename T> struct MCPTask {
     }
 
     // Awaitable interface
-    bool await_ready() const {
+    [[nodiscard]] bool await_ready() const {
         return m_Handle.done();
     }
     void await_suspend(std::coroutine_handle<> /*unused*/) const {}
 
-    T await_resume() const {
+    [[nodiscard]] T await_resume() const {
         if (std::holds_alternative<std::string>(m_Handle.promise().m_Result)) {
             throw std::runtime_error(std::get<std::string>(m_Handle.promise().m_Result));
         }
@@ -77,7 +77,7 @@ template <> struct MCPTask<void> {
     struct promise_type {
         std::optional<std::string> m_Exception;
 
-        MCPTask<void> get_return_object() {
+        [[nodiscard]] MCPTask<void> get_return_object() {
             return MCPTask<void>{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
@@ -97,7 +97,7 @@ template <> struct MCPTask<void> {
 
     std::coroutine_handle<promise_type> m_Handle;
 
-    explicit MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle(Handle) {}
+    explicit MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle{Handle} {}
 
     ~MCPTask() {
         if (m_Handle) { m_Handle.destroy(); }
@@ -106,7 +106,7 @@ template <> struct MCPTask<void> {
     // Non-copyable, movable
     MCPTask(const MCPTask&) = delete;
     MCPTask& operator=(const MCPTask&) = delete;
-    MCPTask(MCPTask&& Other) noexcept : m_Handle(std::exchange(Other.m_Handle, {})) {}
+    MCPTask(MCPTask&& Other) noexcept : m_Handle{std::exchange(Other.m_Handle, {})} {}
     MCPTask& operator=(MCPTask&& Other) noexcept {
         if (this != &Other) {
             if (m_Handle) { m_Handle.destroy(); }
@@ -116,7 +116,7 @@ template <> struct MCPTask<void> {
     }
 
     // Awaitable interface
-    bool await_ready() const {
+    [[nodiscard]] bool await_ready() const {
         return m_Handle.done();
     }
     void await_suspend(std::coroutine_handle<> /*unused*/) const {}

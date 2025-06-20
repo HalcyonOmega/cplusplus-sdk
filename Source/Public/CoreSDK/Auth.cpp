@@ -11,6 +11,7 @@
 #include <Poco/URI.h>
 
 #include <algorithm>
+#include <format>
 #include <mutex>
 #include <sstream>
 #include <unordered_set>
@@ -20,14 +21,14 @@ MCP_NAMESPACE_BEGIN
 static constexpr short DEFAULT_AUTH_SESSION_TIMEOUT{30}; // 30 seconds
 
 // OAuth2AuthProvider Implementation
-OAuth2AuthProvider::OAuth2AuthProvider(const OAuth2Config& InConfig) : m_Config(InConfig) {
-    Poco::URI authURI(m_Config.AuthServerURL);
+OAuth2AuthProvider::OAuth2AuthProvider(const OAuth2Config& InConfig) : m_Config{InConfig} {
+    Poco::URI authURI{m_Config.AuthServerURL};
     m_AuthSession =
         std::make_shared<Poco::Net::HTTPClientSession>(authURI.getHost(), authURI.getPort());
-    m_AuthSession->setTimeout(Poco::Timespan(DEFAULT_AUTH_SESSION_TIMEOUT, 0));
+    m_AuthSession->setTimeout(Poco::Timespan{DEFAULT_AUTH_SESSION_TIMEOUT, 0});
 }
 
-OAuth2AuthProvider::~OAuth2AuthProvider() = default;
+OAuth2AuthProvider::~OAuth2AuthProvider() noexcept = default;
 
 MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
     try {
@@ -55,19 +56,19 @@ MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
         // Cache result
         if (isValid) {
             std::lock_guard<std::mutex> lock(m_CacheMutex);
-            CachedToken cached;
+            CachedToken cached{};
             cached.Result.IsAuthorized = true;
             cached.Result.ClientID = tokenInfo.value("client_id", "");
             if (tokenInfo.contains("scope")) {
                 std::string scope = tokenInfo["scope"].get<std::string>();
                 // Split scope string into vector
-                std::istringstream scopeStream(scope);
+                std::istringstream scopeStream{scope};
                 std::string item;
                 while (std::getline(scopeStream, item, ' ')) {
                     if (!item.empty()) { cached.Result.Scopes.push_back(item); }
                 }
             }
-            cached.CachedAt = Poco::Timestamp();
+            cached.CachedAt = Poco::Timestamp{};
             m_TokenCache[InToken] = cached;
         }
 
@@ -77,7 +78,7 @@ MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
 
 MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMethod,
                                                          const std::string& InToken) {
-    AuthResult result;
+    AuthResult result{};
 
     try {
         // Check if method is public (doesn't require auth)
@@ -103,10 +104,11 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
         // Check if token has required scopes for the method
         auto requiredScopes = AuthUtils::GetRequiredScopes(InMethod);
         if (!requiredScopes.empty()) {
+            const std::unordered_set<std::string> clientScopes(result.Scopes.begin(),
+                                                               result.Scopes.end());
             bool hasRequiredScope = false;
             for (const auto& requiredScope : requiredScopes) {
-                if (std::find(result.Scopes.begin(), result.Scopes.end(), requiredScope)
-                    != result.Scopes.end()) {
+                if (clientScopes.count(requiredScope)) {
                     hasRequiredScope = true;
                     break;
                 }
@@ -114,7 +116,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
 
             if (!hasRequiredScope) {
                 result.IsAuthorized = false;
-                result.ErrorMessage = "Insufficient scope for method: " + InMethod;
+                result.ErrorMessage = std::format("Insufficient scope for method: {}", InMethod);
                 co_return result;
             }
         }
@@ -123,7 +125,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
         co_return result;
 
     } catch (const std::exception& e) {
-        result.ErrorMessage = "Authorization error: " + std::string(e.what());
+        result.ErrorMessage = std::format("Authorization error: {}", e.what());
         co_return result;
     }
 }
@@ -131,15 +133,15 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
 MCPTask<nlohmann::json>
 OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
     try {
-        Poco::URI authURI(m_Config.AuthServerURL + "/oauth/introspect");
+        Poco::URI authURI{m_Config.AuthServerURL + "/oauth/introspect"};
 
-        Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_POST,
-                                       authURI.getPathAndQuery());
+        Poco::Net::HTTPRequest request{Poco::Net::HTTPRequest::HTTP_POST,
+                                       authURI.getPathAndQuery()};
         request.setContentType("application/x-www-form-urlencoded");
 
         // Add authorization header using Poco HTTPCredentials for proper Basic auth
-        Poco::Net::HTTPCredentials credentials(m_Config.ClientID, m_Config.ClientSecret);
-        Poco::Net::HTTPResponse dummyResponse; // Needed for authenticate method signature
+        Poco::Net::HTTPCredentials credentials{m_Config.ClientID, m_Config.ClientSecret};
+        Poco::Net::HTTPResponse dummyResponse{}; // Needed for authenticate method signature
         credentials.authenticate(request, dummyResponse);
 
         std::string body = "token=" + InToken;
@@ -152,8 +154,8 @@ OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
         std::istream& responseStream = m_AuthSession->receiveResponse(response);
 
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK) {
-            throw std::runtime_error("Token validation failed with status: "
-                                     + std::to_string(response.getStatus()));
+            throw std::runtime_error(
+                std::format("Token validation failed with status: {}", response.getStatus()));
         }
 
         std::string responseBody;
@@ -162,7 +164,7 @@ OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
         co_return nlohmann::json::parse(responseBody);
 
     } catch (const std::exception& e) {
-        throw std::runtime_error("Token validation error: " + std::string(e.what()));
+        throw std::runtime_error(std::format("Token validation error: {}", e.what()));
     }
 }
 
@@ -182,7 +184,7 @@ bool OAuth2AuthProvider::IsMethodAllowed(const std::string& InMethod,
 // BearerTokenAuthProvider Implementation
 BearerTokenAuthProvider::BearerTokenAuthProvider(
     const std::unordered_map<std::string, std::vector<std::string>>& InValidTokens)
-    : m_ValidTokens(InValidTokens) {}
+    : m_ValidTokens{InValidTokens} {}
 
 MCPTask<bool> BearerTokenAuthProvider::ValidateToken(const std::string& InToken) {
     co_return m_ValidTokens.find(InToken) != m_ValidTokens.end();
@@ -190,7 +192,7 @@ MCPTask<bool> BearerTokenAuthProvider::ValidateToken(const std::string& InToken)
 
 MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string& InMethod,
                                                               const std::string& InToken) {
-    AuthResult result;
+    AuthResult result{};
 
     try {
         // Check if method is public
@@ -213,10 +215,11 @@ MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string&
         // Check scopes
         auto requiredScopes = AuthUtils::GetRequiredScopes(InMethod);
         if (!requiredScopes.empty()) {
+            const std::unordered_set<std::string> clientScopes(result.Scopes.begin(),
+                                                               result.Scopes.end());
             bool hasRequiredScope = false;
             for (const auto& requiredScope : requiredScopes) {
-                if (std::find(result.Scopes.begin(), result.Scopes.end(), requiredScope)
-                    != result.Scopes.end()) {
+                if (clientScopes.count(requiredScope)) {
                     hasRequiredScope = true;
                     break;
                 }
@@ -224,26 +227,24 @@ MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string&
 
             if (!hasRequiredScope) {
                 result.IsAuthorized = false;
-                result.ErrorMessage = "Insufficient scope for method: " + InMethod;
+                result.ErrorMessage = std::format("Insufficient scope for method: {}", InMethod);
             }
         }
 
         co_return result;
 
     } catch (const std::exception& e) {
-        result.ErrorMessage = "Authorization error: " + std::string(e.what());
+        result.ErrorMessage = std::format("Authorization error: {}", e.what());
         co_return result;
     }
 }
 
 // AuthUtils Implementation
 std::optional<std::string> AuthUtils::ExtractBearerToken(Poco::Net::HTTPServerRequest& InRequest) {
-    static constexpr short BEARER_TOKEN_PREFIX_LENGTH{7};
-    std::string authHeader = InRequest.get("Authorization", "");
+    const std::string authHeader = InRequest.get("Authorization", "");
+    constexpr std::string_view bearerPrefix = "Bearer ";
 
-    if (authHeader.substr(0, BEARER_TOKEN_PREFIX_LENGTH) == "Bearer ") {
-        return authHeader.substr(BEARER_TOKEN_PREFIX_LENGTH);
-    }
+    if (authHeader.starts_with(bearerPrefix)) { return authHeader.substr(bearerPrefix.length()); }
 
     return std::nullopt;
 }

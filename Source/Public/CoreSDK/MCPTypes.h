@@ -51,7 +51,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Annotations, Audience, Priority)
 
 // Content types
 struct TextContent {
-    std::string Type = "text";
+    std::string Type{"text"};
     std::string Text;
     std::optional<Annotations> ContentAnnotations;
 };
@@ -59,7 +59,7 @@ struct TextContent {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(TextContent, Type, Text, ContentAnnotations)
 
 struct ImageContent {
-    std::string Type = "image";
+    std::string Type{"image"};
     std::string Data; // base64
     std::string MimeType;
     std::optional<Annotations> ContentAnnotations;
@@ -69,7 +69,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ImageContent, Type, Data, MimeTy
                                                 ContentAnnotations)
 
 struct AudioContent {
-    std::string Type = "audio";
+    std::string Type{"audio"};
     std::string Data; // base64
     std::string MimeType;
     std::optional<Annotations> ContentAnnotations;
@@ -79,7 +79,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AudioContent, Type, Data, MimeTy
                                                 ContentAnnotations)
 
 struct EmbeddedResource {
-    std::string Type = "resource";
+    std::string Type{"resource"};
     std::optional<Annotations> ContentAnnotations;
     struct Resource {
         std::string URI;
@@ -96,7 +96,7 @@ using Content = std::variant<TextContent, ImageContent, AudioContent, EmbeddedRe
 
 // JSON Schema
 struct JSONSchema {
-    std::string Type = "object";
+    std::string Type{"object"};
     std::optional<std::unordered_map<std::string, JSONValue>> Properties;
     std::optional<std::vector<std::string>> Required;
     std::optional<JSONValue> AdditionalProperties;

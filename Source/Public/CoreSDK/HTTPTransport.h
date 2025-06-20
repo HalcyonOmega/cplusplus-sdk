@@ -17,6 +17,7 @@
 
 #include <chrono>
 #include <future>
+#include <thread>
 #include <unordered_map>
 
 #include "ITransport.h"
@@ -32,13 +33,13 @@ MCP_NAMESPACE_BEGIN
 class HTTPTransportClient : public ITransport, public Poco::Runnable {
   public:
     explicit HTTPTransportClient(const HTTPTransportOptions& InOptions);
-    ~HTTPTransportClient() override;
+    ~HTTPTransportClient() noexcept override;
 
     // ITransport interface
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    bool IsConnected() const override;
-    TransportState GetState() const override;
+    [[nodiscard]] bool IsConnected() const override;
+    [[nodiscard]] TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
                                      const nlohmann::json& InParams) override;
@@ -57,7 +58,7 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     void SetErrorHandler(ErrorHandler InHandler) override;
     void SetStateChangeHandler(StateChangeHandler InHandler) override;
 
-    std::string GetConnectionInfo() const override;
+    [[nodiscard]] std::string GetConnectionInfo() const override;
 
   protected:
     // Poco::Runnable interface for SSE reading
@@ -75,7 +76,7 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     std::unique_ptr<Poco::Net::HTTPClientSession> m_HTTPSession;
     std::unique_ptr<std::istream> m_SSEStream;
 
-    Poco::Thread m_SSEThread;
+    std::jthread m_SSEThread;
     std::atomic<bool> m_ShouldStop{false};
     std::string m_SSEBuffer;
 
@@ -92,9 +93,10 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
 };
 
 // HTTP Server Transport Request Handler
-class MCPHTTPRequestHandler : public Poco::Net::HTTPRequestHandler {
+class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler {
   public:
     explicit MCPHTTPRequestHandler(HTTPTransportServer* InServer);
+    ~MCPHTTPRequestHandler() noexcept override;
     void handleRequest(Poco::Net::HTTPServerRequest& InRequest,
                        Poco::Net::HTTPServerResponse& InResponse) override;
 
@@ -103,10 +105,11 @@ class MCPHTTPRequestHandler : public Poco::Net::HTTPRequestHandler {
 };
 
 // HTTP Server Transport Request Handler Factory
-class MCPHTTPRequestHandlerFactory : public Poco::Net::HTTPRequestHandlerFactory {
+class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerFactory {
   public:
     explicit MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer);
-    Poco::Net::HTTPRequestHandler*
+    ~MCPHTTPRequestHandlerFactory() noexcept override;
+    [[nodiscard]] Poco::Net::HTTPRequestHandler*
     createRequestHandler(const Poco::Net::HTTPServerRequest& InRequest) override;
 
   private:
@@ -117,13 +120,13 @@ class MCPHTTPRequestHandlerFactory : public Poco::Net::HTTPRequestHandlerFactory
 class HTTPTransportServer : public ITransport {
   public:
     explicit HTTPTransportServer(const HTTPTransportOptions& InOptions);
-    ~HTTPTransportServer() override;
+    ~HTTPTransportServer() noexcept override;
 
     // ITransport interface
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    bool IsConnected() const override;
-    TransportState GetState() const override;
+    [[nodiscard]] bool IsConnected() const override;
+    [[nodiscard]] TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
                                      const nlohmann::json& InParams) override;
@@ -142,7 +145,7 @@ class HTTPTransportServer : public ITransport {
     void SetErrorHandler(ErrorHandler InHandler) override;
     void SetStateChangeHandler(StateChangeHandler InHandler) override;
 
-    std::string GetConnectionInfo() const override;
+    [[nodiscard]] std::string GetConnectionInfo() const override;
 
     // Server-specific methods
     void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest,

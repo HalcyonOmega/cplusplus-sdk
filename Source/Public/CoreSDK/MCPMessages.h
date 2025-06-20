@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 
+#include "JSONProxy.h"
 #include "MCPTypes.h"
 #include "Macros.h"
 #include "json.hpp"
@@ -12,30 +13,46 @@ MCP_NAMESPACE_BEGIN
 
 // Base message types
 struct MessageBase {
-    std::string JSONRPCVersion = "2.0";
+    std::string_view JSONRPCVersion = "2.0";
+
+    JKEY(JSONRPCKEY, JSONRPCVersion, "jsonrpc")
+
+    DEFINE_TYPE_JSON(MessageBase, JSONRPCKEY)
 };
 
 struct RequestBase : MessageBase {
     RequestID ID;
     std::string Method;
     std::optional<JSONValue> Params;
+
+    JKEY(IDKEY, ID, "id")
+    JKEY(METHODKEY, Method, "method")
+    JKEY(PARAMSKEY, Params, "params")
+
+    DEFINE_TYPE_JSON(RequestBase, IDKEY, METHODKEY, PARAMSKEY)
 };
 
 struct ResponseBase : MessageBase {
     RequestID ID;
     std::optional<MCPError> Error;
     std::optional<JSONValue> Result;
+
+    JKEY(IDKEY, ID, "id")
+    JKEY(RESULTKEY, Result, "result")
+    JKEY(ERRORKEY, Error, "error")
+
+    DEFINE_TYPE_JSON(ResponseBase, IDKEY, RESULTKEY, ERRORKEY)
 };
 
 struct NotificationBase : MessageBase {
     std::string Method;
     std::optional<JSONValue> Params;
-};
 
-// Error structure is defined in MCPTypes.h
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RequestBase, JSONRPCVersion, ID, Method, Params)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResponseBase, JSONRPCVersion, ID, Result, Error)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(NotificationBase, JSONRPCVersion, Method, Params)
+    JKEY(METHODKEY, Method, "method")
+    JKEY(PARAMSKEY, Params, "params")
+
+    DEFINE_TYPE_JSON(NotificationBase, METHODKEY, PARAMSKEY)
+};
 
 // Initialize request/response
 struct InitializeRequest : RequestBase {
@@ -67,8 +84,7 @@ struct InitializeResponse : ResponseBase {
     }
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InitializeRequest::InitializeParams,
-                                                ProtocolVersion, Capabilities, ClientInfo)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InitializeRequest, Method, Params)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InitializeResult, ProtocolVersion, Capabilities,
                                                 ServerInfo, Meta)
 
@@ -102,6 +118,11 @@ struct ListToolsRequest : RequestBase {
 struct ListToolsResult {
     std::vector<Tool> Tools;
     std::optional<JSONValue> Meta;
+
+    JKEY(TOOLSKEY, Tools, "tools")
+    JKEY(METAKEY, Meta, "_meta") // Uses default key "Meta"
+
+    DEFINE_TYPE_JSON(ListToolsResult, TOOLSKEY, METAKEY)
 };
 
 struct ListToolsResponse : ResponseBase {
