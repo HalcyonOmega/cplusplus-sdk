@@ -106,10 +106,10 @@ class MCPProtocol {
   private:
     void SetupTransportHandlers();
     void OnTransportMessage(const std::string& InRawMessage);
-    void OnTransportRequest(const std::string& InMethod, const nlohmann::json& InParams,
+    void OnTransportRequest(const std::string& InMethod, const JSONValue& InParams,
                             const std::string& InRequestID);
-    void OnTransportResponse(const nlohmann::json& InResult, const std::string& InRequestID);
-    void OnTransportNotification(const std::string& InMethod, const nlohmann::json& InParams);
+    void OnTransportResponse(const JSONValue& InResult, const std::string& InRequestID);
+    void OnTransportNotification(const std::string& InMethod, const JSONValue& InParams);
     void OnTransportError(const std::string& InError);
     void OnTransportStateChange(TransportState InOldState, TransportState InNewState);
 
@@ -294,7 +294,7 @@ class MCPServer : public MCPProtocol {
     // Progress tracking and tool execution
     MCPTask<CallToolResponse> ExecuteToolWithProgress(
         const Tool& InTool,
-        const std::optional<std::unordered_map<std::string, nlohmann::json>>& InArguments,
+        const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
         const std::string& InRequestID);
 
     // Resource subscription management

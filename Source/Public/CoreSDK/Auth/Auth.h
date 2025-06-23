@@ -63,7 +63,7 @@ class OAuth2AuthProvider final : public MCPAuthProvider {
                                                        const std::string& InToken) override;
 
   private:
-    MCPTask<nlohmann::json> ValidateTokenWithAuthServer(const std::string& InToken);
+    MCPTask<JSONValue> ValidateTokenWithAuthServer(const std::string& InToken);
     bool IsMethodAllowed(const std::string& InMethod, const std::vector<std::string>& InScopes);
 
     OAuth2Config m_Config;

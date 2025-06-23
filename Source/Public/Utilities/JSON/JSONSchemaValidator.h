@@ -27,38 +27,38 @@ class JSONSchemaValidator {
     };
 
     // Main validation method
-    [[nodiscard]] static ValidationResult ValidateAgainstSchema(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateAgainstSchema(const JSONValue& InData,
                                                                 const JSONSchema& InSchema);
 
     // Type-specific validation methods
-    [[nodiscard]] static ValidationResult ValidateObjectType(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateObjectType(const JSONValue& InData,
                                                              const JSONSchema& InSchema);
-    [[nodiscard]] static ValidationResult ValidateArrayType(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateArrayType(const JSONValue& InData,
                                                             const JSONSchema& InSchema);
-    [[nodiscard]] static ValidationResult ValidateStringType(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateStringType(const JSONValue& InData,
                                                              const JSONSchema& InSchema);
-    [[nodiscard]] static ValidationResult ValidateNumberType(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateNumberType(const JSONValue& InData,
                                                              const JSONSchema& InSchema);
-    [[nodiscard]] static ValidationResult ValidateBooleanType(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateBooleanType(const JSONValue& InData,
                                                               const JSONSchema& InSchema);
 
     // Extended validation methods for advanced JSON Schema features
-    [[nodiscard]] static ValidationResult ValidateAnyOf(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateAnyOf(const JSONValue& InData,
                                                         const std::vector<JSONSchema>& InSchemas);
-    [[nodiscard]] static ValidationResult ValidateOneOf(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateOneOf(const JSONValue& InData,
                                                         const std::vector<JSONSchema>& InSchemas);
-    [[nodiscard]] static ValidationResult ValidateAllOf(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateAllOf(const JSONValue& InData,
                                                         const std::vector<JSONSchema>& InSchemas);
-    [[nodiscard]] static ValidationResult ValidateNot(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateNot(const JSONValue& InData,
                                                       const JSONSchema& InSchema);
     [[nodiscard]] static ValidationResult
-    ValidateConditional(const nlohmann::json& InData, const JSONSchema& InIfSchema,
+    ValidateConditional(const JSONValue& InData, const JSONSchema& InIfSchema,
                         const std::optional<JSONSchema>& InThenSchema,
                         const std::optional<JSONSchema>& InElseSchema);
 
     // Helper methods
-    [[nodiscard]] static bool IsValidType(const nlohmann::json& InData, std::string_view InType);
-    [[nodiscard]] static std::string GetJSONType(const nlohmann::json& InData);
+    [[nodiscard]] static bool IsValidType(const JSONValue& InData, std::string_view InType);
+    [[nodiscard]] static std::string GetJSONType(const JSONValue& InData);
 
     // Performance optimization - validation caching
     struct CacheKey {
@@ -80,27 +80,27 @@ class JSONSchemaValidator {
     static std::mutex m_CacheMutex;
     static constexpr size_t MAX_CACHE_SIZE{10000};
 
-    static std::string HashJSON(const nlohmann::json& InJSON);
+    static std::string HashJSON(const JSONValue& InJSON);
     static std::string HashSchema(const JSONSchema& InSchema);
-    static CacheKey MakeCacheKey(const nlohmann::json& InData, const JSONSchema& InSchema);
+    static CacheKey MakeCacheKey(const JSONValue& InData, const JSONSchema& InSchema);
 
   private:
     // Private helper for recursive validation
-    [[nodiscard]] static ValidationResult ValidateRecursive(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateRecursive(const JSONValue& InData,
                                                             const JSONSchema& InSchema,
                                                             std::string_view InPath = "");
 
     // Advanced constraint validation
-    [[nodiscard]] static ValidationResult ValidateStringConstraints(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateStringConstraints(const JSONValue& InData,
                                                                     const JSONSchema& InSchema,
                                                                     std::string_view InPath);
-    [[nodiscard]] static ValidationResult ValidateNumberConstraints(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateNumberConstraints(const JSONValue& InData,
                                                                     const JSONSchema& InSchema,
                                                                     std::string_view InPath);
-    [[nodiscard]] static ValidationResult ValidateArrayConstraints(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateArrayConstraints(const JSONValue& InData,
                                                                    const JSONSchema& InSchema,
                                                                    std::string_view InPath);
-    [[nodiscard]] static ValidationResult ValidateObjectConstraints(const nlohmann::json& InData,
+    [[nodiscard]] static ValidationResult ValidateObjectConstraints(const JSONValue& InData,
                                                                     const JSONSchema& InSchema,
                                                                     std::string_view InPath);
 };

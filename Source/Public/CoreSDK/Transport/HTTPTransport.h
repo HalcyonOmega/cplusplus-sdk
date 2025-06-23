@@ -42,14 +42,13 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     [[nodiscard]] TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                     const nlohmann::json& InParams) override;
-    MCPTask_Void SendResponse(const std::string& InRequestID,
-                              const nlohmann::json& InResult) override;
+                                     const JSONValue& InParams) override;
+    MCPTask_Void SendResponse(const std::string& InRequestID, const JSONValue& InResult) override;
     MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
                                    const std::string& InErrorMessage,
-                                   const nlohmann::json& InErrorData = {}) override;
+                                   const JSONValue& InErrorData = {}) override;
     MCPTask_Void SendNotification(const std::string& InMethod,
-                                  const nlohmann::json& InParams = {}) override;
+                                  const JSONValue& InParams = {}) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -66,7 +65,7 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
 
   private:
     MCPTask_Void ConnectToServer();
-    MCPTask_Void SendHTTPMessage(const nlohmann::json& InMessage);
+    MCPTask_Void SendHTTPMessage(const JSONValue& InMessage);
     void StartSSEConnection();
     void ProcessSSELine(const std::string& InLine);
     void HandleConnectionError(const std::string& InError);
@@ -129,14 +128,13 @@ class HTTPTransportServer : public ITransport {
     [[nodiscard]] TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                     const nlohmann::json& InParams) override;
-    MCPTask_Void SendResponse(const std::string& InRequestID,
-                              const nlohmann::json& InResult) override;
+                                     const JSONValue& InParams) override;
+    MCPTask_Void SendResponse(const std::string& InRequestID, const JSONValue& InResult) override;
     MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
                                    const std::string& InErrorMessage,
-                                   const nlohmann::json& InErrorData = {}) override;
+                                   const JSONValue& InErrorData = {}) override;
     MCPTask_Void SendNotification(const std::string& InMethod,
-                                  const nlohmann::json& InParams = {}) override;
+                                  const JSONValue& InParams = {}) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -159,7 +157,7 @@ class HTTPTransportServer : public ITransport {
     std::string GenerateUniqueClientID() const;
 
   private:
-    MCPTask_Void SendToSSEClients(const nlohmann::json& InMessage);
+    MCPTask_Void SendToSSEClients(const JSONValue& InMessage);
     void ProcessReceivedMessage(const std::string& InMessage);
     std::string GenerateClientID() const;
 

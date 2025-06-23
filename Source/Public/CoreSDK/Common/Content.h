@@ -1,9 +1,12 @@
 #pragma once
 
+#include <Poco/Net/MediaType.h>
+
 #include <optional>
 #include <string>
 #include <variant>
 
+#include "CoreSDK/Common/Annotations.h"
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Common/Roles.h"
 #include "JSONProxy.h"
@@ -77,7 +80,7 @@ struct AudioContent : Content {
 
 // The contents of a specific resource or sub-resource.
 struct ResourceContents {
-    URI URI;                                      // The URI of this resource.
+    MCP::URI URI;                                 // The URI of this resource.
     std::optional<Poco::Net::MediaType> MIMEType; // The MIME type of this resource, if known.
 
     JKEY(URIKEY, URI, "uri")
@@ -104,13 +107,13 @@ struct TextResourceContents : ResourceContents {
 
 struct BlobResourceContents : ResourceContents {
     // TODO: @HalcyonOmega @format byte (base64) blob
-    BLOB Blob; // A base64-encoded string representing the binary data of the item.
+    MCP::BLOB Blob; // A base64-encoded string representing the binary data of the item.
 
     JKEY(BLOBKEY, Blob, "blob")
 
     DEFINE_TYPE_JSON_DERIVED(BlobResourceContents, ResourceContents, BLOBKEY)
 
-    BlobResourceContents(const BLOB& InBlob, const MCP::URI& InURI) {
+    BlobResourceContents(const MCP::BLOB& InBlob, const MCP::URI& InURI) {
         URI = InURI;
         MIMEType = Poco::Net::MediaType{"application", "octet-stream"};
         Blob = InBlob;

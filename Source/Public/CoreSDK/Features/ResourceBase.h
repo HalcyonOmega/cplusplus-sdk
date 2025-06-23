@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreSDK/Common/Annotations.h"
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
 #include "Poco/Net/MediaType.h"

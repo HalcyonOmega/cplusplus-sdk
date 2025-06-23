@@ -130,8 +130,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
     }
 }
 
-MCPTask<nlohmann::json>
-OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
+MCPTask<JSONValue> OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
     try {
         Poco::URI authURI{m_Config.AuthServerURL + "/oauth/introspect"};
 
@@ -161,7 +160,7 @@ OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
         std::string responseBody;
         Poco::StreamCopier::copyToString(responseStream, responseBody);
 
-        co_return nlohmann::json::parse(responseBody);
+        co_return JSONValue::parse(responseBody);
 
     } catch (const std::exception& e) {
         throw std::runtime_error(std::format("Token validation error: {}", e.what()));

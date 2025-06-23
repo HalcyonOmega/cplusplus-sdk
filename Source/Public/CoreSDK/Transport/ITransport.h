@@ -26,11 +26,11 @@ enum class TransportState { Disconnected, Connecting, Connected, Error };
 // Message handlers
 using MessageHandler = std::function<void(const std::string& InRawMessage)>;
 using RequestHandler = std::function<void(
-    const std::string& InMethod, const nlohmann::json& InParams, const std::string& InRequestID)>;
+    const std::string& InMethod, const JSONValue& InParams, const std::string& InRequestID)>;
 using ResponseHandler =
-    std::function<void(const nlohmann::json& InResult, const std::string& InRequestID)>;
+    std::function<void(const JSONValue& InResult, const std::string& InRequestID)>;
 using NotificationHandler =
-    std::function<void(const std::string& InMethod, const nlohmann::json& InParams)>;
+    std::function<void(const std::string& InMethod, const JSONValue& InParams)>;
 using ErrorHandler = std::function<void(const std::string& InErrorMessage)>;
 using StateChangeHandler =
     std::function<void(TransportState InOldState, TransportState InNewState)>;
@@ -74,14 +74,14 @@ class ITransport {
 
     // Message sending
     [[nodiscard]] virtual MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                                           const nlohmann::json& InParams) = 0;
+                                                           const JSONValue& InParams) = 0;
     virtual MCPTask_Void SendResponse(const std::string& InRequestID,
-                                      const nlohmann::json& InResult) = 0;
+                                      const JSONValue& InResult) = 0;
     virtual MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
                                            const std::string& InErrorMessage,
-                                           const nlohmann::json& InErrorData = {}) = 0;
+                                           const JSONValue& InErrorData = {}) = 0;
     virtual MCPTask_Void SendNotification(const std::string& InMethod,
-                                          const nlohmann::json& InParams = {}) = 0;
+                                          const JSONValue& InParams = {}) = 0;
 
     // Event handlers
     virtual void SetMessageHandler(MessageHandler InHandler) = 0;
@@ -97,7 +97,7 @@ class ITransport {
   protected:
     // Helper methods for derived classes
     [[nodiscard]] std::string GenerateRequestID() const;
-    [[nodiscard]] bool IsValidJSONRPC(const nlohmann::json& InMessage) const;
+    [[nodiscard]] bool IsValidJSONRPC(const JSONValue& InMessage) const;
     void TriggerStateChange(TransportState InNewState);
 
     TransportState m_CurrentState{TransportState::Disconnected};
@@ -131,15 +131,15 @@ class TransportFactory {
 
 // Helper functions for message parsing
 namespace MessageUtils {
-[[nodiscard]] std::optional<nlohmann::json> ParseJSONMessage(const std::string& InRawMessage);
-[[nodiscard]] bool IsRequest(const nlohmann::json& InMessage);
-[[nodiscard]] bool IsResponse(const nlohmann::json& InMessage);
-[[nodiscard]] bool IsNotification(const nlohmann::json& InMessage);
-[[nodiscard]] std::string ExtractMethod(const nlohmann::json& InMessage);
-[[nodiscard]] std::string ExtractRequestID(const nlohmann::json& InMessage);
-[[nodiscard]] nlohmann::json ExtractParams(const nlohmann::json& InMessage);
-[[nodiscard]] nlohmann::json ExtractResult(const nlohmann::json& InMessage);
-[[nodiscard]] nlohmann::json ExtractError(const nlohmann::json& InMessage);
+[[nodiscard]] std::optional<JSONValue> ParseJSONMessage(const std::string& InRawMessage);
+[[nodiscard]] bool IsRequest(const JSONValue& InMessage);
+[[nodiscard]] bool IsResponse(const JSONValue& InMessage);
+[[nodiscard]] bool IsNotification(const JSONValue& InMessage);
+[[nodiscard]] std::string ExtractMethod(const JSONValue& InMessage);
+[[nodiscard]] std::string ExtractRequestID(const JSONValue& InMessage);
+[[nodiscard]] JSONValue ExtractParams(const JSONValue& InMessage);
+[[nodiscard]] JSONValue ExtractResult(const JSONValue& InMessage);
+[[nodiscard]] JSONValue ExtractError(const JSONValue& InMessage);
 } // namespace MessageUtils
 
 MCP_NAMESPACE_END

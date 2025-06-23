@@ -47,7 +47,7 @@ MCPTask<std::vector<Tool>> SimpleMCPClient::ListTools() {
 }
 
 MCPTask<ToolCallResponse> SimpleMCPClient::CallTool(const std::string& InToolName,
-                                                    const nlohmann::json& InArguments) {
+                                                    const JSONValue& InArguments) {
     co_return co_await m_Client->CallTool(InToolName, InArguments);
 }
 
@@ -57,7 +57,7 @@ MCPTask<std::vector<Prompt>> SimpleMCPClient::ListPrompts() {
 }
 
 MCPTask<PromptGetResponse> SimpleMCPClient::GetPrompt(const std::string& InPromptName,
-                                                      const nlohmann::json& InArguments) {
+                                                      const JSONValue& InArguments) {
     co_return co_await m_Client->GetPrompt(InPromptName, InArguments);
 }
 
@@ -146,8 +146,8 @@ bool SimpleMCPServer::IsRunning() const {
 }
 
 void SimpleMCPServer::AddTool(const std::string& InName, const std::string& InDescription,
-                              const nlohmann::json& InInputSchema,
-                              std::function<ToolCallResponse(const nlohmann::json&)> InHandler) {
+                              const JSONValue& InInputSchema,
+                              std::function<ToolCallResponse(const JSONValue&)> InHandler) {
     Tool tool;
     tool.Name = InName;
     tool.Description = InDescription;
@@ -158,8 +158,8 @@ void SimpleMCPServer::AddTool(const std::string& InName, const std::string& InDe
 
 void SimpleMCPServer::AddPrompt(
     const std::string& InName, const std::string& InDescription,
-    const std::optional<nlohmann::json>& InArgumentsSchema,
-    std::function<PromptGetResponse(const std::optional<nlohmann::json>&)> InHandler) {
+    const std::optional<JSONValue>& InArgumentsSchema,
+    std::function<PromptGetResponse(const std::optional<JSONValue>&)> InHandler) {
     Prompt prompt;
     prompt.Name = InName;
     prompt.Description = InDescription;
@@ -200,7 +200,7 @@ void SimpleMCPServer::SetSamplingHandler(
 
 // Helper Functions Implementation
 Tool CreateTool(const std::string& InName, const std::string& InDescription,
-                const nlohmann::json& InInputSchema) {
+                const JSONValue& InInputSchema) {
     Tool tool;
     tool.Name = InName;
     tool.Description = InDescription;
@@ -209,7 +209,7 @@ Tool CreateTool(const std::string& InName, const std::string& InDescription,
 }
 
 Prompt CreatePrompt(const std::string& InName, const std::string& InDescription,
-                    const std::optional<nlohmann::json>& InArgumentsSchema) {
+                    const std::optional<JSONValue>& InArgumentsSchema) {
     Prompt prompt;
     prompt.Name = InName;
     prompt.Description = InDescription;
@@ -227,13 +227,13 @@ Resource CreateResource(const std::string& InURI, const std::string& InName,
     return resource;
 }
 
-nlohmann::json CreateToolSchema(const std::string& InType,
-                                const std::map<std::string, nlohmann::json>& InProperties,
-                                const std::vector<std::string>& InRequired) {
-    nlohmann::json schema = {{"type", InType}};
+JSONValue CreateToolSchema(const std::string& InType,
+                           const std::map<std::string, JSONValue>& InProperties,
+                           const std::vector<std::string>& InRequired) {
+    JSONValue schema = {{"type", InType}};
 
     if (!InProperties.empty()) {
-        schema["properties"] = nlohmann::json::object();
+        schema["properties"] = JSONValue::object();
         for (const auto& [name, property] : InProperties) { schema["properties"][name] = property; }
     }
 
@@ -242,19 +242,19 @@ nlohmann::json CreateToolSchema(const std::string& InType,
     return schema;
 }
 
-nlohmann::json CreateStringProperty(const std::string& InDescription,
-                                    const std::optional<std::string>& InPattern) {
-    nlohmann::json property = {{"type", "string"}, {"description", InDescription}};
+JSONValue CreateStringProperty(const std::string& InDescription,
+                               const std::optional<std::string>& InPattern) {
+    JSONValue property = {{"type", "string"}, {"description", InDescription}};
 
     if (InPattern.has_value()) { property["pattern"] = InPattern.value(); }
 
     return property;
 }
 
-nlohmann::json CreateNumberProperty(const std::string& InDescription,
-                                    const std::optional<double>& InMinimum,
-                                    const std::optional<double>& InMaximum) {
-    nlohmann::json property = {{"type", "number"}, {"description", InDescription}};
+JSONValue CreateNumberProperty(const std::string& InDescription,
+                               const std::optional<double>& InMinimum,
+                               const std::optional<double>& InMaximum) {
+    JSONValue property = {{"type", "number"}, {"description", InDescription}};
 
     if (InMinimum.has_value()) { property["minimum"] = InMinimum.value(); }
 
@@ -263,21 +263,20 @@ nlohmann::json CreateNumberProperty(const std::string& InDescription,
     return property;
 }
 
-nlohmann::json CreateBooleanProperty(const std::string& InDescription) {
+JSONValue CreateBooleanProperty(const std::string& InDescription) {
     return {{"type", "boolean"}, {"description", InDescription}};
 }
 
-nlohmann::json CreateArrayProperty(const std::string& InDescription,
-                                   const nlohmann::json& InItems) {
+JSONValue CreateArrayProperty(const std::string& InDescription, const JSONValue& InItems) {
     return {{"type", "array"}, {"description", InDescription}, {"items", InItems}};
 }
 
-nlohmann::json CreateObjectProperty(const std::string& InDescription,
-                                    const std::map<std::string, nlohmann::json>& InProperties) {
-    nlohmann::json property = {{"type", "object"}, {"description", InDescription}};
+JSONValue CreateObjectProperty(const std::string& InDescription,
+                               const std::map<std::string, JSONValue>& InProperties) {
+    JSONValue property = {{"type", "object"}, {"description", InDescription}};
 
     if (!InProperties.empty()) {
-        property["properties"] = nlohmann::json::object();
+        property["properties"] = JSONValue::object();
         for (const auto& [name, prop] : InProperties) { property["properties"][name] = prop; }
     }
 

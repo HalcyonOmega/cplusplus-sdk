@@ -40,7 +40,7 @@ class IMCPTool {
     virtual std::string GetName() const = 0;
     virtual std::string GetDescription() const = 0;
     virtual MCPTask<ToolResult>
-    Execute(const std::unordered_map<std::string, nlohmann::json>& InArguments) = 0;
+    Execute(const std::unordered_map<std::string, JSONValue>& InArguments) = 0;
 };
 
 // Simple prompt interface
@@ -96,7 +96,7 @@ class SimpleMCPClient {
     MCPTask<std::vector<std::string>> ListTools();
     MCPTask<ToolResult>
     CallTool(const std::string& InName,
-             const std::unordered_map<std::string, nlohmann::json>& InArguments = {});
+             const std::unordered_map<std::string, JSONValue>& InArguments = {});
 
     // Prompt operations
     MCPTask<std::vector<std::string>> ListPrompts();
@@ -171,7 +171,7 @@ std::unique_ptr<IMCPTool> CreateTool(const std::string& InName, const std::strin
         }
 
         MCPTask<ToolResult>
-        Execute(const std::unordered_map<std::string, nlohmann::json>& InArguments) override {
+        Execute(const std::unordered_map<std::string, JSONValue>& InArguments) override {
             co_return m_Function(InArguments);
         }
 

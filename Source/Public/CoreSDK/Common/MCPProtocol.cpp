@@ -11,16 +11,16 @@ MCPProtocol::MCPProtocol(std::shared_ptr<ITransport> InTransport) : m_Transport(
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetRequestHandler([this](std::string_view InMethod, const nlohmann::json& InParams,
-                                          std::string_view InRequestID) {
-        HandleIncomingRequest(InMethod, InParams, InRequestID);
-    });
+    m_Transport->SetRequestHandler(
+        [this](std::string_view InMethod, const JSONValue& InParams, std::string_view InRequestID) {
+            HandleIncomingRequest(InMethod, InParams, InRequestID);
+        });
 
     m_Transport->SetResponseHandler(
         [this](std::string_view InResponseData) { HandleIncomingResponse(InResponseData); });
 
     m_Transport->SetNotificationHandler(
-        [this](std::string_view InMethod, const nlohmann::json& InParams) {
+        [this](std::string_view InMethod, const JSONValue& InParams) {
             HandleIncomingNotification(InMethod, InParams);
         });
 
@@ -53,7 +53,7 @@ MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
 
         if (InServerInfo.has_value()) { initRequest.ServerInfo = InServerInfo.value(); }
 
-        auto responseJson = co_await SendRequestImpl("initialize", nlohmann::json(initRequest));
+        auto responseJson = co_await SendRequestImpl("initialize", JSONValue(initRequest));
         auto response = responseJson.get<InitializeResponse>();
 
         // Store negotiated capabilities
@@ -61,7 +61,7 @@ MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
         m_ServerInfo = response.ServerInfo;
 
         // Send initialized notification
-        co_await SendNotificationImpl("initialized", nlohmann::json::object());
+        co_await SendNotificationImpl("initialized", JSONValue::object());
 
         m_IsInitialized = true;
 
@@ -107,15 +107,13 @@ bool MCPProtocol::IsInitialized() const {
     return m_IsInitialized;
 }
 
-MCPTask<nlohmann::json> MCPProtocol::SendRequest(std::string_view InMethod,
-                                                 const nlohmann::json& InParams) {
+MCPTask<JSONValue> MCPProtocol::SendRequest(std::string_view InMethod, const JSONValue& InParams) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_return co_await SendRequestImpl(InMethod, InParams);
 }
 
-MCPTask_Void MCPProtocol::SendResponse(std::string_view InRequestID,
-                                       const nlohmann::json& InResult) {
+MCPTask_Void MCPProtocol::SendResponse(std::string_view InRequestID, const JSONValue& InResult) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_await m_Transport->SendResponse(InRequestID, InResult);
@@ -123,14 +121,13 @@ MCPTask_Void MCPProtocol::SendResponse(std::string_view InRequestID,
 
 MCPTask_Void MCPProtocol::SendErrorResponse(std::string_view InRequestID, int64_t InErrorCode,
                                             std::string_view InErrorMessage,
-                                            const nlohmann::json& InErrorData) {
+                                            const JSONValue& InErrorData) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_await m_Transport->SendErrorResponse(InRequestID, InErrorCode, InErrorMessage, InErrorData);
 }
 
-MCPTask_Void MCPProtocol::SendNotification(std::string_view InMethod,
-                                           const nlohmann::json& InParams) {
+MCPTask_Void MCPProtocol::SendNotification(std::string_view InMethod, const JSONValue& InParams) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
     co_await SendNotificationImpl(InMethod, InParams);
@@ -166,8 +163,8 @@ const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
     return m_ServerInfo;
 }
 
-MCPTask<nlohmann::json> MCPProtocol::SendRequestImpl(std::string_view InMethod,
-                                                     const nlohmann::json& InParams) {
+MCPTask<JSONValue> MCPProtocol::SendRequestImpl(std::string_view InMethod,
+                                                const JSONValue& InParams) {
     std::string requestID = GenerateRequestID();
 
     // Create promise for response
@@ -187,7 +184,7 @@ MCPTask<nlohmann::json> MCPProtocol::SendRequestImpl(std::string_view InMethod,
         std::string responseStr = co_await m_Transport->SendRequest(InMethod, InParams);
 
         // Parse response
-        auto response = nlohmann::json::parse(responseStr);
+        auto response = JSONValue::parse(responseStr);
         co_return response;
 
     } catch (const std::exception&) {
@@ -199,11 +196,11 @@ MCPTask<nlohmann::json> MCPProtocol::SendRequestImpl(std::string_view InMethod,
 }
 
 MCPTask_Void MCPProtocol::SendNotificationImpl(std::string_view InMethod,
-                                               const nlohmann::json& InParams) {
+                                               const JSONValue& InParams) {
     co_await m_Transport->SendNotification(InMethod, InParams);
 }
 
-void MCPProtocol::HandleIncomingRequest(std::string_view InMethod, const nlohmann::json& InParams,
+void MCPProtocol::HandleIncomingRequest(std::string_view InMethod, const JSONValue& InParams,
                                         std::string_view InRequestID) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
@@ -212,18 +209,18 @@ void MCPProtocol::HandleIncomingRequest(std::string_view InMethod, const nlohman
             handler->second(InParams, InRequestID);
         } else {
             // Send method not found error
-            SendErrorResponse(InRequestID, -32601, "Method not found", nlohmann::json::object());
+            SendErrorResponse(InRequestID, -32601, "Method not found", JSONValue::object());
         }
     } catch (const std::exception& e) {
         // Send internal error
         SendErrorResponse(InRequestID, -32603, "Internal error",
-                          nlohmann::json::object({{"details", e.what()}}));
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
     try {
-        auto response = nlohmann::json::parse(InResponseData);
+        auto response = JSONValue::parse(InResponseData);
 
         if (!response.contains("id")) {
             return; // Invalid response without ID
@@ -249,8 +246,7 @@ void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
     }
 }
 
-void MCPProtocol::HandleIncomingNotification(std::string_view InMethod,
-                                             const nlohmann::json& InParams) {
+void MCPProtocol::HandleIncomingNotification(std::string_view InMethod, const JSONValue& InParams) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
         auto handler = m_NotificationHandlers.find(InMethod);
@@ -326,19 +322,19 @@ MCPTask<ToolListResponse> MCPClient::ListTools(const std::optional<std::string>&
     ToolListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
-    auto response = co_await m_Protocol->SendRequest("tools/list", nlohmann::json(request));
+    auto response = co_await m_Protocol->SendRequest("tools/list", JSONValue(request));
     co_return response.get<ToolListResponse>();
 }
 
 MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
-                                              const nlohmann::json& InArguments) {
+                                              const JSONValue& InArguments) {
     if (!m_IsConnected) { throw std::runtime_error("Client not connected"); }
 
     ToolCallRequest request;
     request.Name = InToolName;
     request.Arguments = InArguments;
 
-    auto response = co_await m_Protocol->SendRequest("tools/call", nlohmann::json(request));
+    auto response = co_await m_Protocol->SendRequest("tools/call", JSONValue(request));
     co_return response.get<ToolCallResponse>();
 }
 
@@ -348,19 +344,19 @@ MCPTask<PromptListResponse> MCPClient::ListPrompts(const std::optional<std::stri
     PromptListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
-    auto response = co_await m_Protocol->SendRequest("prompts/list", nlohmann::json(request));
+    auto response = co_await m_Protocol->SendRequest("prompts/list", JSONValue(request));
     co_return response.get<PromptListResponse>();
 }
 
 MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
-                                                const std::optional<nlohmann::json>& InArguments) {
+                                                const std::optional<JSONValue>& InArguments) {
     if (!m_IsConnected) { throw std::runtime_error("Client not connected"); }
 
     PromptGetRequest request;
     request.Name = InPromptName;
     if (InArguments.has_value()) { request.Arguments = InArguments.value(); }
 
-    auto response = co_await m_Protocol->SendRequest("prompts/get", nlohmann::json(request));
+    auto response = co_await m_Protocol->SendRequest("prompts/get", JSONValue(request));
     co_return response.get<PromptGetResponse>();
 }
 
@@ -370,7 +366,7 @@ MCPTask<ResourceListResponse> MCPClient::ListResources(const std::optional<std::
     ResourceListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
-    auto response = co_await m_Protocol->SendRequest("resources/list", nlohmann::json(request));
+    auto response = co_await m_Protocol->SendRequest("resources/list", JSONValue(request));
     co_return response.get<ResourceListResponse>();
 }
 
@@ -380,7 +376,7 @@ MCPTask<ResourceReadResponse> MCPClient::ReadResource(const std::string& InResou
     ResourceReadRequest request;
     request.URI = InResourceURI;
 
-    auto response = co_await m_Protocol->SendRequest("resources/read", nlohmann::json(request));
+    auto response = co_await m_Protocol->SendRequest("resources/read", JSONValue(request));
     co_return response.get<ResourceReadResponse>();
 }
 
@@ -390,7 +386,7 @@ MCPTask_Void MCPClient::SubscribeToResource(const std::string& InResourceURI) {
     ResourceSubscribeRequest request;
     request.URI = InResourceURI;
 
-    co_await m_Protocol->SendRequest("resources/subscribe", nlohmann::json(request));
+    co_await m_Protocol->SendRequest("resources/subscribe", JSONValue(request));
 }
 
 MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI) {
@@ -399,7 +395,7 @@ MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI
     ResourceUnsubscribeRequest request;
     request.URI = InResourceURI;
 
-    co_await m_Protocol->SendRequest("resources/unsubscribe", nlohmann::json(request));
+    co_await m_Protocol->SendRequest("resources/unsubscribe", JSONValue(request));
 }
 
 MCPTask<SamplingCreateMessageResponse>
@@ -407,7 +403,7 @@ MCPClient::CreateMessage(const SamplingCreateMessageRequest& InRequest) {
     if (!m_IsConnected) { throw std::runtime_error("Client not connected"); }
 
     auto response =
-        co_await m_Protocol->SendRequest("sampling/createMessage", nlohmann::json(InRequest));
+        co_await m_Protocol->SendRequest("sampling/createMessage", JSONValue(InRequest));
     co_return response.get<SamplingCreateMessageResponse>();
 }
 
@@ -415,8 +411,7 @@ MCPTask<CompletionCompleteResponse>
 MCPClient::CompleteText(const CompletionCompleteRequest& InRequest) {
     if (!m_IsConnected) { throw std::runtime_error("Client not connected"); }
 
-    auto response =
-        co_await m_Protocol->SendRequest("completion/complete", nlohmann::json(InRequest));
+    auto response = co_await m_Protocol->SendRequest("completion/complete", JSONValue(InRequest));
     co_return response.get<CompletionCompleteResponse>();
 }
 
@@ -425,7 +420,7 @@ void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
 
     // Set up protocol notification handler
     m_Protocol->SetNotificationHandler(
-        "notifications/resources/updated", [this](const nlohmann::json& InParams) {
+        "notifications/resources/updated", [this](const JSONValue& InParams) {
             if (m_ResourceUpdatedHandler) {
                 auto notification = InParams.get<ResourceUpdatedNotification>();
                 m_ResourceUpdatedHandler(notification);
@@ -437,7 +432,7 @@ void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandl
     m_ResourceListChangedHandler = InHandler;
 
     m_Protocol->SetNotificationHandler(
-        "notifications/resources/list_changed", [this](const nlohmann::json& InParams) {
+        "notifications/resources/list_changed", [this](const JSONValue& InParams) {
             if (m_ResourceListChangedHandler) {
                 auto notification = InParams.get<ResourceListChangedNotification>();
                 m_ResourceListChangedHandler(notification);
@@ -449,7 +444,7 @@ void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
     m_ToolListChangedHandler = InHandler;
 
     m_Protocol->SetNotificationHandler(
-        "notifications/tools/list_changed", [this](const nlohmann::json& InParams) {
+        "notifications/tools/list_changed", [this](const JSONValue& InParams) {
             if (m_ToolListChangedHandler) {
                 auto notification = InParams.get<ToolListChangedNotification>();
                 m_ToolListChangedHandler(notification);
@@ -461,7 +456,7 @@ void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) 
     m_PromptListChangedHandler = InHandler;
 
     m_Protocol->SetNotificationHandler(
-        "notifications/prompts/list_changed", [this](const nlohmann::json& InParams) {
+        "notifications/prompts/list_changed", [this](const JSONValue& InParams) {
             if (m_PromptListChangedHandler) {
                 auto notification = InParams.get<PromptListChangedNotification>();
                 m_PromptListChangedHandler(notification);
@@ -472,25 +467,23 @@ void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) 
 void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
     m_ProgressHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler(
-        "notifications/progress", [this](const nlohmann::json& InParams) {
-            if (m_ProgressHandler) {
-                auto notification = InParams.get<ProgressNotification>();
-                m_ProgressHandler(notification);
-            }
-        });
+    m_Protocol->SetNotificationHandler("notifications/progress", [this](const JSONValue& InParams) {
+        if (m_ProgressHandler) {
+            auto notification = InParams.get<ProgressNotification>();
+            m_ProgressHandler(notification);
+        }
+    });
 }
 
 void MCPClient::SetLogHandler(LogHandler InHandler) {
     m_LogHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler(
-        "notifications/message", [this](const nlohmann::json& InParams) {
-            if (m_LogHandler) {
-                auto notification = InParams.get<LoggingMessageNotification>();
-                m_LogHandler(notification);
-            }
-        });
+    m_Protocol->SetNotificationHandler("notifications/message", [this](const JSONValue& InParams) {
+        if (m_LogHandler) {
+            auto notification = InParams.get<LoggingMessageNotification>();
+            m_LogHandler(notification);
+        }
+    });
 }
 
 void MCPClient::CreateTransport() {
@@ -629,28 +622,28 @@ MCPTask_Void MCPServer::NotifyResourceUpdated(const std::string& InURI) {
     notification.URI = InURI;
 
     co_await m_Protocol->SendNotification("notifications/resources/updated",
-                                          nlohmann::json(notification));
+                                          JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::NotifyResourceListChanged() {
     ResourceListChangedNotification notification;
 
     co_await m_Protocol->SendNotification("notifications/resources/list_changed",
-                                          nlohmann::json(notification));
+                                          JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::NotifyToolListChanged() {
     ToolListChangedNotification notification;
 
     co_await m_Protocol->SendNotification("notifications/tools/list_changed",
-                                          nlohmann::json(notification));
+                                          JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::NotifyPromptListChanged() {
     PromptListChangedNotification notification;
 
     co_await m_Protocol->SendNotification("notifications/prompts/list_changed",
-                                          nlohmann::json(notification));
+                                          JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::SendProgress(const std::string& InProgressToken, double InProgress,
@@ -660,7 +653,7 @@ MCPTask_Void MCPServer::SendProgress(const std::string& InProgressToken, double 
     notification.Progress = InProgress;
     notification.Total = InTotal;
 
-    co_await m_Protocol->SendNotification("notifications/progress", nlohmann::json(notification));
+    co_await m_Protocol->SendNotification("notifications/progress", JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::SendLog(LoggingLevel InLevel, const std::string& InMessage,
@@ -670,7 +663,7 @@ MCPTask_Void MCPServer::SendLog(LoggingLevel InLevel, const std::string& InMessa
     notification.Data = InMessage;
     if (InLogger.has_value()) { notification.Logger = InLogger.value(); }
 
-    co_await m_Protocol->SendNotification("notifications/message", nlohmann::json(notification));
+    co_await m_Protocol->SendNotification("notifications/message", JSONValue(notification));
 }
 
 void MCPServer::SetSamplingHandler(SamplingHandler InHandler) {
@@ -704,67 +697,67 @@ void MCPServer::CreateProtocol() {
 void MCPServer::SetupDefaultHandlers() {
     // Initialize request handler
     m_Protocol->SetRequestHandler(
-        "initialize", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "initialize", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandleInitialize(InParams, InRequestID);
         });
 
     // Tools handlers
     m_Protocol->SetRequestHandler(
-        "tools/list", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "tools/list", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandleToolsList(InParams, InRequestID);
         });
 
     m_Protocol->SetRequestHandler(
-        "tools/call", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "tools/call", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandleToolCall(InParams, InRequestID);
         });
 
     // Prompts handlers
     m_Protocol->SetRequestHandler(
-        "prompts/list", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "prompts/list", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandlePromptsList(InParams, InRequestID);
         });
 
     m_Protocol->SetRequestHandler(
-        "prompts/get", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "prompts/get", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandlePromptGet(InParams, InRequestID);
         });
 
     // Resources handlers
     m_Protocol->SetRequestHandler(
-        "resources/list", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "resources/list", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandleResourcesList(InParams, InRequestID);
         });
 
     m_Protocol->SetRequestHandler(
-        "resources/read", [this](const nlohmann::json& InParams, const std::string& InRequestID) {
+        "resources/read", [this](const JSONValue& InParams, const std::string& InRequestID) {
             HandleResourceRead(InParams, InRequestID);
         });
 
-    m_Protocol->SetRequestHandler("resources/subscribe", [this](const nlohmann::json& InParams,
-                                                                const std::string& InRequestID) {
-        HandleResourceSubscribe(InParams, InRequestID);
-    });
+    m_Protocol->SetRequestHandler(
+        "resources/subscribe", [this](const JSONValue& InParams, const std::string& InRequestID) {
+            HandleResourceSubscribe(InParams, InRequestID);
+        });
 
-    m_Protocol->SetRequestHandler("resources/unsubscribe", [this](const nlohmann::json& InParams,
-                                                                  const std::string& InRequestID) {
-        HandleResourceUnsubscribe(InParams, InRequestID);
-    });
+    m_Protocol->SetRequestHandler(
+        "resources/unsubscribe", [this](const JSONValue& InParams, const std::string& InRequestID) {
+            HandleResourceUnsubscribe(InParams, InRequestID);
+        });
 
     // Sampling handler
-    m_Protocol->SetRequestHandler("sampling/createMessage", [this](const nlohmann::json& InParams,
+    m_Protocol->SetRequestHandler("sampling/createMessage", [this](const JSONValue& InParams,
                                                                    const std::string& InRequestID) {
         HandleSamplingCreateMessage(InParams, InRequestID);
     });
 
     // Completion handler
-    m_Protocol->SetRequestHandler("completion/complete", [this](const nlohmann::json& InParams,
-                                                                const std::string& InRequestID) {
-        HandleCompletionComplete(InParams, InRequestID);
-    });
+    m_Protocol->SetRequestHandler(
+        "completion/complete", [this](const JSONValue& InParams, const std::string& InRequestID) {
+            HandleCompletionComplete(InParams, InRequestID);
+        });
 }
 
-void MCPServer::HandleInitialize(const nlohmann::json& InParams, const std::string& InRequestID) {
+void MCPServer::HandleInitialize(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<InitializeRequest>();
 
@@ -785,7 +778,7 @@ void MCPServer::HandleInitialize(const nlohmann::json& InParams, const std::stri
             m_Protocol->SendErrorResponse(InRequestID, -32602,
                                           "Unsupported protocol version: " + request.ProtocolVersion
                                               + ". Supported versions: " + supportedVersions,
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
@@ -823,15 +816,15 @@ void MCPServer::HandleInitialize(const nlohmann::json& InParams, const std::stri
 
         response.Capabilities = capabilities;
 
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleToolsList(const nlohmann::json& InParams, const std::string& InRequestID) {
+void MCPServer::HandleToolsList(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<ToolListRequest>();
 
@@ -840,15 +833,15 @@ void MCPServer::HandleToolsList(const nlohmann::json& InParams, const std::strin
         std::lock_guard<std::mutex> lock(m_ToolsMutex);
         for (const auto& [name, tool] : m_Tools) { response.Tools.push_back(tool); }
 
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleToolCall(const nlohmann::json& InParams, const std::string& InRequestID) {
+void MCPServer::HandleToolCall(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<ToolCallRequest>();
 
@@ -856,7 +849,7 @@ void MCPServer::HandleToolCall(const nlohmann::json& InParams, const std::string
         auto toolIter = m_Tools.find(request.Name);
         if (toolIter == m_Tools.end()) {
             m_Protocol->SendErrorResponse(InRequestID, -32601, "Tool not found",
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
@@ -864,13 +857,13 @@ void MCPServer::HandleToolCall(const nlohmann::json& InParams, const std::string
         auto handler = m_ToolHandlers.find(request.Name);
         if (handler == m_ToolHandlers.end()) {
             m_Protocol->SendErrorResponse(InRequestID, -32601, "Tool handler not found",
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
         // CRITICAL: Validate arguments against tool's input schema
         if (request.Arguments.has_value()) {
-            nlohmann::json argsJson = *request.Arguments;
+            JSONValue argsJson = *request.Arguments;
 
             // Validate using JSONSchemaValidator
             auto validationResult =
@@ -882,29 +875,29 @@ void MCPServer::HandleToolCall(const nlohmann::json& InParams, const std::string
                     errorDetails += validationResult.Errors[i];
                 }
                 m_Protocol->SendErrorResponse(InRequestID, -32602, "Schema validation error",
-                                              nlohmann::json::object({{"details", errorDetails}}));
+                                              JSONValue::object({{"details", errorDetails}}));
                 return;
             }
         } else {
             // Check if tool requires arguments
             if (tool.InputSchema.Required.has_value() && !tool.InputSchema.Required->empty()) {
                 m_Protocol->SendErrorResponse(InRequestID, -32602, "Required arguments missing",
-                                              nlohmann::json::object({{"tool", request.Name}}));
+                                              JSONValue::object({{"tool", request.Name}}));
                 return;
             }
         }
 
         // Call handler with validated arguments
         auto response = handler->second(request.Arguments);
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandlePromptsList(const nlohmann::json& InParams, const std::string& InRequestID) {
+void MCPServer::HandlePromptsList(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<PromptListRequest>();
 
@@ -913,15 +906,15 @@ void MCPServer::HandlePromptsList(const nlohmann::json& InParams, const std::str
         std::lock_guard<std::mutex> lock(m_PromptsMutex);
         for (const auto& [name, prompt] : m_Prompts) { response.Prompts.push_back(prompt); }
 
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandlePromptGet(const nlohmann::json& InParams, const std::string& InRequestID) {
+void MCPServer::HandlePromptGet(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<PromptGetRequest>();
 
@@ -929,22 +922,21 @@ void MCPServer::HandlePromptGet(const nlohmann::json& InParams, const std::strin
         auto handler = m_PromptHandlers.find(request.Name);
         if (handler == m_PromptHandlers.end()) {
             m_Protocol->SendErrorResponse(InRequestID, -32601, "Prompt not found",
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
         // Call handler
         auto response = handler->second(request.Arguments);
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleResourcesList(const nlohmann::json& InParams,
-                                    const std::string& InRequestID) {
+void MCPServer::HandleResourcesList(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<ResourceListRequest>();
 
@@ -959,7 +951,7 @@ void MCPServer::HandleResourcesList(const nlohmann::json& InParams,
                 startIndex = DecodeCursor(*request.Cursor);
             } catch (const std::exception& e) {
                 m_Protocol->SendErrorResponse(InRequestID, -32602, "Invalid cursor format",
-                                              nlohmann::json::object({{"details", e.what()}}));
+                                              JSONValue::object({{"details", e.what()}}));
                 return;
             }
         }
@@ -984,15 +976,15 @@ void MCPServer::HandleResourcesList(const nlohmann::json& InParams,
         // Set next cursor if more resources available
         if (endIndex < totalResources) { response.NextCursor = EncodeCursor(endIndex); }
 
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleResourceRead(const nlohmann::json& InParams, const std::string& InRequestID) {
+void MCPServer::HandleResourceRead(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<ResourceReadRequest>();
 
@@ -1000,22 +992,21 @@ void MCPServer::HandleResourceRead(const nlohmann::json& InParams, const std::st
         auto handler = m_ResourceHandlers.find(request.URI);
         if (handler == m_ResourceHandlers.end()) {
             m_Protocol->SendErrorResponse(InRequestID, -32601, "Resource not found",
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
         // Call handler
         auto response = handler->second();
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleResourceSubscribe(const nlohmann::json& InParams,
-                                        const std::string& InRequestID) {
+void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const std::string& InRequestID) {
     try {
         auto request = InParams.get<ResourceSubscribeRequest>();
         std::string uri = request.URI;
@@ -1027,7 +1018,7 @@ void MCPServer::HandleResourceSubscribe(const nlohmann::json& InParams,
             std::lock_guard<std::mutex> lock(m_ResourcesMutex);
             if (m_Resources.find(uri) == m_Resources.end()) {
                 m_Protocol->SendErrorResponse(InRequestID, -32601, "Resource not found",
-                                              nlohmann::json::object({{"uri", uri}}));
+                                              JSONValue::object({{"uri", uri}}));
                 return;
             }
         }
@@ -1039,15 +1030,15 @@ void MCPServer::HandleResourceSubscribe(const nlohmann::json& InParams,
         }
 
         // Send empty response to indicate success
-        m_Protocol->SendResponse(InRequestID, nlohmann::json::object());
+        m_Protocol->SendResponse(InRequestID, JSONValue::object());
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleResourceUnsubscribe(const nlohmann::json& InParams,
+void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams,
                                           const std::string& InRequestID) {
     try {
         auto request = InParams.get<ResourceUnsubscribeRequest>();
@@ -1066,11 +1057,11 @@ void MCPServer::HandleResourceUnsubscribe(const nlohmann::json& InParams,
         }
 
         // Send empty response
-        m_Protocol->SendResponse(InRequestID, nlohmann::json::object());
+        m_Protocol->SendResponse(InRequestID, JSONValue::object());
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
@@ -1118,49 +1109,49 @@ MCPServer::SendNotificationToClient(const std::string& InClientID,
     // For now, send to all clients via the protocol
     // In a real implementation, this would route to the specific client
     co_await m_Protocol->SendNotification("notifications/resources/updated",
-                                          nlohmann::json(InNotification));
+                                          JSONValue(InNotification));
     co_return;
 }
 
-void MCPServer::HandleSamplingCreateMessage(const nlohmann::json& InParams,
+void MCPServer::HandleSamplingCreateMessage(const JSONValue& InParams,
                                             const std::string& InRequestID) {
     try {
         auto request = InParams.get<SamplingCreateMessageRequest>();
 
         if (!m_SamplingHandler) {
             m_Protocol->SendErrorResponse(InRequestID, -32601, "Sampling not supported",
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
         // Call handler
         auto response = m_SamplingHandler(request);
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
-void MCPServer::HandleCompletionComplete(const nlohmann::json& InParams,
+void MCPServer::HandleCompletionComplete(const JSONValue& InParams,
                                          const std::string& InRequestID) {
     try {
         auto request = InParams.get<CompletionCompleteRequest>();
 
         if (!m_CompletionHandler) {
             m_Protocol->SendErrorResponse(InRequestID, -32601, "Completion not supported",
-                                          nlohmann::json::object());
+                                          JSONValue::object());
             return;
         }
 
         // Call handler
         auto response = m_CompletionHandler(request);
-        m_Protocol->SendResponse(InRequestID, nlohmann::json(response));
+        m_Protocol->SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
         m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      nlohmann::json::object({{"details", e.what()}}));
+                                      JSONValue::object({{"details", e.what()}}));
     }
 }
 
@@ -1232,8 +1223,7 @@ MCPTask_Void ProgressTracker::UpdateProgress(double InProgress, std::optional<in
         notification.Progress = InProgress;
         if (InTotal.has_value()) { notification.Total = *InTotal; }
 
-        co_await m_Protocol->SendNotification("notifications/progress",
-                                              nlohmann::json(notification));
+        co_await m_Protocol->SendNotification("notifications/progress", JSONValue(notification));
     } catch (const std::exception&) {
         // Ignore progress reporting errors to not break main operation
     }
@@ -1253,7 +1243,7 @@ MCPTask_Void ProgressTracker::CompleteProgress() {
 // Enhanced tool execution with progress reporting
 MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
     const Tool& InTool,
-    const std::optional<std::unordered_map<std::string, nlohmann::json>>& InArguments,
+    const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
     const std::string& InRequestID) {
     auto progressTracker = std::make_shared<ProgressTracker>(InRequestID, m_Protocol);
 

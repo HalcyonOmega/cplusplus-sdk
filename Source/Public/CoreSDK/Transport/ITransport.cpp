@@ -17,7 +17,7 @@ std::string ITransport::GenerateRequestID() const {
     return StrStream.str();
 }
 
-bool ITransport::IsValidJSONRPC(const nlohmann::json& InMessage) const {
+bool ITransport::IsValidJSONRPC(const JSONValue& InMessage) const {
     if (!InMessage.is_object()) { return false; }
 
     // Must have jsonrpc field with value "2.0"
@@ -92,20 +92,20 @@ TransportFactory::CreateHTTPTransport(const HTTPTransportOptions& InOptions) {
 // MessageUtils implementation
 namespace MessageUtils {
 
-std::optional<nlohmann::json> ParseJSONMessage(const std::string& InRawMessage) {
+std::optional<JSONValue> ParseJSONMessage(const std::string& InRawMessage) {
     try {
-        return nlohmann::json::parse(InRawMessage);
-    } catch (const nlohmann::json::parse_error&) { return std::nullopt; }
+        return JSONValue::parse(InRawMessage);
+    } catch (const JSONValue::parse_error&) { return std::nullopt; }
 }
 
-std::string ExtractMethod(const nlohmann::json& InMessage) {
+std::string ExtractMethod(const JSONValue& InMessage) {
     if (InMessage.contains("method") && InMessage["method"].is_string()) {
         return InMessage["method"].get<std::string>();
     }
     return "";
 }
 
-std::string ExtractRequestID(const nlohmann::json& InMessage) {
+std::string ExtractRequestID(const JSONValue& InMessage) {
     if (InMessage.contains("id")) {
         if (InMessage["id"].is_string()) { return InMessage["id"].get<std::string>(); }
         if (InMessage["id"].is_number()) { return std::to_string(InMessage["id"].get<int64_t>()); }
@@ -113,9 +113,9 @@ std::string ExtractRequestID(const nlohmann::json& InMessage) {
     return "";
 }
 
-nlohmann::json ExtractParams(const nlohmann::json& InMessage) {
+JSONValue ExtractParams(const JSONValue& InMessage) {
     if (InMessage.contains("params")) { return InMessage["params"]; }
-    return nlohmann::json::object();
+    return JSONValue::object();
 }
 
 } // namespace MessageUtils

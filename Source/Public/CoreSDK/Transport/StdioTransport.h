@@ -9,8 +9,9 @@
 #include <thread>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/ErrorBase.h"
 #include "CoreSDK/Transport/ITransport.h"
-#include "json.hpp"
+#include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -26,14 +27,13 @@ class StdioTransport : public ITransport {
     TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                     const nlohmann::json& InParams) override;
-    MCPTask_Void SendResponse(const std::string& InRequestID,
-                              const nlohmann::json& InResult) override;
-    MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
+                                     const JSONValue& InParams) override;
+    MCPTask_Void SendResponse(const std::string& InRequestID, const JSONValue& InResult) override;
+    MCPTask_Void SendErrorResponse(const std::string& InRequestID, MCP::Errors InErrorCode,
                                    const std::string& InErrorMessage,
-                                   const nlohmann::json& InErrorData = {}) override;
+                                   const JSONValue& InErrorData = {}) override;
     MCPTask_Void SendNotification(const std::string& InMethod,
-                                  const nlohmann::json& InParams = {}) override;
+                                  const JSONValue& InParams = {}) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -50,7 +50,7 @@ class StdioTransport : public ITransport {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    MCPTask_Void WriteMessage(const nlohmann::json& InMessage);
+    MCPTask_Void WriteMessage(const JSONValue& InMessage);
     void HandleError(const std::string& InError);
     void Cleanup();
 
@@ -90,14 +90,13 @@ class StdioServerTransport : public ITransport {
     TransportState GetState() const override;
 
     MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                     const nlohmann::json& InParams) override;
-    MCPTask_Void SendResponse(const std::string& InRequestID,
-                              const nlohmann::json& InResult) override;
+                                     const JSONValue& InParams) override;
+    MCPTask_Void SendResponse(const std::string& InRequestID, const JSONValue& InResult) override;
     MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
                                    const std::string& InErrorMessage,
-                                   const nlohmann::json& InErrorData = {}) override;
+                                   const JSONValue& InErrorData = {}) override;
     MCPTask_Void SendNotification(const std::string& InMethod,
-                                  const nlohmann::json& InParams = {}) override;
+                                  const JSONValue& InParams = {}) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -114,7 +113,7 @@ class StdioServerTransport : public ITransport {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    MCPTask_Void WriteMessage(const nlohmann::json& InMessage);
+    MCPTask_Void WriteMessage(const JSONValue& InMessage);
     void HandleError(const std::string& InError);
 
     std::jthread m_ReadThread;

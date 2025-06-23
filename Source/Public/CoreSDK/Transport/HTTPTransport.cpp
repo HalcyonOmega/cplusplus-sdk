@@ -76,11 +76,11 @@ TransportState HTTPTransportClient::GetState() const {
 }
 
 MCPTask<std::string> HTTPTransportClient::SendRequest(const std::string& InMethod,
-                                                      const nlohmann::json& InParams) {
+                                                      const JSONValue& InParams) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     std::string requestID = GenerateRequestID();
-    nlohmann::json request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
+    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
 
     if (!InParams.is_null()) { request["params"] = InParams; }
 
@@ -111,8 +111,8 @@ MCPTask<std::string> HTTPTransportClient::SendRequest(const std::string& InMetho
 }
 
 MCPTask_Void HTTPTransportClient::SendResponse(const std::string& InRequestID,
-                                               const nlohmann::json& InResult) {
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
+                                               const JSONValue& InResult) {
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await SendHTTPMessage(response);
 }
@@ -120,19 +120,19 @@ MCPTask_Void HTTPTransportClient::SendResponse(const std::string& InRequestID,
 MCPTask_Void HTTPTransportClient::SendErrorResponse(const std::string& InRequestID,
                                                     int64_t InErrorCode,
                                                     const std::string& InErrorMessage,
-                                                    const nlohmann::json& InErrorData) {
-    nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
+                                                    const JSONValue& InErrorData) {
+    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
 
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
 
     co_await SendHTTPMessage(response);
 }
 
 MCPTask_Void HTTPTransportClient::SendNotification(const std::string& InMethod,
-                                                   const nlohmann::json& InParams) {
-    nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
+                                                   const JSONValue& InParams) {
+    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
 
@@ -188,8 +188,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
         request.setContentType("application/json");
         request.set("Accept", "text/event-stream");
 
-        nlohmann::json pingMessage = {
-            {"jsonrpc", "2.0"}, {"method", "ping"}, {"id", "connection_test"}};
+        JSONValue pingMessage = {{"jsonrpc", "2.0"}, {"method", "ping"}, {"id", "connection_test"}};
 
         std::string body = pingMessage.dump();
         request.setContentLength(body.length());
@@ -215,7 +214,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
     co_return;
 }
 
-MCPTask_Void HTTPTransportClient::SendHTTPMessage(const nlohmann::json& InMessage) {
+MCPTask_Void HTTPTransportClient::SendHTTPMessage(const JSONValue& InMessage) {
     if (!m_HTTPSession) { throw std::runtime_error("HTTP session not initialized"); }
 
     try {
@@ -284,7 +283,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
         // SSE format: "data: <json>\n"
         if (InLine.substr(0, 6) == "data: ") {
             std::string jsonData = InLine.substr(6);
-            auto message = nlohmann::json::parse(jsonData);
+            auto message = JSONValue::parse(jsonData);
 
             if (!IsValidJSONRPC(message)) {
                 HandleConnectionError("Invalid JSON-RPC message received via SSE");
@@ -316,7 +315,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
             // Handle as request or notification
             if (message.contains("method")) {
                 std::string method = MessageUtils::ExtractMethod(message);
-                nlohmann::json params = MessageUtils::ExtractParams(message);
+                JSONValue params = MessageUtils::ExtractParams(message);
 
                 if (message.contains("id")) {
                     // Request
@@ -472,11 +471,11 @@ TransportState HTTPTransportServer::GetState() const {
 }
 
 MCPTask<std::string> HTTPTransportServer::SendRequest(const std::string& InMethod,
-                                                      const nlohmann::json& InParams) {
+                                                      const JSONValue& InParams) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     std::string requestID = GenerateRequestID();
-    nlohmann::json request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
+    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
 
     if (!InParams.is_null()) { request["params"] = InParams; }
 
@@ -507,8 +506,8 @@ MCPTask<std::string> HTTPTransportServer::SendRequest(const std::string& InMetho
 }
 
 MCPTask_Void HTTPTransportServer::SendResponse(const std::string& InRequestID,
-                                               const nlohmann::json& InResult) {
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
+                                               const JSONValue& InResult) {
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await SendToSSEClients(response);
 }
@@ -516,19 +515,19 @@ MCPTask_Void HTTPTransportServer::SendResponse(const std::string& InRequestID,
 MCPTask_Void HTTPTransportServer::SendErrorResponse(const std::string& InRequestID,
                                                     int64_t InErrorCode,
                                                     const std::string& InErrorMessage,
-                                                    const nlohmann::json& InErrorData) {
-    nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
+                                                    const JSONValue& InErrorData) {
+    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
 
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
 
     co_await SendToSSEClients(response);
 }
 
 MCPTask_Void HTTPTransportServer::SendNotification(const std::string& InMethod,
-                                                   const nlohmann::json& InParams) {
-    nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
+                                                   const JSONValue& InParams) {
+    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
 
@@ -688,7 +687,7 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID) {
     }
 }
 
-MCPTask_Void HTTPTransportServer::SendToSSEClients(const nlohmann::json& InMessage) {
+MCPTask_Void HTTPTransportServer::SendToSSEClients(const JSONValue& InMessage) {
     Poco::Mutex::ScopedLock lock(m_ClientsMutex);
 
     std::string messageStr = "data: " + InMessage.dump() + "\n\n";
@@ -714,7 +713,7 @@ MCPTask_Void HTTPTransportServer::SendToSSEClients(const nlohmann::json& InMessa
 
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
     try {
-        auto message = nlohmann::json::parse(InMessage);
+        auto message = JSONValue::parse(InMessage);
 
         if (!IsValidJSONRPC(message)) {
             if (m_ErrorHandler) { m_ErrorHandler("Invalid JSON-RPC message received"); }
@@ -745,7 +744,7 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
         // Handle as request or notification
         if (message.contains("method")) {
             std::string method = MessageUtils::ExtractMethod(message);
-            nlohmann::json params = MessageUtils::ExtractParams(message);
+            JSONValue params = MessageUtils::ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request

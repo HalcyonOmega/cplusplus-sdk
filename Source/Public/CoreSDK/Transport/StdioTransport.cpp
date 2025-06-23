@@ -105,11 +105,11 @@ TransportState StdioTransport::GetState() const {
 }
 
 MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
-                                                 const nlohmann::json& InParams) {
+                                                 const JSONValue& InParams) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     std::string requestID = GenerateRequestID();
-    nlohmann::json request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
+    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
 
     if (!InParams.is_null()) { request["params"] = InParams; }
 
@@ -141,27 +141,27 @@ MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
 }
 
 MCPTask_Void StdioTransport::SendResponse(const std::string& InRequestID,
-                                          const nlohmann::json& InResult) {
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
+                                          const JSONValue& InResult) {
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await WriteMessage(response);
 }
 
 MCPTask_Void StdioTransport::SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
                                                const std::string& InErrorMessage,
-                                               const nlohmann::json& InErrorData) {
-    nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
+                                               const JSONValue& InErrorData) {
+    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
 
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
 
     co_await WriteMessage(response);
 }
 
 MCPTask_Void StdioTransport::SendNotification(const std::string& InMethod,
-                                              const nlohmann::json& InParams) {
-    nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
+                                              const JSONValue& InParams) {
+    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
 
@@ -223,7 +223,7 @@ void StdioTransport::ProcessIncomingData() {
 
 void StdioTransport::ProcessLine(const std::string& InLine) {
     try {
-        auto message = nlohmann::json::parse(InLine);
+        auto message = JSONValue::parse(InLine);
 
         if (!IsValidJSONRPC(message)) {
             HandleError("Invalid JSON-RPC message received");
@@ -254,7 +254,7 @@ void StdioTransport::ProcessLine(const std::string& InLine) {
         // Handle as request or notification
         if (message.contains("method")) {
             std::string method = MessageUtils::ExtractMethod(message);
-            nlohmann::json params = MessageUtils::ExtractParams(message);
+            JSONValue params = MessageUtils::ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request
@@ -272,7 +272,7 @@ void StdioTransport::ProcessLine(const std::string& InLine) {
     }
 }
 
-MCPTask_Void StdioTransport::WriteMessage(const nlohmann::json& InMessage) {
+MCPTask_Void StdioTransport::WriteMessage(const JSONValue& InMessage) {
     if (!m_StdinStream || !IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     try {
@@ -405,11 +405,11 @@ TransportState StdioServerTransport::GetState() const {
 }
 
 MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMethod,
-                                                       const nlohmann::json& InParams) {
+                                                       const JSONValue& InParams) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     std::string requestID = GenerateRequestID();
-    nlohmann::json request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
+    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
 
     if (!InParams.is_null()) { request["params"] = InParams; }
 
@@ -441,8 +441,8 @@ MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMeth
 }
 
 MCPTask_Void StdioServerTransport::SendResponse(const std::string& InRequestID,
-                                                const nlohmann::json& InResult) {
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
+                                                const JSONValue& InResult) {
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
 
     co_await WriteMessage(response);
 }
@@ -450,19 +450,19 @@ MCPTask_Void StdioServerTransport::SendResponse(const std::string& InRequestID,
 MCPTask_Void StdioServerTransport::SendErrorResponse(const std::string& InRequestID,
                                                      int64_t InErrorCode,
                                                      const std::string& InErrorMessage,
-                                                     const nlohmann::json& InErrorData) {
-    nlohmann::json error = {{"code", InErrorCode}, {"message", InErrorMessage}};
+                                                     const JSONValue& InErrorData) {
+    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
 
     if (!InErrorData.is_null()) { error["data"] = InErrorData; }
 
-    nlohmann::json response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
+    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
 
     co_await WriteMessage(response);
 }
 
 MCPTask_Void StdioServerTransport::SendNotification(const std::string& InMethod,
-                                                    const nlohmann::json& InParams) {
-    nlohmann::json notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
+                                                    const JSONValue& InParams) {
+    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
 
     if (!InParams.is_null()) { notification["params"] = InParams; }
 
@@ -522,7 +522,7 @@ void StdioServerTransport::ProcessIncomingData() {
 
 void StdioServerTransport::ProcessLine(const std::string& InLine) {
     try {
-        auto message = nlohmann::json::parse(InLine);
+        auto message = JSONValue::parse(InLine);
 
         if (!IsValidJSONRPC(message)) {
             HandleError("Invalid JSON-RPC message received");
@@ -553,7 +553,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
         // Handle as request or notification
         if (message.contains("method")) {
             std::string method = MessageUtils::ExtractMethod(message);
-            nlohmann::json params = MessageUtils::ExtractParams(message);
+            JSONValue params = MessageUtils::ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request
@@ -571,7 +571,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
     }
 }
 
-MCPTask_Void StdioServerTransport::WriteMessage(const nlohmann::json& InMessage) {
+MCPTask_Void StdioServerTransport::WriteMessage(const JSONValue& InMessage) {
     try {
         Poco::Mutex::ScopedLock lock(m_WriteMutex);
 

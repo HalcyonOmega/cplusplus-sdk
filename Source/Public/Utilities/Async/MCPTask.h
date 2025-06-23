@@ -82,10 +82,10 @@ template <> struct MCPTask<void> {
             return MCPTask<void>{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        std::suspend_never initial_suspend() {
+        static std::suspend_never initial_suspend() {
             return {};
         }
-        std::suspend_never final_suspend() noexcept {
+        static std::suspend_never final_suspend() noexcept {
             return {};
         }
 

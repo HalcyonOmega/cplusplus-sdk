@@ -4,6 +4,16 @@
 #include <string>
 #include <variant>
 
+#include "CoreSDK/Common/Capabilities.h"
+#include "CoreSDK/Common/Content.h"
+#include "CoreSDK/Common/Implementation.h"
+#include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/Roles.h"
+#include "CoreSDK/Features/PromptBase.h"
+#include "CoreSDK/Features/ResourceBase.h"
+#include "CoreSDK/Features/RootBase.h"
+#include "CoreSDK/Features/SamplingBase.h"
+#include "CoreSDK/Features/ToolBase.h"
 #include "CoreSDK/Messages/NotificationBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 #include "CoreSDK/Messages/ResponseBase.h"

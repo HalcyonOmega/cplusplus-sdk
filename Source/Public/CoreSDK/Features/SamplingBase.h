@@ -3,9 +3,10 @@
 #include <optional>
 #include <string>
 #include <variant>
-#include <vector>
 
+#include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Common/Roles.h"
 #include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
@@ -69,7 +70,7 @@ struct ModelPreferences {
 
 // Describes a message issued to or received from an LLM API.
 struct SamplingMessage {
-    Role Role;
+    MCP::Role Role;
     std::variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
 
     JKEY(ROLEKEY, Role, "role")
