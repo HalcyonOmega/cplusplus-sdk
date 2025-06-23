@@ -41,7 +41,7 @@ class MCPProtocol {
     Initialize(const std::string& InProtocolVersion, const ClientCapabilities& InCapabilities,
                const Implementation& InClientInfo);
     MCPTask_Void SendInitialized();
-    MCPTask<JSONValue> Ping();
+    MCPTask<PingResponse> Ping();
 
     // Protocol version validation
     static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS;
@@ -49,12 +49,8 @@ class MCPProtocol {
 
     // Message sending utilities
     MCPTask<const ResponseBase&> SendRequest(const RequestBase& InRequest);
-
     MCPTask_Void SendResponse(const ResponseBase& InResponse);
-
     MCPTask_Void SendNotification(const NotificationBase& InNotification);
-
-    // Error handling
     MCPTask_Void SendError(const ErrorBase& InError);
 
     // Event handlers

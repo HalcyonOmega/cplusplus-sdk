@@ -75,14 +75,10 @@ TransportState HTTPTransportClient::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<std::string> HTTPTransportClient::SendRequest(const std::string& InMethod,
-                                                      const JSONValue& InParams) {
+MCPTask<std::string> HTTPTransportClient::SendRequest(const RequestBase& InRequest) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
-    std::string requestID = GenerateRequestID();
-    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { request["params"] = InParams; }
+    RequestID requestID = InRequest.ID;
 
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
@@ -97,7 +93,7 @@ MCPTask<std::string> HTTPTransportClient::SendRequest(const std::string& InMetho
     }
 
     // Send the request via HTTP POST
-    co_await SendHTTPMessage(request);
+    co_await SendHTTPMessage(InRequest);
 
     // Wait for response with timeout
     auto status = future.wait_for(m_Options.RequestTimeout);
@@ -110,33 +106,16 @@ MCPTask<std::string> HTTPTransportClient::SendRequest(const std::string& InMetho
     co_return future.get();
 }
 
-MCPTask_Void HTTPTransportClient::SendResponse(const std::string& InRequestID,
-                                               const JSONValue& InResult) {
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
-
-    co_await SendHTTPMessage(response);
+MCPTask_Void HTTPTransportClient::SendResponse(const ResponseBase& InResponse) {
+    co_await SendHTTPMessage(InResponse);
 }
 
-MCPTask_Void HTTPTransportClient::SendErrorResponse(const std::string& InRequestID,
-                                                    int64_t InErrorCode,
-                                                    const std::string& InErrorMessage,
-                                                    const JSONValue& InErrorData) {
-    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
-
-    if (!InErrorData.is_null()) { error["data"] = InErrorData; }
-
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
-
-    co_await SendHTTPMessage(response);
+MCPTask_Void HTTPTransportClient::SendErrorResponse(const ErrorBase& InError) {
+    co_await SendHTTPMessage(InError);
 }
 
-MCPTask_Void HTTPTransportClient::SendNotification(const std::string& InMethod,
-                                                   const JSONValue& InParams) {
-    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { notification["params"] = InParams; }
-
-    co_await SendHTTPMessage(notification);
+MCPTask_Void HTTPTransportClient::SendNotification(const NotificationBase& InNotification) {
+    co_await SendHTTPMessage(InNotification);
 }
 
 void HTTPTransportClient::SetMessageHandler(MessageHandler InHandler) {
@@ -470,14 +449,10 @@ TransportState HTTPTransportServer::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<std::string> HTTPTransportServer::SendRequest(const std::string& InMethod,
-                                                      const JSONValue& InParams) {
+MCPTask<const ResponseBase&> HTTPTransportServer::SendRequest(const RequestBase& InRequest) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
-    std::string requestID = GenerateRequestID();
-    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { request["params"] = InParams; }
+    RequestID requestID = InRequest.ID;
 
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
@@ -492,7 +467,7 @@ MCPTask<std::string> HTTPTransportServer::SendRequest(const std::string& InMetho
     }
 
     // Send to all SSE clients
-    co_await SendToSSEClients(request);
+    co_await SendToSSEClients(InRequest);
 
     // Wait for response with timeout
     auto status = future.wait_for(std::chrono::seconds(30));
@@ -505,33 +480,16 @@ MCPTask<std::string> HTTPTransportServer::SendRequest(const std::string& InMetho
     co_return future.get();
 }
 
-MCPTask_Void HTTPTransportServer::SendResponse(const std::string& InRequestID,
-                                               const JSONValue& InResult) {
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
-
-    co_await SendToSSEClients(response);
+MCPTask_Void HTTPTransportServer::SendResponse(const ResponseBase& InResponse) {
+    co_await SendToSSEClients(InResponse);
 }
 
-MCPTask_Void HTTPTransportServer::SendErrorResponse(const std::string& InRequestID,
-                                                    int64_t InErrorCode,
-                                                    const std::string& InErrorMessage,
-                                                    const JSONValue& InErrorData) {
-    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
-
-    if (!InErrorData.is_null()) { error["data"] = InErrorData; }
-
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
-
-    co_await SendToSSEClients(response);
+MCPTask_Void HTTPTransportServer::SendErrorResponse(const ErrorBase& InError) {
+    co_await SendToSSEClients(InError);
 }
 
-MCPTask_Void HTTPTransportServer::SendNotification(const std::string& InMethod,
-                                                   const JSONValue& InParams) {
-    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { notification["params"] = InParams; }
-
-    co_await SendToSSEClients(notification);
+MCPTask_Void HTTPTransportServer::SendNotification(const NotificationBase& InNotification) {
+    co_await SendToSSEClients(InNotification);
 }
 
 void HTTPTransportServer::SetMessageHandler(MessageHandler InHandler) {
@@ -560,6 +518,7 @@ void HTTPTransportServer::SetStateChangeHandler(StateChangeHandler InHandler) {
 
 std::string HTTPTransportServer::GetConnectionInfo() const {
     std::string protocol = m_Options.UseHTTPS ? "https" : "http";
+    // TODO: @HalcyonOmega - Pretty sure spec says you should use 127.0.0.1 instead of 0.0.0.0
     return protocol + "://0.0.0.0:" + std::to_string(m_Options.Port) + m_Options.Path;
 }
 
@@ -569,7 +528,6 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
         std::string path = InRequest.getURI();
         std::string method = InRequest.getMethod();
 
-        // Critical MCP Compliance Fix: Add missing GET /message endpoint for Server-Sent Events
         if (path == "/message" && method == "GET") {
             // MCP StreamableHTTP GET endpoint implementation
             InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);

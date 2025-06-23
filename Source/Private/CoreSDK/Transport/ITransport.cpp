@@ -5,18 +5,6 @@
 MCP_NAMESPACE_BEGIN
 
 // ITransport implementation
-std::string ITransport::GenerateRequestID() const {
-    const uint64_t counter = m_RequestCounter.fetch_add(1);
-
-    // Create a more unique ID by combining timestamp and counter
-    const auto now = std::chrono::steady_clock::now();
-    const auto timestamp = now.time_since_epoch().count();
-
-    std::stringstream StrStream;
-    StrStream << "req_" << std::hex << timestamp << "_" << std::hex << counter;
-    return StrStream.str();
-}
-
 bool ITransport::IsValidJSONRPC(const JSONValue& InMessage) const {
     if (!InMessage.is_object()) { return false; }
 

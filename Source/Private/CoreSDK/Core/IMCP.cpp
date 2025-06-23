@@ -6,21 +6,25 @@ MCPProtocol::MCPProtocol(std::shared_ptr<ITransport> InTransport) : m_Transport(
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetRequestHandler(
-        [this](std::string_view InMethod, const JSONValue& InParams, std::string_view InRequestID) {
-            HandleIncomingRequest(InMethod, InParams, InRequestID);
-        });
+    m_Transport->SetRequestHandler([this](const RequestBase& InRequest) {
+        (void)this;
+        HandleIncomingRequest(InRequest);
+    });
 
-    m_Transport->SetResponseHandler(
-        [this](std::string_view InResponseData) { HandleIncomingResponse(InResponseData); });
+    m_Transport->SetResponseHandler([this](const ResponseBase& InResponse) {
+        (void)this;
+        HandleIncomingResponse(InResponse);
+    });
 
-    m_Transport->SetNotificationHandler(
-        [this](std::string_view InMethod, const JSONValue& InParams) {
-            HandleIncomingNotification(InMethod, InParams);
-        });
+    m_Transport->SetNotificationHandler([this](const NotificationBase& InNotification) {
+        (void)this;
+        HandleIncomingNotification(InNotification);
+    });
 
-    m_Transport->SetErrorHandler(
-        [this](std::string_view InError) { HandleTransportError(InError); });
+    m_Transport->SetErrorHandler([this](const ErrorBase& InError) {
+        (void)this;
+        HandleTransportError(InError);
+    });
 }
 
 MCPProtocol::~MCPProtocol() noexcept {
@@ -158,13 +162,12 @@ const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
     return m_ServerInfo;
 }
 
-MCPTask<JSONValue> MCPProtocol::SendRequestImpl(std::string_view InMethod,
-                                                const JSONValue& InParams) {
-    std::string requestID = GenerateRequestID();
-
+MCPTask<const ResponseBase&> MCPProtocol::SendRequestImpl(const RequestBase& InRequest) {
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->Method = InMethod;
+    pendingRequest->Method = InRequest.Method;
+    pendingRequest->Params = InRequest.Params;
+    pendingRequest->ID = InRequest.ID;
     pendingRequest->StartTime = std::chrono::steady_clock::now();
 
     auto future = pendingRequest->Promise.get_future();
@@ -256,11 +259,6 @@ void MCPProtocol::HandleIncomingNotification(std::string_view InMethod, const JS
 
 void MCPProtocol::HandleTransportError(std::string_view InError) {
     if (m_ErrorHandler) { m_ErrorHandler("Transport error: " + std::string(InError)); }
-}
-
-std::string MCPProtocol::GenerateRequestID() {
-    uint64_t counter = m_RequestCounter.fetch_add(1);
-    return "req_" + std::to_string(counter);
 }
 
 MCP_NAMESPACE_END

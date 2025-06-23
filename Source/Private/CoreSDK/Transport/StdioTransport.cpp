@@ -104,14 +104,10 @@ TransportState StdioTransport::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
-                                                 const JSONValue& InParams) {
+MCPTask<std::string> StdioTransport::SendRequest(const RequestBase& InRequest) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
-    std::string requestID = GenerateRequestID();
-    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { request["params"] = InParams; }
+    RequestID requestID = InRequest.ID;
 
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
@@ -126,7 +122,7 @@ MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
     }
 
     // Send the request
-    co_await WriteMessage(request);
+    co_await WriteMessage(InRequest);
 
     // Wait for response with timeout
     static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
@@ -140,32 +136,16 @@ MCPTask<std::string> StdioTransport::SendRequest(const std::string& InMethod,
     co_return future.get();
 }
 
-MCPTask_Void StdioTransport::SendResponse(const std::string& InRequestID,
-                                          const JSONValue& InResult) {
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
-
-    co_await WriteMessage(response);
+MCPTask_Void StdioTransport::SendResponse(const ResponseBase& InResponse) {
+    co_await WriteMessage(InResponse);
 }
 
-MCPTask_Void StdioTransport::SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                               const std::string& InErrorMessage,
-                                               const JSONValue& InErrorData) {
-    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
-
-    if (!InErrorData.is_null()) { error["data"] = InErrorData; }
-
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
-
-    co_await WriteMessage(response);
+MCPTask_Void StdioTransport::SendErrorResponse(const ErrorBase& InError) {
+    co_await WriteMessage(InError);
 }
 
-MCPTask_Void StdioTransport::SendNotification(const std::string& InMethod,
-                                              const JSONValue& InParams) {
-    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { notification["params"] = InParams; }
-
-    co_await WriteMessage(notification);
+MCPTask_Void StdioTransport::SendNotification(const NotificationBase& InNotification) {
+    co_await WriteMessage(InNotification);
 }
 
 void StdioTransport::SetMessageHandler(MessageHandler InHandler) {
@@ -404,14 +384,10 @@ TransportState StdioServerTransport::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMethod,
-                                                       const JSONValue& InParams) {
+MCPTask<const ResponseBase&> StdioServerTransport::SendRequest(const RequestBase& InRequest) {
     if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
-    std::string requestID = GenerateRequestID();
-    JSONValue request = {{"jsonrpc", "2.0"}, {"id", requestID}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { request["params"] = InParams; }
+    RequestID requestID = InRequest.ID;
 
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
@@ -426,7 +402,7 @@ MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMeth
     }
 
     // Send the request
-    co_await WriteMessage(request);
+    co_await WriteMessage(InRequest);
 
     // Wait for response with timeout
     static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30000};
@@ -440,33 +416,16 @@ MCPTask<std::string> StdioServerTransport::SendRequest(const std::string& InMeth
     co_return future.get();
 }
 
-MCPTask_Void StdioServerTransport::SendResponse(const std::string& InRequestID,
-                                                const JSONValue& InResult) {
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"result", InResult}};
-
-    co_await WriteMessage(response);
+MCPTask_Void StdioServerTransport::SendResponse(const ResponseBase& InResponse) {
+    co_await WriteMessage(InResponse);
 }
 
-MCPTask_Void StdioServerTransport::SendErrorResponse(const std::string& InRequestID,
-                                                     int64_t InErrorCode,
-                                                     const std::string& InErrorMessage,
-                                                     const JSONValue& InErrorData) {
-    JSONValue error = {{"code", InErrorCode}, {"message", InErrorMessage}};
-
-    if (!InErrorData.is_null()) { error["data"] = InErrorData; }
-
-    JSONValue response = {{"jsonrpc", "2.0"}, {"id", InRequestID}, {"error", error}};
-
-    co_await WriteMessage(response);
+MCPTask_Void StdioServerTransport::SendErrorResponse(const ErrorBase& InError) {
+    co_await WriteMessage(InError);
 }
 
-MCPTask_Void StdioServerTransport::SendNotification(const std::string& InMethod,
-                                                    const JSONValue& InParams) {
-    JSONValue notification = {{"jsonrpc", "2.0"}, {"method", InMethod}};
-
-    if (!InParams.is_null()) { notification["params"] = InParams; }
-
-    co_await WriteMessage(notification);
+MCPTask_Void StdioServerTransport::SendNotification(const NotificationBase& InNotification) {
+    co_await WriteMessage(InNotification);
 }
 
 void StdioServerTransport::SetMessageHandler(MessageHandler InHandler) {

@@ -88,7 +88,6 @@ class ITransport {
 
   protected:
     // Helper methods for derived classes
-    [[nodiscard]] std::string GenerateRequestID() const;
     [[nodiscard]] bool IsValidJSONRPC(const JSONValue& InMessage) const;
     void TriggerStateChange(TransportState InNewState);
 
