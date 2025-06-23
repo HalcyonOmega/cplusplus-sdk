@@ -8,7 +8,6 @@
 #include "../Common/MCPTypes.h"
 #include "../Common/Macros.h"
 
-
 MCP_NAMESPACE_BEGIN
 
 enum class Errors {

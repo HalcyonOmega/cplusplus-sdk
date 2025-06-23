@@ -6,9 +6,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "CoreSDK/Common/Macros.h"
 #include "MCPTypes.h"
-#include "Macros.h"
 #include "json.hpp"
+
 
 MCP_NAMESPACE_BEGIN
 

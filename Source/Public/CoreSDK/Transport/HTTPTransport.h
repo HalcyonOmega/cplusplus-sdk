@@ -20,8 +20,9 @@
 #include <thread>
 #include <unordered_map>
 
+#include "CoreSDK/Common/Macros.h"
 #include "ITransport.h"
-#include "Macros.h"
+
 
 // Forward declarations
 class HTTPTransportClient;

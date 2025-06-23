@@ -9,8 +9,8 @@
 #include <string_view>
 #include <vector>
 
-#include "MCPTask.h"
-#include "Macros.h"
+#include "CoreSDK/Common/Macros.h"
+#include "Utilities/Async/MCPTask.h"
 #include "json.hpp"
 
 // Forward declarations

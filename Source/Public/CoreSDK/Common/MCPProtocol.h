@@ -9,11 +9,11 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "CoreSDK/Common/Macros.h"
 #include "ITransport.h"
 #include "MCPMessages.h"
-#include "MCPTask.h"
 #include "MCPTypes.h"
-#include "Macros.h"
+#include "Utilities/Async/MCPTask.h"
 
 MCP_NAMESPACE_BEGIN
 static constexpr double DEFAULT_TEMPERATURE{0.7};
