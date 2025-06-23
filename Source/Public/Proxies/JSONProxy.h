@@ -153,4 +153,21 @@ concept IsEnumType = std::is_enum_v<EnumerationType>;
         }                                                                                          \
     }
 
+using JSONValue = nlohmann::json;
+
+// JSON Schema
+struct JSONSchema {
+    std::string Type{"object"};
+    std::optional<std::unordered_map<std::string, JSONValue>> Properties;
+    std::optional<std::vector<std::string>> Required;
+    std::optional<JSONValue> AdditionalProperties;
+
+    JKEY(TYPEKEY, Type, "type")
+    JKEY(PROPERTIESKEY, Properties, "properties")
+    JKEY(REQUIREDKEY, Required, "required")
+    JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+
+    DEFINE_TYPE_JSON(JSONSchema, TYPEKEY, PROPERTIESKEY, REQUIREDKEY, ADDITIONALPROPERTIESKEY)
+};
+
 MCP_NAMESPACE_END
