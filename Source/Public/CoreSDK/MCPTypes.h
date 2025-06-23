@@ -16,19 +16,6 @@ MCP_NAMESPACE_BEGIN
 using JSONValue = nlohmann::json;
 using RequestID = std::variant<std::string, int64_t>;
 
-// Error structure
-struct MCPError {
-    int64_t Code;
-    std::string Message;
-    std::optional<JSONValue> Data;
-
-    JKEY(CODEKEY, Code, "code")
-    JKEY(MESSAGEKEY, Message, "message")
-    JKEY(DATAKEY, Data, "data")
-
-    DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
-};
-
 // Role enumeration
 enum class Role { User, Assistant };
 
@@ -149,14 +136,14 @@ struct ToolAnnotations {
     std::optional<std::string> Title; // A human-readable title for the tool.
     std::optional<bool>
         ReadOnlyHint; // If true, the tool does not modify its environment. Default: false
+    std::optional<bool> DestructiveHint; // If true, the tool may perform destructive updates to
+                                         // its environment. If false, the tool performs only
+                                         // additive updates. (This property is meaningful only
+                                         // when `readOnlyHint == false`) Default: true
     std::optional<bool>
-        DestructiveHint; // If true, the tool may perform destructive updates to its environment. If
-                         // false, the tool performs only additive updates. (This property is
-                         // meaningful only when `readOnlyHint == false`) Default: true
-    std::optional<bool>
-        IdempotentHint; // If true, calling the tool repeatedly with the same arguments will have no
-                        // additional effect on the its environment. (This property is meaningful
-                        // only when `readOnlyHint == false`) Default: false
+        IdempotentHint; // If true, calling the tool repeatedly with the same arguments will
+                        // have no additional effect on the its environment. (This property is
+                        // meaningful only when `readOnlyHint == false`) Default: false
     std::optional<bool>
         OpenWorldHint; // If true, this tool may interact with an "open world" of
                        // external entities. If false, the tool's domain of interaction
@@ -266,17 +253,17 @@ struct Resource {
 
 // A template description for resources available on the server.
 struct ResourceTemplate {
-    URITemplate URITemplate; // A URI template (according to RFC 6570) that can be used to construct
-                             // resource URIs.
+    URITemplate URITemplate; // A URI template (according to RFC 6570) that can be used to
+                             // construct resource URIs.
     std::string Name; // A human-readable name for the type of resource this template refers to.
                       // This can be used by clients to populate UI elements.
-    std::optional<std::string> Description; // A description of what this template is for. This can
-                                            // be used by clients to improve the LLM's understanding
-                                            // of available resources. It can be thought of like a
-                                            // "hint" to the model.
+    std::optional<std::string> Description; // A description of what this template is for. This
+                                            // can be used by clients to improve the LLM's
+                                            // understanding of available resources. It can be
+                                            // thought of like a "hint" to the model.
     std::optional<std::string>
-        MIMEType; // The MIME type for all resources that match this template. This should only be
-                  // included if all resources matching this template have the same type.
+        MIMEType; // The MIME type for all resources that match this template. This should only
+                  // be included if all resources matching this template have the same type.
     std::optional<Annotations> Annotations; // Optional annotations for the client.
 
     JKEY(URITEMPLATEKEY, URITemplate, "uriTemplate")
@@ -294,8 +281,8 @@ struct ResourceTemplate {
 // Represents a root directory or file that the server can operate on.
 struct Root {
     URIFile URI; // The URI identifying the root. This *must* start with file:// for now. This
-                 // restriction may be relaxed in future versions of the protocol to allow other URI
-                 // schemes.
+                 // restriction may be relaxed in future versions of the protocol to allow other
+                 // URI schemes.
     std::optional<std::string>
         Name; // An optional name for the root. This can be used to provide a human-readable
               // identifier for the root, which may be useful for display purposes or for
@@ -307,40 +294,42 @@ struct Root {
     DEFINE_TYPE_JSON(Root, URIKEY, NAMEKEY)
 };
 
-// Hints to use for model selection. Keys not declared here are currently left unspecified by the
-// spec and are up to the client to interpret.
+// Hints to use for model selection. Keys not declared here are currently left unspecified by
+// the spec and are up to the client to interpret.
 struct ModelHint {
     std::optional<std::string>
         Name; // A hint for a model name. The client SHOULD treat this as a substring
               // of a model name; for example: - `claude-3-5-sonnet` should match
-              // `claude-3-5-sonnet-20241022` - `sonnet` should match `claude-3-5-sonnet-20241022`,
-              // `claude-3-sonnet-20240229`, etc. - `claude` should match any Claude model The
-              // client MAY also map the string to a different provider's model name or a different
-              // model family, as long as it fills a similar niche; for example: -
-              // `gemini-1.5-flash` could match `claude-3-haiku-20240307`
+              // `claude-3-5-sonnet-20241022` - `sonnet` should match
+              // `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc. - `claude`
+              // should match any Claude model The client MAY also map the string to a different
+              // provider's model name or a different model family, as long as it fills a
+              // similar niche; for example: - `gemini-1.5-flash` could match
+              // `claude-3-haiku-20240307`
 
     JKEY(NAMEKEY, Name, "name")
 
     DEFINE_TYPE_JSON(ModelHint, NAMEKEY)
 };
 
-// The server's preferences for model selection, requested of the client during sampling. Because
-// LLMs can vary along multiple dimensions, choosing the "best" model is rarely straightforward.
-// Different models excel in different areas—some are faster but less capable, others are more
-// capable but more expensive, and so on. This interface allows servers to express their priorities
-// across multiple dimensions to help clients make an appropriate selection for their use case.
-// These preferences are always advisory. The client MAY ignore them. It is also up to the client to
-// decide how to interpret these preferences and how to balance them against other considerations.
+// The server's preferences for model selection, requested of the client during sampling.
+// Because LLMs can vary along multiple dimensions, choosing the "best" model is rarely
+// straightforward. Different models excel in different areas—some are faster but less capable,
+// others are more capable but more expensive, and so on. This interface allows servers to
+// express their priorities across multiple dimensions to help clients make an appropriate
+// selection for their use case. These preferences are always advisory. The client MAY ignore
+// them. It is also up to the client to decide how to interpret these preferences and how to
+// balance them against other considerations.
 struct ModelPreferences {
     std::optional<std::vector<ModelHint>>
-        Hints; // Optional hints to use for model selection. If multiple hints are specified, the
-               // client MUST evaluate them in order (such that the first match is taken). The
-               // client SHOULD prioritize these hints over the numeric priorities, but MAY still
-               // use the priorities to select from ambiguous matches.
+        Hints; // Optional hints to use for model selection. If multiple hints are specified,
+               // the client MUST evaluate them in order (such that the first match is taken).
+               // The client SHOULD prioritize these hints over the numeric priorities, but MAY
+               // still use the priorities to select from ambiguous matches.
     // TODO: @HalcyonOmega Enforce min = 0, max = 1
     std::optional<double> CostPriority; // How much to prioritize cost when selecting a model. A
-                                        // value of 0 means cost is not important, while a value of
-                                        // 1 means cost is the most important factor.
+                                        // value of 0 means cost is not important, while a value
+                                        // of 1 means cost is the most important factor.
     // TODO: @HalcyonOmega Enforce min = 0, max = 1
     std::optional<double>
         SpeedPriority; // How much to prioritize sampling speed (latency) when
@@ -422,8 +411,8 @@ struct LoggingCapability {
 };
 
 struct PromptsCapability {
-    std::optional<bool>
-        ListChanged; // Whether this server supports notifications for changes to the prompt list.
+    std::optional<bool> ListChanged; // Whether this server supports notifications for changes
+                                     // to the prompt list.
     JSONValue AdditionalProperties;
 
     JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
@@ -434,8 +423,8 @@ struct PromptsCapability {
 
 struct ResourcesCapability {
     std::optional<bool> Subscribe; // Whether this server supports subscribing to resource updates.
-    std::optional<bool>
-        ListChanged; // Whether this server supports notifications for changes to the resource list.
+    std::optional<bool> ListChanged; // Whether this server supports notifications for changes
+                                     // to the resource list.
     JSONValue AdditionalProperties;
 
     JKEY(SUBSCRIBEKEY, Subscribe, "subscribe")
@@ -464,8 +453,8 @@ struct ToolsCapability {
     DEFINE_TYPE_JSON(ToolsCapability, LISTCHANGEDKEY, ADDITIONALPROPERTIESKEY)
 };
 
-// Capabilities a client may support. Known capabilities are defined here, in this schema, but this
-// is not a closed set: any client can define its own, additional capabilities.
+// Capabilities a client may support. Known capabilities are defined here, in this schema, but
+// this is not a closed set: any client can define its own, additional capabilities.
 struct ClientCapabilities {
     std::optional<ExperimentalCapability>
         Experimental; // Experimental, non-standard capabilities that the client supports.
@@ -480,8 +469,8 @@ struct ClientCapabilities {
     DEFINE_TYPE_JSON(ClientCapabilities, ROOTSKEY, SAMPLINGKEY, EXPERIMENTALKEY)
 };
 
-// Capabilities that a server may support. Known capabilities are defined here, in this schema, but
-// this is not a closed set: any server can define its own, additional capabilities.
+// Capabilities that a server may support. Known capabilities are defined here, in this schema,
+// but this is not a closed set: any server can define its own, additional capabilities.
 struct ServerCapabilities {
     std::optional<ExperimentalCapability>
         Experimental; // Experimental, non-standard capabilities that the server supports.
