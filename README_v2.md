@@ -1,4 +1,4 @@
-# MCP C++ SDK - MCPTest Implementation
+# MCP C++ SDK
 
 **Status**: Updated for MCP Specification 2025-03-26 Compliance
 
