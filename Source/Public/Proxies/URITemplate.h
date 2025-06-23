@@ -1,14 +1,20 @@
 #pragma once
 
-#include "Core.h"
+#include <string>
+#include <unordered_map>
+#include <variant>
+#include <vector>
+
+#include "../Macros.h"
 
 MCP_NAMESPACE_BEGIN
 
 // Proper RFC 3986 percent-encoding implementation
-string EncodeURI(const string& InValue);
-string EncodeURIComponent(const string& InValue);
+std::string EncodeURI(const std::string& InValue);
+std::string EncodeURIComponent(const std::string& InValue);
 
-using Variables = unordered_map<string, variant<string, vector<string>>>;
+using Variables =
+    std::unordered_map<std::string, std::variant<std::string, std::vector<std::string>>>;
 
 class URITemplate {
   public:
@@ -17,34 +23,35 @@ class URITemplate {
      * A template expression is a sequence of characters enclosed in curly
      * braces, like {foo} or {?bar}.
      */
-    static bool IsTemplate(const string& InString);
-    vector<string> GetVariableNames() const;
-    explicit URITemplate(const string& InTemplateStr);
-    string ToString() const;
-    string Expand(const Variables& InVariables) const;
-    Variables Match(const string& InURI) const;
+    static bool IsTemplate(const std::string& InString);
+    std::vector<std::string> GetVariableNames() const;
+    explicit URITemplate(const std::string& InTemplateStr);
+    std::string ToString() const;
+    std::string Expand(const Variables& InVariables) const;
+    Variables Match(const std::string& InURI) const;
 
   private:
     struct TemplatePart {
-        string m_Name;
-        string m_OperatorChar;
-        vector<string> m_Names;
+        std::string m_Name;
+        std::string m_OperatorChar;
+        std::vector<std::string> m_Names;
         bool m_Exploded;
     };
 
-    using Part = variant<string, TemplatePart>;
+    using Part = std::variant<std::string, TemplatePart>;
 
-    string m_Template;
-    vector<Part> m_Parts;
+    std::string m_Template;
+    std::vector<Part> m_Parts;
 
-    static void ValidateLength(const string& InString, size_t InMax, const string& InContext);
-    vector<Part> Parse(const string& InTemplateStr);
-    string GetOperator(const string& InExpression) const;
-    vector<string> GetNames(const string& InExpression) const;
-    string EncodeValue(const string& InValue, const string& InOperatorChar) const;
-    string ExpandPart(const TemplatePart& InPart, const Variables& InVariables) const;
-    string EscapeRegExp(const string& InString) const;
-    vector<pair<string, string>> PartToRegExp(const TemplatePart& InPart) const;
+    static void ValidateLength(const std::string& InString, size_t InMax,
+                               const std::string& InContext);
+    std::vector<Part> Parse(const std::string& InTemplateStr);
+    std::string GetOperator(const std::string& InExpression) const;
+    std::vector<std::string> GetNames(const std::string& InExpression) const;
+    std::string EncodeValue(const std::string& InValue, const std::string& InOperatorChar) const;
+    std::string ExpandPart(const TemplatePart& InPart, const Variables& InVariables) const;
+    std::string EscapeRegExp(const std::string& InString) const;
+    std::vector<std::pair<std::string, std::string>> PartToRegExp(const TemplatePart& InPart) const;
 };
 
 MCP_NAMESPACE_END
