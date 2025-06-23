@@ -177,4 +177,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(poco)
 
 # Now you can link to the libraries you need as before
-target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::JSON Poco::Foundation)
+target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::JSON Poco::Foundation Poco::Data)

@@ -2,7 +2,7 @@
 
 #include <Poco/URI.h>
 
-#include "../Macros.h"
+#include "../CoreSDK/Common/Macros.h"
 #include "URITemplate.h"
 
 MCP_NAMESPACE_BEGIN

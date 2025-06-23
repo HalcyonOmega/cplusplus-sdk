@@ -6,10 +6,11 @@
 #include <variant>
 #include <vector>
 
-#include "../Macros.h"
-#include "../Proxies/JSONProxy.h"
+#include "../../Proxies/JSONProxy.h"
 #include "../Proxies/URIProxy.h"
-#include "../Utilities/ThirdParty/json.hpp"
+#include "Macros.h"
+#include "Poco/Data/BLOB.h"
+#include "Poco/Net/MediaType.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -45,66 +46,127 @@ struct Annotations {
 };
 
 // Content types
-struct TextContent {
-    std::string Type{"text"};
-    std::string Text;
-    std::optional<Annotations> ContentAnnotations;
+
+struct Content {
+    std::string Type;                       // The type of content.
+    std::optional<Annotations> Annotations; // Optional annotations for the client.
 
     JKEY(TYPEKEY, Type, "type")
+    JKEY(ANNOTATIONSKEY, Annotations, "annotations")
+
+    DEFINE_TYPE_JSON(Content, TYPEKEY, ANNOTATIONSKEY)
+};
+
+// Text provided to or from an LLM.
+struct TextContent : Content {
+    std::string Text; // The text content of the message.
+
     JKEY(TEXTKEY, Text, "text")
-    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
 
-    DEFINE_TYPE_JSON(TextContent, TYPEKEY, TEXTKEY, ANNOTATIONSKEY)
+    DEFINE_TYPE_JSON_DERIVED(TextContent, Content, TEXTKEY)
+
+    TextContent() {
+        Type = "text";
+        Annotations = std::nullopt;
+    }
 };
 
-struct ImageContent {
-    std::string Type{"image"};
-    std::string Data; // base64
-    std::string MimeType;
-    std::optional<Annotations> ContentAnnotations;
+// An image provided to or from an LLM.
+struct ImageContent : Content {
+    // TODO: @HalcyonOmega @format byte (base64)
+    std::string Data;              // The base64-encoded image data.
+    Poco::Net::MediaType MIMEType; // The MIME type of the image. Different providers may support
+                                   // different image types.
 
-    JKEY(TYPEKEY, Type, "type")
     JKEY(DATAKEY, Data, "data")
-    JKEY(MIMETYPEKEY, MimeType, "mimeType")
-    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
+    JKEY(MIMETYPEKEY, MIMEType, "mimeType")
 
-    DEFINE_TYPE_JSON(ImageContent, TYPEKEY, DATAKEY, MIMETYPEKEY, ANNOTATIONSKEY)
+    DEFINE_TYPE_JSON_DERIVED(ImageContent, Content, DATAKEY, MIMETYPEKEY)
+
+    ImageContent() {
+        Type = "image";
+        Annotations = std::nullopt;
+        MIMEType = {"image", "png"};
+    }
 };
 
-struct AudioContent {
-    std::string Type{"audio"};
-    std::string Data; // base64
-    std::string MimeType;
-    std::optional<Annotations> ContentAnnotations;
+// An audio provided to or from an LLM.
+struct AudioContent : Content {
+    // TODO: @HalcyonOmega @format byte (base64)
+    std::string Data;              // The base64-encoded audio data.
+    Poco::Net::MediaType MIMEType; // The MIME type of the audio. Different providers may support
+                                   // different audio types.
 
-    JKEY(TYPEKEY, Type, "type")
     JKEY(DATAKEY, Data, "data")
-    JKEY(MIMETYPEKEY, MimeType, "mimeType")
-    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
+    JKEY(MIMETYPEKEY, MIMEType, "mimeType")
 
-    DEFINE_TYPE_JSON(AudioContent, TYPEKEY, DATAKEY, MIMETYPEKEY, ANNOTATIONSKEY)
+    DEFINE_TYPE_JSON_DERIVED(AudioContent, Content, DATAKEY, MIMETYPEKEY)
+
+    AudioContent() {
+        Type = "audio";
+        Annotations = std::nullopt;
+        MIMEType = {"audio", "mpeg"};
+    }
 };
 
-struct EmbeddedResource {
-    std::string Type{"resource"};
-    std::optional<Annotations> ContentAnnotations;
-    struct Resource {
-        std::string URI;
-        std::optional<std::string> Text;
-        std::optional<std::string> MimeType;
+// The contents of a specific resource or sub-resource.
+struct ResourceContents {
+    URI URI;                                      // The URI of this resource.
+    std::optional<Poco::Net::MediaType> MIMEType; // The MIME type of this resource, if known.
 
-        JKEY(URIKEY, URI, "uri")
-        JKEY(TEXTKEY, Text, "text")
-        JKEY(MIMETYPEKEY, MimeType, "mimeType")
+    JKEY(URIKEY, URI, "uri")
+    JKEY(MIMETYPEKEY, MIMEType, "mimeType")
 
-        DEFINE_TYPE_JSON(Resource, URIKEY, TEXTKEY, MIMETYPEKEY)
-    } ResourceData;
+    DEFINE_TYPE_JSON(ResourceContents, URIKEY, MIMETYPEKEY)
+};
 
-    JKEY(TYPEKEY, Type, "type")
-    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
-    JKEY(RESOURCEDATAKEY, ResourceData, "resource")
+struct TextResourceContents : ResourceContents {
+    std::string Text; // The text of the item. This must only be set if the item can actually be
+                      // represented as text (not binary data).
 
-    DEFINE_TYPE_JSON(EmbeddedResource, TYPEKEY, ANNOTATIONSKEY, RESOURCEDATAKEY)
+    JKEY(TEXTKEY, Text, "text")
+
+    DEFINE_TYPE_JSON_DERIVED(TextResourceContents, ResourceContents, TEXTKEY)
+
+    TextResourceContents(const std::string_view& InText, const MCP::URI& InURI) {
+        URI = InURI;
+        MIMEType = {"text", "plain"};
+        MIMEType->setParameter("charset", "utf-8");
+        Text = InText;
+    }
+};
+
+struct BlobResourceContents : ResourceContents {
+    // TODO: @HalcyonOmega @format byte (base64) blob
+    Poco::Data::BLOB Blob; // A base64-encoded string representing the binary data of the item.
+
+    JKEY(BLOBKEY, Blob, "blob")
+
+    DEFINE_TYPE_JSON_DERIVED(BlobResourceContents, ResourceContents, BLOBKEY)
+
+    BlobResourceContents(const std::string_view& InBlob, const MCP::URI& InURI) {
+        URI = InURI;
+        MIMEType = {"application", "octet-stream"};
+        Blob = InBlob;
+    }
+};
+
+// The contents of a resource, embedded into a prompt or tool call result.
+struct EmbeddedResource : Content {
+    std::variant<TextResourceContents, BlobResourceContents> Resource;
+
+    JKEY(RESOURCEKEY, Resource, "resource")
+
+    DEFINE_TYPE_JSON_DERIVED(EmbeddedResource, Content, RESOURCEKEY)
+
+    template <typename T>
+        requires(std::is_same_v<std::decay_t<T>, TextResourceContents>
+                 || std::is_same_v<std::decay_t<T>, BlobResourceContents>)
+    EmbeddedResource(T&& InResource) {
+        Type = "resource";
+        Annotations = std::nullopt;
+        Resource = std::forward<T>(InResource);
+    }
 };
 
 using Content = std::variant<TextContent, ImageContent, AudioContent, EmbeddedResource>;

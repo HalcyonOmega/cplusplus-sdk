@@ -3,7 +3,7 @@
 #include <optional>
 #include <type_traits>
 
-#include "../Macros.h"
+#include "../CoreSDK/Common/Macros.h"
 #include "../Utilities/ThirdParty/json.hpp"
 
 MCP_NAMESPACE_BEGIN
