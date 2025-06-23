@@ -9,13 +9,15 @@
 #include "../../Proxies/JSONProxy.h"
 #include "../Proxies/URIProxy.h"
 #include "CoreSDK/Common/Macros.h"
-#include "Poco/Data/BLOB.h"
 #include "Poco/Net/MediaType.h"
 
 MCP_NAMESPACE_BEGIN
 
 using JSONValue = nlohmann::json;
 using RequestID = std::variant<std::string, int64_t>;
+
+// TODO: @HalcyonOmega - Attempt to fix Poco::Data::BLOB instead of this
+using BLOB = std::vector<char>;
 
 // Role enumeration
 enum class Role { User, Assistant };
@@ -74,9 +76,9 @@ struct TextContent : Content {
 // An image provided to or from an LLM.
 struct ImageContent : Content {
     // TODO: @HalcyonOmega @format byte (base64)
-    std::string Data;              // The base64-encoded image data.
-    Poco::Net::MediaType MIMEType; // The MIME type of the image. Different providers may support
-                                   // different image types.
+    std::string Data;                              // The base64-encoded image data.
+    Poco::Net::MediaType MIMEType{"image", "png"}; // The MIME type of the image. Different
+                                                   // providers may support different image types.
 
     JKEY(DATAKEY, Data, "data")
     JKEY(MIMETYPEKEY, MIMEType, "mimeType")
@@ -86,16 +88,16 @@ struct ImageContent : Content {
     ImageContent() {
         Type = "image";
         Annotations = std::nullopt;
-        MIMEType = {"image", "png"};
     }
 };
 
 // An audio provided to or from an LLM.
 struct AudioContent : Content {
     // TODO: @HalcyonOmega @format byte (base64)
-    std::string Data;              // The base64-encoded audio data.
-    Poco::Net::MediaType MIMEType; // The MIME type of the audio. Different providers may support
-                                   // different audio types.
+    std::string Data;                               // The base64-encoded audio data.
+    Poco::Net::MediaType MIMEType{"audio", "mpeg"}; // The MIME type of the audio. Different
+                                                    // providers may support different audio
+                                                    // types.
 
     JKEY(DATAKEY, Data, "data")
     JKEY(MIMETYPEKEY, MIMEType, "mimeType")
@@ -105,7 +107,6 @@ struct AudioContent : Content {
     AudioContent() {
         Type = "audio";
         Annotations = std::nullopt;
-        MIMEType = {"audio", "mpeg"};
     }
 };
 
@@ -130,7 +131,7 @@ struct TextResourceContents : ResourceContents {
 
     TextResourceContents(const std::string_view& InText, const MCP::URI& InURI) {
         URI = InURI;
-        MIMEType = {"text", "plain"};
+        MIMEType = Poco::Net::MediaType{"text", "plain"};
         MIMEType->setParameter("charset", "utf-8");
         Text = InText;
     }
@@ -138,15 +139,15 @@ struct TextResourceContents : ResourceContents {
 
 struct BlobResourceContents : ResourceContents {
     // TODO: @HalcyonOmega @format byte (base64) blob
-    Poco::Data::BLOB Blob; // A base64-encoded string representing the binary data of the item.
+    BLOB Blob; // A base64-encoded string representing the binary data of the item.
 
     JKEY(BLOBKEY, Blob, "blob")
 
     DEFINE_TYPE_JSON_DERIVED(BlobResourceContents, ResourceContents, BLOBKEY)
 
-    BlobResourceContents(const std::string_view& InBlob, const MCP::URI& InURI) {
+    BlobResourceContents(const BLOB& InBlob, const MCP::URI& InURI) {
         URI = InURI;
-        MIMEType = {"application", "octet-stream"};
+        MIMEType = Poco::Net::MediaType{"application", "octet-stream"};
         Blob = InBlob;
     }
 };
@@ -168,8 +169,6 @@ struct EmbeddedResource : Content {
         Resource = std::forward<T>(InResource);
     }
 };
-
-using Content = std::variant<TextContent, ImageContent, AudioContent, EmbeddedResource>;
 
 // JSON Schema
 struct JSONSchema {
