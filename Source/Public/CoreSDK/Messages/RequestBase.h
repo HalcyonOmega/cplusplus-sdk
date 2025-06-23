@@ -1,9 +1,15 @@
 #pragma once
 
-#include "CoreSDK/Common/MCPTypes.h"
+#include <optional>
+#include <string>
+#include <variant>
+
 #include "CoreSDK/Messages/MessageBase.h"
+#include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
+
+using RequestID = std::variant<std::string, int64_t>;
 
 struct RequestBase : MessageBase {
     RequestID ID;

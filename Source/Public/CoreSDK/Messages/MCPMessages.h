@@ -4,7 +4,6 @@
 #include <string>
 #include <variant>
 
-#include "CoreSDK/Common/MCPTypes.h"
 #include "CoreSDK/Messages/NotificationBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 #include "CoreSDK/Messages/ResponseBase.h"

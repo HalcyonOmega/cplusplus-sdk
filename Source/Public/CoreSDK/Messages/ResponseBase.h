@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "CoreSDK/Common/MCPTypes.h"
 #include "CoreSDK/Messages/ErrorBase.h"
 #include "CoreSDK/Messages/MessageBase.h"
 

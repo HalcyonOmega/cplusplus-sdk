@@ -6,9 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CoreSDK/Common/MCPTypes.h"
 #include "CoreSDK/Common/Macros.h"
-#include "json.hpp"
+#include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
 

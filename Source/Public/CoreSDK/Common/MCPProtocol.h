@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "CoreSDK/Common/MCPTypes.h"
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 #include "CoreSDK/Transport/ITransport.h"

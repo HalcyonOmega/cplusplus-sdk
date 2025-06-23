@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CoreSDK/Common/MCPTypes.h"
 #include "CoreSDK/Messages/MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
