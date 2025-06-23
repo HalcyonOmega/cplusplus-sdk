@@ -20,9 +20,13 @@ struct MCPError {
     int64_t Code;
     std::string Message;
     std::optional<JSONValue> Data;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MCPError, Code, Message, Data)
+    JKEY(CODEKEY, Code, "code")
+    JKEY(MESSAGEKEY, Message, "message")
+    JKEY(DATAKEY, Data, "data")
+
+    DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
+};
 
 // Role enumeration
 enum class Role { User, Assistant };
@@ -45,38 +49,53 @@ DEFINE_ENUM_JSON(LoggingLevel, {{LoggingLevel::Debug, "debug"},
 struct Annotations {
     std::optional<std::vector<Role>> Audience;
     std::optional<double> Priority; // 0-1 range
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Annotations, Audience, Priority)
+    JKEY(AUDIENCEKEY, Audience, "audience")
+    JKEY(PRIORITYKEY, Priority, "priority")
+
+    DEFINE_TYPE_JSON(Annotations, AUDIENCEKEY, PRIORITYKEY)
+};
 
 // Content types
 struct TextContent {
     std::string Type{"text"};
     std::string Text;
     std::optional<Annotations> ContentAnnotations;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(TextContent, Type, Text, ContentAnnotations)
+    JKEY(TYPEKEY, Type, "type")
+    JKEY(TEXTKEY, Text, "text")
+    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
+
+    DEFINE_TYPE_JSON(TextContent, TYPEKEY, TEXTKEY, ANNOTATIONSKEY)
+};
 
 struct ImageContent {
     std::string Type{"image"};
     std::string Data; // base64
     std::string MimeType;
     std::optional<Annotations> ContentAnnotations;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ImageContent, Type, Data, MimeType,
-                                                ContentAnnotations)
+    JKEY(TYPEKEY, Type, "type")
+    JKEY(DATAKEY, Data, "data")
+    JKEY(MIMETYPEKEY, MimeType, "mimeType")
+    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
+
+    DEFINE_TYPE_JSON(ImageContent, TYPEKEY, DATAKEY, MIMETYPEKEY, ANNOTATIONSKEY)
+};
 
 struct AudioContent {
     std::string Type{"audio"};
     std::string Data; // base64
     std::string MimeType;
     std::optional<Annotations> ContentAnnotations;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AudioContent, Type, Data, MimeType,
-                                                ContentAnnotations)
+    JKEY(TYPEKEY, Type, "type")
+    JKEY(DATAKEY, Data, "data")
+    JKEY(MIMETYPEKEY, MimeType, "mimeType")
+    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
+
+    DEFINE_TYPE_JSON(AudioContent, TYPEKEY, DATAKEY, MIMETYPEKEY, ANNOTATIONSKEY)
+};
 
 struct EmbeddedResource {
     std::string Type{"resource"};
@@ -85,12 +104,20 @@ struct EmbeddedResource {
         std::string URI;
         std::optional<std::string> Text;
         std::optional<std::string> MimeType;
-    } ResourceData;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EmbeddedResource::Resource, URI, Text, MimeType)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EmbeddedResource, Type, ContentAnnotations,
-                                                ResourceData)
+        JKEY(URIKEY, URI, "uri")
+        JKEY(TEXTKEY, Text, "text")
+        JKEY(MIMETYPEKEY, MimeType, "mimeType")
+
+        DEFINE_TYPE_JSON(Resource, URIKEY, TEXTKEY, MIMETYPEKEY)
+    } ResourceData;
+
+    JKEY(TYPEKEY, Type, "type")
+    JKEY(ANNOTATIONSKEY, ContentAnnotations, "annotations")
+    JKEY(RESOURCEDATAKEY, ResourceData, "resource")
+
+    DEFINE_TYPE_JSON(EmbeddedResource, TYPEKEY, ANNOTATIONSKEY, RESOURCEDATAKEY)
+};
 
 using Content = std::variant<TextContent, ImageContent, AudioContent, EmbeddedResource>;
 
@@ -100,45 +127,64 @@ struct JSONSchema {
     std::optional<std::unordered_map<std::string, JSONValue>> Properties;
     std::optional<std::vector<std::string>> Required;
     std::optional<JSONValue> AdditionalProperties;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(JSONSchema, Type, Properties, Required,
-                                                AdditionalProperties)
+    JKEY(TYPEKEY, Type, "type")
+    JKEY(PROPERTIESKEY, Properties, "properties")
+    JKEY(REQUIREDKEY, Required, "required")
+    JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+
+    DEFINE_TYPE_JSON(JSONSchema, TYPEKEY, PROPERTIESKEY, REQUIREDKEY, ADDITIONALPROPERTIESKEY)
+};
 
 // Tool types
 struct ToolAnnotations {
     std::optional<std::vector<Role>> Audience;
     std::optional<double> Priority;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ToolAnnotations, Audience, Priority)
+    JKEY(AUDIENCEKEY, Audience, "audience")
+    JKEY(PRIORITYKEY, Priority, "priority")
+
+    DEFINE_TYPE_JSON(ToolAnnotations, AUDIENCEKEY, PRIORITYKEY)
+};
 
 struct Tool {
     std::string Name;
     std::optional<std::string> Description;
     JSONSchema InputSchema;
     std::optional<ToolAnnotations> ToolAnnotations;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Tool, Name, Description, InputSchema,
-                                                ToolAnnotations)
+    JKEY(NAMEKEY, Name, "name")
+    JKEY(DESCRIPTIONKEY, Description, "description")
+    JKEY(INPUTSCHEMAKEY, InputSchema, "inputSchema")
+    JKEY(TOOLANNOTATIONSKEY, ToolAnnotations, "annotations")
+
+    DEFINE_TYPE_JSON(Tool, NAMEKEY, DESCRIPTIONKEY, INPUTSCHEMAKEY, TOOLANNOTATIONSKEY)
+};
 
 // Prompt types
 struct PromptArgument {
     std::string Name;
     std::optional<std::string> Description;
     std::optional<bool> Required;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PromptArgument, Name, Description, Required)
+    JKEY(NAMEKEY, Name, "name")
+    JKEY(DESCRIPTIONKEY, Description, "description")
+    JKEY(REQUIREDKEY, Required, "required")
+
+    DEFINE_TYPE_JSON(PromptArgument, NAMEKEY, DESCRIPTIONKEY, REQUIREDKEY)
+};
 
 struct Prompt {
     std::string Name;
     std::optional<std::string> Description;
     std::optional<std::vector<PromptArgument>> Arguments;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Prompt, Name, Description, Arguments)
+    JKEY(NAMEKEY, Name, "name")
+    JKEY(DESCRIPTIONKEY, Description, "description")
+    JKEY(ARGUMENTSKEY, Arguments, "arguments")
+
+    DEFINE_TYPE_JSON(Prompt, NAMEKEY, DESCRIPTIONKEY, ARGUMENTSKEY)
+};
 
 // Resource types
 struct Resource {
@@ -146,51 +192,74 @@ struct Resource {
     std::string Name;
     std::optional<std::string> Description;
     std::optional<std::string> MimeType;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Resource, URI, Name, Description, MimeType)
+    JKEY(URIKEY, URI, "uri")
+    JKEY(NAMEKEY, Name, "name")
+    JKEY(DESCRIPTIONKEY, Description, "description")
+    JKEY(MIMETYPEKEY, MimeType, "mimeType")
+
+    DEFINE_TYPE_JSON(Resource, URIKEY, NAMEKEY, DESCRIPTIONKEY, MIMETYPEKEY)
+};
 
 struct ResourceTemplate {
     std::string URITemplate;
     std::string Name;
     std::optional<std::string> Description;
     std::optional<std::string> MimeType;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResourceTemplate, URITemplate, Name, Description,
-                                                MimeType)
+    JKEY(URITEMPLATEKEY, URITemplate, "uriTemplate")
+    JKEY(NAMEKEY, Name, "name")
+    JKEY(DESCRIPTIONKEY, Description, "description")
+    JKEY(MIMETYPEKEY, MimeType, "mimeType")
+
+    DEFINE_TYPE_JSON(ResourceTemplate, URITEMPLATEKEY, NAMEKEY, DESCRIPTIONKEY, MIMETYPEKEY)
+};
 
 // Root
 struct Root {
     std::string URI;
     std::optional<std::string> Name;
+
+    JKEY(URIKEY, URI, "uri")
+    JKEY(NAMEKEY, Name, "name")
+
+    DEFINE_TYPE_JSON(Root, URIKEY, NAMEKEY)
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Root, URI, Name)
-
 // Model preferences for sampling
+struct ModelHint {
+    std::optional<std::string> Name;
+
+    JKEY(NAMEKEY, Name, "name")
+
+    DEFINE_TYPE_JSON(ModelHint, NAMEKEY)
+};
+
 struct ModelPreferences {
-    std::optional<std::vector<struct ModelHint>> Hints;
+    std::optional<std::vector<ModelHint>> Hints;
     std::optional<double> CostPriority;         // 0-1
     std::optional<double> SpeedPriority;        // 0-1
     std::optional<double> IntelligencePriority; // 0-1
-};
 
-struct ModelHint {
-    std::optional<std::string> Name;
-};
+    JKEY(HINTSKEY, Hints, "hints")
+    JKEY(COSTPRIORITYKEY, CostPriority, "costPriority")
+    JKEY(SPEEDPRIORITYKEY, SpeedPriority, "speedPriority")
+    JKEY(INTELLIGENCEPRIORITYKEY, IntelligencePriority, "intelligencePriority")
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ModelHint, Name)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ModelPreferences, Hints, CostPriority,
-                                                SpeedPriority, IntelligencePriority)
+    DEFINE_TYPE_JSON(ModelPreferences, HINTSKEY, COSTPRIORITYKEY, SPEEDPRIORITYKEY,
+                     INTELLIGENCEPRIORITYKEY)
+};
 
 // Sampling message
 struct SamplingMessage {
     Role MessageRole;
     Content MessageContent;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SamplingMessage, MessageRole, MessageContent)
+    JKEY(ROLENAMEKEY, MessageRole, "role")
+    JKEY(CONTENTKEY, MessageContent, "content")
+
+    DEFINE_TYPE_JSON(SamplingMessage, ROLENAMEKEY, CONTENTKEY)
+};
 
 // Progress token
 struct ProgressToken {
@@ -200,31 +269,70 @@ struct ProgressToken {
 // Individual capability structures (defined before they are used)
 struct RootsCapability {
     std::optional<bool> ListChanged;
+
+    JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+
+    DEFINE_TYPE_JSON(RootsCapability, LISTCHANGEDKEY)
 };
 
 struct SamplingCapability {
     // Empty object in spec
+
+    static void to_json(nlohmann::json& JSON, const SamplingCapability& Capability) {
+        (void)Capability;
+        JSON = nlohmann::json::object();
+    }
+
+    static void from_json(const nlohmann::json& JSON, SamplingCapability& Capability) {
+        (void)JSON;
+        (void)Capability;
+    }
 };
 
 struct ExperimentalCapability {
     std::unordered_map<std::string, JSONValue> Features;
+
+    JKEY(FEATURESKEY, Features, "features")
+
+    DEFINE_TYPE_JSON(ExperimentalCapability, FEATURESKEY)
 };
 
 struct LoggingCapability {
-    // Empty object in spec
+    static void to_json(nlohmann::json& JSON, const LoggingCapability& Capability) {
+        (void)Capability;
+        JSON = nlohmann::json::object();
+    }
+
+    static void from_json(const nlohmann::json& JSON, LoggingCapability& Capability) {
+        (void)JSON;
+        (void)Capability;
+    }
 };
 
 struct PromptsCapability {
     std::optional<bool> ListChanged;
+
+    JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+
+    DEFINE_TYPE_JSON(PromptsCapability, LISTCHANGEDKEY)
 };
 
 struct ResourcesCapability {
     std::optional<bool> Subscribe;
     std::optional<bool> ListChanged;
+
+    JKEY(SUBSCRIBEKEY, Subscribe, "subscribe")
+    JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+
+    DEFINE_TYPE_JSON(ResourcesCapability, SUBSCRIBEKEY, LISTCHANGEDKEY)
 };
 
 struct ToolsCapability {
     std::optional<bool> ListChanged;
+
+    JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+
+    DEFINE_TYPE_JSON(ToolsCapability, LISTCHANGEDKEY)
 };
 
 // Now define the main capability containers
@@ -232,6 +340,12 @@ struct ClientCapabilities {
     std::optional<RootsCapability> Roots;
     std::optional<SamplingCapability> Sampling;
     std::optional<std::unordered_map<std::string, JSONValue>> Experimental;
+
+    JKEY(ROOTSKEY, Roots, "roots")
+    JKEY(SAMPLINGKEY, Sampling, "sampling")
+    JKEY(EXPERIMENTALKEY, Experimental, "experimental")
+
+    DEFINE_TYPE_JSON(ClientCapabilities, ROOTSKEY, SAMPLINGKEY, EXPERIMENTALKEY)
 };
 
 struct ServerCapabilities {
@@ -240,36 +354,26 @@ struct ServerCapabilities {
     std::optional<PromptsCapability> Prompts;
     std::optional<ResourcesCapability> Resources;
     std::optional<ToolsCapability> Tools;
+
+    JKEY(EXPERIMENTALKEY, Experimental, "experimental")
+    JKEY(LOGGINGKEY, Logging, "logging")
+    JKEY(PROMPTSKEY, Prompts, "prompts")
+    JKEY(RESOURCESKEY, Resources, "resources")
+    JKEY(TOOLSKEY, Tools, "tools")
+
+    DEFINE_TYPE_JSON(ServerCapabilities, EXPERIMENTALKEY, LOGGINGKEY, PROMPTSKEY, RESOURCESKEY,
+                     TOOLSKEY)
 };
-
-// JSON serialization for all capability types
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RootsCapability, ListChanged)
-// Use inline JSON serialization for empty structs
-inline void to_json(nlohmann::json& j, const SamplingCapability&) {
-    j = nlohmann::json::object();
-}
-inline void from_json(const nlohmann::json&, SamplingCapability&) {}
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExperimentalCapability, Features)
-
-// Use inline JSON serialization for empty structs
-inline void to_json(nlohmann::json& j, const LoggingCapability&) {
-    j = nlohmann::json::object();
-}
-inline void from_json(const nlohmann::json&, LoggingCapability&) {}
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PromptsCapability, ListChanged)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ResourcesCapability, Subscribe, ListChanged)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ToolsCapability, ListChanged)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ClientCapabilities, Roots, Sampling, Experimental)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ServerCapabilities, Experimental, Logging, Prompts,
-                                                Resources, Tools)
 
 // Implementation info
 struct Implementation {
     std::string Name;
     std::string Version;
-};
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Implementation, Name, Version)
+    JKEY(NAMEKEY, Name, "name")
+    JKEY(VERSIONKEY, Version, "version")
+
+    DEFINE_TYPE_JSON(Implementation, NAMEKEY, VERSIONKEY)
+};
 
 MCP_NAMESPACE_END
