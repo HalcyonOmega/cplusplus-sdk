@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "JSONProxy.h"
 #include "Utilities/Async/MCPTask.h"
-#include "json.hpp"
 
 // Forward declarations
 class MCPClient;

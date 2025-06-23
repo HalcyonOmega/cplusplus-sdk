@@ -5,6 +5,10 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
+#include "Utilities/Async/MCPTask.h"
+
+// Forward declarations
+class MCPProtocol;
 
 MCP_NAMESPACE_BEGIN
 
@@ -16,6 +20,20 @@ struct ProgressToken {
     JKEY(TOKENKEY, Token, "token")
 
     DEFINE_TYPE_JSON(ProgressToken, TOKENKEY)
+};
+
+// Progress tracking class for long-running operations
+class ProgressTracker {
+  public:
+    ProgressTracker(const std::string& InRequestID, std::shared_ptr<MCPProtocol> InProtocol);
+
+    MCPTask_Void UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
+    MCPTask_Void CompleteProgress();
+
+  private:
+    std::string m_RequestID;
+    std::shared_ptr<MCPProtocol> m_Protocol{nullptr};
+    bool m_IsComplete{false};
 };
 
 MCP_NAMESPACE_END

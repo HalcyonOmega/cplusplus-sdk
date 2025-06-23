@@ -1,4 +1,4 @@
-#include "HTTPTransport.h"
+#include "CoreSDK/Transport/HTTPTransport.h"
 
 #include <Poco/Net/HTTPMessage.h>
 #include <Poco/Net/HTTPRequest.h>
