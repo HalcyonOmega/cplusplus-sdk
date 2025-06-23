@@ -48,27 +48,20 @@ class MCPProtocol {
     void ValidateProtocolVersion(const std::string& InVersion) const;
 
     // Message sending utilities
-    template <typename TRequest>
-    MCPTask<typename TRequest::ResponseType::ResultType> SendRequest(const TRequest& InRequest);
+    MCPTask<const ResponseBase&> SendRequest(const RequestBase& InRequest);
 
-    template <typename TResponse>
-    MCPTask_Void SendResponse(const std::string& InRequestID, const TResponse& InResponse);
+    MCPTask_Void SendResponse(const ResponseBase& InResponse);
 
-    template <typename TNotification>
-    MCPTask_Void SendNotification(const TNotification& InNotification);
+    MCPTask_Void SendNotification(const NotificationBase& InNotification);
 
     // Error handling
-    MCPTask_Void SendError(const std::string& InRequestID, int64_t InCode,
-                           const std::string& InMessage, const JSONValue& InData = {});
+    MCPTask_Void SendError(const ErrorBase& InError);
 
     // Event handlers
-    using RequestHandler = std::function<MCPTask_Void(
-        const std::string& InMethod, const JSONValue& InParams, const std::string& InRequestID)>;
-    using ResponseHandler =
-        std::function<void(const JSONValue& InResult, const std::string& InRequestID)>;
-    using NotificationHandler =
-        std::function<void(const std::string& InMethod, const JSONValue& InParams)>;
-    using ErrorHandler = std::function<void(const std::string& InError)>;
+    using RequestHandler = std::function<MCPTask_Void(const RequestBase& InRequest)>;
+    using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
+    using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
+    using ErrorHandler = std::function<void(const ErrorBase& InError)>;
 
     void SetRequestHandler(RequestHandler InHandler) {
         m_RequestHandler = InHandler;
@@ -84,6 +77,7 @@ class MCPProtocol {
     }
 
     // Transport access
+    // TODO: @HalcyonOmega Consider converting to reference
     ITransport* GetTransport() const {
         return m_Transport.get();
     }
@@ -92,11 +86,10 @@ class MCPProtocol {
     virtual void OnInitializeRequest(const InitializeRequest& InRequest,
                                      const std::string& InRequestID) = 0;
     virtual void OnInitializedNotification() = 0;
-    virtual MCPTask_Void HandleRequest(const std::string& InMethod, const JSONValue& InParams,
-                                       const std::string& InRequestID);
-    virtual void HandleResponse(const JSONValue& InResult, const std::string& InRequestID);
-    virtual void HandleNotification(const std::string& InMethod, const JSONValue& InParams);
-    virtual void HandleError(const std::string& InError);
+    virtual MCPTask_Void HandleRequest(const RequestBase& InRequest);
+    virtual void HandleResponse(const ResponseBase& InResponse);
+    virtual void HandleNotification(const NotificationBase& InNotification);
+    virtual void HandleError(const ErrorBase& InError);
 
     void SetState(MCPProtocolState InNewState);
 
@@ -105,12 +98,11 @@ class MCPProtocol {
 
   private:
     void SetupTransportHandlers();
-    void OnTransportMessage(const std::string& InRawMessage);
-    void OnTransportRequest(const std::string& InMethod, const JSONValue& InParams,
-                            const std::string& InRequestID);
-    void OnTransportResponse(const JSONValue& InResult, const std::string& InRequestID);
-    void OnTransportNotification(const std::string& InMethod, const JSONValue& InParams);
-    void OnTransportError(const std::string& InError);
+    void OnTransportMessage(const MessageBase& InMessage);
+    void OnTransportRequest(const RequestBase& InRequest);
+    void OnTransportResponse(const ResponseBase& InResponse);
+    void OnTransportNotification(const NotificationBase& InNotification);
+    void OnTransportError(const ErrorBase& InError);
     void OnTransportStateChange(TransportState InOldState, TransportState InNewState);
 
     // Event handlers

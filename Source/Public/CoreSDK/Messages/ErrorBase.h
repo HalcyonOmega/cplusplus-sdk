@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "CoreSDK/Messages/MessageBase.h"
 
 MCP_NAMESPACE_BEGIN
@@ -65,6 +67,10 @@ struct ErrorBase : MessageBase {
     JKEY(DATAKEY, Data, "data")
 
     DEFINE_TYPE_JSON(ErrorBase, CODEKEY, MESSAGEKEY, DATAKEY)
+
+    ErrorBase(Errors InCode, std::string_view InMessage,
+              std::optional<JSONValue> InData = std::nullopt)
+        : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
 };
 
 MCP_NAMESPACE_END

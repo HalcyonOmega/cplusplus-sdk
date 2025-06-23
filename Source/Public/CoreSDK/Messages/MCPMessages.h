@@ -35,10 +35,8 @@ struct InitializeRequest : RequestBase {
                          CLIENTINFOKEY)
     };
 
-    InitializeRequest() {
-        Method = "initialize";
-        Params = InitializeRequestParams{};
-    }
+    InitializeRequest(const InitializeRequestParams& InParams = InitializeRequestParams{})
+        : RequestBase("initialize", InParams) {}
 };
 
 struct InitializeResponse : ResponseBase {
@@ -57,36 +55,28 @@ struct InitializeResponse : ResponseBase {
                          METAKEY)
     };
 
-    InitializeResponse() {
-        Result = InitializeResult{};
-    }
+    InitializeResponse(const RequestID& InRequestID,
+                       const InitializeResult& InResult = InitializeResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Initialized notification
 struct InitializedNotification : NotificationBase {
-    InitializedNotification() {
-        Method = "notifications/initialized";
-    }
+    InitializedNotification() : NotificationBase("notifications/initialized") {}
 };
 
 // Ping request/response
 struct PingRequest : RequestBase {
-    PingRequest() {
-        Method = "ping";
-    }
+    PingRequest() : RequestBase("ping") {}
 };
 
 struct PingResponse : ResponseBase {
-    PingResponse() {
-        Result = JSONValue::object();
-    }
+    PingResponse(const RequestID& InRequestID) : ResponseBase(InRequestID) {}
 };
 
 // Tool-related messages
 struct ListToolsRequest : RequestBase {
-    ListToolsRequest() {
-        Method = "tools/list";
-    }
+    ListToolsRequest() : RequestBase("tools/list") {}
 };
 
 struct ListToolsResponse : ResponseBase {
@@ -100,9 +90,9 @@ struct ListToolsResponse : ResponseBase {
         DEFINE_TYPE_JSON(ListToolsResult, TOOLSKEY, METAKEY)
     };
 
-    ListToolsResponse() {
-        Result = ListToolsResult{};
-    }
+    ListToolsResponse(const RequestID& InRequestID,
+                      const ListToolsResult& InResult = ListToolsResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 struct CallToolRequest : RequestBase {
@@ -116,10 +106,8 @@ struct CallToolRequest : RequestBase {
         DEFINE_TYPE_JSON(CallToolParams, NAMEKEY, ARGUMENTSKEY)
     };
 
-    CallToolRequest() {
-        Method = "tools/call";
-        Params = CallToolParams{};
-    }
+    CallToolRequest(const CallToolParams& InParams = CallToolParams{})
+        : RequestBase("tools/call", InParams) {}
 };
 
 struct CallToolResponse : ResponseBase {
@@ -135,16 +123,13 @@ struct CallToolResponse : ResponseBase {
         DEFINE_TYPE_JSON(CallToolResult, CONTENTKEY, ISERRORKEY, METAKEY)
     };
 
-    CallToolResponse() {
-        Result = CallToolResult{};
-    }
+    CallToolResponse(const RequestID& InRequestID, const CallToolResult& InResult)
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Prompt-related messages
 struct ListPromptsRequest : RequestBase {
-    ListPromptsRequest() {
-        Method = "prompts/list";
-    }
+    ListPromptsRequest() : RequestBase("prompts/list") {}
 };
 
 struct ListPromptsResponse : ResponseBase {
@@ -158,9 +143,9 @@ struct ListPromptsResponse : ResponseBase {
         DEFINE_TYPE_JSON(ListPromptsResult, PROMPTSKEY, METAKEY)
     };
 
-    ListPromptsResponse() {
-        Result = ListPromptsResult{};
-    }
+    ListPromptsResponse(const RequestID& InRequestID,
+                        const ListPromptsResult& InResult = ListPromptsResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 struct GetPromptRequest : RequestBase {
@@ -174,10 +159,8 @@ struct GetPromptRequest : RequestBase {
         DEFINE_TYPE_JSON(GetPromptParams, NAMEKEY, ARGUMENTSKEY)
     };
 
-    GetPromptRequest() {
-        Method = "prompts/get";
-        Params = GetPromptParams{};
-    }
+    GetPromptRequest(const GetPromptParams& InParams = GetPromptParams{})
+        : RequestBase("prompts/get", InParams) {}
 };
 
 struct GetPromptResponse : ResponseBase {
@@ -193,9 +176,9 @@ struct GetPromptResponse : ResponseBase {
         DEFINE_TYPE_JSON(GetPromptResult, DESCRIPTIONKEY, MESSAGESKEY, METAKEY)
     };
 
-    GetPromptResponse() {
-        Result = GetPromptResult{};
-    }
+    GetPromptResponse(const RequestID& InRequestID,
+                      const GetPromptResult& InResult = GetPromptResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Resource-related messages
@@ -208,10 +191,8 @@ struct ListResourcesRequest : RequestBase {
         DEFINE_TYPE_JSON(ListResourcesParams, CURSORKEY)
     };
 
-    ListResourcesRequest() {
-        Method = "resources/list";
-        Params = ListResourcesParams{};
-    }
+    ListResourcesRequest(const ListResourcesParams& InParams = ListResourcesParams{})
+        : RequestBase("resources/list", InParams) {}
 };
 
 struct ListResourcesResponse : ResponseBase {
@@ -227,24 +208,22 @@ struct ListResourcesResponse : ResponseBase {
         DEFINE_TYPE_JSON(ListResourcesResult, RESOURCESKEY, NEXTCURSORKEY, METAKEY)
     };
 
-    ListResourcesResponse() {
-        Result = ListResourcesResult{};
-    }
+    ListResourcesResponse(const RequestID& InRequestID,
+                          const ListResourcesResult& InResult = ListResourcesResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 struct ReadResourceRequest : RequestBase {
     struct ReadResourceParams {
-        std::string URI;
+        MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
         DEFINE_TYPE_JSON(ReadResourceParams, URIKEY)
     };
 
-    ReadResourceRequest() {
-        Method = "resources/read";
-        Params = ReadResourceParams{};
-    }
+    ReadResourceRequest(const ReadResourceParams& InParams = ReadResourceParams{})
+        : RequestBase("resources/read", InParams) {}
 };
 
 struct ReadResourceResponse : ResponseBase {
@@ -258,40 +237,36 @@ struct ReadResourceResponse : ResponseBase {
         DEFINE_TYPE_JSON(ReadResourceResult, CONTENTSKEY, METAKEY)
     };
 
-    ReadResourceResponse() {
-        Result = ReadResourceResult{};
-    }
+    ReadResourceResponse(const RequestID& InRequestID,
+                         const ReadResourceResult& InResult = ReadResourceResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Subscribe/Unsubscribe
 struct SubscribeRequest : RequestBase {
     struct SubscribeParams {
-        std::string URI;
+        MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
         DEFINE_TYPE_JSON(SubscribeParams, URIKEY)
     };
 
-    SubscribeRequest() {
-        Method = "resources/subscribe";
-        Params = SubscribeParams{};
-    }
+    SubscribeRequest(const SubscribeParams& InParams = SubscribeParams{})
+        : RequestBase("resources/subscribe", InParams) {}
 };
 
 struct UnsubscribeRequest : RequestBase {
     struct UnsubscribeParams {
-        std::string URI;
+        MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
         DEFINE_TYPE_JSON(UnsubscribeParams, URIKEY)
     };
 
-    UnsubscribeRequest() {
-        Method = "resources/unsubscribe";
-        Params = UnsubscribeParams{};
-    }
+    UnsubscribeRequest(const UnsubscribeParams& InParams = UnsubscribeParams{})
+        : RequestBase("resources/unsubscribe", InParams) {}
 };
 
 // Sampling-related messages
@@ -320,10 +295,8 @@ struct CreateMessageRequest : RequestBase {
                          METADATAKEY)
     };
 
-    CreateMessageRequest() {
-        Method = "sampling/createMessage";
-        Params = CreateMessageParams{};
-    }
+    CreateMessageRequest(const CreateMessageParams& InParams = CreateMessageParams{})
+        : RequestBase("sampling/createMessage", InParams) {}
 };
 
 struct CreateMessageResponse : ResponseBase {
@@ -342,16 +315,14 @@ struct CreateMessageResponse : ResponseBase {
                          METAKEY)
     };
 
-    CreateMessageResponse() {
-        Result = CreateMessageResult{};
-    }
+    CreateMessageResponse(const RequestID& InRequestID,
+                          const CreateMessageResult& InResult = CreateMessageResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Roots-related messages
 struct ListRootsRequest : RequestBase {
-    ListRootsRequest() {
-        Method = "roots/list";
-    }
+    ListRootsRequest() : RequestBase("roots/list") {}
 };
 
 struct ListRootsResponse : ResponseBase {
@@ -365,9 +336,9 @@ struct ListRootsResponse : ResponseBase {
         DEFINE_TYPE_JSON(ListRootsResult, ROOTSKEY, METAKEY)
     };
 
-    ListRootsResponse() {
-        Result = ListRootsResult{};
-    }
+    ListRootsResponse(const RequestID& InRequestID,
+                      const ListRootsResult& InResult = ListRootsResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Logging messages
@@ -380,10 +351,8 @@ struct SetLevelRequest : RequestBase {
         DEFINE_TYPE_JSON(SetLevelParams, LEVELKEY)
     };
 
-    SetLevelRequest() {
-        Method = "logging/setLevel";
-        Params = SetLevelParams{};
-    }
+    SetLevelRequest(const SetLevelParams& InParams = SetLevelParams{})
+        : RequestBase("logging/setLevel", InParams) {}
 };
 
 struct LoggingMessageNotification : NotificationBase {
@@ -399,10 +368,8 @@ struct LoggingMessageNotification : NotificationBase {
         DEFINE_TYPE_JSON(LoggingParams, LEVELKEY, LOGGERKEY, DATAKEY)
     };
 
-    LoggingMessageNotification() {
-        Method = "notifications/message";
-        Params = LoggingParams{};
-    }
+    LoggingMessageNotification(const LoggingParams& InParams = LoggingParams{})
+        : NotificationBase("notifications/message", InParams) {}
 };
 
 // Progress notification
@@ -419,10 +386,8 @@ struct ProgressNotification : NotificationBase {
         DEFINE_TYPE_JSON(ProgressParams, PROGRESSREQUESTIDKEY, PROGRESSKEY, TOTALKEY)
     };
 
-    ProgressNotification() {
-        Method = "notifications/progress";
-        Params = ProgressParams{};
-    }
+    ProgressNotification(const ProgressParams& InParams = ProgressParams{})
+        : NotificationBase("notifications/progress", InParams) {}
 };
 
 // Cancellation notification
@@ -437,50 +402,38 @@ struct CancelledNotification : NotificationBase {
         DEFINE_TYPE_JSON(CancelledParams, CANCELREQUESTIDKEY, REASONKEY)
     };
 
-    CancelledNotification() {
-        Method = "notifications/cancelled";
-        Params = CancelledParams{};
-    }
+    CancelledNotification(const CancelledParams& InParams = CancelledParams{})
+        : NotificationBase("notifications/cancelled", InParams) {}
 };
 
 // Change notifications
 struct ResourceListChangedNotification : NotificationBase {
-    ResourceListChangedNotification() {
-        Method = "notifications/resources/list_changed";
-    }
+    ResourceListChangedNotification() : NotificationBase("notifications/resources/list_changed") {}
 };
 
 struct ResourceUpdatedNotification : NotificationBase {
     struct ResourceUpdatedParams {
-        std::string URI;
+        MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
         DEFINE_TYPE_JSON(ResourceUpdatedParams, URIKEY)
     };
 
-    ResourceUpdatedNotification() {
-        Method = "notifications/resources/updated";
-        Params = ResourceUpdatedParams{};
-    }
+    ResourceUpdatedNotification()
+        : NotificationBase("notifications/resources/updated", ResourceUpdatedParams{}) {}
 };
 
 struct PromptListChangedNotification : NotificationBase {
-    PromptListChangedNotification() {
-        Method = "notifications/prompts/list_changed";
-    }
+    PromptListChangedNotification() : NotificationBase("notifications/prompts/list_changed") {}
 };
 
 struct ToolListChangedNotification : NotificationBase {
-    ToolListChangedNotification() {
-        Method = "notifications/tools/list_changed";
-    }
+    ToolListChangedNotification() : NotificationBase("notifications/tools/list_changed") {}
 };
 
 struct RootsListChangedNotification : NotificationBase {
-    RootsListChangedNotification() {
-        Method = "notifications/roots/list_changed";
-    }
+    RootsListChangedNotification() : NotificationBase("notifications/roots/list_changed") {}
 };
 
 // Completion request/response
@@ -488,7 +441,7 @@ struct CompleteRequest : RequestBase {
     struct CompleteParams {
         struct CompletionRef {
             std::string Type; // "ref/prompt" or "ref/resource"
-            std::string URI;
+            MCP::URI URI;
 
             JKEY(TYPEKEY, Type, "type")
             JKEY(URIKEY, URI, "uri")
@@ -512,10 +465,8 @@ struct CompleteRequest : RequestBase {
         DEFINE_TYPE_JSON(CompleteParams, COMPLETIONREFERENCEKEY, ARGUMENTKEY)
     };
 
-    CompleteRequest() {
-        Method = "completion/complete";
-        Params = CompleteParams{};
-    }
+    CompleteRequest(const CompleteParams& InParams = CompleteParams{})
+        : RequestBase("completion/complete", InParams) {}
 };
 
 struct CompleteResponse : ResponseBase {
@@ -539,9 +490,9 @@ struct CompleteResponse : ResponseBase {
         DEFINE_TYPE_JSON(CompleteResult, COMPLETIONDATAKEY, METAKEY)
     };
 
-    CompleteResponse() {
-        Result = CompleteResult{};
-    }
+    CompleteResponse(const RequestID& InRequestID,
+                     const CompleteResult& InResult = CompleteResult{})
+        : ResponseBase(InRequestID, InResult) {}
 };
 
 // Union types for polymorphic handling

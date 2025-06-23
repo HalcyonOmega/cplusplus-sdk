@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string_view>
+#include <string>
 
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
@@ -9,9 +9,9 @@ MCP_NAMESPACE_BEGIN
 
 // Base message types
 struct MessageBase {
-    std::string_view JSONRPCVersion = "2.0";
+    std::string JSONRPC = "2.0";
 
-    JKEY(JSONRPCKEY, JSONRPCVersion, "jsonrpc")
+    JKEY(JSONRPCKEY, JSONRPC, "jsonrpc")
 
     DEFINE_TYPE_JSON(MessageBase, JSONRPCKEY)
 };
