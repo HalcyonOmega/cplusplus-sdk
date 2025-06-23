@@ -26,14 +26,10 @@ class StdioTransport : public ITransport {
     bool IsConnected() const override;
     TransportState GetState() const override;
 
-    MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                     const JSONValue& InParams) override;
-    MCPTask_Void SendResponse(const std::string& InRequestID, const JSONValue& InResult) override;
-    MCPTask_Void SendErrorResponse(const std::string& InRequestID, MCP::Errors InErrorCode,
-                                   const std::string& InErrorMessage,
-                                   const JSONValue& InErrorData = {}) override;
-    MCPTask_Void SendNotification(const std::string& InMethod,
-                                  const JSONValue& InParams = {}) override;
+    MCPTask<std::string> SendRequest(const RequestBase& InRequest) override;
+    MCPTask_Void SendResponse(const ResponseBase& InResponse) override;
+    MCPTask_Void SendErrorResponse(const ErrorBase& InError) override;
+    MCPTask_Void SendNotification(const NotificationBase& InNotification) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;
@@ -89,14 +85,10 @@ class StdioServerTransport : public ITransport {
     bool IsConnected() const override;
     TransportState GetState() const override;
 
-    MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                     const JSONValue& InParams) override;
-    MCPTask_Void SendResponse(const std::string& InRequestID, const JSONValue& InResult) override;
-    MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                   const std::string& InErrorMessage,
-                                   const JSONValue& InErrorData = {}) override;
-    MCPTask_Void SendNotification(const std::string& InMethod,
-                                  const JSONValue& InParams = {}) override;
+    MCPTask<std::string> SendRequest(const RequestBase& InRequest) override;
+    MCPTask_Void SendResponse(const ResponseBase& InResponse) override;
+    MCPTask_Void SendErrorResponse(const ErrorBase& InError) override;
+    MCPTask_Void SendNotification(const NotificationBase& InNotification) override;
 
     void SetMessageHandler(MessageHandler InHandler) override;
     void SetRequestHandler(RequestHandler InHandler) override;

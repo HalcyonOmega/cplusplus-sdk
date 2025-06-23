@@ -10,13 +10,13 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/ErrorBase.h"
+#include "CoreSDK/Messages/MessageBase.h"
+#include "CoreSDK/Messages/NotificationBase.h"
+#include "CoreSDK/Messages/RequestBase.h"
+#include "CoreSDK/Messages/ResponseBase.h"
 #include "JSONProxy.h"
 #include "Utilities/Async/MCPTask.h"
-
-// Forward declarations
-struct RequestBase;
-struct ResponseBase;
-struct NotificationBase;
 
 MCP_NAMESPACE_BEGIN
 
@@ -24,14 +24,11 @@ MCP_NAMESPACE_BEGIN
 enum class TransportState { Disconnected, Connecting, Connected, Error };
 
 // Message handlers
-using MessageHandler = std::function<void(const std::string& InRawMessage)>;
-using RequestHandler = std::function<void(
-    const std::string& InMethod, const JSONValue& InParams, const std::string& InRequestID)>;
-using ResponseHandler =
-    std::function<void(const JSONValue& InResult, const std::string& InRequestID)>;
-using NotificationHandler =
-    std::function<void(const std::string& InMethod, const JSONValue& InParams)>;
-using ErrorHandler = std::function<void(const std::string& InErrorMessage)>;
+using MessageHandler = std::function<void(const MessageBase& InMessage)>;
+using RequestHandler = std::function<void(const RequestBase& InRequest)>;
+using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
+using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
+using ErrorHandler = std::function<void(const ErrorBase& InError)>;
 using StateChangeHandler =
     std::function<void(TransportState InOldState, TransportState InNewState)>;
 
@@ -73,15 +70,10 @@ class ITransport {
     [[nodiscard]] virtual TransportState GetState() const = 0;
 
     // Message sending
-    [[nodiscard]] virtual MCPTask<std::string> SendRequest(const std::string& InMethod,
-                                                           const JSONValue& InParams) = 0;
-    virtual MCPTask_Void SendResponse(const std::string& InRequestID,
-                                      const JSONValue& InResult) = 0;
-    virtual MCPTask_Void SendErrorResponse(const std::string& InRequestID, int64_t InErrorCode,
-                                           const std::string& InErrorMessage,
-                                           const JSONValue& InErrorData = {}) = 0;
-    virtual MCPTask_Void SendNotification(const std::string& InMethod,
-                                          const JSONValue& InParams = {}) = 0;
+    [[nodiscard]] virtual MCPTask<std::string> SendRequest(const RequestBase& InRequest) = 0;
+    virtual MCPTask_Void SendResponse(const ResponseBase& InResponse) = 0;
+    virtual MCPTask_Void SendErrorResponse(const ErrorBase& InError) = 0;
+    virtual MCPTask_Void SendNotification(const NotificationBase& InNotification) = 0;
 
     // Event handlers
     virtual void SetMessageHandler(MessageHandler InHandler) = 0;
