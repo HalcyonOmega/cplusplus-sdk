@@ -9,10 +9,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "CoreSDK/Common/MCPTypes.h"
 #include "CoreSDK/Common/Macros.h"
-#include "ITransport.h"
-#include "MCPMessages.h"
-#include "MCPTypes.h"
+#include "CoreSDK/Messages/MCPMessages.h"
+#include "CoreSDK/Transport/ITransport.h"
 #include "Utilities/Async/MCPTask.h"
 
 MCP_NAMESPACE_BEGIN
@@ -38,9 +38,9 @@ class MCPProtocol {
     }
 
     // Core protocol operations
-    MCPTask<InitializeResult> Initialize(const std::string& InProtocolVersion,
-                                         const ClientCapabilities& InCapabilities,
-                                         const Implementation& InClientInfo);
+    MCPTask<InitializeResponse::InitializeResult>
+    Initialize(const std::string& InProtocolVersion, const ClientCapabilities& InCapabilities,
+               const Implementation& InClientInfo);
     MCPTask_Void SendInitialized();
     MCPTask<JSONValue> Ping();
 
@@ -137,36 +137,37 @@ class MCPClient : public MCPProtocol {
     explicit MCPClient(std::unique_ptr<ITransport> InTransport);
 
     // Client-specific operations
-    MCPTask<ListToolsResult> ListTools();
-    MCPTask<CallToolResult>
+    MCPTask<ListToolsResponse::ListToolsResult> ListTools();
+    MCPTask<CallToolResponse::CallToolResult>
     CallTool(const std::string& InName,
              const std::unordered_map<std::string, JSONValue>& InArguments = {});
 
-    MCPTask<ListPromptsResult> ListPrompts();
-    MCPTask<GetPromptResult>
+    MCPTask<ListPromptsResponse::ListPromptsResult> ListPrompts();
+    MCPTask<GetPromptResponse::GetPromptResult>
     GetPrompt(const std::string& InName,
               const std::unordered_map<std::string, std::string>& InArguments = {});
 
-    MCPTask<ListResourcesResult> ListResources();
-    MCPTask<ReadResourceResult> ReadResource(const std::string& InURI);
+    MCPTask<ListResourcesResponse::ListResourcesResult> ListResources();
+    MCPTask<ReadResourceResponse::ReadResourceResult> ReadResource(const std::string& InURI);
     MCPTask_Void Subscribe(const std::string& InURI);
     MCPTask_Void Unsubscribe(const std::string& InURI);
 
-    MCPTask<ListRootsResult> ListRoots();
+    MCPTask<ListRootsResponse::ListRootsResult> ListRoots();
     MCPTask_Void SetLoggingLevel(LoggingLevel InLevel);
 
-    MCPTask<CompleteResult> Complete(const std::string& InRefType, const std::string& InRefURI,
-                                     const std::string& InArgName, const std::string& InArgValue);
+    MCPTask<CompleteResponse::CompleteResult> Complete(const std::string& InRefType,
+                                                       const std::string& InRefURI,
+                                                       const std::string& InArgName,
+                                                       const std::string& InArgValue);
 
     // Sampling (for servers that want to sample via client)
-    MCPTask<CreateMessageResult> CreateMessage(const std::vector<SamplingMessage>& InMessages,
-                                               int64_t InMaxTokens,
-                                               const std::string& InSystemPrompt = "",
-                                               const std::string& InIncludeContext = "none",
-                                               double InTemperature = DEFAULT_TEMPERATURE,
-                                               const std::vector<std::string>& InStopSequences = {},
-                                               const ModelPreferences& InModelPrefs = {},
-                                               const JSONValue& InMetadata = {});
+    MCPTask<CreateMessageResponse::CreateMessageResult>
+    CreateMessage(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
+                  const std::string& InSystemPrompt = "",
+                  const std::string& InIncludeContext = "none",
+                  double InTemperature = DEFAULT_TEMPERATURE,
+                  const std::vector<std::string>& InStopSequences = {},
+                  const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
 
   protected:
     void OnInitializeRequest(const InitializeRequest& InRequest,
@@ -185,10 +186,9 @@ class MCPServer : public MCPProtocol {
                        const ServerCapabilities& InCapabilities);
 
     // Tool management
-    void RegisterTool(
-        const Tool& InTool,
-        std::function<MCPTask<CallToolResult>(const std::unordered_map<std::string, JSONValue>&)>
-            InHandler);
+    void RegisterTool(const Tool& InTool, std::function<MCPTask<CallToolResponse::CallToolResult>(
+                                              const std::unordered_map<std::string, JSONValue>&)>
+                                              InHandler);
     void UnregisterTool(const std::string& InName);
     MCPTask_Void NotifyToolListChanged();
 
@@ -201,11 +201,13 @@ class MCPServer : public MCPProtocol {
     MCPTask_Void NotifyPromptListChanged();
 
     // Resource management
-    void RegisterResource(const Resource& InResource,
-                          std::function<MCPTask<ReadResourceResult>()> InHandler);
+    void
+    RegisterResource(const Resource& InResource,
+                     std::function<MCPTask<ReadResourceResponse::ReadResourceResult>()> InHandler);
     void RegisterResourceTemplate(
         const ResourceTemplate& InTemplate,
-        std::function<MCPTask<ReadResourceResult>(const std::string&)> InHandler);
+        std::function<MCPTask<ReadResourceResponse::ReadResourceResult>(const std::string&)>
+            InHandler);
     void UnregisterResource(const std::string& InURI);
     MCPTask_Void NotifyResourceListChanged();
     MCPTask_Void NotifyResourceUpdated(const std::string& InURI);
@@ -220,7 +222,7 @@ class MCPServer : public MCPProtocol {
                             const JSONValue& InData);
 
     // Sampling requests (servers can request sampling from clients)
-    MCPTask<CreateMessageResult>
+    MCPTask<CreateMessageResponse::CreateMessageResult>
     RequestSampling(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
                     const std::string& InSystemPrompt = "",
                     const std::string& InIncludeContext = "none",
@@ -291,7 +293,7 @@ class MCPServer : public MCPProtocol {
     static constexpr size_t DEFAULT_PAGE_SIZE = 100;
 
     // Progress tracking and tool execution
-    MCPTask<ToolCallResponse> ExecuteToolWithProgress(
+    MCPTask<CallToolResponse> ExecuteToolWithProgress(
         const Tool& InTool,
         const std::optional<std::unordered_map<std::string, nlohmann::json>>& InArguments,
         const std::string& InRequestID);

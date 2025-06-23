@@ -9,9 +9,8 @@
 #include <thread>
 
 #include "CoreSDK/Common/Macros.h"
-#include "ITransport.h"
+#include "CoreSDK/Transport/ITransport.h"
 #include "json.hpp"
-
 
 MCP_NAMESPACE_BEGIN
 

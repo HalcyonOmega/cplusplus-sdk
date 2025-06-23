@@ -21,8 +21,7 @@
 #include <unordered_map>
 
 #include "CoreSDK/Common/Macros.h"
-#include "ITransport.h"
-
+#include "CoreSDK/Transport/ITransport.h"
 
 // Forward declarations
 class HTTPTransportClient;

@@ -6,10 +6,9 @@
 #include <variant>
 #include <vector>
 
-#include "../Proxies/JSONProxy.h"
-#include "../Proxies/URIProxy.h"
-#include "../Utilities/ThirdParty/json.hpp"
 #include "CoreSDK/Common/Macros.h"
+#include "JSONProxy.h"
+#include "URIProxy.h"
 
 MCP_NAMESPACE_BEGIN
 
