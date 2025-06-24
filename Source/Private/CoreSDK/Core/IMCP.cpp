@@ -2,26 +2,29 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPProtocol::MCPProtocol(std::shared_ptr<ITransport> InTransport) : m_Transport(InTransport) {
+MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
+    : m_Transport(std::move(InTransport)) {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetRequestHandler([this](const RequestBase& InRequest) {
-        (void)this;
-        HandleIncomingRequest(InRequest);
-    });
+    m_Transport->SetRequestHandler(
+        [this](const RequestBase& InRequest) -> MCPTask<const ResponseBase&> {
+            (void)this;
+            HandleIncomingRequest(InRequest);
+        });
 
-    m_Transport->SetResponseHandler([this](const ResponseBase& InResponse) {
+    m_Transport->SetResponseHandler([this](const ResponseBase& InResponse) -> MCPTask_Void {
         (void)this;
         HandleIncomingResponse(InResponse);
     });
 
-    m_Transport->SetNotificationHandler([this](const NotificationBase& InNotification) {
-        (void)this;
-        HandleIncomingNotification(InNotification);
-    });
+    m_Transport->SetNotificationHandler(
+        [this](const NotificationBase& InNotification) -> MCPTask_Void {
+            (void)this;
+            HandleIncomingNotification(InNotification);
+        });
 
-    m_Transport->SetErrorResponseHandler([this](const ErrorResponseBase& InError) {
+    m_Transport->SetErrorResponseHandler([this](const ErrorResponseBase& InError) -> MCPTask_Void {
         (void)this;
         HandleTransportError(InError);
     });
@@ -52,7 +55,7 @@ MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
 
         if (InServerInfo.has_value()) { initRequest.ServerInfo = InServerInfo.value(); }
 
-        auto responseJson = co_await SendRequestImpl("initialize", JSONValue(initRequest));
+        auto responseJson = co_await SendRequest("initialize", JSONValue(initRequest));
         auto response = responseJson.get<InitializeResponse>();
 
         // Store negotiated capabilities
@@ -60,14 +63,14 @@ MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
         m_ServerInfo = response.ServerInfo;
 
         // Send initialized notification
-        co_await SendNotificationImpl("initialized", JSONValue::object());
+        co_await SendNotification("initialized");
 
         m_IsInitialized = true;
 
         if (m_InitializedHandler) { m_InitializedHandler(response); }
 
     } catch (const std::exception& e) {
-        throw std::runtime_error("Failed to initialize protocol: " + std::string(e.what()));
+        HandleRuntimeError("Failed to initialize protocol: " + std::string(e.what()));
     }
 
     co_return;
@@ -96,9 +99,7 @@ MCPTask_Void MCPProtocol::Shutdown() {
 
     } catch (const std::exception& e) {
         // Log error but don't throw during shutdown
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error during shutdown: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error during shutdown: " + std::string(e.what()));
     }
 
     co_return;
@@ -111,7 +112,7 @@ bool MCPProtocol::IsInitialized() const {
 MCPTask<JSONValue> MCPProtocol::SendRequest(std::string_view InMethod, const JSONValue& InParams) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
-    co_return co_await SendRequestImpl(InMethod, InParams);
+    co_return co_await SendRequest(InMethod, InParams);
 }
 
 MCPTask_Void MCPProtocol::SendResponse(std::string_view InRequestID, const JSONValue& InResult) {
@@ -131,7 +132,7 @@ MCPTask_Void MCPProtocol::SendErrorResponse(std::string_view InRequestID, int64_
 MCPTask_Void MCPProtocol::SendNotification(std::string_view InMethod, const JSONValue& InParams) {
     if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
 
-    co_await SendNotificationImpl(InMethod, InParams);
+    co_await SendNotification(InMethod, InParams);
 }
 
 void MCPProtocol::SetRequestHandler(std::string_view InMethod, RequestHandler InHandler) {
@@ -164,7 +165,7 @@ const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
     return m_ServerInfo;
 }
 
-MCPTask<const ResponseBase&> MCPProtocol::SendRequestImpl(const RequestBase& InRequest) {
+MCPTask<const ResponseBase&> MCPProtocol::SendRequest(const RequestBase& InRequest) {
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
     pendingRequest->Method = InRequest.Method;
@@ -181,7 +182,7 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequestImpl(const RequestBase& InR
 
     try {
         // Send request via transport
-        std::string responseStr = co_await m_Transport->SendRequest(InMethod, InParams);
+        std::string responseStr = co_await m_Transport->SendRequest(InRequest);
 
         // Parse response
         auto response = JSONValue::parse(responseStr);
@@ -195,7 +196,7 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequestImpl(const RequestBase& InR
     }
 
     // TODO: @HalcyonOmega - BEGIN TIMEOUT IMPLEMENTATION
-    if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
+    if (!IsConnected()) { HandleRuntimeError("Transport not connected"); }
 
     RequestID requestID = InRequest.ID;
 
@@ -227,18 +228,16 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequestImpl(const RequestBase& InR
     // TODO: @HalcyonOmega - END TIMEOUT IMPLEMENTATION
 }
 
-MCPTask_Void MCPProtocol::SendNotificationImpl(std::string_view InMethod,
-                                               const JSONValue& InParams) {
-    co_await m_Transport->SendNotification(InMethod, InParams);
+MCPTask_Void MCPProtocol::SendNotification(const NotificationBase& InNotification) {
+    co_await m_Transport->SendNotification(InNotification);
 }
 
-void MCPProtocol::HandleIncomingRequest(std::string_view InMethod, const JSONValue& InParams,
-                                        std::string_view InRequestID) {
+void MCPProtocol::HandleIncomingRequest(const RequestBase& InRequest) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        auto handler = m_RequestHandlers.find(InMethod);
+        auto handler = m_RequestHandlers.find(InRequest.Method);
         if (handler != m_RequestHandlers.end()) {
-            handler->second(InParams, InRequestID);
+            handler->second(InRequest);
         } else {
             // Send method not found error
             SendErrorResponse(InRequestID, -32601, "Method not found", JSONValue::object());
@@ -274,9 +273,7 @@ void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
             m_PendingRequests.erase(it);
         }
     } catch (const std::exception& e) {
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error handling response: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error handling response: " + std::string(e.what()));
     }
 }
 
@@ -287,16 +284,12 @@ void MCPProtocol::HandleIncomingNotification(std::string_view InMethod, const JS
         if (handler != m_NotificationHandlers.end()) { handler->second(InParams); }
         // Notifications without handlers are simply ignored
     } catch (const std::exception& e) {
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error handling notification: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error handling notification: " + std::string(e.what()));
     }
 }
 
-void MCPProtocol::HandleTransportError(std::string_view InError) {
-    if (m_ErrorResponseHandler) {
-        m_ErrorResponseHandler("Transport error: " + std::string(InError));
-    }
+void MCPProtocol::HandleTransportError(const ErrorResponseBase& InError) {
+    HandleRuntimeError("Transport error: " + std::string(InError.Message));
 }
 
 MCP_NAMESPACE_END

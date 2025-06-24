@@ -55,8 +55,12 @@ class ITransport {
     // Connection management
     virtual MCPTask_Void Start() = 0;
     virtual MCPTask_Void Stop() = 0;
-    [[nodiscard]] virtual bool IsConnected() const = 0;
-    [[nodiscard]] virtual TransportState GetState() const = 0;
+    [[nodiscard]] virtual bool IsConnected() const {
+        return m_CurrentState == TransportState::Connected;
+    }
+    [[nodiscard]] virtual TransportState GetState() const {
+        return m_CurrentState;
+    }
 
     // Message sending
     virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;

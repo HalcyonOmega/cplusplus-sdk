@@ -14,9 +14,7 @@ MCP_NAMESPACE_BEGIN
 
 // StdioClientTransport Implementation
 StdioClientTransport::StdioClientTransport(const StdioClientTransportOptions& InOptions)
-    : m_Options(InOptions) {
-    TriggerStateChange(TransportState::Disconnected);
-}
+    : m_Options(InOptions) {}
 
 StdioClientTransport::~StdioClientTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
@@ -30,7 +28,8 @@ StdioClientTransport::~StdioClientTransport() {
 
 MCPTask_Void StdioClientTransport::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
-        throw std::runtime_error("Transport already started or in progress");
+        HandleRuntimeError("Transport already started or in progress");
+        co_return;
     }
 
     try {
@@ -67,10 +66,8 @@ MCPTask_Void StdioClientTransport::Start() {
         TriggerStateChange(TransportState::Connected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Failed to start stdio transport: " + std::string(e.what()));
-        }
-        throw;
+        HandleRuntimeError("Failed to start stdio transport: " + std::string(e.what()));
+        co_return;
     }
 
     co_return;
@@ -92,20 +89,10 @@ MCPTask_Void StdioClientTransport::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error stopping stdio transport: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error stopping stdio transport: " + std::string(e.what()));
     }
 
     co_return;
-}
-
-bool StdioClientTransport::IsConnected() const {
-    return m_CurrentState == TransportState::Connected;
-}
-
-TransportState StdioClientTransport::GetState() const {
-    return m_CurrentState;
 }
 
 std::string StdioClientTransport::GetConnectionInfo() const {
@@ -189,7 +176,10 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
 }
 
 MCPTask_Void StdioClientTransport::TransmitMessage(const JSONValue& InMessage) {
-    if (!m_StdinStream || !IsConnected()) { throw std::runtime_error("Transport not connected"); }
+    if (!m_StdinStream || !IsConnected()) {
+        HandleRuntimeError("Transport not connected");
+        co_return;
+    }
 
     try {
         Poco::Mutex::ScopedLock lock(m_WriteMutex);
@@ -199,7 +189,7 @@ MCPTask_Void StdioClientTransport::TransmitMessage(const JSONValue& InMessage) {
         m_StdinStream->flush();
     } catch (const std::exception& e) {
         HandleRuntimeError("Error writing message: " + std::string(e.what()));
-        throw;
+        co_return;
     }
 
     co_return;
@@ -239,9 +229,7 @@ void StdioClientTransport::Cleanup() {
 }
 
 // StdioServerTransport Implementation
-StdioServerTransport::StdioServerTransport() {
-    TriggerStateChange(TransportState::Disconnected);
-}
+StdioServerTransport::StdioServerTransport() {}
 
 StdioServerTransport::~StdioServerTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
@@ -255,7 +243,8 @@ StdioServerTransport::~StdioServerTransport() {
 
 MCPTask_Void StdioServerTransport::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
-        throw std::runtime_error("Transport already started");
+        HandleRuntimeError("Transport already started");
+        co_return;
     }
 
     try {
@@ -300,21 +289,10 @@ MCPTask_Void StdioServerTransport::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error stopping stdio server transport: "
-                                   + std::string(e.what()));
-        }
+        HandleRuntimeError("Error stopping stdio server transport: " + std::string(e.what()));
     }
 
     co_return;
-}
-
-bool StdioServerTransport::IsConnected() const {
-    return m_CurrentState == TransportState::Connected;
-}
-
-TransportState StdioServerTransport::GetState() const {
-    return m_CurrentState;
 }
 
 std::string StdioServerTransport::GetConnectionInfo() const {
@@ -349,7 +327,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
         auto message = JSONValue::parse(InLine);
 
         if (!IsValidJSONRPC(message)) {
-            std::cout << "Invalid JSON-RPC message received" << std::endl;
+            HandleRuntimeError("Invalid JSON-RPC message received");
             return;
         }
 

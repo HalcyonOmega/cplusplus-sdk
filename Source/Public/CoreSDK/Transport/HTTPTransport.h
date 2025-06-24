@@ -38,8 +38,6 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     // ITransport interface
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    [[nodiscard]] bool IsConnected() const override;
-    [[nodiscard]] TransportState GetState() const override;
 
     MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
@@ -109,8 +107,6 @@ class HTTPTransportServer : public ITransport {
     // ITransport interface
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    [[nodiscard]] bool IsConnected() const override;
-    [[nodiscard]] TransportState GetState() const override;
 
     MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 

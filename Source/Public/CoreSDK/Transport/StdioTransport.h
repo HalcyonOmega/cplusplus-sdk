@@ -22,8 +22,6 @@ class StdioClientTransport : public ITransport {
     // ITransport interface
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    bool IsConnected() const override;
-    TransportState GetState() const override;
 
     MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
@@ -70,8 +68,6 @@ class StdioServerTransport : public ITransport {
     // ITransport interface
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    bool IsConnected() const override;
-    TransportState GetState() const override;
 
     MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 

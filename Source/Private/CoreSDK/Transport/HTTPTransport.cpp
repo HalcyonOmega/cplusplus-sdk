@@ -12,9 +12,7 @@ MCP_NAMESPACE_BEGIN
 
 // HTTPTransportClient Implementation
 HTTPTransportClient::HTTPTransportClient(const HTTPTransportOptions& InOptions)
-    : m_Options(InOptions) {
-    TriggerStateChange(TransportState::Disconnected);
-}
+    : m_Options(InOptions) {}
 
 HTTPTransportClient::~HTTPTransportClient() {
     if (m_CurrentState != TransportState::Disconnected) {
@@ -28,7 +26,8 @@ HTTPTransportClient::~HTTPTransportClient() {
 
 MCPTask_Void HTTPTransportClient::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
-        throw std::runtime_error("Transport already started or in progress");
+        HandleRuntimeError("Transport already started or in progress");
+        co_return;
     }
 
     try {
@@ -39,10 +38,8 @@ MCPTask_Void HTTPTransportClient::Start() {
         TriggerStateChange(TransportState::Connected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Failed to start HTTP transport: " + std::string(e.what()));
-        }
-        throw;
+        HandleRuntimeError("Failed to start HTTP transport: " + std::string(e.what()));
+        co_return;
     }
 
     co_return;
@@ -61,20 +58,10 @@ MCPTask_Void HTTPTransportClient::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error stopping HTTP transport: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error stopping HTTP transport: " + std::string(e.what()));
     }
 
     co_return;
-}
-
-bool HTTPTransportClient::IsConnected() const {
-    return m_CurrentState == TransportState::Connected;
-}
-
-TransportState HTTPTransportClient::GetState() const {
-    return m_CurrentState;
 }
 
 std::string HTTPTransportClient::GetConnectionInfo() const {
@@ -114,7 +101,8 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
         std::istream& responseStream = m_HTTPSession->receiveResponse(response);
 
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK) {
-            throw std::runtime_error("Server connection failed: " + response.getReason());
+            HandleRuntimeError("Server connection failed: " + response.getReason());
+            co_return;
         }
 
         // Start SSE connection for real-time communication
@@ -122,14 +110,18 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
         m_SSEThread.start(*this);
 
     } catch (const std::exception& e) {
-        throw std::runtime_error("Failed to connect to HTTP server: " + std::string(e.what()));
+        HandleRuntimeError("Failed to connect to HTTP server: " + std::string(e.what()));
+        co_return;
     }
 
     co_return;
 }
 
 MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONValue& InMessage) {
-    if (!m_HTTPSession) { throw std::runtime_error("HTTP session not initialized"); }
+    if (!m_HTTPSession) {
+        HandleRuntimeError("HTTP session not initialized");
+        co_return;
+    }
 
     try {
         Poco::Mutex::ScopedLock lock(m_ConnectionMutex);
@@ -148,12 +140,13 @@ MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONValue& InMessage) {
         std::istream& responseStream = m_HTTPSession->receiveResponse(response);
 
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK) {
-            throw std::runtime_error("HTTP request failed: " + response.getReason());
+            HandleRuntimeError("HTTP request failed: " + response.getReason());
+            co_return;
         }
 
     } catch (const std::exception& e) {
         HandleRuntimeError("Error sending HTTP message: " + std::string(e.what()));
-        throw;
+        co_return;
     }
 
     co_return;
@@ -176,7 +169,8 @@ void HTTPTransportClient::StartSSEConnection() {
         m_SSEStream = std::unique_ptr<std::istream>(&sseSession->receiveResponse(response));
 
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK) {
-            throw std::runtime_error("SSE connection failed: " + response.getReason());
+            HandleRuntimeError("SSE connection failed: " + response.getReason());
+            return;
         }
 
         // Process SSE events
@@ -366,14 +360,6 @@ MCPTask_Void HTTPTransportServer::Stop() {
     co_return;
 }
 
-bool HTTPTransportServer::IsConnected() const {
-    return m_CurrentState == TransportState::Connected;
-}
-
-TransportState HTTPTransportServer::GetState() const {
-    return m_CurrentState;
-}
-
 std::string HTTPTransportServer::GetConnectionInfo() const {
     std::string protocol = m_Options.UseHTTPS ? "https" : "http";
     // TODO: @HalcyonOmega - Pretty sure spec says you should use 127.0.0.1 instead of 0.0.0.0
@@ -532,9 +518,7 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
         auto message = JSONValue::parse(InMessage);
 
         if (!IsValidJSONRPC(message)) {
-            if (m_ErrorResponseHandler) {
-                m_ErrorResponseHandler("Invalid JSON-RPC message received");
-            }
+            HandleRuntimeError("Invalid JSON-RPC message received");
             return;
         }
 
@@ -576,9 +560,7 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
             }
         }
     } catch (const std::exception& e) {
-        if (m_ErrorResponseHandler) {
-            m_ErrorResponseHandler("Error parsing message: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error parsing message: " + std::string(e.what()));
     }
 }
 
