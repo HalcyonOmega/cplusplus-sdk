@@ -65,32 +65,14 @@ class ITransport {
     // Message sending
     virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;
 
-    // Event handlers
-    virtual void SetMessageHandler(MessageHandler InHandler) {
-        m_MessageHandler = InHandler;
-    };
-    virtual void SetRequestHandler(RequestHandler InHandler) {
-        m_RequestHandler = InHandler;
-    };
-    virtual void SetResponseHandler(ResponseHandler InHandler) {
-        m_ResponseHandler = InHandler;
-    };
-    virtual void SetNotificationHandler(NotificationHandler InHandler) {
-        m_NotificationHandler = InHandler;
-    };
-    virtual void SetErrorResponseHandler(ErrorResponseHandler InHandler) {
-        m_ErrorResponseHandler = InHandler;
-    };
-    virtual void SetStateChangeHandler(StateChangeHandler InHandler) {
-        m_StateChangeHandler = InHandler;
-    };
-
     // Utility
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
+  private:
+    mutable std::atomic<uint64_t> m_RequestCounter{0};
+
   protected:
     // Helper methods for derived classes
-    [[nodiscard]] bool IsValidJSONRPC(const JSONValue& InMessage) const;
     void TriggerStateChange(TransportState InNewState);
 
     TransportState m_CurrentState{TransportState::Disconnected};
@@ -103,8 +85,44 @@ class ITransport {
     ErrorResponseHandler m_ErrorResponseHandler;
     StateChangeHandler m_StateChangeHandler;
 
-  private:
-    mutable std::atomic<uint64_t> m_RequestCounter{0};
+  public:
+    void SetMessageHandler(MessageHandler InHandler) {
+        m_MessageHandler = InHandler;
+    }
+    void SetRequestHandler(RequestHandler InHandler) {
+        m_RequestHandler = InHandler;
+    }
+    void SetResponseHandler(ResponseHandler InHandler) {
+        m_ResponseHandler = InHandler;
+    }
+    void SetNotificationHandler(NotificationHandler InHandler) {
+        m_NotificationHandler = InHandler;
+    }
+    void SetErrorResponseHandler(ErrorResponseHandler InHandler) {
+        m_ErrorResponseHandler = InHandler;
+    }
+    void SetStateChangeHandler(StateChangeHandler InHandler) {
+        m_StateChangeHandler = InHandler;
+    }
+
+    void CallMessageHandler(const MessageBase& InMessage) {
+        if (m_MessageHandler) { m_MessageHandler(InMessage); }
+    }
+    void CallRequestHandler(const RequestBase& InRequest) {
+        if (m_RequestHandler) { m_RequestHandler(InRequest); }
+    }
+    void CallResponseHandler(const ResponseBase& InResponse) {
+        if (m_ResponseHandler) { m_ResponseHandler(InResponse); }
+    }
+    void CallNotificationHandler(const NotificationBase& InNotification) {
+        if (m_NotificationHandler) { m_NotificationHandler(InNotification); }
+    }
+    void CallErrorResponseHandler(const ErrorResponseBase& InError) {
+        if (m_ErrorResponseHandler) { m_ErrorResponseHandler(InError); }
+    }
+    void CallStateChangeHandler(TransportState InOldState, TransportState InNewState) {
+        if (m_StateChangeHandler) { m_StateChangeHandler(InOldState, InNewState); }
+    }
 };
 
 // Transport factory
@@ -121,18 +139,5 @@ class TransportFactory {
     [[nodiscard]] static std::unique_ptr<ITransport>
     CreateHTTPTransport(const HTTPTransportOptions& InOptions);
 };
-
-// Helper functions for message parsing
-namespace MessageUtils {
-[[nodiscard]] std::optional<JSONValue> ParseJSONMessage(const std::string& InRawMessage);
-[[nodiscard]] bool IsRequest(const JSONValue& InMessage);
-[[nodiscard]] bool IsResponse(const JSONValue& InMessage);
-[[nodiscard]] bool IsNotification(const JSONValue& InMessage);
-[[nodiscard]] std::string ExtractMethod(const JSONValue& InMessage);
-[[nodiscard]] std::string ExtractRequestID(const JSONValue& InMessage);
-[[nodiscard]] JSONValue ExtractParams(const JSONValue& InMessage);
-[[nodiscard]] JSONValue ExtractResult(const JSONValue& InMessage);
-[[nodiscard]] JSONValue ExtractError(const JSONValue& InMessage);
-} // namespace MessageUtils
 
 MCP_NAMESPACE_END

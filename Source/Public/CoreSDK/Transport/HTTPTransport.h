@@ -24,7 +24,6 @@
 #include "CoreSDK/Transport/ITransport.h"
 
 // Forward declarations
-class HTTPTransportClient;
 class HTTPTransportServer;
 
 MCP_NAMESPACE_BEGIN
@@ -121,7 +120,6 @@ class HTTPTransportServer : public ITransport {
                            Poco::Net::HTTPServerResponse& InResponse);
     void UnregisterSSEClient(const std::string& InClientID);
     MCPTask_Void StreamMessagesToClient(const std::string& InClientID);
-    std::string GenerateUniqueClientID() const;
 
   private:
     void ProcessReceivedMessage(const std::string& InMessage);

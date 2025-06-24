@@ -4,30 +4,7 @@ MCP_NAMESPACE_BEGIN
 
 MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
     : m_Transport(std::move(InTransport)) {
-    if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
-
-    // Set up transport handlers
-    m_Transport->SetRequestHandler(
-        [this](const RequestBase& InRequest) -> MCPTask<const ResponseBase&> {
-            (void)this;
-            HandleIncomingRequest(InRequest);
-        });
-
-    m_Transport->SetResponseHandler([this](const ResponseBase& InResponse) -> MCPTask_Void {
-        (void)this;
-        HandleIncomingResponse(InResponse);
-    });
-
-    m_Transport->SetNotificationHandler(
-        [this](const NotificationBase& InNotification) -> MCPTask_Void {
-            (void)this;
-            HandleIncomingNotification(InNotification);
-        });
-
-    m_Transport->SetErrorResponseHandler([this](const ErrorResponseBase& InError) -> MCPTask_Void {
-        (void)this;
-        HandleTransportError(InError);
-    });
+    SetupTransportHandlers();
 }
 
 MCPProtocol::~MCPProtocol() noexcept {
@@ -277,11 +254,11 @@ void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
     }
 }
 
-void MCPProtocol::HandleIncomingNotification(std::string_view InMethod, const JSONValue& InParams) {
+void MCPProtocol::HandleIncomingNotification(const NotificationBase& InNotification) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        auto handler = m_NotificationHandlers.find(InMethod);
-        if (handler != m_NotificationHandlers.end()) { handler->second(InParams); }
+        auto handler = m_NotificationHandlers.find(InNotification.Method);
+        if (handler != m_NotificationHandlers.end()) { handler->second(InNotification); }
         // Notifications without handlers are simply ignored
     } catch (const std::exception& e) {
         HandleRuntimeError("Error handling notification: " + std::string(e.what()));
@@ -289,7 +266,39 @@ void MCPProtocol::HandleIncomingNotification(std::string_view InMethod, const JS
 }
 
 void MCPProtocol::HandleTransportError(const ErrorResponseBase& InError) {
-    HandleRuntimeError("Transport error: " + std::string(InError.Message));
+    HandleRuntimeError("Transport error: " + InError.dump());
+}
+
+void MCPProtocol::SetupTransportHandlers() {
+    if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
+
+    // Set up transport handlers
+    // TODO: @HalcyonOmega Update callbacks based on sync/async requirements. Below don't match
+    // signatures
+    m_Transport->SetMessageHandler(HandleIncomingMessage);
+    m_Transport->SetRequestHandler(HandleIncomingRequest);
+    m_Transport->SetResponseHandler(HandleIncomingResponse);
+    m_Transport->SetNotificationHandler(HandleIncomingNotification);
+    m_Transport->SetErrorResponseHandler(HandleTransportError);
+    m_Transport->SetStateChangeHandler(HandleTransportStateChange);
+
+    // Preserve alternate lambda callbacks for reference if advanced functionality needed in future.
+    // m_Transport->SetRequestHandler(
+    //     [](const RequestBase& InRequest) -> MCPTask<const ResponseBase&> {
+    //         HandleIncomingRequest(InRequest);
+    //     });
+
+    // m_Transport->SetResponseHandler(
+    //     [](const ResponseBase& InResponse) -> MCPTask_Void { HandleIncomingResponse(InResponse);
+    //     });
+
+    // m_Transport->SetNotificationHandler([](const NotificationBase& InNotification) ->
+    // MCPTask_Void {
+    //     HandleIncomingNotification(InNotification);
+    // });
+
+    // m_Transport->SetErrorResponseHandler(
+    //     [](const ErrorResponseBase& InError) -> MCPTask_Void { HandleTransportError(InError); });
 }
 
 MCP_NAMESPACE_END

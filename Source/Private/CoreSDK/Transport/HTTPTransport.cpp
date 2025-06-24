@@ -7,6 +7,8 @@
 #include <Poco/URI.h>
 
 #include "CoreSDK/Common/RuntimeError.h"
+#include "CoreSDK/Messages/MessageBase.h"
+#include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -36,6 +38,7 @@ MCPTask_Void HTTPTransportClient::Start() {
         co_await ConnectToServer();
 
         TriggerStateChange(TransportState::Connected);
+
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
         HandleRuntimeError("Failed to start HTTP transport: " + std::string(e.what()));
@@ -89,6 +92,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
         request.setContentType("application/json");
         request.set("Accept", "text/event-stream");
 
+        // TODO: @HalcyonOmega Update this to use the actual ping type
         JSONValue pingMessage = {{"jsonrpc", "2.0"}, {"method", "ping"}, {"id", "connection_test"}};
 
         std::string body = pingMessage.dump();
@@ -196,12 +200,14 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
                 return;
             }
 
-            if (m_MessageHandler) { m_MessageHandler(jsonData); }
+            MessageBase ParsedMessage = message;
+
+            CallMessageHandler(ParsedMessage);
 
             // Check if it's a response to a pending request
             if (message.contains("id")
                 && (message.contains("result") || message.contains("error"))) {
-                std::string requestID = MessageUtils::ExtractRequestID(message);
+                std::string requestID = ExtractRequestID(message);
 
                 Poco::Mutex::ScopedLock lock(m_RequestsMutex);
                 auto it = m_PendingRequests.find(requestID);
@@ -220,13 +226,13 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
 
             // Handle as request or notification
             if (message.contains("method")) {
-                std::string method = MessageUtils::ExtractMethod(message);
-                JSONValue params = MessageUtils::ExtractParams(message);
+                std::string method = ExtractMethod(message);
+                JSONValue params = ExtractParams(message);
 
                 if (message.contains("id")) {
                     // Request
                     if (m_RequestHandler) {
-                        std::string requestID = MessageUtils::ExtractRequestID(message);
+                        std::string requestID = ExtractRequestID(message);
                         m_RequestHandler(method, params, requestID);
                     }
                 } else {
@@ -522,11 +528,12 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
             return;
         }
 
-        if (m_MessageHandler) { m_MessageHandler(InMessage); }
+        MessageBase ParsedMessage = message;
+        CallMessageHandler(ParsedMessage);
 
         // Check if it's a response to a pending request
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
-            std::string requestID = MessageUtils::ExtractRequestID(message);
+            std::string requestID = ExtractRequestID(message);
 
             Poco::Mutex::ScopedLock lock(m_RequestsMutex);
             auto it = m_PendingRequests.find(requestID);
@@ -545,13 +552,13 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
 
         // Handle as request or notification
         if (message.contains("method")) {
-            std::string method = MessageUtils::ExtractMethod(message);
-            JSONValue params = MessageUtils::ExtractParams(message);
+            std::string method = ExtractMethod(message);
+            JSONValue params = ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request
                 if (m_RequestHandler) {
-                    std::string requestID = MessageUtils::ExtractRequestID(message);
+                    std::string requestID = ExtractRequestID(message);
                     m_RequestHandler(method, params, requestID);
                 }
             } else {
@@ -569,10 +576,6 @@ std::string HTTPTransportServer::GenerateClientID() const {
     return "client_" + std::to_string(counter);
 }
 
-std::string HTTPTransportServer::GenerateUniqueClientID() const {
-    return GenerateClientID();
-}
-
 MCPTask_Void
 HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRequest,
                                               Poco::Net::HTTPServerResponse& InResponse) {
@@ -585,7 +588,7 @@ HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRe
     InResponse.set("Access-Control-Allow-Headers", "Content-Type");
 
     // Generate unique client ID
-    std::string clientID = GenerateUniqueClientID();
+    std::string clientID = GenerateClientID();
 
     // Register SSE client for message streaming
     RegisterSSEClient(clientID, InResponse);

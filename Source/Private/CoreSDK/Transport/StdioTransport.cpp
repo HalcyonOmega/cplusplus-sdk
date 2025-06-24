@@ -9,6 +9,7 @@
 #include <thread>
 
 #include "CoreSDK/Common/RuntimeError.h"
+#include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -133,11 +134,13 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
             return;
         }
 
-        if (m_MessageHandler) { m_MessageHandler(InLine); }
+        // TODO: @HalcyonOmega - Consider using deserialize from stream in Nlohmann::JSON library
+        MessageBase ParsedMessage = message;
+        CallMessageHandler(ParsedMessage);
 
         // Check if it's a response to a pending request
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
-            std::string requestID = MessageUtils::ExtractRequestID(message);
+            std::string requestID = ExtractRequestID(message);
 
             Poco::Mutex::ScopedLock lock(m_RequestsMutex);
             auto it = m_PendingRequests.find(requestID);
@@ -156,13 +159,13 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
 
         // Handle as request or notification
         if (message.contains("method")) {
-            std::string method = MessageUtils::ExtractMethod(message);
-            JSONValue params = MessageUtils::ExtractParams(message);
+            std::string method = ExtractMethod(message);
+            JSONValue params = ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request
                 if (m_RequestHandler) {
-                    std::string requestID = MessageUtils::ExtractRequestID(message);
+                    std::string requestID = ExtractRequestID(message);
                     m_RequestHandler(method, params, requestID);
                 }
             } else {
@@ -331,11 +334,12 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
             return;
         }
 
-        if (m_MessageHandler) { m_MessageHandler(InLine); }
+        MessageBase ParsedMessage = message;
+        CallMessageHandler(ParsedMessage);
 
         // Check if it's a response to a pending request
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
-            std::string requestID = MessageUtils::ExtractRequestID(message);
+            std::string requestID = ExtractRequestID(message);
 
             Poco::Mutex::ScopedLock lock(m_RequestsMutex);
             auto Iterator = m_PendingRequests.find(requestID);
@@ -354,13 +358,13 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
 
         // Handle as request or notification
         if (message.contains("method")) {
-            std::string method = MessageUtils::ExtractMethod(message);
-            JSONValue params = MessageUtils::ExtractParams(message);
+            std::string method = ExtractMethod(message);
+            JSONValue params = ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request
                 if (m_RequestHandler) {
-                    std::string requestID = MessageUtils::ExtractRequestID(message);
+                    std::string requestID = ExtractRequestID(message);
                     m_RequestHandler(method, params, requestID);
                 }
             } else {

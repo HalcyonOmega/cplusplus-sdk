@@ -53,19 +53,6 @@ class MCPProtocol {
     MCPTask_Void SendNotification(const NotificationBase& InNotification);
     MCPTask_Void SendError(const ErrorResponseBase& InError);
 
-    void SetRequestHandler(RequestHandler InHandler) {
-        m_RequestHandler = InHandler;
-    }
-    void SetResponseHandler(ResponseHandler InHandler) {
-        m_ResponseHandler = InHandler;
-    }
-    void SetNotificationHandler(NotificationHandler InHandler) {
-        m_NotificationHandler = InHandler;
-    }
-    void SetErrorResponseHandler(ErrorResponseHandler InHandler) {
-        m_ErrorResponseHandler = InHandler;
-    }
-
     // Transport access
     // TODO: @HalcyonOmega Consider converting to reference
     ITransport* GetTransport() const {
@@ -94,12 +81,6 @@ class MCPProtocol {
     void OnTransportNotification(const NotificationBase& InNotification);
     void OnTransportErrorResponse(const ErrorResponseBase& InError);
     void OnTransportStateChange(TransportState InOldState, TransportState InNewState);
-
-    // Event handlers
-    RequestHandler m_RequestHandler;
-    ResponseHandler m_ResponseHandler;
-    NotificationHandler m_NotificationHandler;
-    ErrorResponseHandler m_ErrorResponseHandler;
 
     // Request tracking
     struct PendingResponse {
