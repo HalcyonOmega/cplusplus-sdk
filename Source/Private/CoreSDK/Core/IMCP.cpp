@@ -19,7 +19,10 @@ MCPProtocol::~MCPProtocol() noexcept {
 
 MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
                                      const std::optional<MCPServerInfo>& InServerInfo) {
-    if (m_IsInitialized) { throw std::runtime_error("Protocol already initialized"); }
+    if (m_IsInitialized) {
+        HandleRuntimeError("Protocol already initialized");
+        co_return;
+    }
 
     try {
         // Start transport
@@ -32,7 +35,7 @@ MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
 
         if (InServerInfo.has_value()) { initRequest.ServerInfo = InServerInfo.value(); }
 
-        auto responseJson = co_await SendRequest("initialize", JSONValue(initRequest));
+        auto responseJson = co_await SendRequest(RequestBase("initialize", initRequest));
         auto response = responseJson.get<InitializeResponse>();
 
         // Store negotiated capabilities
@@ -40,7 +43,7 @@ MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
         m_ServerInfo = response.ServerInfo;
 
         // Send initialized notification
-        co_await SendNotification("initialized");
+        co_await SendNotification(NotificationBase("initialized"));
 
         m_IsInitialized = true;
 
@@ -86,32 +89,6 @@ bool MCPProtocol::IsInitialized() const {
     return m_IsInitialized;
 }
 
-MCPTask<JSONValue> MCPProtocol::SendRequest(std::string_view InMethod, const JSONValue& InParams) {
-    if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
-
-    co_return co_await SendRequest(InMethod, InParams);
-}
-
-MCPTask_Void MCPProtocol::SendResponse(std::string_view InRequestID, const JSONValue& InResult) {
-    if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
-
-    co_await m_Transport->SendResponse(InRequestID, InResult);
-}
-
-MCPTask_Void MCPProtocol::SendErrorResponse(std::string_view InRequestID, int64_t InErrorCode,
-                                            std::string_view InErrorMessage,
-                                            const JSONValue& InErrorData) {
-    if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
-
-    co_await m_Transport->SendErrorResponse(InRequestID, InErrorCode, InErrorMessage, InErrorData);
-}
-
-MCPTask_Void MCPProtocol::SendNotification(std::string_view InMethod, const JSONValue& InParams) {
-    if (!m_IsInitialized) { throw std::runtime_error("Protocol not initialized"); }
-
-    co_await SendNotification(InMethod, InParams);
-}
-
 void MCPProtocol::SetRequestHandler(std::string_view InMethod, RequestHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
     m_RequestHandlers[InMethod] = InHandler;
@@ -142,7 +119,7 @@ const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
     return m_ServerInfo;
 }
 
-MCPTask<const ResponseBase&> MCPProtocol::SendRequest(const RequestBase& InRequest) {
+MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
     // Create promise for response
     auto pendingRequest = std::make_unique<PendingRequest>();
     pendingRequest->Method = InRequest.Method;
@@ -159,7 +136,7 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequest(const RequestBase& InReque
 
     try {
         // Send request via transport
-        std::string responseStr = co_await m_Transport->SendRequest(InRequest);
+        co_await m_Transport->TransmitMessage(InRequest);
 
         // Parse response
         auto response = JSONValue::parse(responseStr);
@@ -190,7 +167,7 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequest(const RequestBase& InReque
     }
 
     // Send the request
-    co_await WriteMessage(InRequest);
+    co_await m_Transport->TransmitMessage(InRequest);
 
     // Wait for response with timeout
     static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
@@ -198,18 +175,27 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequest(const RequestBase& InReque
     if (status == std::future_status::timeout) {
         Poco::Mutex::ScopedLock lock(m_RequestsMutex);
         m_PendingRequests.erase(requestID);
-        throw std::runtime_error("Request timeout");
+        HandleRuntimeError("Request timeout");
+        co_return;
     }
 
     co_return future.get();
     // TODO: @HalcyonOmega - END TIMEOUT IMPLEMENTATION
 }
 
-MCPTask_Void MCPProtocol::SendNotification(const NotificationBase& InNotification) {
-    co_await m_Transport->SendNotification(InNotification);
+MCPTask_Void MCPProtocol::SendResponse(const ResponseBase& InResponse) {
+    co_await m_Transport->TransmitMessage(InResponse);
 }
 
-void MCPProtocol::HandleIncomingRequest(const RequestBase& InRequest) {
+MCPTask_Void MCPProtocol::SendNotification(const NotificationBase& InNotification) {
+    co_await m_Transport->TransmitMessage(InNotification);
+}
+
+MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResponse) {
+    co_await m_Transport->TransmitMessage(InErrorResponse);
+}
+
+void MCPProtocol::HandleRequest(const RequestBase& InRequest) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
         auto handler = m_RequestHandlers.find(InRequest.Method);
@@ -226,23 +212,21 @@ void MCPProtocol::HandleIncomingRequest(const RequestBase& InRequest) {
     }
 }
 
-void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
+void MCPProtocol::HandleResponse(const ResponseBase& InResponse) {
     try {
-        auto response = JSONValue::parse(InResponseData);
-
-        if (!response.contains("id")) {
+        if (!InResponse.ID.has_value()) {
             return; // Invalid response without ID
         }
 
-        std::string requestID = response["id"].get<std::string>();
+        std::string requestID = InResponse.ID.value();
 
         std::lock_guard<std::mutex> lock(m_RequestsMutex);
         auto it = m_PendingRequests.find(requestID);
         if (it != m_PendingRequests.end()) {
-            if (response.contains("result")) {
-                it->second->Promise.set_value(response["result"]);
-            } else if (response.contains("error")) {
-                auto error = response["error"];
+            if (InResponse.Result.has_value()) {
+                it->second->Promise.set_value(InResponse.Result.value());
+            } else if (InResponse.Error.has_value()) {
+                auto error = InResponse.Error.value();
                 std::string errorMsg = error["message"].get<std::string>();
                 it->second->Promise.set_exception(
                     std::make_exception_ptr(std::runtime_error(errorMsg)));
@@ -254,7 +238,7 @@ void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
     }
 }
 
-void MCPProtocol::HandleIncomingNotification(const NotificationBase& InNotification) {
+void MCPProtocol::HandleNotification(const NotificationBase& InNotification) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
         auto handler = m_NotificationHandlers.find(InNotification.Method);
@@ -265,7 +249,7 @@ void MCPProtocol::HandleIncomingNotification(const NotificationBase& InNotificat
     }
 }
 
-void MCPProtocol::HandleTransportError(const ErrorResponseBase& InError) {
+void MCPProtocol::HandleErrorResponse(const ErrorResponseBase& InError) {
     HandleRuntimeError("Transport error: " + InError.dump());
 }
 
@@ -275,11 +259,11 @@ void MCPProtocol::SetupTransportHandlers() {
     // Set up transport handlers
     // TODO: @HalcyonOmega Update callbacks based on sync/async requirements. Below don't match
     // signatures
-    m_Transport->SetMessageHandler(HandleIncomingMessage);
-    m_Transport->SetRequestHandler(HandleIncomingRequest);
-    m_Transport->SetResponseHandler(HandleIncomingResponse);
-    m_Transport->SetNotificationHandler(HandleIncomingNotification);
-    m_Transport->SetErrorResponseHandler(HandleTransportError);
+    m_Transport->SetMessageHandler(HandleMessage);
+    m_Transport->SetRequestHandler(HandleRequest);
+    m_Transport->SetResponseHandler(HandleResponse);
+    m_Transport->SetNotificationHandler(HandleNotification);
+    m_Transport->SetErrorResponseHandler(HandleErrorResponse);
     m_Transport->SetStateChangeHandler(HandleTransportStateChange);
 
     // Preserve alternate lambda callbacks for reference if advanced functionality needed in future.

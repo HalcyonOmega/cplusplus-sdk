@@ -7,6 +7,12 @@ MCP_NAMESPACE_BEGIN
 
 // Server protocol handler
 class MCPServer : public MCPProtocol {
+  protected:
+    void OnInitializeRequest(const InitializeRequest& InRequest);
+    void OnInitializedNotification();
+
+    void HandleRequest(const RequestBase& InRequest) override;
+
   public:
     explicit MCPServer(std::unique_ptr<ITransport> InTransport, const Implementation& InServerInfo,
                        const ServerCapabilities& InCapabilities);
@@ -57,16 +63,9 @@ class MCPServer : public MCPProtocol {
                     const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
 
     // Progress reporting
-    MCPTask_Void ReportProgress(const std::string& InRequestID, double InProgress,
+    MCPTask_Void ReportProgress(const RequestID& InRequestID, double InProgress,
                                 int64_t InTotal = -1);
-    MCPTask_Void CancelRequest(const std::string& InRequestID, const std::string& InReason = "");
-
-  protected:
-    void OnInitializeRequest(const InitializeRequest& InRequest,
-                             const std::string& InRequestID) override;
-    void OnInitializedNotification() override;
-    MCPTask_Void HandleRequest(const std::string& InMethod, const JSONValue& InParams,
-                               const std::string& InRequestID) override;
+    MCPTask_Void CancelRequest(const RequestID& InRequestID, const std::string& InReason = "");
 
   private:
     Implementation m_ServerInfo;
@@ -120,11 +119,11 @@ class MCPServer : public MCPProtocol {
     MCPTask<CallToolResponse> ExecuteToolWithProgress(
         const Tool& InTool,
         const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
-        const std::string& InRequestID);
+        const RequestID& InRequestID);
 
     // Resource subscription management
     MCPTask_Void NotifyResourceSubscribers(const std::string& InURI);
-    std::string GetCurrentClientID() const;
+    std::string_view GetCurrentClientID() const;
     MCPTask_Void SendNotificationToClient(const std::string& InClientID,
                                           const ResourceUpdatedNotification& InNotification);
 

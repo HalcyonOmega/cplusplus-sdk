@@ -201,7 +201,6 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
             }
 
             MessageBase ParsedMessage = message;
-
             CallMessageHandler(ParsedMessage);
 
             // Check if it's a response to a pending request

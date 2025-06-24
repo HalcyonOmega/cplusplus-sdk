@@ -20,7 +20,10 @@ MCPServer::~MCPServer() {
 }
 
 MCPTask_Void MCPServer::Start(const MCPServerInfo& InServerInfo) {
-    if (m_IsRunning) { throw std::runtime_error("Server already running"); }
+    if (m_IsRunning) {
+        HandleRuntimeError("Server already running");
+        co_return;
+    }
 
     try {
         m_ServerInfo = InServerInfo;
@@ -33,20 +36,26 @@ MCPTask_Void MCPServer::Start(const MCPServerInfo& InServerInfo) {
         // Server doesn't need to call Initialize - it responds to client initialization
 
     } catch (const std::exception& e) {
-        throw std::runtime_error("Failed to start server: " + std::string(e.what()));
+        HandleRuntimeError("Failed to start server: " + std::string(e.what()));
+        co_return;
     }
 
     co_return;
 }
 
 MCPTask_Void MCPServer::Stop() {
-    if (!m_IsRunning) { co_return; }
+    if (!m_IsRunning) {
+        HandleRuntimeError("Server already stopped");
+        co_return;
+    }
 
     try {
         co_await m_Transport->Stop();
         m_IsRunning = false;
+
     } catch (const std::exception& e) {
-        throw std::runtime_error("Failed to stop server: " + std::string(e.what()));
+        HandleRuntimeError("Failed to stop server: " + std::string(e.what()));
+        co_return;
     }
 
     co_return;
@@ -57,7 +66,10 @@ bool MCPServer::IsRunning() const {
 }
 
 void MCPServer::AddTool(const std::string& InName, const Tool& InTool, ToolHandler InHandler) {
-    if (m_IsRunning) { throw std::runtime_error("Cannot add tools while server is running"); }
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot add tools while server is running");
+        co_return;
+    }
 
     std::lock_guard<std::mutex> lock(m_ToolsMutex);
     m_Tools[InName] = InTool;
@@ -65,7 +77,10 @@ void MCPServer::AddTool(const std::string& InName, const Tool& InTool, ToolHandl
 }
 
 void MCPServer::RemoveTool(const std::string& InName) {
-    if (m_IsRunning) { throw std::runtime_error("Cannot remove tools while server is running"); }
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot remove tools while server is running");
+        co_return;
+    }
 
     std::lock_guard<std::mutex> lock(m_ToolsMutex);
     m_Tools.erase(InName);
@@ -74,7 +89,10 @@ void MCPServer::RemoveTool(const std::string& InName) {
 
 void MCPServer::AddPrompt(const std::string& InName, const Prompt& InPrompt,
                           PromptHandler InHandler) {
-    if (m_IsRunning) { throw std::runtime_error("Cannot add prompts while server is running"); }
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot add prompts while server is running");
+        co_return;
+    }
 
     std::lock_guard<std::mutex> lock(m_PromptsMutex);
     m_Prompts[InName] = InPrompt;
@@ -82,7 +100,10 @@ void MCPServer::AddPrompt(const std::string& InName, const Prompt& InPrompt,
 }
 
 void MCPServer::RemovePrompt(const std::string& InName) {
-    if (m_IsRunning) { throw std::runtime_error("Cannot remove prompts while server is running"); }
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot remove prompts while server is running");
+        co_return;
+    }
 
     std::lock_guard<std::mutex> lock(m_PromptsMutex);
     m_Prompts.erase(InName);
@@ -91,7 +112,10 @@ void MCPServer::RemovePrompt(const std::string& InName) {
 
 void MCPServer::AddResource(const std::string& InURI, const Resource& InResource,
                             ResourceHandler InHandler) {
-    if (m_IsRunning) { throw std::runtime_error("Cannot add resources while server is running"); }
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot add resources while server is running");
+        co_return;
+    }
 
     std::lock_guard<std::mutex> lock(m_ResourcesMutex);
     m_Resources[InURI] = InResource;
@@ -100,7 +124,8 @@ void MCPServer::AddResource(const std::string& InURI, const Resource& InResource
 
 void MCPServer::RemoveResource(const std::string& InURI) {
     if (m_IsRunning) {
-        throw std::runtime_error("Cannot remove resources while server is running");
+        HandleRuntimeError("Cannot remove resources while server is running");
+        co_return;
     }
 
     std::lock_guard<std::mutex> lock(m_ResourcesMutex);
@@ -704,7 +729,7 @@ size_t MCPServer::DecodeCursor(const std::string& InCursor) const {
 MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
     const Tool& InTool,
     const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
-    const std::string& InRequestID) {
+    const RequestID& InRequestID) {
     auto progressTracker = std::make_shared<ProgressTracker>(InRequestID, m_Protocol);
 
     try {
@@ -722,7 +747,8 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
 
             co_return result;
         } else {
-            throw std::runtime_error("Tool handler not found");
+            HandleRuntimeError("Tool handler not found");
+            co_return ToolCallResponse();
         }
     } catch (const std::exception& e) {
         // Ensure progress is marked complete even on error

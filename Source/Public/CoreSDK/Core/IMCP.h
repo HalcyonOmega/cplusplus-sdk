@@ -40,7 +40,7 @@ class MCPProtocol {
     MCPTask<InitializeResponse::InitializeResult>
     Initialize(const std::string& InProtocolVersion, const ClientCapabilities& InCapabilities,
                const Implementation& InClientInfo);
-    MCPTask_Void SendInitialized();
+    void SendInitialized();
     MCPTask<PingResponse> Ping();
 
     // Protocol version validation
@@ -48,11 +48,20 @@ class MCPProtocol {
     void ValidateProtocolVersion(const std::string& InVersion) const;
 
     // Message sending utilities
-    MCPTask<const ResponseBase&> SendRequest(const RequestBase& InRequest);
-    MCPTask_Void SendResponse(const ResponseBase& InResponse);
-    MCPTask_Void SendNotification(const NotificationBase& InNotification);
-    MCPTask_Void SendError(const ErrorResponseBase& InError);
+    void SendRequest(const RequestBase& InRequest);
+    void SendResponse(const ResponseBase& InResponse);
+    void SendNotification(const NotificationBase& InNotification);
+    void SendError(const ErrorResponseBase& InError);
 
+  private:
+    void SetupTransportHandlers();
+    virtual void HandleRequest(const RequestBase& InRequest);
+    virtual void HandleResponse(const ResponseBase& InResponse);
+    virtual void HandleNotification(const NotificationBase& InNotification);
+    virtual void HandleErrorResponse(const ErrorResponseBase& InError);
+    virtual void HandleTransportStateChange(TransportState InOldState, TransportState InNewState);
+
+  public:
     // Transport access
     // TODO: @HalcyonOmega Consider converting to reference
     ITransport* GetTransport() const {
@@ -60,36 +69,20 @@ class MCPProtocol {
     }
 
   protected:
-    virtual void OnInitializeRequest(const InitializeRequest& InRequest,
-                                     const std::string& InRequestID) = 0;
-    virtual void OnInitializedNotification() = 0;
-    virtual MCPTask_Void HandleRequest(const RequestBase& InRequest);
-    virtual void HandleResponse(const ResponseBase& InResponse);
-    virtual void HandleNotification(const NotificationBase& InNotification);
-    virtual void HandleError(const ErrorResponseBase& InError);
-
     void SetState(MCPProtocolState InNewState);
 
     MCPProtocolState m_State;
     std::unique_ptr<ITransport> m_Transport;
 
   private:
-    void SetupTransportHandlers();
-    void OnTransportMessage(const MessageBase& InMessage);
-    void OnTransportRequest(const RequestBase& InRequest);
-    void OnTransportResponse(const ResponseBase& InResponse);
-    void OnTransportNotification(const NotificationBase& InNotification);
-    void OnTransportErrorResponse(const ErrorResponseBase& InError);
-    void OnTransportStateChange(TransportState InOldState, TransportState InNewState);
-
     // Request tracking
     struct PendingResponse {
-        std::string RequestID;
+        RequestID RequestID;
         std::promise<JSONValue> Promise;
         std::chrono::steady_clock::time_point StartTime;
     };
 
-    std::unordered_map<std::string, std::unique_ptr<PendingResponse>> m_PendingResponses;
+    std::unordered_map<RequestID, std::unique_ptr<PendingResponse>> m_PendingResponses;
     mutable std::mutex m_ResponsesMutex;
 };
 

@@ -43,10 +43,7 @@ class MCPClient : public MCPProtocol {
                   const std::vector<std::string>& InStopSequences = {},
                   const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
 
-  protected:
-    void OnInitializeRequest(const InitializeRequest& InRequest,
-                             const std::string& InRequestID) override;
-    void OnInitializedNotification() override;
+    void Initialize();
 
   private:
     ServerCapabilities m_ServerCapabilities;
