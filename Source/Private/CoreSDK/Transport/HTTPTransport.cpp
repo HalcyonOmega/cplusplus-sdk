@@ -6,6 +6,8 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/URI.h>
 
+#include "CoreSDK/Common/RuntimeError.h"
+
 MCP_NAMESPACE_BEGIN
 
 // HTTPTransportClient Implementation
@@ -37,8 +39,8 @@ MCPTask_Void HTTPTransportClient::Start() {
         TriggerStateChange(TransportState::Connected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Failed to start HTTP transport: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Failed to start HTTP transport: " + std::string(e.what()));
         }
         throw;
     }
@@ -59,8 +61,8 @@ MCPTask_Void HTTPTransportClient::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Error stopping HTTP transport: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error stopping HTTP transport: " + std::string(e.what()));
         }
     }
 
@@ -150,7 +152,7 @@ MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONValue& InMessage) {
         }
 
     } catch (const std::exception& e) {
-        HandleConnectionError("Error sending HTTP message: " + std::string(e.what()));
+        HandleRuntimeError("Error sending HTTP message: " + std::string(e.what()));
         throw;
     }
 
@@ -184,9 +186,7 @@ void HTTPTransportClient::StartSSEConnection() {
         }
 
     } catch (const std::exception& e) {
-        if (!m_ShouldStop) {
-            HandleConnectionError("SSE connection error: " + std::string(e.what()));
-        }
+        if (!m_ShouldStop) { HandleRuntimeError("SSE connection error: " + std::string(e.what())); }
     }
 }
 
@@ -198,7 +198,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
             auto message = JSONValue::parse(jsonData);
 
             if (!IsValidJSONRPC(message)) {
-                HandleConnectionError("Invalid JSON-RPC message received via SSE");
+                HandleRuntimeError("Invalid JSON-RPC message received via SSE");
                 return;
             }
 
@@ -242,13 +242,8 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
             }
         }
     } catch (const std::exception& e) {
-        HandleConnectionError("Error processing SSE line: " + std::string(e.what()));
+        HandleRuntimeError("Error processing SSE line: " + std::string(e.what()));
     }
-}
-
-void HTTPTransportClient::HandleConnectionError(const std::string& InError) {
-    TriggerStateChange(TransportState::Error);
-    if (m_ErrorHandler) { m_ErrorHandler(InError); }
 }
 
 void HTTPTransportClient::Cleanup() {
@@ -283,6 +278,8 @@ MCPHTTPRequestHandlerFactory::MCPHTTPRequestHandlerFactory(HTTPTransportServer* 
 
 Poco::Net::HTTPRequestHandler*
 MCPHTTPRequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& InRequest) {
+    // TODO: @HalcyonOmega - Why does the request need to be passed in?
+    (void)InRequest;
     return new MCPHTTPRequestHandler(m_Server);
 }
 
@@ -304,7 +301,7 @@ HTTPTransportServer::~HTTPTransportServer() {
 
 MCPTask_Void HTTPTransportServer::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
-        throw std::runtime_error("Transport already started");
+        HandleRuntimeError("Transport already started");
     }
 
     try {
@@ -326,10 +323,7 @@ MCPTask_Void HTTPTransportServer::Start() {
         TriggerStateChange(TransportState::Connected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Failed to start HTTP server transport: " + std::string(e.what()));
-        }
-        throw;
+        HandleRuntimeError("Failed to start HTTP server transport: " + std::string(e.what()));
     }
 
     co_return;
@@ -366,9 +360,7 @@ MCPTask_Void HTTPTransportServer::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Error stopping HTTP server transport: " + std::string(e.what()));
-        }
+        HandleRuntimeError("Error stopping HTTP server transport: " + std::string(e.what()));
     }
 
     co_return;
@@ -540,7 +532,9 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
         auto message = JSONValue::parse(InMessage);
 
         if (!IsValidJSONRPC(message)) {
-            if (m_ErrorHandler) { m_ErrorHandler("Invalid JSON-RPC message received"); }
+            if (m_ErrorResponseHandler) {
+                m_ErrorResponseHandler("Invalid JSON-RPC message received");
+            }
             return;
         }
 
@@ -582,7 +576,9 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
             }
         }
     } catch (const std::exception& e) {
-        if (m_ErrorHandler) { m_ErrorHandler("Error parsing message: " + std::string(e.what())); }
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error parsing message: " + std::string(e.what()));
+        }
     }
 }
 

@@ -35,8 +35,6 @@ class StdioClientTransport : public ITransport {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    void HandleRuntimeError(const std::string& InError);
-    void HandleError(const ErrorBase& InError);
     void Cleanup();
 
     StdioClientTransportOptions m_Options;
@@ -85,8 +83,6 @@ class StdioServerTransport : public ITransport {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    void HandleRuntimeError(const std::string& InError);
-    void HandleError(const ErrorBase& InError);
 
     std::jthread m_ReadThread;
     std::string m_Buffer;

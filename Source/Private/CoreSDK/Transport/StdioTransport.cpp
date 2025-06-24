@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <thread>
 
+#include "CoreSDK/Common/RuntimeError.h"
+
 MCP_NAMESPACE_BEGIN
 
 // StdioClientTransport Implementation
@@ -65,8 +67,8 @@ MCPTask_Void StdioClientTransport::Start() {
         TriggerStateChange(TransportState::Connected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Failed to start stdio transport: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Failed to start stdio transport: " + std::string(e.what()));
         }
         throw;
     }
@@ -90,8 +92,8 @@ MCPTask_Void StdioClientTransport::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Error stopping stdio transport: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error stopping stdio transport: " + std::string(e.what()));
         }
     }
 
@@ -128,7 +130,7 @@ void StdioClientTransport::ProcessIncomingData() {
             }
         } catch (const std::exception& e) {
             if (!m_ShouldStop) {
-                HandleError("Error reading from process: " + std::string(e.what()));
+                HandleRuntimeError("Error reading from process: " + std::string(e.what()));
             }
             break;
         }
@@ -140,7 +142,7 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
         auto message = JSONValue::parse(InLine);
 
         if (!IsValidJSONRPC(message)) {
-            HandleError("Invalid JSON-RPC message received");
+            HandleRuntimeError("Invalid JSON-RPC message received");
             return;
         }
 
@@ -182,7 +184,7 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
             }
         }
     } catch (const std::exception& e) {
-        HandleError("Error parsing message: " + std::string(e.what()));
+        HandleRuntimeError("Error parsing message: " + std::string(e.what()));
     }
 }
 
@@ -196,16 +198,11 @@ MCPTask_Void StdioClientTransport::TransmitMessage(const JSONValue& InMessage) {
         m_StdinStream->write(messageStr.c_str(), messageStr.length());
         m_StdinStream->flush();
     } catch (const std::exception& e) {
-        HandleError("Error writing message: " + std::string(e.what()));
+        HandleRuntimeError("Error writing message: " + std::string(e.what()));
         throw;
     }
 
     co_return;
-}
-
-void StdioClientTransport::HandleError(const std::string& InError) {
-    TriggerStateChange(TransportState::Error);
-    if (m_ErrorHandler) { m_ErrorHandler(InError); }
 }
 
 void StdioClientTransport::Cleanup() {
@@ -271,8 +268,9 @@ MCPTask_Void StdioServerTransport::Start() {
         TriggerStateChange(TransportState::Connected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Failed to start stdio server transport: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Failed to start stdio server transport: "
+                                   + std::string(e.what()));
         }
         throw;
     }
@@ -302,8 +300,9 @@ MCPTask_Void StdioServerTransport::Stop() {
         TriggerStateChange(TransportState::Disconnected);
     } catch (const std::exception& e) {
         TriggerStateChange(TransportState::Error);
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Error stopping stdio server transport: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error stopping stdio server transport: "
+                                   + std::string(e.what()));
         }
     }
 
@@ -338,7 +337,7 @@ void StdioServerTransport::ProcessIncomingData() {
             }
         } catch (const std::exception& e) {
             if (!m_ShouldStop) {
-                HandleError("Error reading from stdin: " + std::string(e.what()));
+                HandleRuntimeError("Error reading from stdin: " + std::string(e.what()));
             }
             break;
         }
@@ -392,7 +391,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
             }
         }
     } catch (const std::exception& e) {
-        throw std::runtime_error("Error parsing message: " + std::string(e.what()));
+        HandleRuntimeError("Error parsing message: " + std::string(e.what()));
     }
 }
 
@@ -408,15 +407,6 @@ MCPTask_Void StdioServerTransport::TransmitMessage(const JSONValue& InMessage) {
     }
 
     co_return;
-}
-
-void StdioServerTransport::HandleRuntimeError(const std::string& InError) {
-    std::cout << "RuntimeError: " << InError << std::endl;
-}
-
-void StdioServerTransport::HandleError(const ErrorBase& InError) {
-    TriggerStateChange(TransportState::Error);
-    if (m_ErrorHandler) { m_ErrorHandler(InError); }
 }
 
 // Factory functions

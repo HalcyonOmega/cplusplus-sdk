@@ -51,13 +51,7 @@ class MCPProtocol {
     MCPTask<const ResponseBase&> SendRequest(const RequestBase& InRequest);
     MCPTask_Void SendResponse(const ResponseBase& InResponse);
     MCPTask_Void SendNotification(const NotificationBase& InNotification);
-    MCPTask_Void SendError(const ErrorBase& InError);
-
-    // Event handlers
-    using RequestHandler = std::function<MCPTask_Void(const RequestBase& InRequest)>;
-    using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
-    using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
-    using ErrorHandler = std::function<void(const ErrorBase& InError)>;
+    MCPTask_Void SendError(const ErrorResponseBase& InError);
 
     void SetRequestHandler(RequestHandler InHandler) {
         m_RequestHandler = InHandler;
@@ -68,8 +62,8 @@ class MCPProtocol {
     void SetNotificationHandler(NotificationHandler InHandler) {
         m_NotificationHandler = InHandler;
     }
-    void SetErrorHandler(ErrorHandler InHandler) {
-        m_ErrorHandler = InHandler;
+    void SetErrorResponseHandler(ErrorResponseHandler InHandler) {
+        m_ErrorResponseHandler = InHandler;
     }
 
     // Transport access
@@ -85,7 +79,7 @@ class MCPProtocol {
     virtual MCPTask_Void HandleRequest(const RequestBase& InRequest);
     virtual void HandleResponse(const ResponseBase& InResponse);
     virtual void HandleNotification(const NotificationBase& InNotification);
-    virtual void HandleError(const ErrorBase& InError);
+    virtual void HandleError(const ErrorResponseBase& InError);
 
     void SetState(MCPProtocolState InNewState);
 
@@ -98,14 +92,14 @@ class MCPProtocol {
     void OnTransportRequest(const RequestBase& InRequest);
     void OnTransportResponse(const ResponseBase& InResponse);
     void OnTransportNotification(const NotificationBase& InNotification);
-    void OnTransportError(const ErrorBase& InError);
+    void OnTransportErrorResponse(const ErrorResponseBase& InError);
     void OnTransportStateChange(TransportState InOldState, TransportState InNewState);
 
     // Event handlers
     RequestHandler m_RequestHandler;
     ResponseHandler m_ResponseHandler;
     NotificationHandler m_NotificationHandler;
-    ErrorHandler m_ErrorHandler;
+    ErrorResponseHandler m_ErrorResponseHandler;
 
     // Request tracking
     struct PendingResponse {

@@ -2,19 +2,14 @@
 
 #include <atomic>
 #include <chrono>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Common/Macros.h"
-#include "CoreSDK/Messages/ErrorBase.h"
-#include "CoreSDK/Messages/MessageBase.h"
-#include "CoreSDK/Messages/NotificationBase.h"
-#include "CoreSDK/Messages/RequestBase.h"
-#include "CoreSDK/Messages/ResponseBase.h"
 #include "JSONProxy.h"
 #include "Utilities/Async/MCPTask.h"
 
@@ -23,12 +18,6 @@ MCP_NAMESPACE_BEGIN
 // Transport events
 enum class TransportState { Disconnected, Connecting, Connected, Error };
 
-// Message handlers
-using MessageHandler = std::function<void(const MessageBase& InMessage)>;
-using RequestHandler = std::function<void(const RequestBase& InRequest)>;
-using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
-using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
-using ErrorHandler = std::function<void(const ErrorBase& InError)>;
 using StateChangeHandler =
     std::function<void(TransportState InOldState, TransportState InNewState)>;
 
@@ -85,8 +74,8 @@ class ITransport {
     virtual void SetNotificationHandler(NotificationHandler InHandler) {
         m_NotificationHandler = InHandler;
     };
-    virtual void SetErrorHandler(ErrorHandler InHandler) {
-        m_ErrorHandler = InHandler;
+    virtual void SetErrorResponseHandler(ErrorResponseHandler InHandler) {
+        m_ErrorResponseHandler = InHandler;
     };
     virtual void SetStateChangeHandler(StateChangeHandler InHandler) {
         m_StateChangeHandler = InHandler;
@@ -107,7 +96,7 @@ class ITransport {
     RequestHandler m_RequestHandler;
     ResponseHandler m_ResponseHandler;
     NotificationHandler m_NotificationHandler;
-    ErrorHandler m_ErrorHandler;
+    ErrorResponseHandler m_ErrorResponseHandler;
     StateChangeHandler m_StateChangeHandler;
 
   private:

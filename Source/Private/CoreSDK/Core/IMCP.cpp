@@ -21,7 +21,7 @@ MCPProtocol::MCPProtocol(std::shared_ptr<ITransport> InTransport) : m_Transport(
         HandleIncomingNotification(InNotification);
     });
 
-    m_Transport->SetErrorHandler([this](const ErrorBase& InError) {
+    m_Transport->SetErrorResponseHandler([this](const ErrorResponseBase& InError) {
         (void)this;
         HandleTransportError(InError);
     });
@@ -96,7 +96,9 @@ MCPTask_Void MCPProtocol::Shutdown() {
 
     } catch (const std::exception& e) {
         // Log error but don't throw during shutdown
-        if (m_ErrorHandler) { m_ErrorHandler("Error during shutdown: " + std::string(e.what())); }
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error during shutdown: " + std::string(e.what()));
+        }
     }
 
     co_return;
@@ -150,8 +152,8 @@ void MCPProtocol::SetShutdownHandler(ShutdownHandler InHandler) {
     m_ShutdownHandler = InHandler;
 }
 
-void MCPProtocol::SetErrorHandler(ErrorHandler InHandler) {
-    m_ErrorHandler = InHandler;
+void MCPProtocol::SetErrorResponseHandler(ErrorResponseHandler InHandler) {
+    m_ErrorResponseHandler = InHandler;
 }
 
 const std::optional<MCPCapabilities>& MCPProtocol::GetClientCapabilities() const {
@@ -272,7 +274,9 @@ void MCPProtocol::HandleIncomingResponse(std::string_view InResponseData) {
             m_PendingRequests.erase(it);
         }
     } catch (const std::exception& e) {
-        if (m_ErrorHandler) { m_ErrorHandler("Error handling response: " + std::string(e.what())); }
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error handling response: " + std::string(e.what()));
+        }
     }
 }
 
@@ -283,14 +287,16 @@ void MCPProtocol::HandleIncomingNotification(std::string_view InMethod, const JS
         if (handler != m_NotificationHandlers.end()) { handler->second(InParams); }
         // Notifications without handlers are simply ignored
     } catch (const std::exception& e) {
-        if (m_ErrorHandler) {
-            m_ErrorHandler("Error handling notification: " + std::string(e.what()));
+        if (m_ErrorResponseHandler) {
+            m_ErrorResponseHandler("Error handling notification: " + std::string(e.what()));
         }
     }
 }
 
 void MCPProtocol::HandleTransportError(std::string_view InError) {
-    if (m_ErrorHandler) { m_ErrorHandler("Transport error: " + std::string(InError)); }
+    if (m_ErrorResponseHandler) {
+        m_ErrorResponseHandler("Transport error: " + std::string(InError));
+    }
 }
 
 MCP_NAMESPACE_END

@@ -54,7 +54,7 @@ DEFINE_ENUM_JSON(Errors, {Errors::Ok, ErrorMessages::MSG_OK},
                  {Errors::InternalOutputError, ErrorMessages::INTERNAL_OUTPUT_ERROR})
 
 // Error structure
-struct ErrorBase : MessageBase {
+struct ErrorResponseBase : MessageBase {
     Errors Code;         // The error type that occurred.
     std::string Message; // A short description of the error. The message SHOULD be limited to a
                          // concise single sentence.
@@ -66,10 +66,10 @@ struct ErrorBase : MessageBase {
     JKEY(MESSAGEKEY, Message, "message")
     JKEY(DATAKEY, Data, "data")
 
-    DEFINE_TYPE_JSON(ErrorBase, CODEKEY, MESSAGEKEY, DATAKEY)
+    DEFINE_TYPE_JSON(ErrorResponseBase, CODEKEY, MESSAGEKEY, DATAKEY)
 
-    ErrorBase(Errors InCode, std::string_view InMessage,
-              std::optional<JSONValue> InData = std::nullopt)
+    ErrorResponseBase(Errors InCode, std::string_view InMessage,
+                      std::optional<JSONValue> InData = std::nullopt)
         : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
 };
 
