@@ -191,6 +191,38 @@ MCPTask<const ResponseBase&> MCPProtocol::SendRequestImpl(const RequestBase& InR
         m_PendingRequests.erase(requestID);
         throw;
     }
+
+    // TODO: @HalcyonOmega - BEGIN TIMEOUT IMPLEMENTATION
+    if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
+
+    RequestID requestID = InRequest.ID;
+
+    // Create promise for response
+    auto pendingRequest = std::make_unique<PendingRequest>();
+    pendingRequest->RequestID = requestID;
+    pendingRequest->StartTime = std::chrono::steady_clock::now();
+
+    auto future = pendingRequest->Promise.get_future();
+
+    {
+        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+        m_PendingRequests[requestID] = std::move(pendingRequest);
+    }
+
+    // Send the request
+    co_await WriteMessage(InRequest);
+
+    // Wait for response with timeout
+    static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
+    auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
+    if (status == std::future_status::timeout) {
+        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+        m_PendingRequests.erase(requestID);
+        throw std::runtime_error("Request timeout");
+    }
+
+    co_return future.get();
+    // TODO: @HalcyonOmega - END TIMEOUT IMPLEMENTATION
 }
 
 MCPTask_Void MCPProtocol::SendNotificationImpl(std::string_view InMethod,

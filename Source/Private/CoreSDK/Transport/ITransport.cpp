@@ -44,11 +44,11 @@ TransportFactory::CreateTransport(TransportType InType,
                                   std::unique_ptr<TransportOptions> InOptions) {
     switch (InType) {
         case TransportType::Stdio: {
-            auto* StdioOptions = dynamic_cast<StdioTransportOptions*>(InOptions.get());
+            auto* StdioOptions = dynamic_cast<StdioClientTransportOptions*>(InOptions.get());
             if (StdioOptions == nullptr) {
                 throw std::invalid_argument("Invalid options for stdio transport");
             }
-            return CreateStdioTransport(*StdioOptions);
+            return CreateStdioClientTransport(*StdioOptions);
         }
         case TransportType::StreamableHTTP: {
             auto* HTTPOptions = dynamic_cast<HTTPTransportOptions*>(InOptions.get());
@@ -62,11 +62,11 @@ TransportFactory::CreateTransport(TransportType InType,
 }
 
 std::unique_ptr<ITransport>
-TransportFactory::CreateStdioTransport(const StdioTransportOptions& InOptions) {
-    // Forward declaration - will be implemented in StdioTransport.cpp
-    extern std::unique_ptr<ITransport> CreateStdioTransportImpl(
-        const StdioTransportOptions& InOptions);
-    return CreateStdioTransportImpl(InOptions);
+TransportFactory::CreateStdioClientTransport(const StdioClientTransportOptions& InOptions) {
+    // Forward declaration - will be implemented in StdioClientTransport.cpp
+    extern std::unique_ptr<ITransport> CreateStdioClientTransportImpl(
+        const StdioClientTransportOptions& InOptions);
+    return CreateStdioClientTransportImpl(InOptions);
 }
 
 std::unique_ptr<ITransport>

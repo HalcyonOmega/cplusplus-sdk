@@ -37,7 +37,7 @@ struct TransportOptions {
     virtual ~TransportOptions() noexcept = default;
 };
 
-struct StdioTransportOptions : TransportOptions {
+struct StdioClientTransportOptions : TransportOptions {
     bool UseStderr{false};
     std::string Command;
     std::vector<std::string> Arguments;
@@ -70,18 +70,27 @@ class ITransport {
     [[nodiscard]] virtual TransportState GetState() const = 0;
 
     // Message sending
-    [[nodiscard]] virtual MCPTask<std::string> SendRequest(const RequestBase& InRequest) = 0;
-    virtual MCPTask_Void SendResponse(const ResponseBase& InResponse) = 0;
-    virtual MCPTask_Void SendErrorResponse(const ErrorBase& InError) = 0;
-    virtual MCPTask_Void SendNotification(const NotificationBase& InNotification) = 0;
+    virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;
 
     // Event handlers
-    virtual void SetMessageHandler(MessageHandler InHandler) = 0;
-    virtual void SetRequestHandler(RequestHandler InHandler) = 0;
-    virtual void SetResponseHandler(ResponseHandler InHandler) = 0;
-    virtual void SetNotificationHandler(NotificationHandler InHandler) = 0;
-    virtual void SetErrorHandler(ErrorHandler InHandler) = 0;
-    virtual void SetStateChangeHandler(StateChangeHandler InHandler) = 0;
+    virtual void SetMessageHandler(MessageHandler InHandler) {
+        m_MessageHandler = InHandler;
+    };
+    virtual void SetRequestHandler(RequestHandler InHandler) {
+        m_RequestHandler = InHandler;
+    };
+    virtual void SetResponseHandler(ResponseHandler InHandler) {
+        m_ResponseHandler = InHandler;
+    };
+    virtual void SetNotificationHandler(NotificationHandler InHandler) {
+        m_NotificationHandler = InHandler;
+    };
+    virtual void SetErrorHandler(ErrorHandler InHandler) {
+        m_ErrorHandler = InHandler;
+    };
+    virtual void SetStateChangeHandler(StateChangeHandler InHandler) {
+        m_StateChangeHandler = InHandler;
+    };
 
     // Utility
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
@@ -115,7 +124,7 @@ class TransportFactory {
 
     // Convenience factory methods
     [[nodiscard]] static std::unique_ptr<ITransport>
-    CreateStdioTransport(const StdioTransportOptions& InOptions);
+    CreateStdioClientTransport(const StdioClientTransportOptions& InOptions);
     [[nodiscard]] static std::unique_ptr<ITransport>
     CreateHTTPTransport(const HTTPTransportOptions& InOptions);
 };

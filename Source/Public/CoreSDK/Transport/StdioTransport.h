@@ -9,16 +9,15 @@
 #include <thread>
 
 #include "CoreSDK/Common/Macros.h"
-#include "CoreSDK/Messages/ErrorBase.h"
 #include "CoreSDK/Transport/ITransport.h"
 #include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
 
-class StdioTransport : public ITransport {
+class StdioClientTransport : public ITransport {
   public:
-    explicit StdioTransport(const StdioTransportOptions& InOptions);
-    ~StdioTransport() noexcept override;
+    explicit StdioClientTransport(const StdioClientTransportOptions& InOptions);
+    ~StdioClientTransport() noexcept override;
 
     // ITransport interface
     MCPTask_Void Start() override;
@@ -26,17 +25,7 @@ class StdioTransport : public ITransport {
     bool IsConnected() const override;
     TransportState GetState() const override;
 
-    MCPTask<std::string> SendRequest(const RequestBase& InRequest) override;
-    MCPTask_Void SendResponse(const ResponseBase& InResponse) override;
-    MCPTask_Void SendErrorResponse(const ErrorBase& InError) override;
-    MCPTask_Void SendNotification(const NotificationBase& InNotification) override;
-
-    void SetMessageHandler(MessageHandler InHandler) override;
-    void SetRequestHandler(RequestHandler InHandler) override;
-    void SetResponseHandler(ResponseHandler InHandler) override;
-    void SetNotificationHandler(NotificationHandler InHandler) override;
-    void SetErrorHandler(ErrorHandler InHandler) override;
-    void SetStateChangeHandler(StateChangeHandler InHandler) override;
+    MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
     std::string GetConnectionInfo() const override;
 
@@ -46,11 +35,11 @@ class StdioTransport : public ITransport {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    MCPTask_Void WriteMessage(const JSONValue& InMessage);
-    void HandleError(const std::string& InError);
+    void HandleRuntimeError(const std::string& InError);
+    void HandleError(const ErrorBase& InError);
     void Cleanup();
 
-    StdioTransportOptions m_Options;
+    StdioClientTransportOptions m_Options;
     std::unique_ptr<Poco::ProcessHandle> m_ProcessHandle;
     std::unique_ptr<Poco::Pipe> m_StdinPipe;
     std::unique_ptr<Poco::Pipe> m_StdoutPipe;
@@ -59,6 +48,7 @@ class StdioTransport : public ITransport {
     std::unique_ptr<Poco::PipeInputStream> m_StdoutStream;
     std::unique_ptr<Poco::PipeInputStream> m_StderrStream;
 
+    bool m_ShouldStop{false};
     std::jthread m_ReadThread;
     std::string m_Buffer;
 
@@ -85,17 +75,7 @@ class StdioServerTransport : public ITransport {
     bool IsConnected() const override;
     TransportState GetState() const override;
 
-    MCPTask<std::string> SendRequest(const RequestBase& InRequest) override;
-    MCPTask_Void SendResponse(const ResponseBase& InResponse) override;
-    MCPTask_Void SendErrorResponse(const ErrorBase& InError) override;
-    MCPTask_Void SendNotification(const NotificationBase& InNotification) override;
-
-    void SetMessageHandler(MessageHandler InHandler) override;
-    void SetRequestHandler(RequestHandler InHandler) override;
-    void SetResponseHandler(ResponseHandler InHandler) override;
-    void SetNotificationHandler(NotificationHandler InHandler) override;
-    void SetErrorHandler(ErrorHandler InHandler) override;
-    void SetStateChangeHandler(StateChangeHandler InHandler) override;
+    MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
     std::string GetConnectionInfo() const override;
 
@@ -105,8 +85,8 @@ class StdioServerTransport : public ITransport {
   private:
     void ProcessIncomingData();
     void ProcessLine(const std::string& InLine);
-    MCPTask_Void WriteMessage(const JSONValue& InMessage);
-    void HandleError(const std::string& InError);
+    void HandleRuntimeError(const std::string& InError);
+    void HandleError(const ErrorBase& InError);
 
     std::jthread m_ReadThread;
     std::string m_Buffer;

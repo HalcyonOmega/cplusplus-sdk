@@ -75,73 +75,6 @@ TransportState HTTPTransportClient::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<std::string> HTTPTransportClient::SendRequest(const RequestBase& InRequest) {
-    if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
-
-    RequestID requestID = InRequest.ID;
-
-    // Create promise for response
-    auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->RequestID = requestID;
-    pendingRequest->StartTime = std::chrono::steady_clock::now();
-
-    auto future = pendingRequest->Promise.get_future();
-
-    {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests[requestID] = std::move(pendingRequest);
-    }
-
-    // Send the request via HTTP POST
-    co_await SendHTTPMessage(InRequest);
-
-    // Wait for response with timeout
-    auto status = future.wait_for(m_Options.RequestTimeout);
-    if (status == std::future_status::timeout) {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests.erase(requestID);
-        throw std::runtime_error("Request timeout");
-    }
-
-    co_return future.get();
-}
-
-MCPTask_Void HTTPTransportClient::SendResponse(const ResponseBase& InResponse) {
-    co_await SendHTTPMessage(InResponse);
-}
-
-MCPTask_Void HTTPTransportClient::SendErrorResponse(const ErrorBase& InError) {
-    co_await SendHTTPMessage(InError);
-}
-
-MCPTask_Void HTTPTransportClient::SendNotification(const NotificationBase& InNotification) {
-    co_await SendHTTPMessage(InNotification);
-}
-
-void HTTPTransportClient::SetMessageHandler(MessageHandler InHandler) {
-    m_MessageHandler = InHandler;
-}
-
-void HTTPTransportClient::SetRequestHandler(RequestHandler InHandler) {
-    m_RequestHandler = InHandler;
-}
-
-void HTTPTransportClient::SetResponseHandler(ResponseHandler InHandler) {
-    m_ResponseHandler = InHandler;
-}
-
-void HTTPTransportClient::SetNotificationHandler(NotificationHandler InHandler) {
-    m_NotificationHandler = InHandler;
-}
-
-void HTTPTransportClient::SetErrorHandler(ErrorHandler InHandler) {
-    m_ErrorHandler = InHandler;
-}
-
-void HTTPTransportClient::SetStateChangeHandler(StateChangeHandler InHandler) {
-    m_StateChangeHandler = InHandler;
-}
-
 std::string HTTPTransportClient::GetConnectionInfo() const {
     std::string protocol = m_Options.UseHTTPS ? "https" : "http";
     return protocol + "://" + m_Options.Host + ":" + std::to_string(m_Options.Port)
@@ -193,7 +126,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
     co_return;
 }
 
-MCPTask_Void HTTPTransportClient::SendHTTPMessage(const JSONValue& InMessage) {
+MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONValue& InMessage) {
     if (!m_HTTPSession) { throw std::runtime_error("HTTP session not initialized"); }
 
     try {
@@ -449,73 +382,6 @@ TransportState HTTPTransportServer::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<const ResponseBase&> HTTPTransportServer::SendRequest(const RequestBase& InRequest) {
-    if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
-
-    RequestID requestID = InRequest.ID;
-
-    // Create promise for response
-    auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->RequestID = requestID;
-    pendingRequest->StartTime = std::chrono::steady_clock::now();
-
-    auto future = pendingRequest->Promise.get_future();
-
-    {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests[requestID] = std::move(pendingRequest);
-    }
-
-    // Send to all SSE clients
-    co_await SendToSSEClients(InRequest);
-
-    // Wait for response with timeout
-    auto status = future.wait_for(std::chrono::seconds(30));
-    if (status == std::future_status::timeout) {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests.erase(requestID);
-        throw std::runtime_error("Request timeout");
-    }
-
-    co_return future.get();
-}
-
-MCPTask_Void HTTPTransportServer::SendResponse(const ResponseBase& InResponse) {
-    co_await SendToSSEClients(InResponse);
-}
-
-MCPTask_Void HTTPTransportServer::SendErrorResponse(const ErrorBase& InError) {
-    co_await SendToSSEClients(InError);
-}
-
-MCPTask_Void HTTPTransportServer::SendNotification(const NotificationBase& InNotification) {
-    co_await SendToSSEClients(InNotification);
-}
-
-void HTTPTransportServer::SetMessageHandler(MessageHandler InHandler) {
-    m_MessageHandler = InHandler;
-}
-
-void HTTPTransportServer::SetRequestHandler(RequestHandler InHandler) {
-    m_RequestHandler = InHandler;
-}
-
-void HTTPTransportServer::SetResponseHandler(ResponseHandler InHandler) {
-    m_ResponseHandler = InHandler;
-}
-
-void HTTPTransportServer::SetNotificationHandler(NotificationHandler InHandler) {
-    m_NotificationHandler = InHandler;
-}
-
-void HTTPTransportServer::SetErrorHandler(ErrorHandler InHandler) {
-    m_ErrorHandler = InHandler;
-}
-
-void HTTPTransportServer::SetStateChangeHandler(StateChangeHandler InHandler) {
-    m_StateChangeHandler = InHandler;
-}
-
 std::string HTTPTransportServer::GetConnectionInfo() const {
     std::string protocol = m_Options.UseHTTPS ? "https" : "http";
     // TODO: @HalcyonOmega - Pretty sure spec says you should use 127.0.0.1 instead of 0.0.0.0
@@ -645,7 +511,7 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID) {
     }
 }
 
-MCPTask_Void HTTPTransportServer::SendToSSEClients(const JSONValue& InMessage) {
+MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONValue& InMessage) {
     Poco::Mutex::ScopedLock lock(m_ClientsMutex);
 
     std::string messageStr = "data: " + InMessage.dump() + "\n\n";

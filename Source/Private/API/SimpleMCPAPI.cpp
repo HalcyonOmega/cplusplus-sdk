@@ -5,7 +5,7 @@ MCP_NAMESPACE_BEGIN
 // SimpleMCPClient Implementation
 SimpleMCPClient::SimpleMCPClient(const std::string& InCommand,
                                  const std::vector<std::string>& InArguments) {
-    auto options = std::make_unique<StdioTransportOptions>();
+    auto options = std::make_unique<StdioClientTransportOptions>();
     options->Command = InCommand;
     options->Arguments = InArguments;
 

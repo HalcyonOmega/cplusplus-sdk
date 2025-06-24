@@ -222,11 +222,12 @@ void MCPClient::SetLogHandler(LogHandler InHandler) {
 void MCPClient::CreateTransport() {
     switch (m_TransportType) {
         case TransportType::Stdio: {
-            auto stdioOptions = dynamic_cast<StdioTransportOptions*>(m_TransportOptions.get());
+            auto stdioOptions =
+                dynamic_cast<StdioClientTransportOptions*>(m_TransportOptions.get());
             if (!stdioOptions) {
                 throw std::invalid_argument("Invalid options for stdio transport");
             }
-            m_Transport = std::make_unique<StdioTransport>(*stdioOptions);
+            m_Transport = std::make_unique<StdioClientTransport>(*stdioOptions);
             break;
         }
         case TransportType::StreamableHTTP: {

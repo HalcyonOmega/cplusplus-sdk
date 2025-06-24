@@ -41,17 +41,7 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     [[nodiscard]] bool IsConnected() const override;
     [[nodiscard]] TransportState GetState() const override;
 
-    MCPTask<std::string> SendRequest(const RequestBase& InRequest) override;
-    MCPTask_Void SendResponse(const ResponseBase& InResponse) override;
-    MCPTask_Void SendErrorResponse(const ErrorBase& InError) override;
-    MCPTask_Void SendNotification(const NotificationBase& InNotification) override;
-
-    void SetMessageHandler(MessageHandler InHandler) override;
-    void SetRequestHandler(RequestHandler InHandler) override;
-    void SetResponseHandler(ResponseHandler InHandler) override;
-    void SetNotificationHandler(NotificationHandler InHandler) override;
-    void SetErrorHandler(ErrorHandler InHandler) override;
-    void SetStateChangeHandler(StateChangeHandler InHandler) override;
+    MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
     [[nodiscard]] std::string GetConnectionInfo() const override;
 
@@ -61,7 +51,6 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
 
   private:
     MCPTask_Void ConnectToServer();
-    MCPTask_Void SendHTTPMessage(const JSONValue& InMessage);
     void StartSSEConnection();
     void ProcessSSELine(const std::string& InLine);
     void HandleConnectionError(const std::string& InError);
@@ -123,17 +112,7 @@ class HTTPTransportServer : public ITransport {
     [[nodiscard]] bool IsConnected() const override;
     [[nodiscard]] TransportState GetState() const override;
 
-    MCPTask<std::string> SendRequest(const RequestBase& InRequest) override;
-    MCPTask_Void SendResponse(const ResponseBase& InResponse) override;
-    MCPTask_Void SendErrorResponse(const ErrorBase& InError) override;
-    MCPTask_Void SendNotification(const NotificationBase& InNotification) override;
-
-    void SetMessageHandler(MessageHandler InHandler) override;
-    void SetRequestHandler(RequestHandler InHandler) override;
-    void SetResponseHandler(ResponseHandler InHandler) override;
-    void SetNotificationHandler(NotificationHandler InHandler) override;
-    void SetErrorHandler(ErrorHandler InHandler) override;
-    void SetStateChangeHandler(StateChangeHandler InHandler) override;
+    MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
     [[nodiscard]] std::string GetConnectionInfo() const override;
 
@@ -149,7 +128,6 @@ class HTTPTransportServer : public ITransport {
     std::string GenerateUniqueClientID() const;
 
   private:
-    MCPTask_Void SendToSSEClients(const JSONValue& InMessage);
     void ProcessReceivedMessage(const std::string& InMessage);
     std::string GenerateClientID() const;
 

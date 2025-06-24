@@ -5,16 +5,18 @@
 
 #include <chrono>
 #include <iostream>
+#include <stdexcept>
 #include <thread>
 
 MCP_NAMESPACE_BEGIN
 
-// StdioTransport Implementation
-StdioTransport::StdioTransport(const StdioTransportOptions& InOptions) : m_Options(InOptions) {
+// StdioClientTransport Implementation
+StdioClientTransport::StdioClientTransport(const StdioClientTransportOptions& InOptions)
+    : m_Options(InOptions) {
     TriggerStateChange(TransportState::Disconnected);
 }
 
-StdioTransport::~StdioTransport() {
+StdioClientTransport::~StdioClientTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
             Stop().GetResult();
@@ -24,7 +26,7 @@ StdioTransport::~StdioTransport() {
     }
 }
 
-MCPTask_Void StdioTransport::Start() {
+MCPTask_Void StdioClientTransport::Start() {
     if (m_CurrentState != TransportState::Disconnected) {
         throw std::runtime_error("Transport already started or in progress");
     }
@@ -72,7 +74,7 @@ MCPTask_Void StdioTransport::Start() {
     co_return;
 }
 
-MCPTask_Void StdioTransport::Stop() {
+MCPTask_Void StdioClientTransport::Stop() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -96,91 +98,23 @@ MCPTask_Void StdioTransport::Stop() {
     co_return;
 }
 
-bool StdioTransport::IsConnected() const {
+bool StdioClientTransport::IsConnected() const {
     return m_CurrentState == TransportState::Connected;
 }
 
-TransportState StdioTransport::GetState() const {
+TransportState StdioClientTransport::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<std::string> StdioTransport::SendRequest(const RequestBase& InRequest) {
-    if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
-
-    RequestID requestID = InRequest.ID;
-
-    // Create promise for response
-    auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->RequestID = requestID;
-    pendingRequest->StartTime = std::chrono::steady_clock::now();
-
-    auto future = pendingRequest->Promise.get_future();
-
-    {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests[requestID] = std::move(pendingRequest);
-    }
-
-    // Send the request
-    co_await WriteMessage(InRequest);
-
-    // Wait for response with timeout
-    static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
-    auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
-    if (status == std::future_status::timeout) {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests.erase(requestID);
-        throw std::runtime_error("Request timeout");
-    }
-
-    co_return future.get();
-}
-
-MCPTask_Void StdioTransport::SendResponse(const ResponseBase& InResponse) {
-    co_await WriteMessage(InResponse);
-}
-
-MCPTask_Void StdioTransport::SendErrorResponse(const ErrorBase& InError) {
-    co_await WriteMessage(InError);
-}
-
-MCPTask_Void StdioTransport::SendNotification(const NotificationBase& InNotification) {
-    co_await WriteMessage(InNotification);
-}
-
-void StdioTransport::SetMessageHandler(MessageHandler InHandler) {
-    m_MessageHandler = InHandler;
-}
-
-void StdioTransport::SetRequestHandler(RequestHandler InHandler) {
-    m_RequestHandler = InHandler;
-}
-
-void StdioTransport::SetResponseHandler(ResponseHandler InHandler) {
-    m_ResponseHandler = InHandler;
-}
-
-void StdioTransport::SetNotificationHandler(NotificationHandler InHandler) {
-    m_NotificationHandler = InHandler;
-}
-
-void StdioTransport::SetErrorHandler(ErrorHandler InHandler) {
-    m_ErrorHandler = InHandler;
-}
-
-void StdioTransport::SetStateChangeHandler(StateChangeHandler InHandler) {
-    m_StateChangeHandler = InHandler;
-}
-
-std::string StdioTransport::GetConnectionInfo() const {
+std::string StdioClientTransport::GetConnectionInfo() const {
     return "Stdio transport to: " + m_Options.Command;
 }
 
-void StdioTransport::run() {
+void StdioClientTransport::run() {
     ProcessIncomingData();
 }
 
-void StdioTransport::ProcessIncomingData() {
+void StdioClientTransport::ProcessIncomingData() {
     static constexpr std::chrono::milliseconds DEFAULT_SLEEP_FOR{10};
 
     std::string line;
@@ -201,7 +135,7 @@ void StdioTransport::ProcessIncomingData() {
     }
 }
 
-void StdioTransport::ProcessLine(const std::string& InLine) {
+void StdioClientTransport::ProcessLine(const std::string& InLine) {
     try {
         auto message = JSONValue::parse(InLine);
 
@@ -252,7 +186,7 @@ void StdioTransport::ProcessLine(const std::string& InLine) {
     }
 }
 
-MCPTask_Void StdioTransport::WriteMessage(const JSONValue& InMessage) {
+MCPTask_Void StdioClientTransport::TransmitMessage(const JSONValue& InMessage) {
     if (!m_StdinStream || !IsConnected()) { throw std::runtime_error("Transport not connected"); }
 
     try {
@@ -269,12 +203,12 @@ MCPTask_Void StdioTransport::WriteMessage(const JSONValue& InMessage) {
     co_return;
 }
 
-void StdioTransport::HandleError(const std::string& InError) {
+void StdioClientTransport::HandleError(const std::string& InError) {
     TriggerStateChange(TransportState::Error);
     if (m_ErrorHandler) { m_ErrorHandler(InError); }
 }
 
-void StdioTransport::Cleanup() {
+void StdioClientTransport::Cleanup() {
     // Terminate process if still running
     if (m_ProcessHandle) {
         try {
@@ -384,74 +318,6 @@ TransportState StdioServerTransport::GetState() const {
     return m_CurrentState;
 }
 
-MCPTask<const ResponseBase&> StdioServerTransport::SendRequest(const RequestBase& InRequest) {
-    if (!IsConnected()) { throw std::runtime_error("Transport not connected"); }
-
-    RequestID requestID = InRequest.ID;
-
-    // Create promise for response
-    auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->RequestID = requestID;
-    pendingRequest->StartTime = std::chrono::steady_clock::now();
-
-    auto future = pendingRequest->Promise.get_future();
-
-    {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests[requestID] = std::move(pendingRequest);
-    }
-
-    // Send the request
-    co_await WriteMessage(InRequest);
-
-    // Wait for response with timeout
-    static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30000};
-    auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
-    if (status == std::future_status::timeout) {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
-        m_PendingRequests.erase(requestID);
-        throw std::runtime_error("Request timeout");
-    }
-
-    co_return future.get();
-}
-
-MCPTask_Void StdioServerTransport::SendResponse(const ResponseBase& InResponse) {
-    co_await WriteMessage(InResponse);
-}
-
-MCPTask_Void StdioServerTransport::SendErrorResponse(const ErrorBase& InError) {
-    co_await WriteMessage(InError);
-}
-
-MCPTask_Void StdioServerTransport::SendNotification(const NotificationBase& InNotification) {
-    co_await WriteMessage(InNotification);
-}
-
-void StdioServerTransport::SetMessageHandler(MessageHandler InHandler) {
-    m_MessageHandler = InHandler;
-}
-
-void StdioServerTransport::SetRequestHandler(RequestHandler InHandler) {
-    m_RequestHandler = InHandler;
-}
-
-void StdioServerTransport::SetResponseHandler(ResponseHandler InHandler) {
-    m_ResponseHandler = InHandler;
-}
-
-void StdioServerTransport::SetNotificationHandler(NotificationHandler InHandler) {
-    m_NotificationHandler = InHandler;
-}
-
-void StdioServerTransport::SetErrorHandler(ErrorHandler InHandler) {
-    m_ErrorHandler = InHandler;
-}
-
-void StdioServerTransport::SetStateChangeHandler(StateChangeHandler InHandler) {
-    m_StateChangeHandler = InHandler;
-}
-
 std::string StdioServerTransport::GetConnectionInfo() const {
     return "Stdio server transport (stdin/stdout)";
 }
@@ -484,7 +350,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
         auto message = JSONValue::parse(InLine);
 
         if (!IsValidJSONRPC(message)) {
-            HandleError("Invalid JSON-RPC message received");
+            std::cout << "Invalid JSON-RPC message received" << std::endl;
             return;
         }
 
@@ -526,11 +392,11 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
             }
         }
     } catch (const std::exception& e) {
-        HandleError("Error parsing message: " + std::string(e.what()));
+        throw std::runtime_error("Error parsing message: " + std::string(e.what()));
     }
 }
 
-MCPTask_Void StdioServerTransport::WriteMessage(const JSONValue& InMessage) {
+MCPTask_Void StdioServerTransport::TransmitMessage(const JSONValue& InMessage) {
     try {
         Poco::Mutex::ScopedLock lock(m_WriteMutex);
 
@@ -538,21 +404,25 @@ MCPTask_Void StdioServerTransport::WriteMessage(const JSONValue& InMessage) {
         std::cout << messageStr;
         std::cout.flush();
     } catch (const std::exception& e) {
-        HandleError("Error writing message: " + std::string(e.what()));
-        throw;
+        HandleRuntimeError("Error writing message: " + std::string(e.what()));
     }
 
     co_return;
 }
 
-void StdioServerTransport::HandleError(const std::string& InError) {
+void StdioServerTransport::HandleRuntimeError(const std::string& InError) {
+    std::cout << "RuntimeError: " << InError << std::endl;
+}
+
+void StdioServerTransport::HandleError(const ErrorBase& InError) {
     TriggerStateChange(TransportState::Error);
     if (m_ErrorHandler) { m_ErrorHandler(InError); }
 }
 
 // Factory functions
-std::unique_ptr<ITransport> CreateStdioTransportImpl(const StdioTransportOptions& InOptions) {
-    return std::make_unique<StdioTransport>(InOptions);
+std::unique_ptr<ITransport>
+CreateStdioClientTransportImpl(const StdioClientTransportOptions& InOptions) {
+    return std::make_unique<StdioClientTransport>(InOptions);
 }
 
 MCP_NAMESPACE_END
