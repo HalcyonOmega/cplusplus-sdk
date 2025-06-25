@@ -81,7 +81,7 @@ struct SamplingMessage {
 };
 
 template <typename T>
-concept IsSamplingMessage = requires(T Type) {
+concept SamplingType = requires(T Type) {
     { Type.Role } -> std::same_as<MCP::Role>;
     { Type.Content } -> std::same_as<std::variant<TextContent, ImageContent, AudioContent>>;
 };

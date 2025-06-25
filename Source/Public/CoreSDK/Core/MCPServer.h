@@ -2,6 +2,7 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Core/IMCP.h"
+#include "CoreSDK/Features/FeatureSignatures.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -18,35 +19,26 @@ class MCPServer : public MCPProtocol {
                        const ServerCapabilities& InCapabilities);
 
     // Tool management
-    void RegisterTool(const Tool& InTool, std::function<MCPTask<CallToolResponse::CallToolResult>(
-                                              const std::unordered_map<std::string, JSONValue>&)>
-                                              InHandler);
-    void UnregisterTool(const Tool& InTool);
+    void AddTool(const Tool& InTool, ToolHandler InHandler);
+    void RemoveTool(const Tool& InTool);
     MCPTask_Void NotifyToolListChanged();
 
     // Prompt management
-    void RegisterPrompt(
-        const Prompt& InPrompt,
-        std::function<MCPTask<GetPromptResult>(const std::unordered_map<std::string, std::string>&)>
-            InHandler);
-    void UnregisterPrompt(const std::string& InName);
+    void AddPrompt(const Prompt& InPrompt, PromptHandler InHandler);
+    void RemovePrompt(const Prompt& InPrompt);
     MCPTask_Void NotifyPromptListChanged();
 
     // Resource management
-    void
-    RegisterResource(const Resource& InResource,
-                     std::function<MCPTask<ReadResourceResponse::ReadResourceResult>()> InHandler);
-    void RegisterResourceTemplate(
-        const ResourceTemplate& InTemplate,
-        std::function<MCPTask<ReadResourceResponse::ReadResourceResult>(const std::string&)>
-            InHandler);
-    void UnregisterResource(const Resource& InResource);
+    void AddResource(const Resource& InResource, ResourceHandler InHandler);
+    void AddResourceTemplate(const ResourceTemplate& InTemplate, ResourceTemplateHandler InHandler);
+    void RemoveResource(const Resource& InResource);
+    void RemoveResourceTemplate(const ResourceTemplate& InTemplate);
     MCPTask_Void NotifyResourceListChanged();
-    MCPTask_Void NotifyResourceUpdated(const std::string& InURI);
+    MCPTask_Void NotifyResourceUpdated(const Resource& InResource);
 
     // Root management
-    void RegisterRoot(const Root& InRoot);
-    void UnregisterRoot(const std::string& InURI);
+    void AddRoot(const Root& InRoot);
+    void RemoveRoot(const Root& InRoot);
     MCPTask_Void NotifyRootsListChanged();
 
     // Logging
@@ -72,41 +64,11 @@ class MCPServer : public MCPProtocol {
     ServerCapabilities m_ServerCapabilities;
     ClientCapabilities m_ClientCapabilities;
 
-    // Tool handlers
-    struct ToolHandler {
-        Tool ToolInfo;
-        std::function<MCPTask<CallToolResult>(const std::unordered_map<std::string, JSONValue>&)>
-            Handler;
-    };
-    std::unordered_map<std::string, ToolHandler> m_Tools;
-
-    // Prompt handlers
-    struct PromptHandler {
-        Prompt PromptInfo;
-        std::function<MCPTask<GetPromptResult>(const std::unordered_map<std::string, std::string>&)>
-            Handler;
-    };
-    std::unordered_map<std::string, PromptHandler> m_Prompts;
-
-    // Resource handlers
-    struct ResourceHandler {
-        Resource ResourceInfo;
-        std::function<MCPTask<ReadResourceResult>()> Handler;
-    };
-    std::unordered_map<std::string, ResourceHandler> m_Resources;
-
-    struct ResourceTemplateHandler {
-        ResourceTemplate TemplateInfo;
-        std::function<MCPTask<ReadResourceResult>(const std::string&)> Handler;
-    };
-    std::unordered_map<std::string, ResourceTemplateHandler> m_ResourceTemplates;
-
-    // Root storage
-    std::unordered_map<std::string, Root> m_Roots;
-
-    // Subscription management
-    std::unordered_map<std::string, std::unordered_set<std::string>>
-        m_Subscriptions; // URI -> Set of client IDs
+    std::unordered_map<Tool, ToolHandler> m_Tools;
+    std::unordered_map<Prompt, PromptHandler> m_Prompts;
+    std::unordered_map<Resource, ResourceHandler> m_Resources;
+    std::unordered_map<ResourceTemplate, ResourceTemplateHandler> m_ResourceTemplates;
+    std::unordered_map<Root, RootHandler> m_Roots;
 
     mutable std::mutex m_HandlersMutex;
 
@@ -122,14 +84,13 @@ class MCPServer : public MCPProtocol {
         const RequestID& InRequestID);
 
     // Resource subscription management
-    MCPTask_Void NotifyResourceSubscribers(const std::string& InURI);
+    MCPTask_Void NotifyResourceSubscribers(const Resource& InResource);
     std::string_view GetCurrentClientID() const;
-    MCPTask_Void SendNotificationToClient(const std::string& InClientID,
+    MCPTask_Void SendNotificationToClient(std::string_view InClientID,
                                           const ResourceUpdatedNotification& InNotification);
 
     // Updated subscription management with client tracking
-    std::unordered_map<std::string, std::set<std::string>>
-        m_ResourceSubscriptions; // URI -> Set of client IDs
+    std::unordered_map<Resource, std::vector<std::string> /* Client IDs */> m_ResourceSubscriptions;
     mutable std::mutex m_ResourceSubscriptionsMutex;
 };
 

@@ -8,8 +8,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-using ToolHandler = std::function<MCPTask<CallToolResponse::CallToolResult>(const Tool& InTool)>;
-
 // Additional properties describing a Tool to clients.
 // NOTE: all properties in ToolAnnotations are **hints**.
 // They are not guaranteed to provide a faithful description of
@@ -67,7 +65,7 @@ struct Tool {
 };
 
 template <typename T>
-concept IsTool = requires(T Type) {
+concept ToolType = requires(T Type) {
     { Type.Name } -> std::convertible_to<std::string>;
     { Type.Description } -> std::same_as<std::optional<std::string>>;
     { Type.InputSchema } -> std::same_as<JSONSchema>;

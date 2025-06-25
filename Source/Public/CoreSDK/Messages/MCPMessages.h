@@ -17,6 +17,7 @@
 #include "CoreSDK/Messages/NotificationBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 #include "CoreSDK/Messages/ResponseBase.h"
+#include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
 

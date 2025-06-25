@@ -46,7 +46,7 @@ struct Prompt {
 };
 
 template <typename T>
-concept IsPrompt = requires(T Type) {
+concept PromptType = requires(T Type) {
     { Type.Name } -> std::convertible_to<std::string>;
     { Type.Description } -> std::same_as<std::optional<std::string>>;
     { Type.Arguments } -> std::same_as<std::optional<std::vector<PromptArgument>>>;

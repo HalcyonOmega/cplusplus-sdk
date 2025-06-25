@@ -65,7 +65,7 @@ bool MCPServer::IsRunning() const {
     return m_IsRunning;
 }
 
-void MCPServer::AddTool(const std::string& InName, const Tool& InTool, ToolHandler InHandler) {
+void MCPServer::AddTool(const Tool& InTool, ToolHandler InHandler) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add tools while server is running");
         co_return;

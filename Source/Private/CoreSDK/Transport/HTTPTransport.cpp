@@ -387,7 +387,7 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
             InResponse.set("Access-Control-Allow-Headers", "Content-Type");
             InResponse.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 
-            std::string clientID = GenerateClientID();
+            std::string clientID = GenerateUUID();
             RegisterSSEClient(clientID, InResponse);
 
             // Send initial connection event
@@ -413,7 +413,7 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
             InResponse.set("Connection", "keep-alive");
             InResponse.set("Access-Control-Allow-Origin", "*");
 
-            std::string clientID = GenerateClientID();
+            std::string clientID = GenerateUUID();
             RegisterSSEClient(clientID, InResponse);
 
             // Keep connection alive
@@ -570,11 +570,6 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
     }
 }
 
-std::string HTTPTransportServer::GenerateClientID() const {
-    uint64_t counter = m_ClientCounter.fetch_add(1);
-    return "client_" + std::to_string(counter);
-}
-
 MCPTask_Void
 HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRequest,
                                               Poco::Net::HTTPServerResponse& InResponse) {
@@ -587,7 +582,7 @@ HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRe
     InResponse.set("Access-Control-Allow-Headers", "Content-Type");
 
     // Generate unique client ID
-    std::string clientID = GenerateClientID();
+    std::string clientID = GenerateUUID();
 
     // Register SSE client for message streaming
     RegisterSSEClient(clientID, InResponse);

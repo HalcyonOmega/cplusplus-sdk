@@ -50,7 +50,6 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     MCPTask_Void ConnectToServer();
     void StartSSEConnection();
     void ProcessSSELine(const std::string& InLine);
-    void HandleConnectionError(const std::string& InError);
     void Cleanup();
 
     HTTPTransportOptions m_Options;
@@ -123,7 +122,6 @@ class HTTPTransportServer : public ITransport {
 
   private:
     void ProcessReceivedMessage(const std::string& InMessage);
-    std::string GenerateClientID() const;
 
     HTTPTransportOptions m_Options;
     std::unique_ptr<Poco::Net::HTTPServer> m_HTTPServer;
@@ -151,8 +149,6 @@ class HTTPTransportServer : public ITransport {
 
     std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
     mutable Poco::Mutex m_RequestsMutex;
-
-    std::atomic<uint64_t> m_ClientCounter{0};
 };
 
 MCP_NAMESPACE_END

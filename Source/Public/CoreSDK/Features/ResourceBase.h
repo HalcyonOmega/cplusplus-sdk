@@ -61,7 +61,7 @@ struct ResourceTemplate {
 };
 
 template <typename T>
-concept IsResource = requires(T Type) {
+concept ResourceType = requires(T Type) {
     { Type.URI } -> std::same_as<MCP::URI>;
     { Type.Name } -> std::convertible_to<std::string>;
     { Type.Description } -> std::same_as<std::optional<std::string>>;
@@ -71,7 +71,7 @@ concept IsResource = requires(T Type) {
 };
 
 template <typename T>
-concept IsResourceTemplate = requires(T Type) {
+concept ResourceTemplateType = requires(T Type) {
     { Type.URITemplate } -> std::same_as<MCP::URITemplate>;
     { Type.Name } -> std::convertible_to<std::string>;
     { Type.Description } -> std::same_as<std::optional<std::string>>;

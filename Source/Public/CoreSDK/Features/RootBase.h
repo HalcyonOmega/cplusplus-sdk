@@ -26,7 +26,7 @@ struct Root {
 };
 
 template <typename T>
-concept IsRoot = requires(T Type) {
+concept RootType = requires(T Type) {
     { Type.URI } -> std::same_as<MCP::URIFile>;
     { Type.Name } -> std::same_as<std::optional<std::string>>;
 };
