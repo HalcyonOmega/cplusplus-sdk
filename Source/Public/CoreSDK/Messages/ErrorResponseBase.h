@@ -1,8 +1,7 @@
 #pragma once
 
-#include <utility>
-
 #include "CoreSDK/Messages/MessageBase.h"
+#include "CoreSDK/Messages/RequestBase.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -53,8 +52,7 @@ DEFINE_ENUM_JSON(Errors, {Errors::Ok, ErrorMessages::MSG_OK},
                  {Errors::InternalInputError, ErrorMessages::INTERNAL_INPUT_ERROR},
                  {Errors::InternalOutputError, ErrorMessages::INTERNAL_OUTPUT_ERROR})
 
-// Error structure
-struct ErrorResponseBase : MessageBase {
+struct MCPErrorInfo {
     Errors Code;         // The error type that occurred.
     std::string Message; // A short description of the error. The message SHOULD be limited to a
                          // concise single sentence.
@@ -66,11 +64,21 @@ struct ErrorResponseBase : MessageBase {
     JKEY(MESSAGEKEY, Message, "message")
     JKEY(DATAKEY, Data, "data")
 
-    DEFINE_TYPE_JSON(ErrorResponseBase, CODEKEY, MESSAGEKEY, DATAKEY)
+    DEFINE_TYPE_JSON(MCPErrorInfo, CODEKEY, MESSAGEKEY, DATAKEY)
+};
 
-    ErrorResponseBase(Errors InCode, std::string_view InMessage,
-                      std::optional<JSONValue> InData = std::nullopt)
-        : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
+// Error structure
+struct ErrorResponseBase : MessageBase {
+    RequestID ID;
+    MCPErrorInfo Error;
+
+    JKEY(IDKEY, ID, "id")
+    JKEY(ERRORKEY, Error, "error")
+
+    DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, MessageBase, IDKEY, ERRORKEY)
+
+    ErrorResponseBase(RequestID InID, MCPErrorInfo InError)
+        : ID(std::move(InID)), Error(std::move(InError)) {}
 };
 
 MCP_NAMESPACE_END

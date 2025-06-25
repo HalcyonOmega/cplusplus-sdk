@@ -23,7 +23,7 @@ MCP_NAMESPACE_BEGIN
 
 // Initialize request/response
 struct InitializeRequest : RequestBase {
-    struct InitializeRequestParams {
+    struct InitializeRequestParams : RequestParams {
         std::string ProtocolVersion;
         ClientCapabilities Capabilities;
         Implementation ClientInfo;
@@ -32,8 +32,8 @@ struct InitializeRequest : RequestBase {
         JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
         JKEY(CLIENTINFOKEY, ClientInfo, "clientInfo")
 
-        DEFINE_TYPE_JSON(InitializeRequestParams, PROTOCOLVERSIONKEY, CAPABILITIESKEY,
-                         CLIENTINFOKEY)
+        DEFINE_TYPE_JSON_DERIVED(InitializeRequestParams, RequestParams, PROTOCOLVERSIONKEY,
+                                 CAPABILITIESKEY, CLIENTINFOKEY)
     };
 
     InitializeRequest(const InitializeRequestParams& InParams = InitializeRequestParams{})
@@ -41,19 +41,17 @@ struct InitializeRequest : RequestBase {
 };
 
 struct InitializeResponse : ResponseBase {
-    struct InitializeResult {
+    struct InitializeResult : ResultParams {
         std::string ProtocolVersion;
         ServerCapabilities Capabilities;
         Implementation ServerInfo;
-        std::optional<JSONValue> Meta;
 
         JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
         JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
         JKEY(SERVERINFOKEY, ServerInfo, "serverInfo")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(InitializeResult, PROTOCOLVERSIONKEY, CAPABILITIESKEY, SERVERINFOKEY,
-                         METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(InitializeResult, ResultParams, PROTOCOLVERSIONKEY,
+                                 CAPABILITIESKEY, SERVERINFOKEY)
     };
 
     InitializeResponse(const RequestID& InRequestID,
@@ -77,18 +75,17 @@ struct PingResponse : ResponseBase {
 
 // Tool-related messages
 struct ListToolsRequest : RequestBase {
-    ListToolsRequest() : RequestBase("tools/list") {}
+    ListToolsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
+        : RequestBase("tools/list", InParams) {}
 };
 
 struct ListToolsResponse : ResponseBase {
-    struct ListToolsResult {
+    struct ListToolsResult : PaginatedResultParams {
         std::vector<Tool> Tools;
-        std::optional<JSONValue> Meta;
 
         JKEY(TOOLSKEY, Tools, "tools")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(ListToolsResult, TOOLSKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(ListToolsResult, PaginatedResultParams, TOOLSKEY)
     };
 
     ListToolsResponse(const RequestID& InRequestID,
@@ -97,14 +94,14 @@ struct ListToolsResponse : ResponseBase {
 };
 
 struct CallToolRequest : RequestBase {
-    struct CallToolParams {
+    struct CallToolParams : RequestParams {
         std::string Name;
         std::optional<std::unordered_map<std::string, JSONValue>> Arguments;
 
         JKEY(NAMEKEY, Name, "name")
         JKEY(ARGUMENTSKEY, Arguments, "arguments")
 
-        DEFINE_TYPE_JSON(CallToolParams, NAMEKEY, ARGUMENTSKEY)
+        DEFINE_TYPE_JSON_DERIVED(CallToolParams, RequestParams, NAMEKEY, ARGUMENTSKEY)
     };
 
     CallToolRequest(const CallToolParams& InParams = CallToolParams{})
@@ -112,16 +109,14 @@ struct CallToolRequest : RequestBase {
 };
 
 struct CallToolResponse : ResponseBase {
-    struct CallToolResult {
+    struct CallToolResult : ResultParams {
         std::vector<Content> Content;
         std::optional<bool> IsError;
-        std::optional<JSONValue> Meta;
 
         JKEY(CONTENTKEY, Content, "content")
         JKEY(ISERRORKEY, IsError, "isError")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(CallToolResult, CONTENTKEY, ISERRORKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(CallToolResult, ResultParams, CONTENTKEY, ISERRORKEY)
     };
 
     CallToolResponse(const RequestID& InRequestID, const CallToolResult& InResult)
@@ -130,18 +125,17 @@ struct CallToolResponse : ResponseBase {
 
 // Prompt-related messages
 struct ListPromptsRequest : RequestBase {
-    ListPromptsRequest() : RequestBase("prompts/list") {}
+    ListPromptsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
+        : RequestBase("prompts/list", InParams) {}
 };
 
 struct ListPromptsResponse : ResponseBase {
-    struct ListPromptsResult {
+    struct ListPromptsResult : PaginatedResultParams {
         std::vector<Prompt> Prompts;
-        std::optional<JSONValue> Meta;
 
         JKEY(PROMPTSKEY, Prompts, "prompts")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(ListPromptsResult, PROMPTSKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(ListPromptsResult, PaginatedResultParams, PROMPTSKEY)
     };
 
     ListPromptsResponse(const RequestID& InRequestID,
@@ -150,14 +144,14 @@ struct ListPromptsResponse : ResponseBase {
 };
 
 struct GetPromptRequest : RequestBase {
-    struct GetPromptParams {
+    struct GetPromptParams : RequestParams {
         std::string Name;
         std::optional<std::unordered_map<std::string, std::string>> Arguments;
 
         JKEY(NAMEKEY, Name, "name")
         JKEY(ARGUMENTSKEY, Arguments, "arguments")
 
-        DEFINE_TYPE_JSON(GetPromptParams, NAMEKEY, ARGUMENTSKEY)
+        DEFINE_TYPE_JSON_DERIVED(GetPromptParams, RequestParams, NAMEKEY, ARGUMENTSKEY)
     };
 
     GetPromptRequest(const GetPromptParams& InParams = GetPromptParams{})
@@ -165,16 +159,14 @@ struct GetPromptRequest : RequestBase {
 };
 
 struct GetPromptResponse : ResponseBase {
-    struct GetPromptResult {
+    struct GetPromptResult : ResultParams {
         std::optional<std::string> Description;
         std::vector<Content> Messages;
-        std::optional<JSONValue> Meta;
 
         JKEY(DESCRIPTIONKEY, Description, "description")
         JKEY(MESSAGESKEY, Messages, "messages")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(GetPromptResult, DESCRIPTIONKEY, MESSAGESKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(GetPromptResult, ResultParams, DESCRIPTIONKEY, MESSAGESKEY)
     };
 
     GetPromptResponse(const RequestID& InRequestID,
@@ -184,29 +176,17 @@ struct GetPromptResponse : ResponseBase {
 
 // Resource-related messages
 struct ListResourcesRequest : RequestBase {
-    struct ListResourcesParams {
-        std::optional<std::string> Cursor;
-
-        JKEY(CURSORKEY, Cursor, "cursor")
-
-        DEFINE_TYPE_JSON(ListResourcesParams, CURSORKEY)
-    };
-
-    ListResourcesRequest(const ListResourcesParams& InParams = ListResourcesParams{})
+    ListResourcesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("resources/list", InParams) {}
 };
 
 struct ListResourcesResponse : ResponseBase {
-    struct ListResourcesResult {
+    struct ListResourcesResult : PaginatedResultParams {
         std::vector<Resource> Resources;
-        std::optional<std::string> NextCursor;
-        std::optional<JSONValue> Meta;
 
         JKEY(RESOURCESKEY, Resources, "resources")
-        JKEY(NEXTCURSORKEY, NextCursor, "nextCursor")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(ListResourcesResult, RESOURCESKEY, NEXTCURSORKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(ListResourcesResult, PaginatedResultParams, RESOURCESKEY)
     };
 
     ListResourcesResponse(const RequestID& InRequestID,
@@ -215,12 +195,12 @@ struct ListResourcesResponse : ResponseBase {
 };
 
 struct ReadResourceRequest : RequestBase {
-    struct ReadResourceParams {
+    struct ReadResourceParams : RequestParams {
         MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
-        DEFINE_TYPE_JSON(ReadResourceParams, URIKEY)
+        DEFINE_TYPE_JSON_DERIVED(ReadResourceParams, RequestParams, URIKEY)
     };
 
     ReadResourceRequest(const ReadResourceParams& InParams = ReadResourceParams{})
@@ -228,14 +208,12 @@ struct ReadResourceRequest : RequestBase {
 };
 
 struct ReadResourceResponse : ResponseBase {
-    struct ReadResourceResult {
+    struct ReadResourceResult : ResultParams {
         std::vector<Content> Contents;
-        std::optional<JSONValue> Meta;
 
         JKEY(CONTENTSKEY, Contents, "contents")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(ReadResourceResult, CONTENTSKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(ReadResourceResult, ResultParams, CONTENTSKEY)
     };
 
     ReadResourceResponse(const RequestID& InRequestID,
@@ -245,12 +223,12 @@ struct ReadResourceResponse : ResponseBase {
 
 // Subscribe/Unsubscribe
 struct SubscribeRequest : RequestBase {
-    struct SubscribeParams {
+    struct SubscribeParams : RequestParams {
         MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
-        DEFINE_TYPE_JSON(SubscribeParams, URIKEY)
+        DEFINE_TYPE_JSON_DERIVED(SubscribeParams, RequestParams, URIKEY)
     };
 
     SubscribeRequest(const SubscribeParams& InParams = SubscribeParams{})
@@ -258,12 +236,12 @@ struct SubscribeRequest : RequestBase {
 };
 
 struct UnsubscribeRequest : RequestBase {
-    struct UnsubscribeParams {
+    struct UnsubscribeParams : RequestParams {
         MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
-        DEFINE_TYPE_JSON(UnsubscribeParams, URIKEY)
+        DEFINE_TYPE_JSON_DERIVED(UnsubscribeParams, RequestParams, URIKEY)
     };
 
     UnsubscribeRequest(const UnsubscribeParams& InParams = UnsubscribeParams{})
@@ -272,7 +250,7 @@ struct UnsubscribeRequest : RequestBase {
 
 // Sampling-related messages
 struct CreateMessageRequest : RequestBase {
-    struct CreateMessageParams {
+    struct CreateMessageParams : RequestParams {
         std::vector<SamplingMessage> Messages;
         int64_t MaxTokens;
         std::optional<std::string> SystemPrompt;
@@ -291,9 +269,9 @@ struct CreateMessageRequest : RequestBase {
         JKEY(MODELPREFSKEY, ModelPrefs, "modelPreferences")
         JKEY(METADATAKEY, Metadata, "metadata")
 
-        DEFINE_TYPE_JSON(CreateMessageParams, MESSAGESKEY, MAXTOKENSKEY, SYSTEMPROMPTKEY,
-                         INCLUDECONTEXTKEY, TEMPERATUREKEY, STOPSEQUENCESKEY, MODELPREFSKEY,
-                         METADATAKEY)
+        DEFINE_TYPE_JSON_DERIVED(CreateMessageParams, RequestParams, MESSAGESKEY, MAXTOKENSKEY,
+                                 SYSTEMPROMPTKEY, INCLUDECONTEXTKEY, TEMPERATUREKEY,
+                                 STOPSEQUENCESKEY, MODELPREFSKEY, METADATAKEY)
     };
 
     CreateMessageRequest(const CreateMessageParams& InParams = CreateMessageParams{})
@@ -301,19 +279,17 @@ struct CreateMessageRequest : RequestBase {
 };
 
 struct CreateMessageResponse : ResponseBase {
-    struct CreateMessageResult {
+    struct CreateMessageResult : ResultParams {
         std::string Model;
         Role ResponseRole;
         Content ResponseContent;
-        std::optional<JSONValue> Meta;
 
         JKEY(MODELKEY, Model, "model")
         JKEY(RESPONSEROLEKEY, ResponseRole, "role")
         JKEY(RESPONSECONTENTKEY, ResponseContent, "content")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(CreateMessageResult, MODELKEY, RESPONSEROLEKEY, RESPONSECONTENTKEY,
-                         METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(CreateMessageResult, ResultParams, MODELKEY, RESPONSEROLEKEY,
+                                 RESPONSECONTENTKEY)
     };
 
     CreateMessageResponse(const RequestID& InRequestID,
@@ -323,18 +299,17 @@ struct CreateMessageResponse : ResponseBase {
 
 // Roots-related messages
 struct ListRootsRequest : RequestBase {
-    ListRootsRequest() : RequestBase("roots/list") {}
+    ListRootsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
+        : RequestBase("roots/list", InParams) {}
 };
 
 struct ListRootsResponse : ResponseBase {
-    struct ListRootsResult {
+    struct ListRootsResult : PaginatedResultParams {
         std::vector<Root> Roots;
-        std::optional<JSONValue> Meta;
 
         JKEY(ROOTSKEY, Roots, "roots")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(ListRootsResult, ROOTSKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(ListRootsResult, PaginatedResultParams, ROOTSKEY)
     };
 
     ListRootsResponse(const RequestID& InRequestID,
@@ -344,12 +319,12 @@ struct ListRootsResponse : ResponseBase {
 
 // Logging messages
 struct SetLevelRequest : RequestBase {
-    struct SetLevelParams {
+    struct SetLevelParams : RequestParams {
         LoggingLevel Level;
 
         JKEY(LEVELKEY, Level, "level")
 
-        DEFINE_TYPE_JSON(SetLevelParams, LEVELKEY)
+        DEFINE_TYPE_JSON_DERIVED(SetLevelParams, RequestParams, LEVELKEY)
     };
 
     SetLevelRequest(const SetLevelParams& InParams = SetLevelParams{})
@@ -357,16 +332,16 @@ struct SetLevelRequest : RequestBase {
 };
 
 struct LoggingMessageNotification : NotificationBase {
-    struct LoggingParams {
+    struct LoggingParams : NotificationParams {
         LoggingLevel Level;
-        std::string Logger;
         JSONValue Data;
+        std::optional<std::string> Logger;
 
         JKEY(LEVELKEY, Level, "level")
         JKEY(LOGGERKEY, Logger, "logger")
         JKEY(DATAKEY, Data, "data")
 
-        DEFINE_TYPE_JSON(LoggingParams, LEVELKEY, LOGGERKEY, DATAKEY)
+        DEFINE_TYPE_JSON_DERIVED(LoggingParams, NotificationParams, LEVELKEY, LOGGERKEY, DATAKEY)
     };
 
     LoggingMessageNotification(const LoggingParams& InParams = LoggingParams{})
@@ -375,16 +350,19 @@ struct LoggingMessageNotification : NotificationBase {
 
 // Progress notification
 struct ProgressNotification : NotificationBase {
-    struct ProgressParams {
-        RequestID ProgressRequestID;
+    struct ProgressParams : NotificationParams {
+        std::optional<std::string> Message;
+        ProgressToken ProgressToken;
         double Progress; // 0-1
         std::optional<int64_t> Total;
 
-        JKEY(PROGRESSREQUESTIDKEY, ProgressRequestID, "progressToken")
+        JKEY(MESSAGEKEY, Message, "message")
+        JKEY(PROGRESSTOKENKEY, ProgressToken, "progressToken")
         JKEY(PROGRESSKEY, Progress, "progress")
         JKEY(TOTALKEY, Total, "total")
 
-        DEFINE_TYPE_JSON(ProgressParams, PROGRESSREQUESTIDKEY, PROGRESSKEY, TOTALKEY)
+        DEFINE_TYPE_JSON_DERIVED(ProgressParams, NotificationParams, MESSAGEKEY, PROGRESSTOKENKEY,
+                                 PROGRESSKEY, TOTALKEY)
     };
 
     ProgressNotification(const ProgressParams& InParams = ProgressParams{})
@@ -393,14 +371,14 @@ struct ProgressNotification : NotificationBase {
 
 // Cancellation notification
 struct CancelledNotification : NotificationBase {
-    struct CancelledParams {
+    struct CancelledParams : NotificationParams {
         RequestID CancelRequestID;
         std::optional<std::string> Reason;
 
         JKEY(CANCELREQUESTIDKEY, CancelRequestID, "requestId")
         JKEY(REASONKEY, Reason, "reason")
 
-        DEFINE_TYPE_JSON(CancelledParams, CANCELREQUESTIDKEY, REASONKEY)
+        DEFINE_TYPE_JSON_DERIVED(CancelledParams, NotificationParams, CANCELREQUESTIDKEY, REASONKEY)
     };
 
     CancelledNotification(const CancelledParams& InParams = CancelledParams{})
@@ -413,12 +391,12 @@ struct ResourceListChangedNotification : NotificationBase {
 };
 
 struct ResourceUpdatedNotification : NotificationBase {
-    struct ResourceUpdatedParams {
+    struct ResourceUpdatedParams : NotificationParams {
         MCP::URI URI;
 
         JKEY(URIKEY, URI, "uri")
 
-        DEFINE_TYPE_JSON(ResourceUpdatedParams, URIKEY)
+        DEFINE_TYPE_JSON_DERIVED(ResourceUpdatedParams, NotificationParams, URIKEY)
     };
 
     ResourceUpdatedNotification()
@@ -439,7 +417,7 @@ struct RootsListChangedNotification : NotificationBase {
 
 // Completion request/response
 struct CompleteRequest : RequestBase {
-    struct CompleteParams {
+    struct CompleteParams : RequestParams {
         struct CompletionRef {
             std::string Type; // "ref/prompt" or "ref/resource"
             MCP::URI URI;
@@ -463,7 +441,7 @@ struct CompleteRequest : RequestBase {
         JKEY(COMPLETIONREFERENCEKEY, CompletionReference, "ref")
         JKEY(ARGUMENTKEY, Argument, "argument")
 
-        DEFINE_TYPE_JSON(CompleteParams, COMPLETIONREFERENCEKEY, ARGUMENTKEY)
+        DEFINE_TYPE_JSON_DERIVED(CompleteParams, RequestParams, COMPLETIONREFERENCEKEY, ARGUMENTKEY)
     };
 
     CompleteRequest(const CompleteParams& InParams = CompleteParams{})
@@ -471,7 +449,7 @@ struct CompleteRequest : RequestBase {
 };
 
 struct CompleteResponse : ResponseBase {
-    struct CompleteResult {
+    struct CompleteResult : ResultParams {
         struct Completion {
             std::vector<std::string> Values;
             std::optional<int64_t> Total;
@@ -483,12 +461,10 @@ struct CompleteResponse : ResponseBase {
 
             DEFINE_TYPE_JSON(Completion, VALUESKEY, TOTALKEY, HASMOREKEY)
         } CompletionData;
-        std::optional<JSONValue> Meta;
 
         JKEY(COMPLETIONDATAKEY, CompletionData, "completion")
-        JKEY(METAKEY, Meta, "_meta")
 
-        DEFINE_TYPE_JSON(CompleteResult, COMPLETIONDATAKEY, METAKEY)
+        DEFINE_TYPE_JSON_DERIVED(CompleteResult, ResultParams, COMPLETIONDATAKEY)
     };
 
     CompleteResponse(const RequestID& InRequestID,

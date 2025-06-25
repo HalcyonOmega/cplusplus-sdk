@@ -20,8 +20,8 @@ class StdioClientTransport : public ITransport {
     ~StdioClientTransport() noexcept override;
 
     // ITransport interface
-    MCPTask_Void Start() override;
-    MCPTask_Void Stop() override;
+    MCPTask_Void Connect() override;
+    MCPTask_Void Disconnect() override;
 
     MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 
@@ -66,8 +66,8 @@ class StdioServerTransport : public ITransport {
     ~StdioServerTransport() noexcept override;
 
     // ITransport interface
-    MCPTask_Void Start() override;
-    MCPTask_Void Stop() override;
+    MCPTask_Void Connect() override;
+    MCPTask_Void Disconnect() override;
 
     MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
 

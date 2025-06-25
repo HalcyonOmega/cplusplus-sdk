@@ -52,8 +52,8 @@ class ITransport {
   public:
     virtual ~ITransport() = default;
 
-    virtual MCPTask_Void Start() = 0;
-    virtual MCPTask_Void Stop() = 0;
+    virtual MCPTask_Void Connect() = 0;
+    virtual MCPTask_Void Disconnect() = 0;
     virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
@@ -86,10 +86,13 @@ class ITransport {
 // Transport factory
 enum class TransportType { Stdio, StreamableHTTP };
 
+enum class TransportSide { Client, Server };
+
 class TransportFactory {
   public:
     [[nodiscard]] static std::unique_ptr<ITransport>
-    CreateTransport(TransportType InType, std::unique_ptr<TransportOptions> InOptions);
+    CreateTransport(TransportType InType, TransportSide InSide,
+                    std::optional<std::unique_ptr<TransportOptions>> InOptions);
 
     // Convenience factory methods
     [[nodiscard]] static std::unique_ptr<ITransport>

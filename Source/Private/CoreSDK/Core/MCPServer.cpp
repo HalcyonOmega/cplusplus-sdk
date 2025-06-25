@@ -5,7 +5,6 @@ MCP_NAMESPACE_BEGIN
 MCPServer::MCPServer(TransportType InTransportType, std::unique_ptr<TransportOptions> InOptions)
     : m_TransportType(InTransportType), m_TransportOptions(std::move(InOptions)) {
     CreateTransport();
-    CreateProtocol();
     SetupDefaultHandlers();
 }
 
@@ -19,7 +18,7 @@ MCPTask_Void MCPServer::Start(const MCPServerInfo& InServerInfo) {
         m_ServerInfo = InServerInfo;
 
         // Start transport
-        co_await m_Transport->Start();
+        co_await m_Transport->Connect();
 
         m_IsRunning = true;
 
@@ -40,7 +39,7 @@ MCPTask_Void MCPServer::Stop() {
     }
 
     try {
-        co_await m_Transport->Stop();
+        co_await m_Transport->Disconnect();
         m_IsRunning = false;
 
     } catch (const std::exception& e) {
@@ -178,26 +177,6 @@ void MCPServer::SetSamplingHandler(SamplingHandler InHandler) {
 
 void MCPServer::SetCompletionHandler(CompletionHandler InHandler) {
     m_CompletionHandler = InHandler;
-}
-
-void MCPServer::CreateTransport() {
-    switch (m_TransportType) {
-        case TransportType::Stdio: {
-            m_Transport = std::make_unique<StdioServerTransport>();
-            break;
-        }
-        case TransportType::StreamableHTTP: {
-            auto httpOptions = dynamic_cast<HTTPTransportOptions*>(m_TransportOptions.get());
-            if (!httpOptions) { throw std::invalid_argument("Invalid options for HTTP transport"); }
-            m_Transport = std::make_unique<HTTPTransportServer>(*httpOptions);
-            break;
-        }
-        default: throw std::invalid_argument("Unsupported transport type");
-    }
-}
-
-void MCPServer::CreateProtocol() {
-    m_Protocol = std::make_unique<MCPProtocol>(m_Transport);
 }
 
 void MCPServer::SetupDefaultHandlers() {

@@ -6,8 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CoreSDK/Common/Capabilities.h"
-#include "CoreSDK/Common/Implementation.h"
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 #include "CoreSDK/Transport/ITransport.h"
@@ -42,10 +40,10 @@ class MCPProtocol {
     void ValidateProtocolVersion(const std::string& InVersion) const;
 
     // Message sending utilities
-    void SendRequest(const RequestBase& InRequest);
-    void SendResponse(const ResponseBase& InResponse);
-    void SendNotification(const NotificationBase& InNotification);
-    void SendError(const ErrorResponseBase& InError);
+    MCPTask_Void SendRequest(const RequestBase& InRequest);
+    MCPTask_Void SendResponse(const ResponseBase& InResponse);
+    MCPTask_Void SendNotification(const NotificationBase& InResponse);
+    MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError);
 
   private:
     void SetupTransportHandlers();

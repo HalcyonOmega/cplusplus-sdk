@@ -8,7 +8,8 @@ MCP_NAMESPACE_BEGIN
 // Client protocol handler
 class MCPClient : public MCPProtocol {
   public:
-    explicit MCPClient(std::unique_ptr<ITransport> InTransport);
+    MCPClient(TransportType InTransportType,
+              std::optional<std::unique_ptr<TransportOptions>> InOptions = std::nullopt);
 
     // Client-specific operations
     MCPTask<InitializeResponse::InitializeResult>

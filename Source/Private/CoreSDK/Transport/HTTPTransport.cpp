@@ -19,14 +19,14 @@ HTTPTransportClient::HTTPTransportClient(const HTTPTransportOptions& InOptions)
 HTTPTransportClient::~HTTPTransportClient() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
-            Stop().GetResult();
+            Disconnect().GetResult();
         } catch (...) {
             // Ignore errors during destruction
         }
     }
 }
 
-MCPTask_Void HTTPTransportClient::Start() {
+MCPTask_Void HTTPTransportClient::Connect() {
     if (m_CurrentState != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started or in progress");
         co_return;
@@ -48,7 +48,7 @@ MCPTask_Void HTTPTransportClient::Start() {
     co_return;
 }
 
-MCPTask_Void HTTPTransportClient::Stop() {
+MCPTask_Void HTTPTransportClient::Disconnect() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -291,14 +291,14 @@ HTTPTransportServer::HTTPTransportServer(const HTTPTransportOptions& InOptions)
 HTTPTransportServer::~HTTPTransportServer() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
-            Stop().GetResult();
+            Disconnect().GetResult();
         } catch (...) {
             // Ignore errors during destruction
         }
     }
 }
 
-MCPTask_Void HTTPTransportServer::Start() {
+MCPTask_Void HTTPTransportServer::Connect() {
     if (m_CurrentState != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started");
     }
@@ -328,7 +328,7 @@ MCPTask_Void HTTPTransportServer::Start() {
     co_return;
 }
 
-MCPTask_Void HTTPTransportServer::Stop() {
+MCPTask_Void HTTPTransportServer::Disconnect() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {

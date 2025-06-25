@@ -19,7 +19,7 @@ MCPProtocol::~MCPProtocol() noexcept {
 }
 
 MCPTask_Void MCPProtocol::Start() {
-    co_await m_Transport->Start();
+    co_await m_Transport->Connect();
 }
 
 MCPTask_Void MCPProtocol::Stop() {
@@ -37,7 +37,7 @@ MCPTask_Void MCPProtocol::Stop() {
         }
 
         // Stop transport
-        co_await m_Transport->Stop();
+        co_await m_Transport->Disconnect();
 
         SetState(MCPProtocolState::Shutdown);
 
@@ -87,18 +87,18 @@ const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
 }
 
 MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
-    // Create promise for response
-    auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->Method = InRequest.Method;
-    pendingRequest->Params = InRequest.Params;
-    pendingRequest->ID = InRequest.ID;
-    pendingRequest->StartTime = std::chrono::steady_clock::now();
+    if (!m_Transport->IsConnected()) { HandleRuntimeError("Transport not connected"); }
 
-    auto future = pendingRequest->Promise.get_future();
+    // Create promise for response
+    auto pendingResponse = std::make_unique<PendingResponse>();
+    pendingResponse->RequestID = InRequest.ID;
+    pendingResponse->StartTime = std::chrono::steady_clock::now();
+
+    auto future = pendingResponse->Promise.get_future();
 
     {
-        std::lock_guard<std::mutex> lock(m_RequestsMutex);
-        m_PendingRequests[requestID] = std::move(pendingRequest);
+        std::lock_guard<std::mutex> lock(m_ResponsesMutex);
+        m_PendingResponses[InRequest.ID] = std::move(pendingResponse);
     }
 
     try {
@@ -112,26 +112,10 @@ MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
     } catch (const std::exception&) {
         // Remove from pending requests if send failed
         std::lock_guard<std::mutex> lock(m_RequestsMutex);
-        m_PendingRequests.erase(requestID);
-        throw;
+        m_PendingResponses.erase(InRequest.ID);
     }
 
     // TODO: @HalcyonOmega - BEGIN TIMEOUT IMPLEMENTATION
-    if (!IsConnected()) { HandleRuntimeError("Transport not connected"); }
-
-    RequestID requestID = InRequest.ID;
-
-    // Create promise for response
-    auto pendingRequest = std::make_unique<PendingRequest>();
-    pendingRequest->RequestID = requestID;
-    pendingRequest->StartTime = std::chrono::steady_clock::now();
-
-    auto future = pendingRequest->Promise.get_future();
-
-    {
-        std::lock_guard<std::mutex> lock(m_RequestsMutex);
-        m_PendingRequests[requestID] = std::move(pendingRequest);
-    }
 
     // Send the request
     co_await m_Transport->TransmitMessage(InRequest);

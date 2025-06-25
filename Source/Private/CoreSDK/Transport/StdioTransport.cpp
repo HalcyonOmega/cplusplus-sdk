@@ -20,14 +20,14 @@ StdioClientTransport::StdioClientTransport(const StdioClientTransportOptions& In
 StdioClientTransport::~StdioClientTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
-            Stop().GetResult();
+            Disconnect().GetResult();
         } catch (...) {
             // Ignore errors during destruction
         }
     }
 }
 
-MCPTask_Void StdioClientTransport::Start() {
+MCPTask_Void StdioClientTransport::Connect() {
     if (m_CurrentState != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started or in progress");
         co_return;
@@ -74,7 +74,7 @@ MCPTask_Void StdioClientTransport::Start() {
     co_return;
 }
 
-MCPTask_Void StdioClientTransport::Stop() {
+MCPTask_Void StdioClientTransport::Disconnect() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -237,14 +237,14 @@ StdioServerTransport::StdioServerTransport() {}
 StdioServerTransport::~StdioServerTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
-            Stop().GetResult();
+            Disconnect().GetResult();
         } catch (...) {
             // Ignore errors during destruction
         }
     }
 }
 
-MCPTask_Void StdioServerTransport::Start() {
+MCPTask_Void StdioServerTransport::Connect() {
     if (m_CurrentState != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started");
         co_return;
@@ -270,7 +270,7 @@ MCPTask_Void StdioServerTransport::Start() {
     co_return;
 }
 
-MCPTask_Void StdioServerTransport::Stop() {
+MCPTask_Void StdioServerTransport::Disconnect() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
