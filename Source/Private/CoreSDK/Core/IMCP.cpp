@@ -65,6 +65,10 @@ ITransport* MCPProtocol::GetTransport() const {
     return m_Transport.get();
 }
 
+bool MCPProtocol::IsConnected() const {
+    return m_Transport->IsConnected();
+}
+
 void MCPProtocol::SetNotificationHandler(std::string_view InMethod, NotificationHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
     m_NotificationHandlers[InMethod] = InHandler;

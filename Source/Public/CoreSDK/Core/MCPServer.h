@@ -9,8 +9,9 @@ MCP_NAMESPACE_BEGIN
 // Server protocol handler
 class MCPServer : public MCPProtocol {
   public:
-    explicit MCPServer(std::unique_ptr<ITransport> InTransport, const Implementation& InServerInfo,
-                       const ServerCapabilities& InCapabilities);
+    MCPServer(TransportType InTransportType,
+              std::optional<std::unique_ptr<TransportOptions>> InOptions,
+              const Implementation& InServerInfo, const ServerCapabilities& InCapabilities);
 
     void HandleInitializeRequest(const InitializeRequest& InRequest);
     void NotifyInitialized();
@@ -57,10 +58,6 @@ class MCPServer : public MCPProtocol {
     MCPTask_Void CancelRequest(const RequestID& InRequestID, const std::string& InReason = "");
 
   private:
-    Implementation m_ServerInfo;
-    ServerCapabilities m_ServerCapabilities;
-    ClientCapabilities m_ClientCapabilities;
-
     std::unordered_map<Tool, ToolHandler> m_Tools;
     std::unordered_map<Prompt, PromptHandler> m_Prompts;
     std::unordered_map<Resource, ResourceHandler> m_Resources;

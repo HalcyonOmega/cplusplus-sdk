@@ -23,7 +23,7 @@ MCP_NAMESPACE_BEGIN
 
 // Initialize request/response
 struct InitializeRequest : RequestBase {
-    struct InitializeRequestParams : RequestParams {
+    struct Params : RequestParams {
         std::string ProtocolVersion;
         ClientCapabilities Capabilities;
         Implementation ClientInfo;
@@ -32,16 +32,16 @@ struct InitializeRequest : RequestBase {
         JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
         JKEY(CLIENTINFOKEY, ClientInfo, "clientInfo")
 
-        DEFINE_TYPE_JSON_DERIVED(InitializeRequestParams, RequestParams, PROTOCOLVERSIONKEY,
+        DEFINE_TYPE_JSON_DERIVED(InitializeRequest::Params, RequestParams, PROTOCOLVERSIONKEY,
                                  CAPABILITIESKEY, CLIENTINFOKEY)
     };
 
-    InitializeRequest(const InitializeRequestParams& InParams = InitializeRequestParams{})
+    InitializeRequest(const InitializeRequest::Params& InParams = InitializeRequest::Params{})
         : RequestBase("initialize", InParams) {}
 };
 
 struct InitializeResponse : ResponseBase {
-    struct InitializeResult : ResultParams {
+    struct Result : ResultParams {
         std::string ProtocolVersion;
         ServerCapabilities Capabilities;
         Implementation ServerInfo;
@@ -50,12 +50,12 @@ struct InitializeResponse : ResponseBase {
         JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
         JKEY(SERVERINFOKEY, ServerInfo, "serverInfo")
 
-        DEFINE_TYPE_JSON_DERIVED(InitializeResult, ResultParams, PROTOCOLVERSIONKEY,
+        DEFINE_TYPE_JSON_DERIVED(InitializeResponse::Result, ResultParams, PROTOCOLVERSIONKEY,
                                  CAPABILITIESKEY, SERVERINFOKEY)
     };
 
     InitializeResponse(const RequestID& InRequestID,
-                       const InitializeResult& InResult = InitializeResult{})
+                       const InitializeResponse::Result& InResult = InitializeResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
 };
 

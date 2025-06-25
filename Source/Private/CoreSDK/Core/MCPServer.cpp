@@ -2,9 +2,12 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPServer::MCPServer(TransportType InTransportType, std::unique_ptr<TransportOptions> InOptions)
-    : m_TransportType(InTransportType), m_TransportOptions(std::move(InOptions)) {
-    CreateTransport();
+MCPServer::MCPServer(TransportType InTransportType,
+                     std::optional<std::unique_ptr<TransportOptions>> InOptions,
+                     const Implementation& InServerInfo, const ServerCapabilities& InCapabilities)
+    : MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server,
+                                                    std::move(InOptions))),
+      m_ServerInfo(InServerInfo), m_ServerCapabilities(InCapabilities) {
     SetupDefaultHandlers();
 }
 

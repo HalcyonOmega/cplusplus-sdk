@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 #include "CoreSDK/Transport/ITransport.h"
 #include "Utilities/Async/MCPTask.h"
@@ -25,12 +26,13 @@ class MCPProtocol {
     virtual ~MCPProtocol() noexcept;
 
     // Lifecycle
-    MCPTask_Void Start();
-    MCPTask_Void Stop();
+    virtual MCPTask_Void Start() = 0;
+    virtual MCPTask_Void Stop() = 0;
     bool IsInitialized() const;
     MCPProtocolState GetState() const;
     void SetState(MCPProtocolState InNewState);
     ITransport* GetTransport() const; // TODO: @HalcyonOmega Consider converting to reference
+    bool IsConnected() const;
 
     // Core protocol operations
     MCPTask<PingResponse> Ping();
@@ -66,6 +68,23 @@ class MCPProtocol {
 
     std::unordered_map<RequestID, std::unique_ptr<PendingResponse>> m_PendingResponses;
     mutable std::mutex m_ResponsesMutex;
+
+  protected:
+    Implementation m_ServerInfo;
+    Implementation m_ClientInfo;
+    ServerCapabilities m_ServerCapabilities;
+    ClientCapabilities m_ClientCapabilities;
+
+  public:
+    template <typename T> MCPTask<T> SendRequest(const RequestBase& InRequest) {
+        (void)InRequest;
+        co_return {};
+    }
+
+    template <typename T> MCPTask<T> SendResponse(const ResponseBase& InResponse) {
+        (void)InResponse;
+        co_return {};
+    }
 };
 
 MCP_NAMESPACE_END

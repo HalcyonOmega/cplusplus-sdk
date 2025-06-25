@@ -9,12 +9,14 @@ MCP_NAMESPACE_BEGIN
 class MCPClient : public MCPProtocol {
   public:
     MCPClient(TransportType InTransportType,
-              std::optional<std::unique_ptr<TransportOptions>> InOptions = std::nullopt);
+              std::optional<std::unique_ptr<TransportOptions>> InOptions,
+              const Implementation& InClientInfo, const ClientCapabilities& InCapabilities);
+
+    MCPTask_Void Start() override;
+    MCPTask_Void Stop() override;
 
     // Client-specific operations
-    MCPTask<InitializeResponse::InitializeResult>
-    Initialize(const std::string& InProtocolVersion, const ClientCapabilities& InCapabilities,
-               const Implementation& InClientInfo);
+    MCPTask<InitializeResponse::Result> Initialize();
 
     // Tools
     MCPTask<ListToolsResponse::ListToolsResult> ListTools();
@@ -50,11 +52,6 @@ class MCPClient : public MCPProtocol {
                   double InTemperature = DEFAULT_TEMPERATURE,
                   const std::vector<std::string>& InStopSequences = {},
                   const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
-
-  private:
-    Implementation m_ServerInfo;
-    ServerCapabilities m_ServerCapabilities;
-    ClientCapabilities m_ClientCapabilities;
 };
 
 MCP_NAMESPACE_END

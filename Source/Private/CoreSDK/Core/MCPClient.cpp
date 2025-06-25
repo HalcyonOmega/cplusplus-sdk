@@ -5,12 +5,45 @@
 MCP_NAMESPACE_BEGIN
 
 MCPClient::MCPClient(TransportType InTransportType,
-                     std::optional<std::unique_ptr<TransportOptions>> InOptions)
+                     std::optional<std::unique_ptr<TransportOptions>> InOptions,
+                     const Implementation& InClientInfo, const ClientCapabilities& InCapabilities)
     : MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client,
-                                                    std::move(InOptions))) {}
+                                                    std::move(InOptions))),
+      m_ClientInfo(InClientInfo), m_ClientCapabilities(InCapabilities) {}
 
-MCPTask_Void MCPClient::Initialize(const MCPClientInfo& InClientInfo,
-                                   const std::optional<MCPServerInfo>& InServerInfo) {
+MCPTask_Void MCPClient::Start() {
+    if (IsConnected()) {
+        HandleRuntimeError("Client already connected");
+        co_return;
+    }
+
+    try {
+        InitializeResponse::InitializeResult Result = co_await Initialize();
+        IsConnected() = true;
+        m_ClientInfo = InClientInfo;
+    } catch (const std::exception& e) {
+        HandleRuntimeError("Failed to connect: " + std::string(e.what()));
+        co_return;
+    }
+
+    co_return;
+}
+
+MCPTask_Void MCPClient::Stop() {
+    if (!IsConnected()) { co_return; }
+
+    try {
+        co_await Stop();
+        IsConnected() = false;
+    } catch (const std::exception& e) {
+        HandleRuntimeError("Failed to disconnect: " + std::string(e.what()));
+        co_return;
+    }
+
+    co_return;
+}
+
+MCPTask<InitializeResponse::Result> MCPClient::Initialize() {
     if (IsInitialized()) {
         HandleRuntimeError("Protocol already initialized");
         co_return;
@@ -21,18 +54,17 @@ MCPTask_Void MCPClient::Initialize(const MCPClientInfo& InClientInfo,
         co_await m_Transport->Connect();
 
         // Send initialize request
-        InitializeRequest initRequest;
-        initRequest.ProtocolVersion = PROTOCOL_VERSION;
-        initRequest.ClientInfo = InClientInfo;
+        InitializeRequest Request{InitializeRequest::Params{
+            .ProtocolVersion = m_ClientInfo.Version,
+            .Capabilities = m_ClientCapabilities,
+            .ClientInfo = m_ClientInfo,
+        }};
 
-        if (InServerInfo.has_value()) { initRequest.ServerInfo = InServerInfo.value(); }
-
-        auto responseJson = co_await SendRequest(RequestBase("initialize", initRequest));
-        auto response = responseJson.get<InitializeResponse>();
+        InitializeResponse Response = co_await SendRequest<InitializeResponse>(Request);
 
         // Store negotiated capabilities
-        m_ClientCapabilities = response.Capabilities;
-        m_ServerInfo = response.ServerInfo;
+        m_ClientCapabilities = Response.Result.Capabilities;
+        m_ServerInfo = Response.ServerInfo;
 
         // Send initialized notification
         co_await SendNotification(NotificationBase("initialized"));
@@ -48,42 +80,6 @@ MCPTask_Void MCPClient::Initialize(const MCPClientInfo& InClientInfo,
     co_return;
 }
 
-MCPTask_Void MCPClient::Connect(const MCPClientInfo& InClientInfo) {
-    if (m_Transport->IsConnected()) {
-        HandleRuntimeError("Client already connected");
-        co_return;
-    }
-
-    try {
-        co_await Initialize(InClientInfo, std::nullopt);
-        m_Transport->IsConnected() = true;
-        m_ClientInfo = InClientInfo;
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Failed to connect: " + std::string(e.what()));
-        co_return;
-    }
-
-    co_return;
-}
-
-MCPTask_Void MCPClient::Disconnect() {
-    if (!m_Transport->IsConnected()) { co_return; }
-
-    try {
-        co_await Stop();
-        m_Transport->IsConnected() = false;
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Failed to disconnect: " + std::string(e.what()));
-        co_return;
-    }
-
-    co_return;
-}
-
-bool MCPClient::IsConnected() const {
-    return m_Transport->IsConnected();
-}
-
 MCPTask<ToolListResponse> MCPClient::ListTools(const std::optional<std::string>& InCursor) {
     ToolListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
@@ -94,7 +90,7 @@ MCPTask<ToolListResponse> MCPClient::ListTools(const std::optional<std::string>&
 
 MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
                                               const JSONValue& InArguments) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -108,7 +104,7 @@ MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
 }
 
 MCPTask<PromptListResponse> MCPClient::ListPrompts(const std::optional<std::string>& InCursor) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -122,7 +118,7 @@ MCPTask<PromptListResponse> MCPClient::ListPrompts(const std::optional<std::stri
 
 MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
                                                 const std::optional<JSONValue>& InArguments) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -136,7 +132,7 @@ MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
 }
 
 MCPTask<ResourceListResponse> MCPClient::ListResources(const std::optional<std::string>& InCursor) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -149,7 +145,7 @@ MCPTask<ResourceListResponse> MCPClient::ListResources(const std::optional<std::
 }
 
 MCPTask<ResourceReadResponse> MCPClient::ReadResource(const std::string& InResourceURI) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -162,7 +158,7 @@ MCPTask<ResourceReadResponse> MCPClient::ReadResource(const std::string& InResou
 }
 
 MCPTask_Void MCPClient::SubscribeToResource(const std::string& InResourceURI) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -174,7 +170,7 @@ MCPTask_Void MCPClient::SubscribeToResource(const std::string& InResourceURI) {
 }
 
 MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -187,7 +183,7 @@ MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI
 
 MCPTask<SamplingCreateMessageResponse>
 MCPClient::CreateMessage(const SamplingCreateMessageRequest& InRequest) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
@@ -198,7 +194,7 @@ MCPClient::CreateMessage(const SamplingCreateMessageRequest& InRequest) {
 
 MCPTask<CompletionCompleteResponse>
 MCPClient::CompleteText(const CompletionCompleteRequest& InRequest) {
-    if (!m_Transport->IsConnected()) {
+    if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }

@@ -55,6 +55,7 @@ class ITransport {
     virtual MCPTask_Void Connect() = 0;
     virtual MCPTask_Void Disconnect() = 0;
     virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;
+    virtual MCPTask<JSONValue> TransmitRequest(const JSONValue& InRequest) = 0;
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
     // Default Implementations
