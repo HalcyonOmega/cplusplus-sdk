@@ -68,8 +68,8 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     };
 
     std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable Poco::Mutex m_RequestsMutex;
-    mutable Poco::Mutex m_ConnectionMutex;
+    mutable std::mutex m_RequestsMutex;
+    mutable std::mutex m_ConnectionMutex;
 };
 
 // HTTP Server Transport Request Handler
@@ -138,7 +138,7 @@ class HTTPTransportServer : public ITransport {
     };
 
     std::unordered_map<std::string, std::unique_ptr<SSEClient>> m_SSEClients;
-    mutable Poco::Mutex m_ClientsMutex;
+    mutable std::mutex m_ClientsMutex;
 
     // Response tracking
     struct PendingRequest {
@@ -148,7 +148,7 @@ class HTTPTransportServer : public ITransport {
     };
 
     std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable Poco::Mutex m_RequestsMutex;
+    mutable std::mutex m_RequestsMutex;
 };
 
 MCP_NAMESPACE_END

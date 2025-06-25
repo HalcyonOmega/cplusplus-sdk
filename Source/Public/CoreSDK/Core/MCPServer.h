@@ -8,15 +8,12 @@ MCP_NAMESPACE_BEGIN
 
 // Server protocol handler
 class MCPServer : public MCPProtocol {
-  protected:
-    void OnInitializeRequest(const InitializeRequest& InRequest);
-    void OnInitializedNotification();
-
-    void HandleRequest(const RequestBase& InRequest) override;
-
   public:
     explicit MCPServer(std::unique_ptr<ITransport> InTransport, const Implementation& InServerInfo,
                        const ServerCapabilities& InCapabilities);
+
+    void HandleInitializeRequest(const InitializeRequest& InRequest);
+    void NotifyInitialized();
 
     // Tool management
     void AddTool(const Tool& InTool, ToolHandler InHandler);

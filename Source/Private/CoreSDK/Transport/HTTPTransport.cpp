@@ -33,14 +33,14 @@ MCPTask_Void HTTPTransportClient::Start() {
     }
 
     try {
-        TriggerStateChange(TransportState::Connecting);
+        SetState(TransportState::Connecting);
 
         co_await ConnectToServer();
 
-        TriggerStateChange(TransportState::Connected);
+        SetState(TransportState::Connected);
 
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Failed to start HTTP transport: " + std::string(e.what()));
         co_return;
     }
@@ -58,9 +58,9 @@ MCPTask_Void HTTPTransportClient::Stop() {
         if (m_SSEThread.isRunning()) { m_SSEThread.join(); }
 
         Cleanup();
-        TriggerStateChange(TransportState::Disconnected);
+        SetState(TransportState::Disconnected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Error stopping HTTP transport: " + std::string(e.what()));
     }
 
@@ -79,7 +79,7 @@ void HTTPTransportClient::run() {
 
 MCPTask_Void HTTPTransportClient::ConnectToServer() {
     try {
-        Poco::Mutex::ScopedLock lock(m_ConnectionMutex);
+        std::lock_guard<std::mutex> lock(m_ConnectionMutex);
 
         // Create HTTP session
         m_HTTPSession =
@@ -128,7 +128,7 @@ MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONValue& InMessage) {
     }
 
     try {
-        Poco::Mutex::ScopedLock lock(m_ConnectionMutex);
+        std::lock_guard<std::mutex> lock(m_ConnectionMutex);
 
         Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_POST, m_Options.Path,
                                        Poco::Net::HTTPMessage::HTTP_1_1);
@@ -208,7 +208,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
                 && (message.contains("result") || message.contains("error"))) {
                 std::string requestID = ExtractRequestID(message);
 
-                Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+                std::lock_guard<std::mutex> lock(m_RequestsMutex);
                 auto it = m_PendingRequests.find(requestID);
                 if (it != m_PendingRequests.end()) {
                     if (message.contains("result")) {
@@ -254,7 +254,7 @@ void HTTPTransportClient::Cleanup() {
 
     // Clear pending requests
     {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+        std::lock_guard<std::mutex> lock(m_RequestsMutex);
         for (auto& [id, request] : m_PendingRequests) {
             request->Promise.set_exception(
                 std::make_exception_ptr(std::runtime_error("Transport closed")));
@@ -285,7 +285,7 @@ MCPHTTPRequestHandlerFactory::createRequestHandler(const Poco::Net::HTTPServerRe
 // HTTPTransportServer Implementation
 HTTPTransportServer::HTTPTransportServer(const HTTPTransportOptions& InOptions)
     : m_Options(InOptions) {
-    TriggerStateChange(TransportState::Disconnected);
+    SetState(TransportState::Disconnected);
 }
 
 HTTPTransportServer::~HTTPTransportServer() {
@@ -304,7 +304,7 @@ MCPTask_Void HTTPTransportServer::Start() {
     }
 
     try {
-        TriggerStateChange(TransportState::Connecting);
+        SetState(TransportState::Connecting);
 
         // Create server socket
         m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
@@ -319,9 +319,9 @@ MCPTask_Void HTTPTransportServer::Start() {
         // Start the server
         m_HTTPServer->start();
 
-        TriggerStateChange(TransportState::Connected);
+        SetState(TransportState::Connected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Failed to start HTTP server transport: " + std::string(e.what()));
     }
 
@@ -337,14 +337,14 @@ MCPTask_Void HTTPTransportServer::Stop() {
 
         // Close all SSE clients
         {
-            Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+            std::lock_guard<std::mutex> lock(m_ClientsMutex);
             for (auto& [id, client] : m_SSEClients) { client->IsActive = false; }
             m_SSEClients.clear();
         }
 
         // Clear pending requests
         {
-            Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+            std::lock_guard<std::mutex> lock(m_RequestsMutex);
             for (auto& [id, request] : m_PendingRequests) {
                 request->Promise.set_exception(
                     std::make_exception_ptr(std::runtime_error("Server stopped")));
@@ -356,9 +356,9 @@ MCPTask_Void HTTPTransportServer::Stop() {
         m_HandlerFactory.reset();
         m_ServerSocket.reset();
 
-        TriggerStateChange(TransportState::Disconnected);
+        SetState(TransportState::Disconnected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Error stopping HTTP server transport: " + std::string(e.what()));
     }
 
@@ -399,7 +399,7 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
             // Keep connection alive until client disconnects
             while (true) {
                 {
-                    Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+                    std::lock_guard<std::mutex> lock(m_ClientsMutex);
                     auto it = m_SSEClients.find(clientID);
                     if (it == m_SSEClients.end() || !it->second->IsActive) { break; }
                 }
@@ -423,7 +423,7 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 
             // Wait until client disconnects
             while (true) {
-                Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+                std::lock_guard<std::mutex> lock(m_ClientsMutex);
                 auto it = m_SSEClients.find(clientID);
                 if (it == m_SSEClients.end() || !it->second->IsActive) { break; }
                 lock.unlock();
@@ -473,7 +473,7 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 
 void HTTPTransportServer::RegisterSSEClient(const std::string& InClientID,
                                             Poco::Net::HTTPServerResponse& InResponse) {
-    Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+    std::lock_guard<std::mutex> lock(m_ClientsMutex);
 
     auto client = std::make_unique<SSEClient>();
     client->ClientID = InClientID;
@@ -486,7 +486,7 @@ void HTTPTransportServer::RegisterSSEClient(const std::string& InClientID,
 }
 
 void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID) {
-    Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+    std::lock_guard<std::mutex> lock(m_ClientsMutex);
     auto it = m_SSEClients.find(InClientID);
     if (it != m_SSEClients.end()) {
         it->second->IsActive = false;
@@ -495,7 +495,7 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID) {
 }
 
 MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONValue& InMessage) {
-    Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+    std::lock_guard<std::mutex> lock(m_ClientsMutex);
 
     std::string messageStr = "data: " + InMessage.dump() + "\n\n";
 
@@ -534,7 +534,7 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
             std::string requestID = ExtractRequestID(message);
 
-            Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+            std::lock_guard<std::mutex> lock(m_RequestsMutex);
             auto it = m_PendingRequests.find(requestID);
             if (it != m_PendingRequests.end()) {
                 if (message.contains("result")) {
@@ -595,7 +595,7 @@ MCPTask_Void HTTPTransportServer::StreamMessagesToClient(const std::string& InCl
     try {
         while (true) {
             {
-                Poco::Mutex::ScopedLock lock(m_ClientsMutex);
+                std::lock_guard<std::mutex> lock(m_ClientsMutex);
                 auto it = m_SSEClients.find(InClientID);
                 if (it == m_SSEClients.end() || !it->second->IsActive) { break; }
             }

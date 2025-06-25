@@ -11,7 +11,9 @@ class MCPClient : public MCPProtocol {
     explicit MCPClient(std::unique_ptr<ITransport> InTransport);
 
     // Client-specific operations
-    void Initialize();
+    MCPTask<InitializeResponse::InitializeResult>
+    Initialize(const std::string& InProtocolVersion, const ClientCapabilities& InCapabilities,
+               const Implementation& InClientInfo);
 
     // Tools
     MCPTask<ListToolsResponse::ListToolsResult> ListTools();
@@ -49,8 +51,9 @@ class MCPClient : public MCPProtocol {
                   const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
 
   private:
-    ServerCapabilities m_ServerCapabilities;
     Implementation m_ServerInfo;
+    ServerCapabilities m_ServerCapabilities;
+    ClientCapabilities m_ClientCapabilities;
 };
 
 MCP_NAMESPACE_END

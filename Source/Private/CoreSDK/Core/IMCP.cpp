@@ -8,74 +8,38 @@ MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
 }
 
 MCPProtocol::~MCPProtocol() noexcept {
-    if (m_IsInitialized) {
+    if (IsInitialized()) {
         try {
-            Shutdown().GetResult();
+            // TODO: @HalcyonOmega - Verify this is the correct implementation
+            Stop().await_resume();
         } catch (...) {
             // Ignore errors during destruction
         }
     }
 }
 
-MCPTask_Void MCPProtocol::Initialize(const MCPClientInfo& InClientInfo,
-                                     const std::optional<MCPServerInfo>& InServerInfo) {
-    if (m_IsInitialized) {
-        HandleRuntimeError("Protocol already initialized");
-        co_return;
-    }
-
-    try {
-        // Start transport
-        co_await m_Transport->Start();
-
-        // Send initialize request
-        InitializeRequest initRequest;
-        initRequest.ProtocolVersion = PROTOCOL_VERSION;
-        initRequest.ClientInfo = InClientInfo;
-
-        if (InServerInfo.has_value()) { initRequest.ServerInfo = InServerInfo.value(); }
-
-        auto responseJson = co_await SendRequest(RequestBase("initialize", initRequest));
-        auto response = responseJson.get<InitializeResponse>();
-
-        // Store negotiated capabilities
-        m_ClientCapabilities = response.Capabilities;
-        m_ServerInfo = response.ServerInfo;
-
-        // Send initialized notification
-        co_await SendNotification(NotificationBase("initialized"));
-
-        m_IsInitialized = true;
-
-        if (m_InitializedHandler) { m_InitializedHandler(response); }
-
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Failed to initialize protocol: " + std::string(e.what()));
-    }
-
-    co_return;
+MCPTask_Void MCPProtocol::Start() {
+    co_await m_Transport->Start();
 }
 
-MCPTask_Void MCPProtocol::Shutdown() {
-    if (!m_IsInitialized) { co_return; }
+MCPTask_Void MCPProtocol::Stop() {
+    if (!IsInitialized()) { co_return; }
 
     try {
         // Clear all pending requests
         {
-            std::lock_guard<std::mutex> lock(m_RequestsMutex);
-            for (auto& [id, request] : m_PendingRequests) {
+            std::lock_guard<std::mutex> lock(m_ResponsesMutex);
+            for (auto& [id, request] : m_PendingResponses) {
                 request->Promise.set_exception(
                     std::make_exception_ptr(std::runtime_error("Protocol shutdown")));
             }
-            m_PendingRequests.clear();
+            m_PendingResponses.clear();
         }
 
         // Stop transport
         co_await m_Transport->Stop();
 
-        m_IsInitialized = false;
-
-        if (m_ShutdownHandler) { m_ShutdownHandler(); }
+        SetState(MCPProtocolState::Shutdown);
 
     } catch (const std::exception& e) {
         // Log error but don't throw during shutdown
@@ -86,12 +50,19 @@ MCPTask_Void MCPProtocol::Shutdown() {
 }
 
 bool MCPProtocol::IsInitialized() const {
-    return m_IsInitialized;
+    return m_State == MCPProtocolState::Initialized;
 }
 
-void MCPProtocol::SetRequestHandler(std::string_view InMethod, RequestHandler InHandler) {
-    std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_RequestHandlers[InMethod] = InHandler;
+MCPProtocolState MCPProtocol::GetState() const {
+    return m_State;
+}
+
+void MCPProtocol::SetState(MCPProtocolState InNewState) {
+    m_State = InNewState;
+}
+
+ITransport* MCPProtocol::GetTransport() const {
+    return m_Transport.get();
 }
 
 void MCPProtocol::SetNotificationHandler(std::string_view InMethod, NotificationHandler InHandler) {
@@ -101,10 +72,6 @@ void MCPProtocol::SetNotificationHandler(std::string_view InMethod, Notification
 
 void MCPProtocol::SetInitializedHandler(InitializedHandler InHandler) {
     m_InitializedHandler = InHandler;
-}
-
-void MCPProtocol::SetShutdownHandler(ShutdownHandler InHandler) {
-    m_ShutdownHandler = InHandler;
 }
 
 void MCPProtocol::SetErrorResponseHandler(ErrorResponseHandler InHandler) {
@@ -162,7 +129,7 @@ MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
     auto future = pendingRequest->Promise.get_future();
 
     {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+        std::lock_guard<std::mutex> lock(m_RequestsMutex);
         m_PendingRequests[requestID] = std::move(pendingRequest);
     }
 
@@ -173,7 +140,7 @@ MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
     static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
     auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
     if (status == std::future_status::timeout) {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+        std::lock_guard<std::mutex> lock(m_RequestsMutex);
         m_PendingRequests.erase(requestID);
         HandleRuntimeError("Request timeout");
         co_return;

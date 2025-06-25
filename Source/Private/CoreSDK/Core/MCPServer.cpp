@@ -9,16 +9,6 @@ MCPServer::MCPServer(TransportType InTransportType, std::unique_ptr<TransportOpt
     SetupDefaultHandlers();
 }
 
-MCPServer::~MCPServer() {
-    if (m_Protocol && m_Protocol->IsInitialized()) {
-        try {
-            m_Protocol->Shutdown().GetResult();
-        } catch (...) {
-            // Ignore errors during cleanup
-        }
-    }
-}
-
 MCPTask_Void MCPServer::Start(const MCPServerInfo& InServerInfo) {
     if (m_IsRunning) {
         HandleRuntimeError("Server already running");

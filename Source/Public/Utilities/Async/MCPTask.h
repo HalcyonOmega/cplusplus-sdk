@@ -132,4 +132,11 @@ template <> struct MCPTask<void> {
 // Specialized void task
 using MCPTask_Void = MCPTask<void>;
 
+inline void WaitForMCPTaskVoid(MCPTask_Void& task) {
+    if (task.m_Handle && !task.m_Handle.done()) { task.m_Handle.resume(); }
+    if (task.m_Handle.promise().m_Exception) {
+        throw std::runtime_error(*task.m_Handle.promise().m_Exception);
+    }
+}
+
 MCP_NAMESPACE_END

@@ -34,7 +34,7 @@ MCPTask_Void StdioClientTransport::Start() {
     }
 
     try {
-        TriggerStateChange(TransportState::Connecting);
+        SetState(TransportState::Connecting);
 
         // Create pipes for communication
         m_StdinPipe = std::make_unique<Poco::Pipe>();
@@ -64,9 +64,9 @@ MCPTask_Void StdioClientTransport::Start() {
         m_ShouldStop = false;
         m_ReadThread.start(*this);
 
-        TriggerStateChange(TransportState::Connected);
+        SetState(TransportState::Connected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Failed to start stdio transport: " + std::string(e.what()));
         co_return;
     }
@@ -87,9 +87,9 @@ MCPTask_Void StdioClientTransport::Stop() {
         if (m_ReadThread.isRunning()) { m_ReadThread.join(); }
 
         Cleanup();
-        TriggerStateChange(TransportState::Disconnected);
+        SetState(TransportState::Disconnected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Error stopping stdio transport: " + std::string(e.what()));
     }
 
@@ -142,7 +142,7 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
             std::string requestID = ExtractRequestID(message);
 
-            Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+            std::lock_guard<std::mutex> lock(m_RequestsMutex);
             auto it = m_PendingRequests.find(requestID);
             if (it != m_PendingRequests.end()) {
                 if (message.contains("result")) {
@@ -185,7 +185,7 @@ MCPTask_Void StdioClientTransport::TransmitMessage(const JSONValue& InMessage) {
     }
 
     try {
-        Poco::Mutex::ScopedLock lock(m_WriteMutex);
+        std::lock_guard<std::mutex> lock(m_WriteMutex);
 
         std::string messageStr = InMessage.dump() + "\n";
         m_StdinStream->write(messageStr.c_str(), messageStr.length());
@@ -222,7 +222,7 @@ void StdioClientTransport::Cleanup() {
 
     // Clear pending requests
     {
-        Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+        std::lock_guard<std::mutex> lock(m_RequestsMutex);
         for (auto& [id, request] : m_PendingRequests) {
             request->Promise.set_exception(
                 std::make_exception_ptr(std::runtime_error("Transport closed")));
@@ -251,15 +251,15 @@ MCPTask_Void StdioServerTransport::Start() {
     }
 
     try {
-        TriggerStateChange(TransportState::Connecting);
+        SetState(TransportState::Connecting);
 
         // Server uses stdin/stdout directly
         m_ShouldStop = false;
         m_ReadThread.start(*this);
 
-        TriggerStateChange(TransportState::Connected);
+        SetState(TransportState::Connected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         if (m_ErrorResponseHandler) {
             m_ErrorResponseHandler("Failed to start stdio server transport: "
                                    + std::string(e.what()));
@@ -281,7 +281,7 @@ MCPTask_Void StdioServerTransport::Stop() {
 
         // Clear pending requests
         {
-            Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+            std::lock_guard<std::mutex> lock(m_RequestsMutex);
             for (auto& [id, request] : m_PendingRequests) {
                 request->Promise.set_exception(
                     std::make_exception_ptr(std::runtime_error("Transport stopped")));
@@ -289,9 +289,9 @@ MCPTask_Void StdioServerTransport::Stop() {
             m_PendingRequests.clear();
         }
 
-        TriggerStateChange(TransportState::Disconnected);
+        SetState(TransportState::Disconnected);
     } catch (const std::exception& e) {
-        TriggerStateChange(TransportState::Error);
+        SetState(TransportState::Error);
         HandleRuntimeError("Error stopping stdio server transport: " + std::string(e.what()));
     }
 
@@ -341,7 +341,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
             std::string requestID = ExtractRequestID(message);
 
-            Poco::Mutex::ScopedLock lock(m_RequestsMutex);
+            std::lock_guard<std::mutex> lock(m_RequestsMutex);
             auto Iterator = m_PendingRequests.find(requestID);
             if (Iterator != m_PendingRequests.end()) {
                 if (message.contains("result")) {
@@ -379,7 +379,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
 
 MCPTask_Void StdioServerTransport::TransmitMessage(const JSONValue& InMessage) {
     try {
-        Poco::Mutex::ScopedLock lock(m_WriteMutex);
+        std::lock_guard<std::mutex> lock(m_WriteMutex);
 
         std::string messageStr = InMessage.dump() + "\n";
         std::cout << messageStr;

@@ -52,77 +52,35 @@ class ITransport {
   public:
     virtual ~ITransport() = default;
 
-    // Connection management
     virtual MCPTask_Void Start() = 0;
     virtual MCPTask_Void Stop() = 0;
-    [[nodiscard]] virtual bool IsConnected() const {
-        return m_CurrentState == TransportState::Connected;
-    }
-    [[nodiscard]] virtual TransportState GetState() const {
-        return m_CurrentState;
-    }
-
-    // Message sending
     virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;
-
-    // Utility
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
-  private:
-    mutable std::atomic<uint64_t> m_RequestCounter{0};
+    // Default Implementations
+    [[nodiscard]] bool IsConnected() const;
+    [[nodiscard]] TransportState GetState() const;
+    void SetState(TransportState InNewState);
+    void SetRequestHandler(RequestHandler InHandler);
+    void SetResponseHandler(ResponseHandler InHandler);
+    void SetNotificationHandler(NotificationHandler InHandler);
+    void SetErrorResponseHandler(ErrorResponseHandler InHandler);
+    void SetStateChangeHandler(StateChangeHandler InHandler);
+    void CallRequestHandler(const RequestBase& InRequest);
+    void CallResponseHandler(const ResponseBase& InResponse);
+    void CallNotificationHandler(const NotificationBase& InNotification);
+    void CallErrorResponseHandler(const ErrorResponseBase& InError);
+    void CallStateChangeHandler(TransportState InOldState, TransportState InNewState);
 
   protected:
-    // Helper methods for derived classes
-    void TriggerStateChange(TransportState InNewState);
-
     TransportState m_CurrentState{TransportState::Disconnected};
 
     // Event handlers
-    MessageHandler m_MessageHandler;
     RequestHandler m_RequestHandler;
     ResponseHandler m_ResponseHandler;
     NotificationHandler m_NotificationHandler;
     ErrorResponseHandler m_ErrorResponseHandler;
     StateChangeHandler m_StateChangeHandler;
-
-  public:
-    void SetMessageHandler(MessageHandler InHandler) {
-        m_MessageHandler = InHandler;
-    }
-    void SetRequestHandler(RequestHandler InHandler) {
-        m_RequestHandler = InHandler;
-    }
-    void SetResponseHandler(ResponseHandler InHandler) {
-        m_ResponseHandler = InHandler;
-    }
-    void SetNotificationHandler(NotificationHandler InHandler) {
-        m_NotificationHandler = InHandler;
-    }
-    void SetErrorResponseHandler(ErrorResponseHandler InHandler) {
-        m_ErrorResponseHandler = InHandler;
-    }
-    void SetStateChangeHandler(StateChangeHandler InHandler) {
-        m_StateChangeHandler = InHandler;
-    }
-
-    void CallMessageHandler(const MessageBase& InMessage) {
-        if (m_MessageHandler) { m_MessageHandler(InMessage); }
-    }
-    void CallRequestHandler(const RequestBase& InRequest) {
-        if (m_RequestHandler) { m_RequestHandler(InRequest); }
-    }
-    void CallResponseHandler(const ResponseBase& InResponse) {
-        if (m_ResponseHandler) { m_ResponseHandler(InResponse); }
-    }
-    void CallNotificationHandler(const NotificationBase& InNotification) {
-        if (m_NotificationHandler) { m_NotificationHandler(InNotification); }
-    }
-    void CallErrorResponseHandler(const ErrorResponseBase& InError) {
-        if (m_ErrorResponseHandler) { m_ErrorResponseHandler(InError); }
-    }
-    void CallStateChangeHandler(TransportState InOldState, TransportState InNewState) {
-        if (m_StateChangeHandler) { m_StateChangeHandler(InOldState, InNewState); }
-    }
 };
 
 // Transport factory

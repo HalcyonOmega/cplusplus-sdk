@@ -24,23 +24,17 @@ enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, S
 class MCPProtocol {
   public:
     explicit MCPProtocol(std::unique_ptr<ITransport> InTransport);
-    virtual ~MCPProtocol();
+    virtual ~MCPProtocol() noexcept;
 
     // Lifecycle
     MCPTask_Void Start();
-    MCPTask_Void Shutdown();
-    bool IsInitialized() const {
-        return m_State == MCPProtocolState::Initialized;
-    }
-    MCPProtocolState GetState() const {
-        return m_State;
-    }
+    MCPTask_Void Stop();
+    bool IsInitialized() const;
+    MCPProtocolState GetState() const;
+    void SetState(MCPProtocolState InNewState);
+    ITransport* GetTransport() const; // TODO: @HalcyonOmega Consider converting to reference
 
     // Core protocol operations
-    MCPTask<InitializeResponse::InitializeResult>
-    Initialize(const std::string& InProtocolVersion, const ClientCapabilities& InCapabilities,
-               const Implementation& InClientInfo);
-    void SendInitialized();
     MCPTask<PingResponse> Ping();
 
     // Protocol version validation
@@ -59,18 +53,8 @@ class MCPProtocol {
     virtual void HandleResponse(const ResponseBase& InResponse);
     virtual void HandleNotification(const NotificationBase& InNotification);
     virtual void HandleErrorResponse(const ErrorResponseBase& InError);
-    virtual void HandleTransportStateChange(TransportState InOldState, TransportState InNewState);
-
-  public:
-    // Transport access
-    // TODO: @HalcyonOmega Consider converting to reference
-    ITransport* GetTransport() const {
-        return m_Transport.get();
-    }
 
   protected:
-    void SetState(MCPProtocolState InNewState);
-
     MCPProtocolState m_State;
     std::unique_ptr<ITransport> m_Transport;
 

@@ -8,14 +8,43 @@ MCPClient::MCPClient(TransportType InTransportType, std::unique_ptr<TransportOpt
     CreateProtocol();
 }
 
-MCPClient::~MCPClient() {
-    if (m_Protocol && m_Protocol->IsInitialized()) {
-        try {
-            m_Protocol->Shutdown().GetResult();
-        } catch (...) {
-            // Ignore errors during cleanup
-        }
+MCPTask_Void MCPClient::Initialize(const MCPClientInfo& InClientInfo,
+                                   const std::optional<MCPServerInfo>& InServerInfo) {
+    if (IsInitialized()) {
+        HandleRuntimeError("Protocol already initialized");
+        co_return;
     }
+
+    try {
+        // Start transport
+        co_await m_Transport->Start();
+
+        // Send initialize request
+        InitializeRequest initRequest;
+        initRequest.ProtocolVersion = PROTOCOL_VERSION;
+        initRequest.ClientInfo = InClientInfo;
+
+        if (InServerInfo.has_value()) { initRequest.ServerInfo = InServerInfo.value(); }
+
+        auto responseJson = co_await SendRequest(RequestBase("initialize", initRequest));
+        auto response = responseJson.get<InitializeResponse>();
+
+        // Store negotiated capabilities
+        m_ClientCapabilities = response.Capabilities;
+        m_ServerInfo = response.ServerInfo;
+
+        // Send initialized notification
+        co_await SendNotification(NotificationBase("initialized"));
+
+        m_IsInitialized = true;
+
+        if (m_InitializedHandler) { m_InitializedHandler(response); }
+
+    } catch (const std::exception& e) {
+        HandleRuntimeError("Failed to initialize protocol: " + std::string(e.what()));
+    }
+
+    co_return;
 }
 
 MCPTask_Void MCPClient::Connect(const MCPClientInfo& InClientInfo) {
