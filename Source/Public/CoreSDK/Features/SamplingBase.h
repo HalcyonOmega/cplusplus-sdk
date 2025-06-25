@@ -71,12 +71,19 @@ struct ModelPreferences {
 // Describes a message issued to or received from an LLM API.
 struct SamplingMessage {
     MCP::Role Role;
+    // TODO: @HalcyonOmega Should this exclude other content types?
     std::variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
 
     JKEY(ROLEKEY, Role, "role")
     JKEY(CONTENTKEY, Content, "content")
 
     DEFINE_TYPE_JSON(SamplingMessage, ROLEKEY, CONTENTKEY)
+};
+
+template <typename T>
+concept IsSamplingMessage = requires(T Type) {
+    { Type.Role } -> std::same_as<MCP::Role>;
+    { Type.Content } -> std::same_as<std::variant<TextContent, ImageContent, AudioContent>>;
 };
 
 MCP_NAMESPACE_END

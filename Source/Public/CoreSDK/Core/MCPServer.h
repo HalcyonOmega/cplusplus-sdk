@@ -21,7 +21,7 @@ class MCPServer : public MCPProtocol {
     void RegisterTool(const Tool& InTool, std::function<MCPTask<CallToolResponse::CallToolResult>(
                                               const std::unordered_map<std::string, JSONValue>&)>
                                               InHandler);
-    void UnregisterTool(const std::string& InName);
+    void UnregisterTool(const Tool& InTool);
     MCPTask_Void NotifyToolListChanged();
 
     // Prompt management
@@ -40,7 +40,7 @@ class MCPServer : public MCPProtocol {
         const ResourceTemplate& InTemplate,
         std::function<MCPTask<ReadResourceResponse::ReadResourceResult>(const std::string&)>
             InHandler);
-    void UnregisterResource(const std::string& InURI);
+    void UnregisterResource(const Resource& InResource);
     MCPTask_Void NotifyResourceListChanged();
     MCPTask_Void NotifyResourceUpdated(const std::string& InURI);
 

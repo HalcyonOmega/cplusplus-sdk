@@ -45,4 +45,11 @@ struct Prompt {
     DEFINE_TYPE_JSON(Prompt, NAMEKEY, DESCRIPTIONKEY, ARGUMENTSKEY)
 };
 
+template <typename T>
+concept IsPrompt = requires(T Type) {
+    { Type.Name } -> std::convertible_to<std::string>;
+    { Type.Description } -> std::same_as<std::optional<std::string>>;
+    { Type.Arguments } -> std::same_as<std::optional<std::vector<PromptArgument>>>;
+};
+
 MCP_NAMESPACE_END

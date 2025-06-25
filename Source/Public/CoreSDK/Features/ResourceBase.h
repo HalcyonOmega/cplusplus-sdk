@@ -60,4 +60,23 @@ struct ResourceTemplate {
                      ANNOTATIONSKEY)
 };
 
+template <typename T>
+concept IsResource = requires(T Type) {
+    { Type.URI } -> std::same_as<MCP::URI>;
+    { Type.Name } -> std::convertible_to<std::string>;
+    { Type.Description } -> std::same_as<std::optional<std::string>>;
+    { Type.MIMEType } -> std::same_as<std::optional<Poco::Net::MediaType>>;
+    { Type.Annotations } -> std::same_as<std::optional<Annotations>>;
+    { Type.Size } -> std::same_as<std::optional<int64_t>>;
+};
+
+template <typename T>
+concept IsResourceTemplate = requires(T Type) {
+    { Type.URITemplate } -> std::same_as<MCP::URITemplate>;
+    { Type.Name } -> std::convertible_to<std::string>;
+    { Type.Description } -> std::same_as<std::optional<std::string>>;
+    { Type.MIMEType } -> std::same_as<std::optional<Poco::Net::MediaType>>;
+    { Type.Annotations } -> std::same_as<std::optional<Annotations>>;
+};
+
 MCP_NAMESPACE_END

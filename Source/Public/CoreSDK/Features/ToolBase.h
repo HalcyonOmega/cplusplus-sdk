@@ -8,6 +8,8 @@
 
 MCP_NAMESPACE_BEGIN
 
+using ToolHandler = std::function<MCPTask<CallToolResponse::CallToolResult>(const Tool& InTool)>;
+
 // Additional properties describing a Tool to clients.
 // NOTE: all properties in ToolAnnotations are **hints**.
 // They are not guaranteed to provide a faithful description of
@@ -62,6 +64,15 @@ struct Tool {
     JKEY(ANNOTATIONSKEY, Annotations, "annotations")
 
     DEFINE_TYPE_JSON(Tool, NAMEKEY, DESCRIPTIONKEY, INPUTSCHEMAKEY, OUTPUTSCHEMAKEY, ANNOTATIONSKEY)
+};
+
+template <typename T>
+concept IsTool = requires(T Type) {
+    { Type.Name } -> std::convertible_to<std::string>;
+    { Type.Description } -> std::same_as<std::optional<std::string>>;
+    { Type.InputSchema } -> std::same_as<JSONSchema>;
+    { Type.OutputSchema } -> std::same_as<std::optional<JSONSchema>>;
+    { Type.Annotations } -> std::same_as<std::optional<ToolAnnotations>>;
 };
 
 MCP_NAMESPACE_END

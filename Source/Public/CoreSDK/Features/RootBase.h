@@ -25,4 +25,10 @@ struct Root {
     DEFINE_TYPE_JSON(Root, URIKEY, NAMEKEY)
 };
 
+template <typename T>
+concept IsRoot = requires(T Type) {
+    { Type.URI } -> std::same_as<MCP::URIFile>;
+    { Type.Name } -> std::same_as<std::optional<std::string>>;
+};
+
 MCP_NAMESPACE_END
