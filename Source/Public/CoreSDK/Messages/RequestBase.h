@@ -37,7 +37,6 @@ struct RequestID {
             Value);
     }
 
-    // Custom JSON serialization functions (must be free functions for nlohmann json)
     friend void to_json(JSONValue& InJSON, const RequestID& InRequestID) {
         InJSON = InRequestID.ToString();
     }
