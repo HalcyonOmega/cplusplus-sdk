@@ -7,49 +7,7 @@ MCP_NAMESPACE_BEGIN
 
 MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
     : m_Transport(std::move(InTransport)) {
-    SetupTransportHandlers();
-}
-
-MCPProtocol::~MCPProtocol() noexcept {
-    if (IsInitialized()) {
-        try {
-            // TODO: @HalcyonOmega - Verify this is the correct implementation
-            Stop().await_resume();
-        } catch (...) {
-            // Ignore errors during destruction
-        }
-    }
-}
-
-MCPTask_Void MCPProtocol::Start() {
-    co_await m_Transport->Connect();
-    SetState(MCPProtocolState::Initialized);
-}
-
-MCPTask_Void MCPProtocol::Stop() {
-    if (!IsInitialized()) { co_return; }
-
-    try {
-        // Clear all pending requests
-        {
-            std::lock_guard<std::mutex> lock(m_ResponsesMutex);
-            for (auto& [id, request] : m_PendingResponses) {
-                request->Promise.set_exception(
-                    std::make_exception_ptr(std::runtime_error("Protocol shutdown")));
-            }
-            m_PendingResponses.clear();
-        }
-
-        // Stop transport
-        co_await m_Transport->Disconnect();
-        SetState(MCPProtocolState::Shutdown);
-
-    } catch (const std::exception& e) {
-        // Log error but don't throw during shutdown
-        HandleRuntimeError("Error during shutdown: " + std::string(e.what()));
-    }
-
-    co_return;
+    SetupTransportRouters();
 }
 
 bool MCPProtocol::IsInitialized() const {
@@ -187,9 +145,11 @@ void MCPProtocol::RouteResponse(const ResponseBase& InResponse) {
 void MCPProtocol::RouteNotification(const NotificationBase& InNotification) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        for (const auto& registeredNotification : m_RegisteredNotifications) {
+        for (const NotificationBase& registeredNotification : m_RegisteredNotifications) {
             if (registeredNotification.Method == InNotification.Method) {
-                registeredNotification.Handler.value()(InNotification);
+                if (registeredNotification.Handler.has_value()) {
+                    registeredNotification.Handler.value();
+                }
                 return;
             }
         }

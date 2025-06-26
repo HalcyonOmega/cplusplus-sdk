@@ -21,7 +21,16 @@ concept NotificationHandlerConcept = requires(T handler, const NotificationBase&
 using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
 
 struct NotificationParams {
-    struct NotificationParamsMeta {};
+    struct NotificationParamsMeta {
+        // Custom JSON serialization to serialize directly as the value, not as an object
+        void to_json(JSONValue& InJSON) const {
+            (void)InJSON;
+        }
+
+        void from_json(const JSONValue& InJSON) {
+            (void)InJSON;
+        }
+    };
 
     std::optional<NotificationParamsMeta> Meta;
 

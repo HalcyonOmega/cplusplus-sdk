@@ -24,7 +24,6 @@ enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, S
 class MCPProtocol {
   public:
     explicit MCPProtocol(std::unique_ptr<ITransport> InTransport);
-    virtual ~MCPProtocol() noexcept;
 
     // Lifecycle
     virtual MCPTask_Void Start() = 0;

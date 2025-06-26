@@ -15,13 +15,6 @@ struct RequestBase;
 
 MCP_NAMESPACE_BEGIN
 
-// Forward declare concept from EventSignatures.h
-template <typename T>
-concept RequestHandlerConcept = requires(T handler, const RequestBase& request) {
-    { handler(request) } -> std::same_as<void>;
-};
-
-// Keep type alias for storage - concepts can't be used as types directly
 using RequestHandler = std::function<void(const RequestBase& InRequest)>;
 
 struct RequestID {
@@ -44,16 +37,16 @@ struct RequestID {
             Value);
     }
 
-    // Custom JSON serialization to serialize directly as the value, not as an object
-    void to_json(JSONValue& InJSON) const {
-        std::visit([&InJSON](const auto& InValue) { InJSON = InValue; }, Value);
+    // Custom JSON serialization functions (must be free functions for nlohmann json)
+    friend void to_json(JSONValue& InJSON, const RequestID& InRequestID) {
+        InJSON = InRequestID.ToString();
     }
 
-    void from_json(const JSONValue& InJSON) {
+    friend void from_json(const JSONValue& InJSON, RequestID& InRequestID) {
         if (InJSON.is_string()) {
-            Value = InJSON.get<std::string>();
+            InRequestID.Value = InJSON.get<std::string>();
         } else if (InJSON.is_number_integer()) {
-            Value = InJSON.get<int64_t>();
+            InRequestID.Value = InJSON.get<int64_t>();
         } else {
             throw std::invalid_argument("RequestID must be string or integer");
         }
@@ -101,23 +94,6 @@ struct RequestBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
-    // Concept-based constructors that accept any callable matching the concept
-    template <RequestHandlerConcept T>
-    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt,
-                std::optional<T> InHandler = std::nullopt)
-        : MessageBase(), ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)) {
-        if (InHandler.has_value()) { Handler = RequestHandler(std::move(InHandler.value())); }
-    }
-
-    template <RequestHandlerConcept T>
-    RequestBase(RequestID InID, std::string_view InMethod,
-                std::optional<RequestParams> InParams = std::nullopt,
-                std::optional<T> InHandler = std::nullopt)
-        : MessageBase(), ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)) {
-        if (InHandler.has_value()) { Handler = RequestHandler(std::move(InHandler.value())); }
-    }
-
-    // Legacy constructors for backward compatibility
     RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt,
                 std::optional<RequestHandler> InHandler = std::nullopt)
         : MessageBase(), ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)),
@@ -129,7 +105,6 @@ struct RequestBase : MessageBase {
         : MessageBase(), ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)),
           Handler(std::move(InHandler)) {}
 
-    // Use std::function for storage, not the concept directly
     std::optional<RequestHandler> Handler;
 };
 

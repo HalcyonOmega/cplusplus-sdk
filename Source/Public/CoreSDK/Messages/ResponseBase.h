@@ -12,13 +12,6 @@ struct ResponseBase;
 
 MCP_NAMESPACE_BEGIN
 
-// Forward declare concept from EventSignatures.h
-template <typename T>
-concept ResponseHandlerConcept = requires(T handler, const ResponseBase& response) {
-    { handler(response) } -> std::same_as<void>;
-};
-
-// Keep type alias for storage compatibility
 using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
 
 struct ResultParams {
@@ -48,15 +41,6 @@ struct ResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
-    // Concept-based constructors that accept any callable matching the concept
-    template <ResponseHandlerConcept T>
-    ResponseBase(RequestID InID, ResultParams InResult = ResultParams{},
-                 std::optional<T> InHandler = std::nullopt)
-        : MessageBase(), ID(std::move(InID)), Result(std::move(InResult)) {
-        if (InHandler.has_value()) { Handler = ResponseHandler(std::move(InHandler.value())); }
-    }
-
-    // Legacy constructor for backward compatibility
     ResponseBase(RequestID InID, ResultParams InResult = ResultParams{},
                  std::optional<ResponseHandler> InHandler = std::nullopt)
         : MessageBase(), ID(std::move(InID)), Result(std::move(InResult)),
