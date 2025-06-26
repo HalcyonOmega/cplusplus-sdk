@@ -47,10 +47,10 @@ class MCPProtocol {
     MCPTask_Void SendNotification(const NotificationBase& InResponse);
     MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError);
 
-    void SetRequestHandler(const RequestBase&, RequestHandler InHandler);
-    void SetResponseHandler(const ResponseBase&, ResponseHandler InHandler);
-    void SetNotificationHandler(const NotificationBase&, NotificationHandler InHandler);
-    void SetErrorResponseHandler(const ErrorResponseBase&, ErrorResponseHandler InHandler);
+    void RegisterRequestHandler(const RequestBase& InRequest);
+    void RegisterResponseHandler(const ResponseBase& InResponse);
+    void RegisterNotificationHandler(const NotificationBase& InNotification);
+    void RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse);
 
   private:
     void SetupTransportHandlers();
@@ -71,16 +71,16 @@ class MCPProtocol {
         std::chrono::steady_clock::time_point StartTime;
     };
 
-    std::unordered_map<RequestID, std::unique_ptr<PendingResponse>> m_PendingResponses;
+    std::unordered_map<std::string, std::unique_ptr<PendingResponse>> m_PendingResponses;
     mutable std::mutex m_ResponsesMutex;
 
     mutable std::mutex m_HandlersMutex;
 
-    // Event handlers
-    std::unordered_map<std::string, RequestHandler> m_RequestHandlers;
-    std::unordered_map<std::string, ResponseHandler> m_ResponseHandlers;
-    std::unordered_map<std::string, NotificationHandler> m_NotificationHandlers;
-    std::unordered_map<std::string, ErrorResponseHandler> m_ErrorResponseHandlers;
+    // Vectorized handler registries - store full message objects
+    std::vector<RequestBase> m_RegisteredRequests;
+    std::vector<ResponseBase> m_RegisteredResponses;
+    std::vector<NotificationBase> m_RegisteredNotifications;
+    std::vector<ErrorResponseBase> m_RegisteredErrorResponses;
 
   protected:
     Implementation m_ServerInfo;

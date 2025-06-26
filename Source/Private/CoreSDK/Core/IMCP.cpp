@@ -22,6 +22,7 @@ MCPProtocol::~MCPProtocol() noexcept {
 
 MCPTask_Void MCPProtocol::Start() {
     co_await m_Transport->Connect();
+    SetState(MCPProtocolState::Initialized);
 }
 
 MCPTask_Void MCPProtocol::Stop() {
@@ -40,7 +41,6 @@ MCPTask_Void MCPProtocol::Stop() {
 
         // Stop transport
         co_await m_Transport->Disconnect();
-
         SetState(MCPProtocolState::Shutdown);
 
     } catch (const std::exception& e) {
@@ -71,30 +71,35 @@ bool MCPProtocol::IsConnected() const {
     return m_Transport->IsConnected();
 }
 
-void MCPProtocol::SetRequestHandler(const RequestBase& InRequest, RequestHandler InHandler) {
+void MCPProtocol::RegisterRequestHandler(const RequestBase& InRequest) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_RequestHandlers[InRequest.Method] = InHandler;
+    if (InRequest.Handler.has_value()) { m_RegisteredRequests.emplace_back(InRequest); }
 }
 
-void MCPProtocol::SetResponseHandler(const ResponseBase& InResponse, ResponseHandler InHandler) {
+void MCPProtocol::RegisterResponseHandler(const ResponseBase& InResponse) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_ResponseHandlers[InResponse.ID.to_string()] = InHandler;
+    if (InResponse.Handler.has_value()) { m_RegisteredResponses.emplace_back(InResponse); }
 }
 
-void MCPProtocol::SetNotificationHandler(const NotificationBase& InNotification,
-                                         NotificationHandler InHandler) {
+void MCPProtocol::RegisterNotificationHandler(const NotificationBase& InNotification) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_NotificationHandlers[InNotification.Method] = InHandler;
+    if (InNotification.Handler.has_value()) {
+        m_RegisteredNotifications.emplace_back(InNotification);
+    }
 }
 
-void MCPProtocol::SetErrorResponseHandler(const ErrorResponseBase& InErrorResponse,
-                                          ErrorResponseHandler InHandler) {
+void MCPProtocol::RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_ErrorResponseHandlers[InErrorResponse.Error.Message] = InHandler;
+    if (InErrorResponse.Handler.has_value()) {
+        m_RegisteredErrorResponses.emplace_back(InErrorResponse);
+    }
 }
 
 MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
-    if (!m_Transport->IsConnected()) { HandleRuntimeError("Transport not connected"); }
+    if (!m_Transport->IsConnected()) {
+        HandleRuntimeError("Transport not connected");
+        co_return;
+    }
 
     // Create promise for response
     auto pendingResponse = std::make_unique<PendingResponse>();
@@ -102,94 +107,76 @@ MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
     pendingResponse->StartTime = std::chrono::steady_clock::now();
 
     auto future = pendingResponse->Promise.get_future();
+    std::string requestIDStr = InRequest.ID.ToString();
 
     {
         std::lock_guard<std::mutex> lock(m_ResponsesMutex);
-        m_PendingResponses[InRequest.ID] = std::move(pendingResponse);
+        m_PendingResponses[requestIDStr] = std::move(pendingResponse);
     }
 
     try {
         // Send request via transport
-        co_await m_Transport->TransmitMessage(InRequest);
-
-        // Parse response
-        auto response = JSONValue::parse(responseStr);
-        co_return response;
+        JSONValue requestJSON;
+        to_json(requestJSON, InRequest);
+        co_await m_Transport->TransmitMessage(requestJSON);
 
     } catch (const std::exception&) {
         // Remove from pending requests if send failed
-        std::lock_guard<std::mutex> lock(m_RequestsMutex);
-        m_PendingResponses.erase(InRequest.ID);
+        std::lock_guard<std::mutex> lock(m_ResponsesMutex);
+        m_PendingResponses.erase(requestIDStr);
+        throw;
     }
 
-    // TODO: @HalcyonOmega - BEGIN TIMEOUT IMPLEMENTATION
-
-    // Send the request
-    co_await m_Transport->TransmitMessage(InRequest);
-
-    // Wait for response with timeout
-    static constexpr std::chrono::seconds DEFAULT_RESPONSE_WAIT_FOR{30};
-    auto status = future.wait_for(std::chrono::seconds(DEFAULT_RESPONSE_WAIT_FOR));
-    if (status == std::future_status::timeout) {
-        std::lock_guard<std::mutex> lock(m_RequestsMutex);
-        m_PendingRequests.erase(requestID);
-        HandleRuntimeError("Request timeout");
-        co_return;
-    }
-
-    co_return future.get();
-    // TODO: @HalcyonOmega - END TIMEOUT IMPLEMENTATION
+    co_return;
 }
 
 MCPTask_Void MCPProtocol::SendResponse(const ResponseBase& InResponse) {
-    co_await m_Transport->TransmitMessage(InResponse);
+    JSONValue responseJSON;
+    to_json(responseJSON, InResponse);
+    co_await m_Transport->TransmitMessage(responseJSON);
 }
 
 MCPTask_Void MCPProtocol::SendNotification(const NotificationBase& InNotification) {
-    co_await m_Transport->TransmitMessage(InNotification);
+    JSONValue notificationJSON;
+    to_json(notificationJSON, InNotification);
+    co_await m_Transport->TransmitMessage(notificationJSON);
 }
 
 MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResponse) {
-    co_await m_Transport->TransmitMessage(InErrorResponse);
+    JSONValue errorJSON;
+    to_json(errorJSON, InErrorResponse);
+    co_await m_Transport->TransmitMessage(errorJSON);
 }
 
 void MCPProtocol::HandleRequest(const RequestBase& InRequest) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        auto handler = m_RequestHandlers.find(InRequest);
-        if (handler != m_RequestHandlers.end()) {
-            handler->second(InRequest);
-        } else {
-            // Send method not found error
-            SendErrorResponse(InRequest.ID, -32601, "Method not found", JSONValue::object());
+        for (const auto& registeredRequest : m_RegisteredRequests) {
+            if (registeredRequest.Method == InRequest.Method) {
+                registeredRequest.Handler.value()(InRequest);
+                return;
+            }
         }
+        // Send method not found error
+        // TODO: Implement error response creation
     } catch (const std::exception& e) {
-        // Send internal error
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        // TODO: Send internal error
+        HandleRuntimeError("Error handling request: " + std::string(e.what()));
     }
 }
 
 void MCPProtocol::HandleResponse(const ResponseBase& InResponse) {
     try {
-        if (!InResponse.ID.has_value()) {
-            return; // Invalid response without ID
-        }
+        std::string requestID = InResponse.ID.ToString();
 
-        std::string requestID = InResponse.ID.value();
-
-        std::lock_guard<std::mutex> lock(m_RequestsMutex);
-        auto it = m_PendingRequests.find(requestID);
-        if (it != m_PendingRequests.end()) {
-            if (InResponse.Result.has_value()) {
-                it->second->Promise.set_value(InResponse.Result.value());
-            } else if (InResponse.Error.has_value()) {
-                auto error = InResponse.Error.value();
-                std::string errorMsg = error["message"].get<std::string>();
-                it->second->Promise.set_exception(
-                    std::make_exception_ptr(std::runtime_error(errorMsg)));
-            }
-            m_PendingRequests.erase(it);
+        std::lock_guard<std::mutex> lock(m_ResponsesMutex);
+        auto it = m_PendingResponses.find(requestID);
+        if (it != m_PendingResponses.end()) {
+            // Convert ResultParams to JSONValue for the promise
+            JSONValue resultJSON;
+            to_json(resultJSON, InResponse.Result);
+            it->second->Promise.set_value(resultJSON);
+            m_PendingResponses.erase(it);
         }
     } catch (const std::exception& e) {
         HandleRuntimeError("Error handling response: " + std::string(e.what()));
@@ -199,44 +186,48 @@ void MCPProtocol::HandleResponse(const ResponseBase& InResponse) {
 void MCPProtocol::HandleNotification(const NotificationBase& InNotification) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        auto handler = m_NotificationHandlers.find(InNotification.Method);
-        if (handler != m_NotificationHandlers.end()) { handler->second(InNotification); }
-        // Notifications without handlers are simply ignored
+        for (const auto& registeredNotification : m_RegisteredNotifications) {
+            if (registeredNotification.Method == InNotification.Method) {
+                registeredNotification.Handler.value()(InNotification);
+                return;
+            }
+        }
+        // Notifications without handlers are simply ignored per JSON-RPC spec
     } catch (const std::exception& e) {
         HandleRuntimeError("Error handling notification: " + std::string(e.what()));
     }
 }
 
 void MCPProtocol::HandleErrorResponse(const ErrorResponseBase& InError) {
-    HandleRuntimeError("Transport error: " + InError.dump());
+    try {
+        std::string requestID = InError.ID.ToString();
+
+        std::lock_guard<std::mutex> lock(m_ResponsesMutex);
+        auto it = m_PendingResponses.find(requestID);
+        if (it != m_PendingResponses.end()) {
+            std::string errorMessage = "Error response: " + InError.Error.Message;
+
+            it->second->Promise.set_exception(
+                std::make_exception_ptr(std::runtime_error(errorMessage)));
+            m_PendingResponses.erase(it);
+        }
+    } catch (const std::exception& e) {
+        HandleRuntimeError("Error handling error response: " + std::string(e.what()));
+    }
 }
 
 void MCPProtocol::SetupTransportHandlers() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetRequestHandler(HandleRequest);
-    m_Transport->SetResponseHandler(HandleResponse);
-    m_Transport->SetNotificationHandler(HandleNotification);
-    m_Transport->SetErrorResponseHandler(HandleErrorResponse);
-
-    // Preserve alternate lambda callbacks for reference if advanced functionality needed in future.
-    // m_Transport->SetRequestHandler(
-    //     [](const RequestBase& InRequest) -> MCPTask<const ResponseBase&> {
-    //         HandleIncomingRequest(InRequest);
-    //     });
-
-    // m_Transport->SetResponseHandler(
-    //     [](const ResponseBase& InResponse) -> MCPTask_Void { HandleIncomingResponse(InResponse);
-    //     });
-
-    // m_Transport->SetNotificationHandler([](const NotificationBase& InNotification) ->
-    // MCPTask_Void {
-    //     HandleIncomingNotification(InNotification);
-    // });
-
-    // m_Transport->SetErrorResponseHandler(
-    //     [](const ErrorResponseBase& InError) -> MCPTask_Void { HandleTransportError(InError); });
+    m_Transport->SetRequestHandler(
+        [this](const RequestBase& InRequest) { HandleRequest(InRequest); });
+    m_Transport->SetResponseHandler(
+        [this](const ResponseBase& InResponse) { HandleResponse(InResponse); });
+    m_Transport->SetNotificationHandler(
+        [this](const NotificationBase& InNotification) { HandleNotification(InNotification); });
+    m_Transport->SetErrorResponseHandler(
+        [this](const ErrorResponseBase& InError) { HandleErrorResponse(InError); });
 }
 
 MCP_NAMESPACE_END

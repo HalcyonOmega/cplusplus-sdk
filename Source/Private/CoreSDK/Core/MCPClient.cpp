@@ -207,19 +207,18 @@ void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
     m_ResourceUpdatedHandler = InHandler;
 
     // Set up protocol notification handler
-    m_Protocol->SetNotificationHandler(
-        "notifications/resources/updated", [this](const JSONValue& InParams) {
-            if (m_ResourceUpdatedHandler) {
-                auto notification = InParams.get<ResourceUpdatedNotification>();
-                m_ResourceUpdatedHandler(notification);
-            }
-        });
+    SetNotificationHandler("notifications/resources/updated", [this](const JSONValue& InParams) {
+        if (m_ResourceUpdatedHandler) {
+            auto notification = InParams.get<ResourceUpdatedNotification>();
+            m_ResourceUpdatedHandler(notification);
+        }
+    });
 }
 
 void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandler) {
     m_ResourceListChangedHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler(
+    SetNotificationHandler(
         "notifications/resources/list_changed", [this](const JSONValue& InParams) {
             if (m_ResourceListChangedHandler) {
                 auto notification = InParams.get<ResourceListChangedNotification>();
@@ -231,31 +230,29 @@ void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandl
 void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
     m_ToolListChangedHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler(
-        "notifications/tools/list_changed", [this](const JSONValue& InParams) {
-            if (m_ToolListChangedHandler) {
-                auto notification = InParams.get<ToolListChangedNotification>();
-                m_ToolListChangedHandler(notification);
-            }
-        });
+    SetNotificationHandler("notifications/tools/list_changed", [this](const JSONValue& InParams) {
+        if (m_ToolListChangedHandler) {
+            auto notification = InParams.get<ToolListChangedNotification>();
+            m_ToolListChangedHandler(notification);
+        }
+    });
 }
 
 void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) {
     m_PromptListChangedHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler(
-        "notifications/prompts/list_changed", [this](const JSONValue& InParams) {
-            if (m_PromptListChangedHandler) {
-                auto notification = InParams.get<PromptListChangedNotification>();
-                m_PromptListChangedHandler(notification);
-            }
-        });
+    SetNotificationHandler("notifications/prompts/list_changed", [this](const JSONValue& InParams) {
+        if (m_PromptListChangedHandler) {
+            auto notification = InParams.get<PromptListChangedNotification>();
+            m_PromptListChangedHandler(notification);
+        }
+    });
 }
 
 void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
     m_ProgressHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler("notifications/progress", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/progress", [this](const JSONValue& InParams) {
         if (m_ProgressHandler) {
             auto notification = InParams.get<ProgressNotification>();
             m_ProgressHandler(notification);
@@ -266,7 +263,7 @@ void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
 void MCPClient::SetLogHandler(LogHandler InHandler) {
     m_LogHandler = InHandler;
 
-    m_Protocol->SetNotificationHandler("notifications/message", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/message", [this](const JSONValue& InParams) {
         if (m_LogHandler) {
             auto notification = InParams.get<LoggingMessageNotification>();
             m_LogHandler(notification);

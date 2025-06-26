@@ -3,7 +3,11 @@
 #include "CoreSDK/Messages/MessageBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 
+struct ErrorResponseBase;
+
 MCP_NAMESPACE_BEGIN
+
+using ErrorResponseHandler = std::function<void(const ErrorResponseBase& InError)>;
 
 enum class Errors {
     // JSON-RPC
@@ -77,8 +81,11 @@ struct ErrorResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, MessageBase, IDKEY, ERRORKEY)
 
-    ErrorResponseBase(RequestID InID, MCPErrorInfo InError)
-        : ID(std::move(InID)), Error(std::move(InError)) {}
+    ErrorResponseBase(RequestID InID, MCPErrorInfo InError,
+                      std::optional<ErrorResponseHandler> InHandler = std::nullopt)
+        : ID(std::move(InID)), Error(std::move(InError)), Handler(std::move(InHandler)) {}
+
+    std::optional<ErrorResponseHandler> Handler;
 };
 
 MCP_NAMESPACE_END

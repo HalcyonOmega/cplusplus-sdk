@@ -6,7 +6,11 @@
 #include "CoreSDK/Messages/RequestBase.h"
 #include "JSONProxy.h"
 
+struct ResponseBase;
+
 MCP_NAMESPACE_BEGIN
+
+using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
 
 struct ResultParams {
     std::optional<JSONValue> Meta;
@@ -35,8 +39,11 @@ struct ResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
-    ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
-        : ID(std::move(InID)), Result(std::move(InResult)) {}
+    ResponseBase(RequestID InID, ResultParams InResult = ResultParams{},
+                 std::optional<ResponseHandler> InHandler = std::nullopt)
+        : ID(std::move(InID)), Result(std::move(InResult)), Handler(std::move(InHandler)) {}
+
+    std::optional<ResponseHandler> Handler;
 };
 
 MCP_NAMESPACE_END

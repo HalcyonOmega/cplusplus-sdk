@@ -2,7 +2,11 @@
 
 #include "CoreSDK/Messages/MessageBase.h"
 
+struct NotificationBase;
+
 MCP_NAMESPACE_BEGIN
+
+using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
 
 struct NotificationParams {
     struct NotificationParamsMeta {};
@@ -24,8 +28,11 @@ struct NotificationBase : MessageBase {
     DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
     NotificationBase(std::string_view InMethod,
-                     std::optional<NotificationParams> InParams = std::nullopt)
-        : Method(InMethod), Params(std::move(InParams)) {}
+                     std::optional<NotificationParams> InParams = std::nullopt,
+                     std::optional<NotificationHandler> InHandler = std::nullopt)
+        : Method(InMethod), Params(std::move(InParams)), Handler(std::move(InHandler)) {}
+
+    std::optional<NotificationHandler> Handler;
 };
 
 MCP_NAMESPACE_END

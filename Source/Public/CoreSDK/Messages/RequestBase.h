@@ -10,7 +10,11 @@
 #include "JSONProxy.h"
 #include "UUIDProxy.h"
 
+struct RequestBase;
+
 MCP_NAMESPACE_BEGIN
+
+using RequestHandler = std::function<void(const RequestBase& InRequest)>;
 
 struct RequestID {
     std::variant<std::string, int64_t> Value;
@@ -89,12 +93,18 @@ struct RequestBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
-    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
-        : ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)) {}
+    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt,
+                std::optional<RequestHandler> InHandler = std::nullopt)
+        : ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)),
+          Handler(std::move(InHandler)) {}
 
     RequestBase(RequestID InID, std::string_view InMethod,
-                std::optional<RequestParams> InParams = std::nullopt)
-        : ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)) {}
+                std::optional<RequestParams> InParams = std::nullopt,
+                std::optional<RequestHandler> InHandler = std::nullopt)
+        : ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)),
+          Handler(std::move(InHandler)) {}
+
+    std::optional<RequestHandler> Handler;
 };
 
 MCP_NAMESPACE_END
