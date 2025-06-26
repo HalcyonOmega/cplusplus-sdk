@@ -1,16 +1,17 @@
 #pragma once
 
-#include <atomic>
 #include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
-#include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/ErrorResponseBase.h"
+#include "CoreSDK/Messages/NotificationBase.h"
+#include "CoreSDK/Messages/RequestBase.h"
+#include "CoreSDK/Messages/ResponseBase.h"
 #include "JSONProxy.h"
 #include "Utilities/Async/MCPTask.h"
 
@@ -18,9 +19,6 @@ MCP_NAMESPACE_BEGIN
 
 // Transport events
 enum class TransportState { Disconnected, Connecting, Connected, Error };
-
-using StateChangeHandler =
-    std::function<void(TransportState InOldState, TransportState InNewState)>;
 
 // Transport options for different transport types
 struct TransportOptions {
@@ -63,24 +61,25 @@ class ITransport {
     [[nodiscard]] bool IsConnected() const;
     [[nodiscard]] TransportState GetState() const;
     void SetState(TransportState InNewState);
-    void SetRequestHandler(RequestHandler InHandler);
-    void SetResponseHandler(ResponseHandler InHandler);
-    void SetNotificationHandler(NotificationHandler InHandler);
-    void SetErrorResponseHandler(ErrorResponseHandler InHandler);
-    void SetStateChangeHandler(StateChangeHandler InHandler);
-    void CallRequestHandler(const RequestBase& InRequest);
-    void CallResponseHandler(const ResponseBase& InResponse);
-    void CallNotificationHandler(const NotificationBase& InNotification);
-    void CallErrorResponseHandler(const ErrorResponseBase& InError);
+
+    void SetRequestRouter(std::function<void(const RequestBase&)> InRouter);
+    void SetResponseRouter(std::function<void(const ResponseBase&)> InRouter);
+    void SetNotificationRouter(std::function<void(const NotificationBase&)> InRouter);
+    void SetErrorResponseRouter(std::function<void(const ErrorResponseBase&)> InRouter);
+
+    void CallRequestRouter(const RequestBase& InRequest);
+    void CallResponseRouter(const ResponseBase& InResponse);
+    void CallNotificationRouter(const NotificationBase& InNotification);
+    void CallErrorResponseRouter(const ErrorResponseBase& InError);
 
   protected:
     TransportState m_CurrentState{TransportState::Disconnected};
 
     // Event handlers
-    RequestHandler m_RequestHandler;
-    ResponseHandler m_ResponseHandler;
-    NotificationHandler m_NotificationHandler;
-    ErrorResponseHandler m_ErrorResponseHandler;
+    RequestHandler m_RequestRouter;
+    ResponseHandler m_ResponseRouter;
+    NotificationHandler m_NotificationRouter;
+    ErrorResponseHandler m_ErrorResponseRouter;
 };
 
 // Transport factory

@@ -1,5 +1,6 @@
 #include "CoreSDK/Core/IMCP.h"
 
+#include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Messages/NotificationBase.h"
 
 MCP_NAMESPACE_BEGIN
@@ -148,7 +149,7 @@ MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResp
     co_await m_Transport->TransmitMessage(errorJSON);
 }
 
-void MCPProtocol::HandleRequest(const RequestBase& InRequest) {
+void MCPProtocol::RouteRequest(const RequestBase& InRequest) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
         for (const auto& registeredRequest : m_RegisteredRequests) {
@@ -165,7 +166,7 @@ void MCPProtocol::HandleRequest(const RequestBase& InRequest) {
     }
 }
 
-void MCPProtocol::HandleResponse(const ResponseBase& InResponse) {
+void MCPProtocol::RouteResponse(const ResponseBase& InResponse) {
     try {
         std::string requestID = InResponse.ID.ToString();
 
@@ -183,7 +184,7 @@ void MCPProtocol::HandleResponse(const ResponseBase& InResponse) {
     }
 }
 
-void MCPProtocol::HandleNotification(const NotificationBase& InNotification) {
+void MCPProtocol::RouteNotification(const NotificationBase& InNotification) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
         for (const auto& registeredNotification : m_RegisteredNotifications) {
@@ -198,7 +199,7 @@ void MCPProtocol::HandleNotification(const NotificationBase& InNotification) {
     }
 }
 
-void MCPProtocol::HandleErrorResponse(const ErrorResponseBase& InError) {
+void MCPProtocol::RouteErrorResponse(const ErrorResponseBase& InError) {
     try {
         std::string requestID = InError.ID.ToString();
 
@@ -216,18 +217,18 @@ void MCPProtocol::HandleErrorResponse(const ErrorResponseBase& InError) {
     }
 }
 
-void MCPProtocol::SetupTransportHandlers() {
+void MCPProtocol::SetupTransportRouters() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetRequestHandler(
-        [this](const RequestBase& InRequest) { HandleRequest(InRequest); });
-    m_Transport->SetResponseHandler(
-        [this](const ResponseBase& InResponse) { HandleResponse(InResponse); });
-    m_Transport->SetNotificationHandler(
-        [this](const NotificationBase& InNotification) { HandleNotification(InNotification); });
-    m_Transport->SetErrorResponseHandler(
-        [this](const ErrorResponseBase& InError) { HandleErrorResponse(InError); });
+    m_Transport->SetRequestRouter(
+        [this](const RequestBase& InRequest) { RouteRequest(InRequest); });
+    m_Transport->SetResponseRouter(
+        [this](const ResponseBase& InResponse) { RouteResponse(InResponse); });
+    m_Transport->SetNotificationRouter(
+        [this](const NotificationBase& InNotification) { RouteNotification(InNotification); });
+    m_Transport->SetErrorResponseRouter(
+        [this](const ErrorResponseBase& InError) { RouteErrorResponse(InError); });
 }
 
 MCP_NAMESPACE_END

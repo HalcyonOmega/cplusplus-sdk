@@ -12,26 +12,8 @@ MCP_NAMESPACE_BEGIN
 }
 
 void ITransport::SetState(TransportState InNewState) {
-    const TransportState oldState = m_CurrentState;
     m_CurrentState = InNewState;
-
-    CallStateChangeHandler(oldState, InNewState);
-}
-
-void ITransport::SetRequestHandler(RequestHandler InHandler) {
-    m_RequestHandler = InHandler;
-}
-
-void ITransport::SetResponseHandler(ResponseHandler InHandler) {
-    m_ResponseHandler = InHandler;
-}
-
-void ITransport::SetNotificationHandler(NotificationHandler InHandler) {
-    m_NotificationHandler = InHandler;
-}
-
-void ITransport::SetErrorResponseHandler(ErrorResponseHandler InHandler) {
-    m_ErrorResponseHandler = InHandler;
+    // TODO: Implement state change handler
 }
 
 void ITransport::CallRequestHandler(const RequestBase& InRequest) {
@@ -52,18 +34,21 @@ void ITransport::CallErrorResponseHandler(const ErrorResponseBase& InError) {
 
 // TransportFactory implementation
 std::unique_ptr<ITransport>
-TransportFactory::CreateTransport(TransportType InType,
-                                  std::unique_ptr<TransportOptions> InOptions) {
+TransportFactory::CreateTransport(TransportType InType, TransportSide InSide,
+                                  std::optional<std::unique_ptr<TransportOptions>> InOptions) {
+    (void)InSide; // TODO: Use transport side parameter
+    if (!InOptions.has_value()) { throw std::invalid_argument("Transport options are required"); }
+
     switch (InType) {
         case TransportType::Stdio: {
-            auto* StdioOptions = dynamic_cast<StdioClientTransportOptions*>(InOptions.get());
+            auto* StdioOptions = dynamic_cast<StdioClientTransportOptions*>(InOptions->get());
             if (StdioOptions == nullptr) {
                 throw std::invalid_argument("Invalid options for stdio transport");
             }
             return CreateStdioClientTransport(*StdioOptions);
         }
         case TransportType::StreamableHTTP: {
-            auto* HTTPOptions = dynamic_cast<HTTPTransportOptions*>(InOptions.get());
+            auto* HTTPOptions = dynamic_cast<HTTPTransportOptions*>(InOptions->get());
             if (HTTPOptions == nullptr) {
                 throw std::invalid_argument("Invalid options for HTTP transport");
             }

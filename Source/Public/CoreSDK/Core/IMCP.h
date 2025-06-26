@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/MCPMessages.h"
@@ -47,17 +48,18 @@ class MCPProtocol {
     MCPTask_Void SendNotification(const NotificationBase& InResponse);
     MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError);
 
+    // Legacy registration methods for backward compatibility
     void RegisterRequestHandler(const RequestBase& InRequest);
     void RegisterResponseHandler(const ResponseBase& InResponse);
     void RegisterNotificationHandler(const NotificationBase& InNotification);
     void RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse);
 
   private:
-    void SetupTransportHandlers();
-    virtual void HandleRequest(const RequestBase& InRequest);
-    virtual void HandleResponse(const ResponseBase& InResponse);
-    virtual void HandleNotification(const NotificationBase& InNotification);
-    virtual void HandleErrorResponse(const ErrorResponseBase& InError);
+    void SetupTransportRouters();
+    virtual void RouteRequest(const RequestBase& InRequest);
+    virtual void RouteResponse(const ResponseBase& InResponse);
+    virtual void RouteNotification(const NotificationBase& InNotification);
+    virtual void RouteErrorResponse(const ErrorResponseBase& InError);
 
   protected:
     MCPProtocolState m_State;

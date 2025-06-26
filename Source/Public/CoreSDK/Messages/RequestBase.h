@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <utility>
@@ -14,6 +15,13 @@ struct RequestBase;
 
 MCP_NAMESPACE_BEGIN
 
+// Forward declare concept from EventSignatures.h
+template <typename T>
+concept RequestHandlerConcept = requires(T handler, const RequestBase& request) {
+    { handler(request) } -> std::same_as<void>;
+};
+
+// Keep type alias for storage - concepts can't be used as types directly
 using RequestHandler = std::function<void(const RequestBase& InRequest)>;
 
 struct RequestID {
@@ -93,17 +101,35 @@ struct RequestBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
+    // Concept-based constructors that accept any callable matching the concept
+    template <RequestHandlerConcept T>
+    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt,
+                std::optional<T> InHandler = std::nullopt)
+        : MessageBase(), ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)) {
+        if (InHandler.has_value()) { Handler = RequestHandler(std::move(InHandler.value())); }
+    }
+
+    template <RequestHandlerConcept T>
+    RequestBase(RequestID InID, std::string_view InMethod,
+                std::optional<RequestParams> InParams = std::nullopt,
+                std::optional<T> InHandler = std::nullopt)
+        : MessageBase(), ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)) {
+        if (InHandler.has_value()) { Handler = RequestHandler(std::move(InHandler.value())); }
+    }
+
+    // Legacy constructors for backward compatibility
     RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt,
                 std::optional<RequestHandler> InHandler = std::nullopt)
-        : ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)),
+        : MessageBase(), ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)),
           Handler(std::move(InHandler)) {}
 
     RequestBase(RequestID InID, std::string_view InMethod,
                 std::optional<RequestParams> InParams = std::nullopt,
                 std::optional<RequestHandler> InHandler = std::nullopt)
-        : ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)),
+        : MessageBase(), ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)),
           Handler(std::move(InHandler)) {}
 
+    // Use std::function for storage, not the concept directly
     std::optional<RequestHandler> Handler;
 };
 
