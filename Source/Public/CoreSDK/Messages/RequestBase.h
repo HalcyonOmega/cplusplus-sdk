@@ -12,7 +12,41 @@
 
 MCP_NAMESPACE_BEGIN
 
-using RequestID = std::variant<std::string, int64_t>;
+struct RequestID {
+    std::variant<std::string, int64_t> Value;
+
+    RequestID() = default;
+    RequestID(const std::string& InValue) : Value(InValue) {}
+    RequestID(int64_t InValue) : Value(InValue) {}
+    RequestID(const std::variant<std::string, int64_t>& InValue) : Value(InValue) {}
+
+    std::string ToString() const {
+        return std::visit(
+            [](const auto& InValue) -> std::string {
+                if constexpr (std::is_same_v<std::decay_t<decltype(InValue)>, std::string>) {
+                    return InValue;
+                } else {
+                    return std::to_string(InValue);
+                }
+            },
+            Value);
+    }
+
+    // Custom JSON serialization to serialize directly as the value, not as an object
+    void to_json(JSONValue& InJSON) const {
+        std::visit([&InJSON](const auto& InValue) { InJSON = InValue; }, Value);
+    }
+
+    void from_json(const JSONValue& InJSON) {
+        if (InJSON.is_string()) {
+            Value = InJSON.get<std::string>();
+        } else if (InJSON.is_number_integer()) {
+            Value = InJSON.get<int64_t>();
+        } else {
+            throw std::invalid_argument("RequestID must be string or integer");
+        }
+    }
+};
 
 struct RequestParams {
     struct RequestParamsMeta {

@@ -73,24 +73,24 @@ bool MCPProtocol::IsConnected() const {
 
 void MCPProtocol::SetRequestHandler(const RequestBase& InRequest, RequestHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_RequestHandlers[InRequest] = InHandler;
+    m_RequestHandlers[InRequest.Method] = InHandler;
 }
 
 void MCPProtocol::SetResponseHandler(const ResponseBase& InResponse, ResponseHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_ResponseHandlers[InResponse] = InHandler;
+    m_ResponseHandlers[InResponse.ID.to_string()] = InHandler;
 }
 
 void MCPProtocol::SetNotificationHandler(const NotificationBase& InNotification,
                                          NotificationHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_NotificationHandlers[InNotification] = InHandler;
+    m_NotificationHandlers[InNotification.Method] = InHandler;
 }
 
 void MCPProtocol::SetErrorResponseHandler(const ErrorResponseBase& InErrorResponse,
                                           ErrorResponseHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_ErrorResponseHandlers[InErrorResponse] = InHandler;
+    m_ErrorResponseHandlers[InErrorResponse.Error.Message] = InHandler;
 }
 
 MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
@@ -156,12 +156,12 @@ MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResp
 void MCPProtocol::HandleRequest(const RequestBase& InRequest) {
     try {
         std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        auto handler = m_RequestHandlers.find(InRequest.Method);
+        auto handler = m_RequestHandlers.find(InRequest);
         if (handler != m_RequestHandlers.end()) {
             handler->second(InRequest);
         } else {
             // Send method not found error
-            SendErrorResponse(InRequestID, -32601, "Method not found", JSONValue::object());
+            SendErrorResponse(InRequest.ID, -32601, "Method not found", JSONValue::object());
         }
     } catch (const std::exception& e) {
         // Send internal error

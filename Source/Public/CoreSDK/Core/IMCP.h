@@ -50,7 +50,7 @@ class MCPProtocol {
     void SetRequestHandler(const RequestBase&, RequestHandler InHandler);
     void SetResponseHandler(const ResponseBase&, ResponseHandler InHandler);
     void SetNotificationHandler(const NotificationBase&, NotificationHandler InHandler);
-    void SetErrorResponseHandler(ErrorResponseHandler InHandler);
+    void SetErrorResponseHandler(const ErrorResponseBase&, ErrorResponseHandler InHandler);
 
   private:
     void SetupTransportHandlers();
