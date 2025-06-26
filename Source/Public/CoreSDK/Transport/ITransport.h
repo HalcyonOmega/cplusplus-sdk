@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "CoreSDK/Common/EventSignatures.h"
@@ -71,7 +72,6 @@ class ITransport {
     void CallResponseHandler(const ResponseBase& InResponse);
     void CallNotificationHandler(const NotificationBase& InNotification);
     void CallErrorResponseHandler(const ErrorResponseBase& InError);
-    void CallStateChangeHandler(TransportState InOldState, TransportState InNewState);
 
   protected:
     TransportState m_CurrentState{TransportState::Disconnected};
@@ -81,7 +81,6 @@ class ITransport {
     ResponseHandler m_ResponseHandler;
     NotificationHandler m_NotificationHandler;
     ErrorResponseHandler m_ErrorResponseHandler;
-    StateChangeHandler m_StateChangeHandler;
 };
 
 // Transport factory

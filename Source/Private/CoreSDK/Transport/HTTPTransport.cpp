@@ -200,9 +200,6 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
                 return;
             }
 
-            MessageBase ParsedMessage = message;
-            CallMessageHandler(ParsedMessage);
-
             // Check if it's a response to a pending request
             if (message.contains("id")
                 && (message.contains("result") || message.contains("error"))) {
@@ -526,9 +523,6 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
             HandleRuntimeError("Invalid JSON-RPC message received");
             return;
         }
-
-        MessageBase ParsedMessage = message;
-        CallMessageHandler(ParsedMessage);
 
         // Check if it's a response to a pending request
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {

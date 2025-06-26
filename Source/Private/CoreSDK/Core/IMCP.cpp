@@ -1,5 +1,7 @@
 #include "CoreSDK/Core/IMCP.h"
 
+#include "CoreSDK/Messages/NotificationBase.h"
+
 MCP_NAMESPACE_BEGIN
 
 MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
@@ -69,25 +71,26 @@ bool MCPProtocol::IsConnected() const {
     return m_Transport->IsConnected();
 }
 
-void MCPProtocol::SetNotificationHandler(std::string_view InMethod, NotificationHandler InHandler) {
+void MCPProtocol::SetRequestHandler(const RequestBase& InRequest, RequestHandler InHandler) {
     std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    m_NotificationHandlers[InMethod] = InHandler;
+    m_RequestHandlers[InRequest] = InHandler;
 }
 
-void MCPProtocol::SetInitializedHandler(InitializedHandler InHandler) {
-    m_InitializedHandler = InHandler;
+void MCPProtocol::SetResponseHandler(const ResponseBase& InResponse, ResponseHandler InHandler) {
+    std::lock_guard<std::mutex> lock(m_HandlersMutex);
+    m_ResponseHandlers[InResponse] = InHandler;
 }
 
-void MCPProtocol::SetErrorResponseHandler(ErrorResponseHandler InHandler) {
-    m_ErrorResponseHandler = InHandler;
+void MCPProtocol::SetNotificationHandler(const NotificationBase& InNotification,
+                                         NotificationHandler InHandler) {
+    std::lock_guard<std::mutex> lock(m_HandlersMutex);
+    m_NotificationHandlers[InNotification] = InHandler;
 }
 
-const std::optional<MCPCapabilities>& MCPProtocol::GetClientCapabilities() const {
-    return m_ClientCapabilities;
-}
-
-const std::optional<MCPServerInfo>& MCPProtocol::GetServerInfo() const {
-    return m_ServerInfo;
+void MCPProtocol::SetErrorResponseHandler(const ErrorResponseBase& InErrorResponse,
+                                          ErrorResponseHandler InHandler) {
+    std::lock_guard<std::mutex> lock(m_HandlersMutex);
+    m_ErrorResponseHandlers[InErrorResponse] = InHandler;
 }
 
 MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
@@ -212,14 +215,10 @@ void MCPProtocol::SetupTransportHandlers() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    // TODO: @HalcyonOmega Update callbacks based on sync/async requirements. Below don't match
-    // signatures
-    m_Transport->SetMessageHandler(HandleMessage);
     m_Transport->SetRequestHandler(HandleRequest);
     m_Transport->SetResponseHandler(HandleResponse);
     m_Transport->SetNotificationHandler(HandleNotification);
     m_Transport->SetErrorResponseHandler(HandleErrorResponse);
-    m_Transport->SetStateChangeHandler(HandleTransportStateChange);
 
     // Preserve alternate lambda callbacks for reference if advanced functionality needed in future.
     // m_Transport->SetRequestHandler(

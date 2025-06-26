@@ -135,8 +135,6 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
         }
 
         // TODO: @HalcyonOmega - Consider using deserialize from stream in Nlohmann::JSON library
-        MessageBase ParsedMessage = message;
-        CallMessageHandler(ParsedMessage);
 
         // Check if it's a response to a pending request
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
@@ -333,9 +331,6 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
             HandleRuntimeError("Invalid JSON-RPC message received");
             return;
         }
-
-        MessageBase ParsedMessage = message;
-        CallMessageHandler(ParsedMessage);
 
         // Check if it's a response to a pending request
         if (message.contains("id") && (message.contains("result") || message.contains("error"))) {

@@ -34,10 +34,6 @@ void ITransport::SetErrorResponseHandler(ErrorResponseHandler InHandler) {
     m_ErrorResponseHandler = InHandler;
 }
 
-void ITransport::SetStateChangeHandler(StateChangeHandler InHandler) {
-    m_StateChangeHandler = InHandler;
-}
-
 void ITransport::CallRequestHandler(const RequestBase& InRequest) {
     if (m_RequestHandler) { m_RequestHandler(InRequest); }
 }
@@ -52,12 +48,6 @@ void ITransport::CallNotificationHandler(const NotificationBase& InNotification)
 
 void ITransport::CallErrorResponseHandler(const ErrorResponseBase& InError) {
     if (m_ErrorResponseHandler) { m_ErrorResponseHandler(InError); }
-}
-
-void ITransport::CallStateChangeHandler(TransportState InOldState, TransportState InNewState) {
-    if (m_StateChangeHandler && InOldState != InNewState) {
-        m_StateChangeHandler(InOldState, InNewState);
-    }
 }
 
 // TransportFactory implementation
