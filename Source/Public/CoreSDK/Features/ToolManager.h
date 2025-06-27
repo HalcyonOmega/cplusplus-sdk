@@ -1,83 +1,118 @@
-from __future__ import annotations as _annotations
+#pragma once
 
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+#include <any>
+#include <functional>
+#include <future>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-from mcp.server.fastmcp.exceptions import ToolError
-from mcp.server.fastmcp.tools.base import Tool
-from mcp.server.fastmcp.utilities.logging import get_logger
-from mcp.shared.context import LifespanContextT, RequestT
-from mcp.types import ToolAnnotations
+#include "CoreSDK/Common/Macros.h"
+#include "JSONProxy.h"
+#include "ToolBase.h"
 
-if TYPE_CHECKING:
-    from mcp.server.fastmcp.server import Context
-    from mcp.server.session import ServerSessionT
+MCP_NAMESPACE_BEGIN
 
-logger = get_logger(__name__)
+// Forward declarations
+class MCPContext;
 
+/**
+ * Exception thrown when tool operations fail.
+ */
+class ToolError : public std::runtime_error {
+  public:
+    explicit ToolError(const std::string& InMessage) : std::runtime_error(InMessage) {}
+};
 
-class ToolManager:
-    """Manages FastMCP tools."""
+/**
+ * Manages FastMCP tools.
+ * Provides functionality for registering, retrieving, listing, and calling tools.
+ */
+class ToolManager {
+  public:
+    using ToolFunction = std::function<std::future<std::any>(const JSONValue&, MCPContext*)>;
 
-    def __init__(
-        self,
-        warn_on_duplicate_tools: bool = True,
-        *,
-        tools: list[Tool] | None = None,
-    ):
-        self._tools: dict[str, Tool] = {}
-        if tools is not None:
-            for tool in tools:
-                if warn_on_duplicate_tools and tool.name in self._tools:
-                    logger.warning(f"Tool already exists: {tool.name}")
-                self._tools[tool.name] = tool
+    /**
+     * Constructor
+     * @param InWarnOnDuplicateTools Whether to warn when duplicate tools are added
+     * @param InTools Optional initial list of tools to register
+     */
+    explicit ToolManager(bool InWarnOnDuplicateTools = true, const std::vector<Tool>& InTools = {});
 
-        self.warn_on_duplicate_tools = warn_on_duplicate_tools
+    /**
+     * Get tool by name.
+     * @param InName The name of the tool to retrieve
+     * @return The tool if found, nullopt otherwise
+     */
+    std::optional<Tool> GetTool(const std::string& InName) const;
 
-    def get_tool(self, name: str) -> Tool | None:
-        """Get tool by name."""
-        return self._tools.get(name)
+    /**
+     * List all registered tools.
+     * @return Vector containing all registered tools
+     */
+    std::vector<Tool> ListTools() const;
 
-    def list_tools(self) -> list[Tool]:
-        """List all registered tools."""
-        return list(self._tools.values())
+    /**
+     * Add a tool from a function.
+     * @param InFunction The function to execute when the tool is called
+     * @param InTool The tool configuration
+     * @return The added tool. If a tool with the same name exists, returns the existing tool.
+     */
+    Tool AddTool(ToolFunction InFunction, const Tool& InTool);
 
-    def add_tool(
-        self,
-        fn: Callable[..., Any],
-        name: str | None = None,
-        title: str | None = None,
-        description: str | None = None,
-        annotations: ToolAnnotations | None = None,
-        structured_output: bool | None = None,
-    ) -> Tool:
-        """Add a tool to the server."""
-        tool = Tool.from_function(
-            fn,
-            name=name,
-            title=title,
-            description=description,
-            annotations=annotations,
-            structured_output=structured_output,
-        )
-        existing = self._tools.get(tool.name)
-        if existing:
-            if self.warn_on_duplicate_tools:
-                logger.warning(f"Tool already exists: {tool.name}")
-            return existing
-        self._tools[tool.name] = tool
-        return tool
+    /**
+     * Add a tool with automatic schema generation (simplified version).
+     * @param InFunction The function to execute when the tool is called
+     * @param InName The name of the tool
+     * @param InDescription Optional description of the tool
+     * @param InAnnotations Optional tool annotations
+     * @return The added tool
+     */
+    Tool AddTool(ToolFunction InFunction, const std::string& InName,
+                 const std::optional<std::string>& InDescription = std::nullopt,
+                 const std::optional<ToolAnnotations>& InAnnotations = std::nullopt);
 
-    async def call_tool(
-        self,
-        name: str,
-        arguments: dict[str, Any],
-        context: Context[ServerSessionT, LifespanContextT, RequestT] | None = None,
-        convert_result: bool = False,
-    ) -> Any:
-        """Call a tool by name with arguments."""
-        tool = self.get_tool(name)
-        if not tool:
-            raise ToolError(f"Unknown tool: {name}")
+    /**
+     * Call a tool by name with arguments.
+     * @param InName The name of the tool to call
+     * @param InArguments The arguments to pass to the tool
+     * @param InContext Optional context for the tool execution
+     * @param InConvertResult Whether to convert the result format
+     * @return Future containing the result of the tool execution
+     */
+    std::future<std::any> CallTool(const std::string& InName, const JSONValue& InArguments,
+                                   MCPContext* InContext = nullptr, bool InConvertResult = false);
 
-        return await tool.run(arguments, context=context, convert_result=convert_result)
+    /**
+     * Call a tool by name with arguments synchronously.
+     * @param InName The name of the tool to call
+     * @param InArguments The arguments to pass to the tool
+     * @param InContext Optional context for the tool execution
+     * @param InConvertResult Whether to convert the result format
+     * @return The result of the tool execution
+     */
+    std::any CallToolSync(const std::string& InName, const JSONValue& InArguments,
+                          MCPContext* InContext = nullptr, bool InConvertResult = false);
+
+    /**
+     * Check if a tool with the given name exists.
+     * @param InName The name to check
+     * @return True if the tool exists, false otherwise
+     */
+    bool HasTool(const std::string& InName) const;
+
+  private:
+    std::unordered_map<std::string, std::pair<Tool, ToolFunction>> m_Tools;
+    bool m_WarnOnDuplicateTools;
+
+    /**
+     * Create a basic JSON schema for a tool.
+     * @param InName The tool name
+     * @return A basic JSON schema
+     */
+    JSONSchema CreateBasicSchema(const std::string& InName) const;
+};
+
+MCP_NAMESPACE_END

@@ -1,40 +1,58 @@
-""
-    "Prompt management functionality."
-    ""
+#pragma once
 
-    from mcp.server.fastmcp.prompts.base import Prompt from
-        mcp.server.fastmcp.utilities.logging import get_logger
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-            logger =
-    get_logger(__name__)
+#include "CoreSDK/Common/Macros.h"
+#include "PromptBase.h"
 
-        class PromptManager : ""
-                              "Manages FastMCP prompts."
-                              ""
+MCP_NAMESPACE_BEGIN
 
-                              def
-                              __init__(self, warn_on_duplicate_prompts : bool = True)
-    : self._prompts : dict[str, Prompt] = {} self.warn_on_duplicate_prompts =
-        warn_on_duplicate_prompts
+/**
+ * Manages FastMCP prompts.
+ * Provides functionality for registering, retrieving, and listing prompts.
+ */
+class PromptManager {
+  public:
+    /**
+     * Constructor
+     * @param InWarnOnDuplicatePrompts Whether to warn when duplicate prompts are added
+     */
+    explicit PromptManager(bool InWarnOnDuplicatePrompts = true);
 
-            def add_prompt(self, prompt : Prompt)
-                ->Prompt : ""
-                           "Add a prompt to the manager."
-                           "" logger.debug(f "Adding prompt: {prompt.name}") existing =
-            self._prompts.get(prompt.name) if existing : if self.warn_on_duplicate_prompts
-    : logger.warning(
-                f
-                "Prompt already exists: {prompt.name}") return existing self._prompts[prompt.name] =
-                prompt return prompt
+    /**
+     * Add a prompt to the manager.
+     * @param InPrompt The prompt to add
+     * @return The added prompt. If a prompt with the same name already exists, returns the existing
+     * prompt.
+     */
+    Prompt AddPrompt(const Prompt& InPrompt);
 
-                    def get_prompt(self, name : str)
-                        ->Prompt
-                | None : ""
-                         "Get prompt by name."
-                         "" return self._prompts
-                             .get(name)
+    /**
+     * Get prompt by name.
+     * @param InName The name of the prompt to retrieve
+     * @return The prompt if found, nullopt otherwise
+     */
+    std::optional<Prompt> GetPrompt(const std::string& InName) const;
 
-                                 def list_prompts(self)
-                             ->list[Prompt] : ""
-                                              "List all registered prompts."
-                                              "" return list(self._prompts.values())
+    /**
+     * List all registered prompts.
+     * @return Vector containing all registered prompts
+     */
+    std::vector<Prompt> ListPrompts() const;
+
+    /**
+     * Check if a prompt with the given name exists.
+     * @param InName The name to check
+     * @return True if the prompt exists, false otherwise
+     */
+    bool HasPrompt(const std::string& InName) const;
+
+  private:
+    std::unordered_map<std::string, Prompt> m_Prompts;
+    bool m_WarnOnDuplicatePrompts;
+};
+
+MCP_NAMESPACE_END
