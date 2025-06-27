@@ -1,11 +1,9 @@
 #pragma once
 
 #include <coroutine>
+#include <exception>
 #include <optional>
-#include <stdexcept>
-#include <string>
 #include <utility>
-#include <variant>
 
 #include "CoreSDK/Common/Macros.h"
 
@@ -16,17 +14,21 @@ template <typename T> struct MCPTask;
 // Primary template for coroutine tasks that return a value
 template <typename T> struct MCPTask {
     struct promise_type {
-        T m_Result;
-        std::optional<std::string> m_Exception;
+        std::optional<T> m_Result;
+        std::exception_ptr m_Exception;
+        std::coroutine_handle<> m_Awaiter;
 
         [[nodiscard]] MCPTask get_return_object() {
             return MCPTask{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        std::suspend_never initial_suspend() {
+        std::suspend_always initial_suspend() noexcept {
             return {};
         }
-        std::suspend_never final_suspend() noexcept {
+
+        std::suspend_always final_suspend() noexcept {
+            // Resume awaiter when this task completes
+            if (m_Awaiter) { m_Awaiter.resume(); }
             return {};
         }
 
@@ -35,7 +37,7 @@ template <typename T> struct MCPTask {
         }
 
         void unhandled_exception() {
-            m_Exception = "Coroutine exception occurred";
+            m_Exception = std::current_exception();
         }
     };
 
@@ -61,38 +63,48 @@ template <typename T> struct MCPTask {
 
     // Awaitable interface
     [[nodiscard]] bool await_ready() const {
-        return m_Handle.done();
+        return m_Handle && m_Handle.done();
     }
-    void await_suspend(std::coroutine_handle<> /*unused*/) const {}
+
+    void await_suspend(std::coroutine_handle<> InAwaiter) {
+        // Store awaiter to resume when this task completes
+        m_Handle.promise().m_Awaiter = InAwaiter;
+        // Resume this task if not started
+        if (m_Handle && !m_Handle.done()) { m_Handle.resume(); }
+    }
 
     [[nodiscard]] T await_resume() const {
-        if (std::holds_alternative<std::string>(m_Handle.promise().m_Result)) {
-            throw std::runtime_error(std::get<std::string>(m_Handle.promise().m_Result));
+        if (m_Handle.promise().m_Exception) {
+            std::rethrow_exception(m_Handle.promise().m_Exception);
         }
-        return std::get<T>(m_Handle.promise().m_Result);
+        return std::move(*m_Handle.promise().m_Result);
     }
 };
 
 // Specialization for void return type
 template <> struct MCPTask<void> {
     struct promise_type {
-        std::optional<std::string> m_Exception;
+        std::exception_ptr m_Exception;
+        std::coroutine_handle<> m_Awaiter;
 
         [[nodiscard]] MCPTask<void> get_return_object() {
             return MCPTask<void>{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        static std::suspend_never initial_suspend() {
+        std::suspend_always initial_suspend() noexcept {
             return {};
         }
-        static std::suspend_never final_suspend() noexcept {
+
+        std::suspend_always final_suspend() noexcept {
+            // Resume awaiter when this task completes
+            if (m_Awaiter) { m_Awaiter.resume(); }
             return {};
         }
 
         void return_void() {}
 
         void unhandled_exception() {
-            m_Exception = "Coroutine exception occurred";
+            m_Exception = std::current_exception();
         }
     };
 
@@ -118,25 +130,24 @@ template <> struct MCPTask<void> {
 
     // Awaitable interface
     [[nodiscard]] bool await_ready() const {
-        return m_Handle.done();
+        return m_Handle && m_Handle.done();
     }
-    void await_suspend(std::coroutine_handle<> /*unused*/) const {}
+
+    void await_suspend(std::coroutine_handle<> InAwaiter) {
+        // Store awaiter to resume when this task completes
+        m_Handle.promise().m_Awaiter = InAwaiter;
+        // Resume this task if not started
+        if (m_Handle && !m_Handle.done()) { m_Handle.resume(); }
+    }
 
     void await_resume() const {
         if (m_Handle.promise().m_Exception) {
-            throw std::runtime_error(*m_Handle.promise().m_Exception);
+            std::rethrow_exception(m_Handle.promise().m_Exception);
         }
     }
 };
 
 // Specialized void task
 using MCPTask_Void = MCPTask<void>;
-
-inline void WaitForMCPTaskVoid(MCPTask_Void& task) {
-    if (task.m_Handle && !task.m_Handle.done()) { task.m_Handle.resume(); }
-    if (task.m_Handle.promise().m_Exception) {
-        throw std::runtime_error(*task.m_Handle.promise().m_Exception);
-    }
-}
 
 MCP_NAMESPACE_END

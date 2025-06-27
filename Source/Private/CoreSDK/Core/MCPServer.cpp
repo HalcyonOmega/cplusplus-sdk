@@ -1,5 +1,7 @@
 #include "CoreSDK/Core/MCPServer.h"
 
+#include "CoreSDK/Common/Progress.h"
+
 MCP_NAMESPACE_BEGIN
 
 MCPServer::MCPServer(TransportType InTransportType,
@@ -102,7 +104,7 @@ void MCPServer::RemovePrompt(const std::string& InName) {
     m_PromptHandlers.erase(InName);
 }
 
-void MCPServer::AddResource(const std::string& InURI, const Resource& InResource,
+void MCPServer::AddResource(const URI& InURI, const Resource& InResource,
                             ResourceHandler InHandler) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add resources while server is running");
@@ -114,7 +116,7 @@ void MCPServer::AddResource(const std::string& InURI, const Resource& InResource
     m_ResourceHandlers[InURI] = InHandler;
 }
 
-void MCPServer::RemoveResource(const std::string& InURI) {
+void MCPServer::RemoveResource(const URI& InURI) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot remove resources while server is running");
         co_return;
@@ -125,7 +127,7 @@ void MCPServer::RemoveResource(const std::string& InURI) {
     m_ResourceHandlers.erase(InURI);
 }
 
-MCPTask_Void MCPServer::NotifyResourceUpdated(const std::string& InURI) {
+MCPTask_Void MCPServer::NotifyResourceUpdated(const URI& InURI) {
     ResourceUpdatedNotification notification;
     notification.URI = InURI;
 
@@ -154,7 +156,7 @@ MCPTask_Void MCPServer::NotifyPromptListChanged() {
                                           JSONValue(notification));
 }
 
-MCPTask_Void MCPServer::SendProgress(const std::string& InProgressToken, double InProgress,
+MCPTask_Void MCPServer::SendProgress(const ProgressToken& InProgressToken, double InProgress,
                                      double InTotal) {
     ProgressNotification notification;
     notification.ProgressToken = InProgressToken;
@@ -245,7 +247,7 @@ void MCPServer::SetupDefaultHandlers() {
         });
 }
 
-void MCPServer::HandleInitialize(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandleInitialize(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<InitializeRequest>();
 
@@ -312,7 +314,7 @@ void MCPServer::HandleInitialize(const JSONValue& InParams, const std::string& I
     }
 }
 
-void MCPServer::HandleToolsList(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandleToolsList(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<ToolListRequest>();
 
@@ -329,7 +331,7 @@ void MCPServer::HandleToolsList(const JSONValue& InParams, const std::string& In
     }
 }
 
-void MCPServer::HandleToolCall(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandleToolCall(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<ToolCallRequest>();
 
@@ -385,7 +387,7 @@ void MCPServer::HandleToolCall(const JSONValue& InParams, const std::string& InR
     }
 }
 
-void MCPServer::HandlePromptsList(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandlePromptsList(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<PromptListRequest>();
 
@@ -402,7 +404,7 @@ void MCPServer::HandlePromptsList(const JSONValue& InParams, const std::string& 
     }
 }
 
-void MCPServer::HandlePromptGet(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandlePromptGet(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<PromptGetRequest>();
 
@@ -424,7 +426,7 @@ void MCPServer::HandlePromptGet(const JSONValue& InParams, const std::string& In
     }
 }
 
-void MCPServer::HandleResourcesList(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandleResourcesList(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<ResourceListRequest>();
 
@@ -472,7 +474,7 @@ void MCPServer::HandleResourcesList(const JSONValue& InParams, const std::string
     }
 }
 
-void MCPServer::HandleResourceRead(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandleResourceRead(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<ResourceReadRequest>();
 
@@ -494,7 +496,7 @@ void MCPServer::HandleResourceRead(const JSONValue& InParams, const std::string&
     }
 }
 
-void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const std::string& InRequestID) {
+void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<ResourceSubscribeRequest>();
         std::string uri = request.URI;
@@ -526,8 +528,7 @@ void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const std::st
     }
 }
 
-void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams,
-                                          const std::string& InRequestID) {
+void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
         auto request = InParams.get<ResourceUnsubscribeRequest>();
         std::string uri = request.URI;
@@ -554,7 +555,7 @@ void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams,
 }
 
 // Enhanced resource change notification
-MCPTask_Void MCPServer::NotifyResourceSubscribers(const std::string& InURI) {
+MCPTask_Void MCPServer::NotifyResourceSubscribers(const URI& InURI) {
     std::set<std::string> subscribers;
 
     {
@@ -596,8 +597,7 @@ MCPServer::SendNotificationToClient(const std::string& InClientID,
                                     const ResourceUpdatedNotification& InNotification) {
     // For now, send to all clients via the protocol
     // In a real implementation, this would route to the specific client
-    co_await m_Protocol->SendNotification("notifications/resources/updated",
-                                          JSONValue(InNotification));
+    co_await SendNotification("notifications/resources/updated", JSONValue(InNotification));
     co_return;
 }
 
@@ -728,8 +728,6 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
 }
 
 MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t> InTotal) {
-    if (m_IsComplete.load() || !m_Protocol) { co_return; }
-
     try {
         ProgressNotification notification;
         notification.ProgressToken = m_RequestID;

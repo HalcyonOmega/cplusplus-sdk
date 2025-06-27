@@ -167,14 +167,13 @@ install(EXPORT ${PROJECT_NAME}Targets
 
 include(FetchContent)
 
+# Poco
 FetchContent_Declare(
   poco
   GIT_REPOSITORY https://github.com/pocoproject/poco.git
-  # This is the crucial line to update:
   GIT_TAG        poco-1.14.2-release 
 )
 
 FetchContent_MakeAvailable(poco)
 
-# Now you can link to the libraries you need as before
 target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::JSON Poco::Foundation Poco::Data)

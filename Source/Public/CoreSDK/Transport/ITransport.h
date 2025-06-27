@@ -5,7 +5,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -58,17 +57,13 @@ class ITransport {
 
     virtual MCPTask_Void Connect() = 0;
     virtual MCPTask_Void Disconnect() = 0;
-    virtual MCPTask_Void TransmitMessage(const JSONValue& InMessage) = 0;
-    virtual MCPTask<JSONValue> TransmitRequest(const JSONValue& InRequest) = 0;
+    virtual MCPTask_Void TransmitMessage(
+        const JSONValue& InMessage,
+        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) = 0;
+    virtual MCPTask<JSONValue> TransmitRequest(
+        const JSONValue& InRequest,
+        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) = 0;
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
-
-    // Connection-specific message transmission
-    virtual MCPTask_Void TransmitMessageToConnection(const ConnectionID& InConnectionID,
-                                                     const JSONValue& InMessage) = 0;
-    virtual MCPTask_Void
-    TransmitMessageToConnections(const std::vector<ConnectionID>& InConnectionIDs,
-                                 const JSONValue& InMessage);
-    virtual MCPTask_Void TransmitMessageToAllConnections(const JSONValue& InMessage);
 
     // Default Implementations
     [[nodiscard]] bool IsConnected() const;
