@@ -1,6 +1,7 @@
 #include "CoreSDK/Core/MCPServer.h"
 
 #include "CoreSDK/Common/Progress.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -8,23 +9,21 @@ MCPServer::MCPServer(TransportType InTransportType,
                      std::optional<std::unique_ptr<TransportOptions>> InOptions,
                      const Implementation& InServerInfo, const ServerCapabilities& InCapabilities)
     : MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server,
-                                                    std::move(InOptions))),
-      m_ServerInfo(InServerInfo), m_ServerCapabilities(InCapabilities) {
+                                                    std::move(InOptions))) {
     SetupDefaultHandlers();
+    SetServerInfo(InServerInfo);
+    SetServerCapabilities(InCapabilities);
 }
 
-MCPTask_Void MCPServer::Start(const MCPServerInfo& InServerInfo) {
+MCPTask_Void MCPServer::Start() {
     if (m_IsRunning) {
         HandleRuntimeError("Server already running");
         co_return;
     }
 
     try {
-        m_ServerInfo = InServerInfo;
-
         // Start transport
         co_await m_Transport->Connect();
-
         m_IsRunning = true;
 
         // Server doesn't need to call Initialize - it responds to client initialization
@@ -59,190 +58,330 @@ bool MCPServer::IsRunning() const {
     return m_IsRunning;
 }
 
-void MCPServer::AddTool(const Tool& InTool, ToolHandler InHandler) {
+// Tool management - delegate to ToolManager
+void MCPServer::AddTool(const Tool& InTool) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add tools while server is running");
-        co_return;
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(m_ToolsMutex);
-    m_Tools[InName] = InTool;
-    m_ToolHandlers[InName] = InHandler;
+    m_ToolManager->AddTool(InTool);
 }
 
-void MCPServer::RemoveTool(const std::string& InName) {
+void MCPServer::RemoveTool(const Tool& InTool) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot remove tools while server is running");
-        co_return;
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(m_ToolsMutex);
-    m_Tools.erase(InName);
-    m_ToolHandlers.erase(InName);
+    m_ToolManager->RemoveTool(InTool.Name);
 }
 
-void MCPServer::AddPrompt(const std::string& InName, const Prompt& InPrompt,
-                          PromptHandler InHandler) {
+// Prompt management - delegate to PromptManager
+void MCPServer::AddPrompt(const Prompt& InPrompt) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add prompts while server is running");
-        co_return;
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(m_PromptsMutex);
-    m_Prompts[InName] = InPrompt;
-    m_PromptHandlers[InName] = InHandler;
+    m_PromptManager->AddPrompt(InPrompt);
 }
 
-void MCPServer::RemovePrompt(const std::string& InName) {
-    // m_PromptManager->RemovePrompt
+void MCPServer::RemovePrompt(const Prompt& InPrompt) {
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot remove prompts while server is running");
+        return;
+    }
+
+    m_PromptManager->RemovePrompt(InPrompt);
 }
 
-void MCPServer::AddResource(const URI& InURI, const Resource& InResource,
-                            ResourceHandler InHandler) {
+// Resource management - delegate to ResourceManager
+void MCPServer::AddResource(const Resource& InResource) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add resources while server is running");
-        co_return;
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(m_ResourcesMutex);
-    m_Resources[InURI] = InResource;
-    m_ResourceHandlers[InURI] = InHandler;
+    m_ResourceManager->AddResource(InResource);
 }
 
-void MCPServer::RemoveResource(const URI& InURI) {
+void MCPServer::AddResourceTemplate(const ResourceTemplate& InTemplate) {
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot add resource templates while server is running");
+        return;
+    }
+
+    m_ResourceManager->AddTemplate(InTemplate);
+}
+
+void MCPServer::RemoveResource(const Resource& InResource) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot remove resources while server is running");
-        co_return;
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(m_ResourcesMutex);
-    m_Resources.erase(InURI);
-    m_ResourceHandlers.erase(InURI);
+    m_ResourceManager->RemoveResource(InResource);
 }
 
-MCPTask_Void MCPServer::NotifyResourceUpdated(const URI& InURI) {
-    ResourceUpdatedNotification notification;
-    notification.URI = InURI;
+void MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate) {
+    if (m_IsRunning) {
+        HandleRuntimeError("Cannot remove resource templates while server is running");
+        return;
+    }
 
-    co_await m_Protocol->SendNotification("notifications/resources/updated",
-                                          JSONValue(notification));
+    m_ResourceManager->RemoveTemplate(InTemplate);
+}
+
+MCPTask_Void MCPServer::NotifyResourceUpdated(const Resource& InResource) {
+    ResourceUpdatedNotification notification;
+    notification.Params.URI = MCP::URI(InURI);
+
+    co_await SendNotification("notifications/resources/updated", JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::NotifyResourceListChanged() {
     ResourceListChangedNotification notification;
 
-    co_await m_Protocol->SendNotification("notifications/resources/list_changed",
-                                          JSONValue(notification));
+    co_await SendNotification("notifications/resources/list_changed", JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::NotifyToolListChanged() {
     ToolListChangedNotification notification;
 
-    co_await m_Protocol->SendNotification("notifications/tools/list_changed",
-                                          JSONValue(notification));
+    co_await SendNotification("notifications/tools/list_changed", JSONValue(notification));
 }
 
 MCPTask_Void MCPServer::NotifyPromptListChanged() {
     PromptListChangedNotification notification;
 
-    co_await m_Protocol->SendNotification("notifications/prompts/list_changed",
-                                          JSONValue(notification));
+    co_await SendNotification("notifications/prompts/list_changed", JSONValue(notification));
 }
 
-MCPTask_Void MCPServer::SendProgress(const ProgressToken& InProgressToken, double InProgress,
-                                     double InTotal) {
+MCPTask_Void MCPServer::ReportProgress(const RequestID& InRequestID, double InProgress,
+                                       int64_t InTotal) {
     ProgressNotification notification;
-    notification.ProgressToken = InProgressToken;
-    notification.Progress = InProgress;
-    notification.Total = InTotal;
+    notification.Params.ProgressToken = ProgressToken(InRequestID);
+    notification.Params.Progress = InProgress;
+    if (InTotal >= 0) { notification.Params.Total = InTotal; }
 
-    co_await m_Protocol->SendNotification("notifications/progress", JSONValue(notification));
+    co_await SendNotification("notifications/progress", JSONValue(notification));
 }
 
-MCPTask_Void MCPServer::SendLog(LoggingLevel InLevel, const std::string& InMessage,
-                                const std::optional<std::string>& InLogger) {
+MCPTask_Void MCPServer::LogMessage(LoggingLevel InLevel, const std::string& InLogger,
+                                   const JSONValue& InData) {
     LoggingMessageNotification notification;
-    notification.Level = InLevel;
-    notification.Data = InMessage;
-    if (InLogger.has_value()) { notification.Logger = InLogger.value(); }
+    notification.Params.Level = InLevel;
+    notification.Params.Data = InData;
+    if (!InLogger.empty()) { notification.Params.Logger = InLogger; }
 
-    co_await m_Protocol->SendNotification("notifications/message", JSONValue(notification));
-}
-
-void MCPServer::SetSamplingHandler(SamplingHandler InHandler) {
-    m_SamplingHandler = InHandler;
-}
-
-void MCPServer::SetCompletionHandler(CompletionHandler InHandler) {
-    m_CompletionHandler = InHandler;
+    co_await SendNotification("notifications/message", JSONValue(notification));
 }
 
 void MCPServer::SetupDefaultHandlers() {
-    // Initialize request handler
-    m_Protocol->SetRequestHandler(
-        "initialize", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleInitialize(InParams, InRequestID);
+    // Register request handlers using the RegisterRequestHandler method
+    RegisterRequestHandler(
+        RequestBase("initialize", std::nullopt, [this](const RequestBase& InRequest) {
+            try {
+                JSONValue paramsJSON;
+                if (InRequest.Params.has_value()) {
+                    to_json(paramsJSON, InRequest.Params.value());
+                } else {
+                    paramsJSON = JSONValue::object();
+                }
+                HandleInitialize(paramsJSON, InRequest.ID);
+            } catch (const std::exception& e) {
+                SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                                  JSONValue::object({{"details", e.what()}}));
+            }
+        }));
+
+    // Tools handlers
+    RegisterRequestHandler(RequestBase("tools/list", std::nullopt,
+        "initialize", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleInitialize(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
     // Tools handlers
-    m_Protocol->SetRequestHandler(
-        "tools/list", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleToolsList(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "tools/list", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleToolsList(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
-    m_Protocol->SetRequestHandler(
-        "tools/call", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleToolCall(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "tools/call", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleToolCall(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
     // Prompts handlers
-    m_Protocol->SetRequestHandler(
-        "prompts/list", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandlePromptsList(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "prompts/list", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandlePromptsList(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
-    m_Protocol->SetRequestHandler(
-        "prompts/get", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandlePromptGet(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "prompts/get", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandlePromptGet(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
     // Resources handlers
-    m_Protocol->SetRequestHandler(
-        "resources/list", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleResourcesList(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "resources/list", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleResourcesList(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
-    m_Protocol->SetRequestHandler(
-        "resources/read", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleResourceRead(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "resources/read", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleResourceRead(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
-    m_Protocol->SetRequestHandler(
-        "resources/subscribe", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleResourceSubscribe(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "resources/subscribe", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleResourceSubscribe(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
-    m_Protocol->SetRequestHandler(
-        "resources/unsubscribe", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleResourceUnsubscribe(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "resources/unsubscribe", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleResourceUnsubscribe(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 
     // Sampling handler
-    m_Protocol->SetRequestHandler("sampling/createMessage", [this](const JSONValue& InParams,
-                                                                   const std::string& InRequestID) {
-        HandleSamplingCreateMessage(InParams, InRequestID);
-    });
+    GetRequestManager().RegisterRequestHandler(
+        "sampling/createMessage", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleSamplingCreateMessage(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
+        });
 
     // Completion handler
-    m_Protocol->SetRequestHandler(
-        "completion/complete", [this](const JSONValue& InParams, const std::string& InRequestID) {
-            HandleCompletionComplete(InParams, InRequestID);
+    GetRequestManager().RegisterRequestHandler(
+        "completion/complete", [this](const RequestBase& InRequest, MCPContext* InContext) {
+        try {
+            JSONValue paramsJSON;
+            if (InRequest.Params.has_value()) {
+                to_json(paramsJSON, InRequest.Params.value());
+            } else {
+                paramsJSON = JSONValue::object();
+            }
+            HandleCompletionComplete(paramsJSON, InRequest.ID);
+        } catch (const std::exception& e) {
+            SendErrorResponse(InRequest.ID, -32603, "Internal error",
+                              JSONValue::object({{"details", e.what()}}));
+        }
         });
 }
 
 void MCPServer::HandleInitialize(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<InitializeRequest>();
+        auto request = InParams.get<InitializeRequest::Params>();
 
         // CRITICAL: Validate protocol version first
         static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS = {"2024-11-05",
@@ -258,34 +397,34 @@ void MCPServer::HandleInitialize(const JSONValue& InParams, const RequestID& InR
                 supportedVersions += SUPPORTED_PROTOCOL_VERSIONS[i];
             }
 
-            m_Protocol->SendErrorResponse(InRequestID, -32602,
-                                          "Unsupported protocol version: " + request.ProtocolVersion
-                                              + ". Supported versions: " + supportedVersions,
-                                          JSONValue::object());
+            SendErrorResponse(InRequestID, -32602,
+                              "Unsupported protocol version: " + request.ProtocolVersion
+                                  + ". Supported versions: " + supportedVersions,
+                              JSONValue::object());
             return;
         }
 
-        InitializeResponse response;
+        InitializeResponse::Result response;
         response.ProtocolVersion = request.ProtocolVersion; // Use negotiated version
         response.ServerInfo = m_ServerInfo;
 
         // Set up capabilities based on what we support
-        MCPCapabilities capabilities;
+        ServerCapabilities capabilities;
 
         // Tools capability
-        if (!m_Tools.empty()) {
+        if (m_ToolManager.HasTools()) {
             capabilities.Tools = ToolsCapability{};
             capabilities.Tools->ListChanged = true;
         }
 
         // Prompts capability
-        if (!m_Prompts.empty()) {
+        if (m_PromptManager.HasPrompts()) {
             capabilities.Prompts = PromptsCapability{};
             capabilities.Prompts->ListChanged = true;
         }
 
         // Resources capability
-        if (!m_Resources.empty()) {
+        if (m_ResourceManager.HasResources()) {
             capabilities.Resources = ResourcesCapability{};
             capabilities.Resources->Subscribe = true;
             capabilities.Resources->ListChanged = true;
@@ -299,211 +438,126 @@ void MCPServer::HandleInitialize(const JSONValue& InParams, const RequestID& InR
 
         response.Capabilities = capabilities;
 
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleToolsList(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ToolListRequest>();
+        auto request = InParams.get<ListToolsRequest::Params>();
 
-        ToolListResponse response;
+        ListToolsResponse::ListToolsResult response;
+        response.Tools = m_ToolManager.ListTools();
 
-        std::lock_guard<std::mutex> lock(m_ToolsMutex);
-        for (const auto& [name, tool] : m_Tools) { response.Tools.push_back(tool); }
-
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleToolCall(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ToolCallRequest>();
+        auto request = InParams.get<CallToolRequest::CallToolParams>();
 
-        std::lock_guard<std::mutex> lock(m_ToolsMutex);
-        auto toolIter = m_Tools.find(request.Name);
-        if (toolIter == m_Tools.end()) {
-            m_Protocol->SendErrorResponse(InRequestID, -32601, "Tool not found",
-                                          JSONValue::object());
-            return;
-        }
+        // Use ToolManager to call the tool
+        auto result = m_ToolManager.CallToolSync(request.Name, request.Arguments);
 
-        const auto& tool = toolIter->second;
-        auto handler = m_ToolHandlers.find(request.Name);
-        if (handler == m_ToolHandlers.end()) {
-            m_Protocol->SendErrorResponse(InRequestID, -32601, "Tool handler not found",
-                                          JSONValue::object());
-            return;
-        }
+        CallToolResponse::CallToolResult response;
+        response.Content = result.Content;
+        response.IsError = result.IsError;
 
-        // CRITICAL: Validate arguments against tool's input schema
-        if (request.Arguments.has_value()) {
-            JSONValue argsJson = *request.Arguments;
-
-            // Validate using JSONSchemaValidator
-            auto validationResult =
-                JSONSchemaValidator::ValidateAgainstSchema(argsJson, tool.InputSchema);
-            if (!validationResult.IsValid) {
-                std::string errorDetails = "Tool arguments validation failed: ";
-                for (size_t i = 0; i < validationResult.Errors.size(); ++i) {
-                    if (i > 0) errorDetails += "; ";
-                    errorDetails += validationResult.Errors[i];
-                }
-                m_Protocol->SendErrorResponse(InRequestID, -32602, "Schema validation error",
-                                              JSONValue::object({{"details", errorDetails}}));
-                return;
-            }
-        } else {
-            // Check if tool requires arguments
-            if (tool.InputSchema.Required.has_value() && !tool.InputSchema.Required->empty()) {
-                m_Protocol->SendErrorResponse(InRequestID, -32602, "Required arguments missing",
-                                              JSONValue::object({{"tool", request.Name}}));
-                return;
-            }
-        }
-
-        // Call handler with validated arguments
-        auto response = handler->second(request.Arguments);
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandlePromptsList(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<PromptListRequest>();
+        auto request = InParams.get<ListPromptsRequest::Params>();
 
-        PromptListResponse response;
+        ListPromptsResponse::ListPromptsResult response;
+        response.Prompts = m_PromptManager.ListPrompts();
 
-        std::lock_guard<std::mutex> lock(m_PromptsMutex);
-        for (const auto& [name, prompt] : m_Prompts) { response.Prompts.push_back(prompt); }
-
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandlePromptGet(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<PromptGetRequest>();
+        auto request = InParams.get<GetPromptRequest::GetPromptParams>();
 
-        std::lock_guard<std::mutex> lock(m_PromptsMutex);
-        auto handler = m_PromptHandlers.find(request.Name);
-        if (handler == m_PromptHandlers.end()) {
-            m_Protocol->SendErrorResponse(InRequestID, -32601, "Prompt not found",
-                                          JSONValue::object());
-            return;
-        }
+        // Use PromptManager to get the prompt
+        auto result = m_PromptManager.GetPromptSync(request.Name, request.Arguments);
 
-        // Call handler
-        auto response = handler->second(request.Arguments);
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        GetPromptResponse::GetPromptResult response;
+        response.Description = result.Description;
+        response.Messages = result.Messages;
+
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleResourcesList(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ResourceListRequest>();
+        auto request = InParams.get<ListResourcesRequest::Params>();
 
-        ResourceListResponse response;
-        size_t startIndex = 0;
-        static constexpr size_t DEFAULT_PAGE_SIZE = 100;
-        size_t pageSize = DEFAULT_PAGE_SIZE;
+        ListResourcesResponse::ListResourcesResult response;
+        response.Resources = m_ResourceManager.ListResources();
 
-        // Decode cursor if provided
-        if (request.Cursor.has_value()) {
-            try {
-                startIndex = DecodeCursor(*request.Cursor);
-            } catch (const std::exception& e) {
-                m_Protocol->SendErrorResponse(InRequestID, -32602, "Invalid cursor format",
-                                              JSONValue::object({{"details", e.what()}}));
-                return;
-            }
-        }
-
-        // Get all available resources
-        std::vector<Resource> allResources;
-        {
-            std::lock_guard<std::mutex> lock(m_ResourcesMutex);
-            allResources.reserve(m_Resources.size());
-            for (const auto& [uri, resource] : m_Resources) { allResources.push_back(resource); }
-        }
-
-        auto totalResources = allResources.size();
-        auto endIndex = std::min(startIndex + pageSize, totalResources);
-
-        // Extract page of resources
-        if (startIndex < totalResources) {
-            response.Resources.assign(allResources.begin() + startIndex,
-                                      allResources.begin() + endIndex);
-        }
-
-        // Set next cursor if more resources available
-        if (endIndex < totalResources) { response.NextCursor = EncodeCursor(endIndex); }
-
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleResourceRead(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ResourceReadRequest>();
+        auto request = InParams.get<ReadResourceRequest::ReadResourceParams>();
 
-        std::lock_guard<std::mutex> lock(m_ResourcesMutex);
-        auto handler = m_ResourceHandlers.find(request.URI);
-        if (handler == m_ResourceHandlers.end()) {
-            m_Protocol->SendErrorResponse(InRequestID, -32601, "Resource not found",
-                                          JSONValue::object());
-            return;
-        }
+        // Use ResourceManager to read the resource
+        auto result = m_ResourceManager.GetResourceSync(request.URI.ToString());
 
-        // Call handler
-        auto response = handler->second();
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        ReadResourceResponse::ReadResourceResult response;
+        response.Contents = result.Contents;
+
+        SendResponse(InRequestID, JSONValue(response));
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ResourceSubscribeRequest>();
-        std::string uri = request.URI;
-        std::string clientID =
-            GetCurrentClientID(); // This needs to be implemented based on transport
+        auto request = InParams.get<SubscribeRequest::SubscribeParams>();
+        std::string uri = request.URI.ToString();
+        std::string clientID = GetCurrentClientID();
 
         // Validate resource exists
-        {
-            std::lock_guard<std::mutex> lock(m_ResourcesMutex);
-            if (m_Resources.find(uri) == m_Resources.end()) {
-                m_Protocol->SendErrorResponse(InRequestID, -32601, "Resource not found",
-                                              JSONValue::object({{"uri", uri}}));
-                return;
-            }
+        if (!m_ResourceManager.HasResource(uri)) {
+            SendErrorResponse(InRequestID, -32601, "Resource not found",
+                              JSONValue::object({{"uri", uri}}));
+            return;
         }
 
         // Add subscription with proper client tracking
@@ -513,18 +567,18 @@ void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const Request
         }
 
         // Send empty response to indicate success
-        m_Protocol->SendResponse(InRequestID, JSONValue::object());
+        SendResponse(InRequestID, JSONValue::object());
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ResourceUnsubscribeRequest>();
-        std::string uri = request.URI;
+        auto request = InParams.get<UnsubscribeRequest::UnsubscribeParams>();
+        std::string uri = request.URI.ToString();
         std::string clientID = GetCurrentClientID();
 
         // Remove from subscriptions
@@ -539,16 +593,16 @@ void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams, const Reque
         }
 
         // Send empty response
-        m_Protocol->SendResponse(InRequestID, JSONValue::object());
+        SendResponse(InRequestID, JSONValue::object());
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 // Enhanced resource change notification
-MCPTask_Void MCPServer::NotifyResourceSubscribers(const URI& InURI) {
+MCPTask_Void MCPServer::NotifyResourceSubscribers(const std::string& InURI) {
     std::set<std::string> subscribers;
 
     {
@@ -561,7 +615,7 @@ MCPTask_Void MCPServer::NotifyResourceSubscribers(const URI& InURI) {
 
     if (!subscribers.empty()) {
         ResourceUpdatedNotification notification;
-        notification.URI = InURI;
+        notification.Params.URI = MCP::URI(InURI);
 
         // Send notification to all subscribers
         for (const auto& clientID : subscribers) {
@@ -597,42 +651,44 @@ MCPServer::SendNotificationToClient(const std::string& InClientID,
 void MCPServer::HandleSamplingCreateMessage(const JSONValue& InParams,
                                             const std::string& InRequestID) {
     try {
-        auto request = InParams.get<SamplingCreateMessageRequest>();
+        auto request = InParams.get<CreateMessageRequest::CreateMessageParams>();
 
         if (!m_SamplingHandler) {
-            m_Protocol->SendErrorResponse(InRequestID, -32601, "Sampling not supported",
-                                          JSONValue::object());
+            SendErrorResponse(InRequestID, -32601, "Sampling not supported", JSONValue::object());
             return;
         }
 
         // Call handler
-        auto response = m_SamplingHandler(request);
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        // auto response = m_SamplingHandler(request);
+        // SendResponse(InRequestID, JSONValue(response));
+
+        // TODO: Implement actual sampling handler call
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
 void MCPServer::HandleCompletionComplete(const JSONValue& InParams,
                                          const std::string& InRequestID) {
     try {
-        auto request = InParams.get<CompletionCompleteRequest>();
+        auto request = InParams.get<CompleteRequest::CompleteParams>();
 
         if (!m_CompletionHandler) {
-            m_Protocol->SendErrorResponse(InRequestID, -32601, "Completion not supported",
-                                          JSONValue::object());
+            SendErrorResponse(InRequestID, -32601, "Completion not supported", JSONValue::object());
             return;
         }
 
         // Call handler
-        auto response = m_CompletionHandler(request);
-        m_Protocol->SendResponse(InRequestID, JSONValue(response));
+        // auto response = m_CompletionHandler(request);
+        // SendResponse(InRequestID, JSONValue(response));
+
+        // TODO: Implement actual completion handler call
 
     } catch (const std::exception& e) {
-        m_Protocol->SendErrorResponse(InRequestID, -32603, "Internal error",
-                                      JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(InRequestID, -32603, "Internal error",
+                          JSONValue::object({{"details", e.what()}}));
     }
 }
 
@@ -691,7 +747,7 @@ size_t MCPServer::DecodeCursor(const std::string& InCursor) const {
 }
 
 // Enhanced tool execution with progress reporting
-MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
+MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(
     const Tool& InTool,
     const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
     const RequestID& InRequestID) {
@@ -699,20 +755,14 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
         // Update progress at 0%
         co_await UpdateProgress(0.0);
 
-        // Find and execute tool handler
-        auto handlerIter = m_ToolHandlers.find(InTool.Name);
-        if (handlerIter != m_ToolHandlers.end()) {
-            // Execute tool with progress capability
-            auto result = co_await handlerIter->second(InArguments);
+        // Use ToolManager to execute tool
+        auto result = co_await m_ToolManager.CallTool(InTool.Name, InArguments);
 
-            // Complete progress
-            co_await UpdateProgress(1.0);
+        // Complete progress
+        co_await UpdateProgress(1.0);
 
-            co_return result;
-        } else {
-            HandleRuntimeError("Tool handler not found");
-            co_return ToolCallResponse();
-        }
+        CallToolResponse response(InRequestID, result);
+        co_return response;
     } catch (const std::exception& e) {
         // Ensure progress is marked complete even on error
         co_await UpdateProgress(1.0);
@@ -723,15 +773,20 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
 MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t> InTotal) {
     try {
         ProgressNotification notification;
-        notification.ProgressToken = m_RequestID;
-        notification.Progress = InProgress;
-        if (InTotal.has_value()) { notification.Total = *InTotal; }
+        notification.Params.ProgressToken = ProgressToken("current_request");
+        notification.Params.Progress = InProgress;
+        if (InTotal.has_value()) { notification.Params.Total = *InTotal; }
 
-        co_await SendNotification(notification);
+        co_await SendNotification("notifications/progress", JSONValue(notification));
     } catch (const std::exception&) {
         // Ignore progress reporting errors to not break main operation
     }
 
+    co_return;
+}
+
+MCPTask_Void MCPServer::CompleteProgress() {
+    co_await UpdateProgress(1.0);
     co_return;
 }
 

@@ -6,7 +6,10 @@
 MCP_NAMESPACE_BEGIN
 
 MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
-    : m_Transport(std::move(InTransport)) {
+    : m_Transport(std::move(InTransport)), m_RequestManager(std::make_unique<RequestManager>(true)),
+      m_ResponseManager(std::make_unique<ResponseManager>(true)),
+      m_NotificationManager(std::make_unique<NotificationManager>(true)),
+      m_ErrorManager(std::make_unique<ErrorManager>(true)) {
     SetupTransportRouters();
 }
 
@@ -31,26 +34,36 @@ bool MCPProtocol::IsConnected() const {
 }
 
 void MCPProtocol::RegisterRequestHandler(const RequestBase& InRequest) {
-    std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    if (InRequest.Handler.has_value()) { m_RegisteredRequests.emplace_back(InRequest); }
+    if (InRequest.Handler.has_value()) {
+        m_RequestManager->RegisterRequestHandler(
+            InRequest.Method, [handler = InRequest.Handler.value()](
+                                  const RequestBase& InReq, MCPContext* InCtx) { handler(InReq); });
+    }
 }
 
 void MCPProtocol::RegisterResponseHandler(const ResponseBase& InResponse) {
-    std::lock_guard<std::mutex> lock(m_HandlersMutex);
-    if (InResponse.Handler.has_value()) { m_RegisteredResponses.emplace_back(InResponse); }
+    if (InResponse.Handler.has_value()) {
+        m_ResponseManager->RegisterPendingRequest(
+            InResponse.ID, [handler = InResponse.Handler.value()](
+                               const ResponseBase& InResp, MCPContext* InCtx) { handler(InResp); });
+    }
 }
 
 void MCPProtocol::RegisterNotificationHandler(const NotificationBase& InNotification) {
-    std::lock_guard<std::mutex> lock(m_HandlersMutex);
     if (InNotification.Handler.has_value()) {
-        m_RegisteredNotifications.emplace_back(InNotification);
+        m_NotificationManager->RegisterNotificationHandler(
+            InNotification.Method,
+            [handler = InNotification.Handler.value()](const NotificationBase& InNotif,
+                                                       MCPContext* InCtx) { handler(InNotif); });
     }
 }
 
 void MCPProtocol::RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse) {
-    std::lock_guard<std::mutex> lock(m_HandlersMutex);
     if (InErrorResponse.Handler.has_value()) {
-        m_RegisteredErrorResponses.emplace_back(InErrorResponse);
+        m_ErrorManager->RegisterRequestErrorHandler(
+            InErrorResponse.ID,
+            [handler = InErrorResponse.Handler.value()](const ErrorResponseBase& InErr,
+                                                        MCPContext* InCtx) { handler(InErr); });
     }
 }
 
@@ -109,25 +122,24 @@ MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResp
 
 void MCPProtocol::RouteRequest(const RequestBase& InRequest) {
     try {
-        std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        for (const auto& registeredRequest : m_RegisteredRequests) {
-            if (registeredRequest.Method == InRequest.Method) {
-                registeredRequest.Handler.value()(InRequest);
-                return;
-            }
-        }
-        // Send method not found error
-        // TODO: Implement error response creation
+        m_RequestManager->RouteRequest(InRequest, nullptr);
     } catch (const std::exception& e) {
-        // TODO: Send internal error
+        // Send internal error response
+        ErrorResponseBase errorResponse(
+            InRequest.ID, MCPError{ErrorCodes::INTERNAL_ERROR,
+                                   "Internal error: " + std::string(e.what()), std::nullopt});
+        SendErrorResponse(errorResponse);
         HandleRuntimeError("Error handling request: " + std::string(e.what()));
     }
 }
 
 void MCPProtocol::RouteResponse(const ResponseBase& InResponse) {
     try {
-        std::string requestID = InResponse.ID.ToString();
+        // First handle any registered response handlers
+        m_ResponseManager->RouteResponse(InResponse, nullptr);
 
+        // Then handle pending request promises
+        std::string requestID = InResponse.ID.ToString();
         std::lock_guard<std::mutex> lock(m_ResponsesMutex);
         auto it = m_PendingResponses.find(requestID);
         if (it != m_PendingResponses.end()) {
@@ -144,16 +156,9 @@ void MCPProtocol::RouteResponse(const ResponseBase& InResponse) {
 
 void MCPProtocol::RouteNotification(const NotificationBase& InNotification) {
     try {
-        std::lock_guard<std::mutex> lock(m_HandlersMutex);
-        for (const NotificationBase& registeredNotification : m_RegisteredNotifications) {
-            if (registeredNotification.Method == InNotification.Method) {
-                if (registeredNotification.Handler.has_value()) {
-                    registeredNotification.Handler.value();
-                }
-                return;
-            }
-        }
+        // Route notification to registered handlers
         // Notifications without handlers are simply ignored per JSON-RPC spec
+        m_NotificationManager->RouteNotification(InNotification, nullptr);
     } catch (const std::exception& e) {
         HandleRuntimeError("Error handling notification: " + std::string(e.what()));
     }
@@ -161,16 +166,18 @@ void MCPProtocol::RouteNotification(const NotificationBase& InNotification) {
 
 void MCPProtocol::RouteErrorResponse(const ErrorResponseBase& InError) {
     try {
+        // First handle any registered error handlers
+        m_ErrorManager->RouteError(InError, nullptr);
+
+        // Always handle pending request promises for built-in functionality
         std::string requestID = InError.ID.ToString();
-
         std::lock_guard<std::mutex> lock(m_ResponsesMutex);
-        auto it = m_PendingResponses.find(requestID);
-        if (it != m_PendingResponses.end()) {
+        auto Iter = m_PendingResponses.find(requestID);
+        if (Iter != m_PendingResponses.end()) {
             std::string errorMessage = "Error response: " + InError.Error.Message;
-
-            it->second->Promise.set_exception(
+            Iter->second->Promise.set_exception(
                 std::make_exception_ptr(std::runtime_error(errorMessage)));
-            m_PendingResponses.erase(it);
+            m_PendingResponses.erase(Iter);
         }
     } catch (const std::exception& e) {
         HandleRuntimeError("Error handling error response: " + std::string(e.what()));

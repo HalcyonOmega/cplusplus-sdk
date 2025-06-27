@@ -36,8 +36,9 @@ struct InitializeRequest : RequestBase {
                                  CAPABILITIESKEY, CLIENTINFOKEY)
     };
 
-    InitializeRequest(const InitializeRequest::Params& InParams = InitializeRequest::Params{})
-        : RequestBase("initialize", InParams) {}
+    InitializeRequest(const InitializeRequest::Params& InParams = InitializeRequest::Params{},
+                      std::optional<RequestHandler> InHandler = std::nullopt)
+        : RequestBase("initialize", InParams, InHandler) {}
 };
 
 struct InitializeResponse : ResponseBase {

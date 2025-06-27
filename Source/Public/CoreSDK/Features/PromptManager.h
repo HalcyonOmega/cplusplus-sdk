@@ -32,6 +32,12 @@ class PromptManager {
     Prompt AddPrompt(const Prompt& InPrompt);
 
     /**
+     * Remove a prompt from the manager.
+     * @param InPrompt The prompt to remove
+     */
+    void RemovePrompt(const Prompt& InPrompt);
+
+    /**
      * Get prompt by name.
      * @param InName The name of the prompt to retrieve
      * @return The prompt if found, nullopt otherwise

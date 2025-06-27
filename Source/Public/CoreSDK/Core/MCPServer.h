@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <unordered_map>
+
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Core/IMCP.h"
 #include "CoreSDK/Features/FeatureSignatures.h"
@@ -16,6 +19,11 @@ class MCPServer : public MCPProtocol {
               std::optional<std::unique_ptr<TransportOptions>> InOptions,
               const Implementation& InServerInfo, const ServerCapabilities& InCapabilities);
 
+    // Lifecycle methods
+    MCPTask_Void Start() override;
+    MCPTask_Void Stop() override;
+    bool IsRunning() const;
+
     void HandleInitializeRequest(const InitializeRequest& InRequest);
     void NotifyInitialized();
 
@@ -25,13 +33,13 @@ class MCPServer : public MCPProtocol {
     MCPTask_Void NotifyToolListChanged();
 
     // Prompt management
-    void AddPrompt(const Prompt& InPrompt, PromptHandler InHandler);
+    void AddPrompt(const Prompt& InPrompt);
     void RemovePrompt(const Prompt& InPrompt);
     MCPTask_Void NotifyPromptListChanged();
 
     // Resource management
-    void AddResource(const Resource& InResource, ResourceHandler InHandler);
-    void AddResourceTemplate(const ResourceTemplate& InTemplate, ResourceTemplateHandler InHandler);
+    void AddResource(const Resource& InResource);
+    void AddResourceTemplate(const ResourceTemplate& InTemplate);
     void RemoveResource(const Resource& InResource);
     void RemoveResourceTemplate(const ResourceTemplate& InTemplate);
     MCPTask_Void NotifyResourceListChanged();
@@ -60,16 +68,28 @@ class MCPServer : public MCPProtocol {
                                 int64_t InTotal = -1);
     MCPTask_Void CancelRequest(const RequestID& InRequestID, const std::string& InReason = "");
 
+    // Access to managers for MCPContext
+    std::weak_ptr<ToolManager> GetToolManager() {
+        return m_ToolManager;
+    }
+    std::weak_ptr<ResourceManager> GetResourceManager() {
+        return m_ResourceManager;
+    }
+    std::weak_ptr<PromptManager> GetPromptManager() {
+        return m_PromptManager;
+    }
+
   private:
     // Server state
     bool m_IsRunning{false};
 
-    PromptManager m_PromptManager;
-    ResourceManager m_ResourceManager;
-    ToolManager m_ToolManager;
+    // Managers for handling MCP features
+    std::shared_ptr<ToolManager> m_ToolManager;
+    std::shared_ptr<PromptManager> m_PromptManager;
+    std::shared_ptr<ResourceManager> m_ResourceManager;
 
     // Root management
-    std::unordered_map<Root, RootHandler> m_Roots;
+    std::vector<Root> m_Roots;
     mutable std::mutex m_RootsMutex;
 
     // Feature handlers
@@ -79,6 +99,22 @@ class MCPServer : public MCPProtocol {
 
     // Handler management
     mutable std::mutex m_HandlersMutex;
+
+    // Setup methods
+    void SetupDefaultHandlers();
+
+    // Request handlers that delegate to managers
+    void HandleInitialize(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleToolsList(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleToolCall(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandlePromptsList(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandlePromptGet(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleResourcesList(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleResourceRead(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleResourceSubscribe(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleResourceUnsubscribe(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleSamplingCreateMessage(const JSONValue& InParams, const RequestID& InRequestID);
+    void HandleCompletionComplete(const JSONValue& InParams, const RequestID& InRequestID);
 
     // Pagination helper methods
     std::string EncodeCursor(size_t InIndex) const;
@@ -97,8 +133,8 @@ class MCPServer : public MCPProtocol {
     MCPTask_Void SendNotificationToClient(std::string_view InClientID,
                                           const ResourceUpdatedNotification& InNotification);
 
-    // Updated subscription management with client tracking
-    std::unordered_map<Resource, std::vector<std::string> /* Client IDs */> m_ResourceSubscriptions;
+    std::unordered_map<std::string /* Resource */, std::vector<std::string> /* Client IDs */>
+        m_ResourceSubscriptions;
     mutable std::mutex m_ResourceSubscriptionsMutex;
 
     MCPTask_Void UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});

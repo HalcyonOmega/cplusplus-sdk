@@ -38,14 +38,25 @@ class ResourceManager {
     Resource AddResource(const Resource& InResource);
 
     /**
+     * Remove a resource from the manager.
+     * @param InResource The resource to remove
+     */
+    void RemoveResource(const Resource& InResource);
+
+    /**
      * Add a template from a function.
      * @param InFunction The function to handle template-based resource creation
      * @param InURITemplate The URI template string
      * @param InTemplate The resource template configuration
      * @return The added resource template
      */
-    ResourceTemplate AddTemplate(ResourceFunction InFunction, const std::string& InURITemplate,
-                                 const ResourceTemplate& InTemplate);
+    ResourceTemplate AddTemplate(const ResourceTemplate& InTemplate);
+
+    /**
+     * Remove a template from the manager.
+     * @param InTemplate The template to remove
+     */
+    void RemoveTemplate(const ResourceTemplate& InTemplate);
 
     /**
      * Get resource by URI, checking concrete resources first, then templates.

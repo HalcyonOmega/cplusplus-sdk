@@ -9,7 +9,11 @@
 #include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Common/RuntimeError.h"
+#include "CoreSDK/Messages/ErrorManager.h"
 #include "CoreSDK/Messages/MCPMessages.h"
+#include "CoreSDK/Messages/NotificationManager.h"
+#include "CoreSDK/Messages/RequestManager.h"
+#include "CoreSDK/Messages/ResponseManager.h"
 #include "CoreSDK/Transport/ITransport.h"
 #include "Utilities/Async/MCPTask.h"
 
@@ -47,7 +51,6 @@ class MCPProtocol {
     MCPTask_Void SendNotification(const NotificationBase& InResponse);
     MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError);
 
-    // Legacy registration methods for backward compatibility
     void RegisterRequestHandler(const RequestBase& InRequest);
     void RegisterResponseHandler(const ResponseBase& InResponse);
     void RegisterNotificationHandler(const NotificationBase& InNotification);
@@ -64,6 +67,12 @@ class MCPProtocol {
     MCPProtocolState m_State;
     std::unique_ptr<ITransport> m_Transport;
 
+    // Message managers for routing incoming messages
+    std::unique_ptr<RequestManager> m_RequestManager;
+    std::unique_ptr<ResponseManager> m_ResponseManager;
+    std::unique_ptr<NotificationManager> m_NotificationManager;
+    std::unique_ptr<ErrorManager> m_ErrorManager;
+
   private:
     // Request tracking
     struct PendingResponse {
@@ -75,14 +84,6 @@ class MCPProtocol {
     std::unordered_map<std::string, std::unique_ptr<PendingResponse>> m_PendingResponses;
     mutable std::mutex m_ResponsesMutex;
 
-    mutable std::mutex m_HandlersMutex;
-
-    // Vectorized handler registries - store full message objects
-    std::vector<RequestBase> m_RegisteredRequests;
-    std::vector<ResponseBase> m_RegisteredResponses;
-    std::vector<NotificationBase> m_RegisteredNotifications;
-    std::vector<ErrorResponseBase> m_RegisteredErrorResponses;
-
   protected:
     Implementation m_ServerInfo;
     Implementation m_ClientInfo;
@@ -90,6 +91,32 @@ class MCPProtocol {
     ClientCapabilities m_ClientCapabilities;
 
   public:
+    void SetServerInfo(const Implementation& InServerInfo) {
+        m_ServerInfo = InServerInfo;
+    }
+    void SetClientInfo(const Implementation& InClientInfo) {
+        m_ClientInfo = InClientInfo;
+    }
+    void SetServerCapabilities(const ServerCapabilities& InServerCapabilities) {
+        m_ServerCapabilities = InServerCapabilities;
+    }
+    void SetClientCapabilities(const ClientCapabilities& InClientCapabilities) {
+        m_ClientCapabilities = InClientCapabilities;
+    }
+
+    Implementation GetServerInfo() const {
+        return m_ServerInfo;
+    }
+    Implementation GetClientInfo() const {
+        return m_ClientInfo;
+    }
+    ServerCapabilities GetServerCapabilities() const {
+        return m_ServerCapabilities;
+    }
+    ClientCapabilities GetClientCapabilities() const {
+        return m_ClientCapabilities;
+    }
+
     template <typename T> MCPTask<T> SendRequest(const RequestBase& InRequest) {
         (void)InRequest;
         co_return {};

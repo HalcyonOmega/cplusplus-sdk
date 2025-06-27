@@ -63,6 +63,12 @@ class ToolManager {
     Tool AddTool(const Tool& InTool);
 
     /**
+     * Remove a tool.
+     * @param InTool The tool to remove
+     */
+    void RemoveTool(const Tool& InTool);
+
+    /**
      * Add a tool with automatic schema generation.
      * @param InHandler The function to execute when the tool is called
      * @param InName The name of the tool
@@ -73,6 +79,12 @@ class ToolManager {
     Tool AddTool(ToolFunction InHandler, const std::string& InName,
                  const std::optional<std::string>& InDescription = std::nullopt,
                  const std::optional<ToolAnnotations>& InAnnotations = std::nullopt);
+
+    /**
+     * Remove a tool by name.
+     * @param InName The name of the tool to remove
+     */
+    void RemoveTool(const std::string& InName);
 
     /**
      * Call a tool by name with arguments.
