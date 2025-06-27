@@ -58,12 +58,35 @@ class MCPServer : public MCPProtocol {
     MCPTask_Void CancelRequest(const RequestID& InRequestID, const std::string& InReason = "");
 
   private:
-    std::unordered_map<Tool, ToolHandler> m_Tools;
-    std::unordered_map<Prompt, PromptHandler> m_Prompts;
-    std::unordered_map<Resource, ResourceHandler> m_Resources;
-    std::unordered_map<ResourceTemplate, ResourceTemplateHandler> m_ResourceTemplates;
-    std::unordered_map<Root, RootHandler> m_Roots;
+    // Server state
+    bool m_IsRunning{false};
 
+    // Tool management
+    std::unordered_map<Tool, ToolHandler> m_Tools;
+    std::unordered_map<std::string, ToolHandler> m_ToolHandlers;
+    mutable std::mutex m_ToolsMutex;
+
+    // Prompt management
+    std::unordered_map<Prompt, PromptHandler> m_Prompts;
+    std::unordered_map<std::string, PromptHandler> m_PromptHandlers;
+    mutable std::mutex m_PromptsMutex;
+
+    // Resource management
+    std::unordered_map<Resource, ResourceHandler> m_Resources;
+    std::unordered_map<std::string, ResourceHandler> m_ResourceHandlers;
+    std::unordered_map<ResourceTemplate, ResourceTemplateHandler> m_ResourceTemplates;
+    mutable std::mutex m_ResourcesMutex;
+
+    // Root management
+    std::unordered_map<Root, RootHandler> m_Roots;
+    mutable std::mutex m_RootsMutex;
+
+    // Feature handlers
+    // TODO: @HalcyonOmega Cleanup, fix, or remove these handlers
+    std::function<void()> m_SamplingHandler;
+    std::function<void()> m_CompletionHandler;
+
+    // Handler management
     mutable std::mutex m_HandlersMutex;
 
     // Pagination helper methods
@@ -86,6 +109,9 @@ class MCPServer : public MCPProtocol {
     // Updated subscription management with client tracking
     std::unordered_map<Resource, std::vector<std::string> /* Client IDs */> m_ResourceSubscriptions;
     mutable std::mutex m_ResourceSubscriptionsMutex;
+
+    MCPTask_Void UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
+    MCPTask_Void CompleteProgress();
 };
 
 MCP_NAMESPACE_END

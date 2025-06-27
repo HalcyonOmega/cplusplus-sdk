@@ -47,6 +47,11 @@ struct ResponseBase : MessageBase {
           Handler(std::move(InHandler)) {}
 
     std::optional<ResponseHandler> Handler;
+
+    // Get typed result - cast the base Result to the derived response's Result type
+    template <typename TResultType> [[nodiscard]] const TResultType& GetResult() const {
+        return static_cast<const TResultType&>(Result);
+    }
 };
 
 MCP_NAMESPACE_END

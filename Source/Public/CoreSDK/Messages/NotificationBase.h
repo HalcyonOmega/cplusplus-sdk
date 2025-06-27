@@ -51,6 +51,12 @@ struct NotificationBase : MessageBase {
           Handler(std::move(InHandler)) {}
 
     std::optional<NotificationHandler> Handler;
+
+    // Get typed params - cast the base Params to the derived notification's Params type
+    template <typename TParamsType> [[nodiscard]] std::optional<TParamsType> GetParams() const {
+        if (Params) { return static_cast<const TParamsType&>(*Params); }
+        return std::nullopt;
+    }
 };
 
 MCP_NAMESPACE_END

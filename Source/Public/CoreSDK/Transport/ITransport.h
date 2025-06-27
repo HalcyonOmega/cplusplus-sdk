@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
@@ -19,6 +21,9 @@ MCP_NAMESPACE_BEGIN
 
 // Transport events
 enum class TransportState { Disconnected, Connecting, Connected, Error };
+
+// Connection identifier type
+using ConnectionID = std::string;
 
 // Transport options for different transport types
 struct TransportOptions {
@@ -57,6 +62,14 @@ class ITransport {
     virtual MCPTask<JSONValue> TransmitRequest(const JSONValue& InRequest) = 0;
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
+    // Connection-specific message transmission
+    virtual MCPTask_Void TransmitMessageToConnection(const ConnectionID& InConnectionID,
+                                                     const JSONValue& InMessage) = 0;
+    virtual MCPTask_Void
+    TransmitMessageToConnections(const std::vector<ConnectionID>& InConnectionIDs,
+                                 const JSONValue& InMessage);
+    virtual MCPTask_Void TransmitMessageToAllConnections(const JSONValue& InMessage);
+
     // Default Implementations
     [[nodiscard]] bool IsConnected() const;
     [[nodiscard]] TransportState GetState() const;
@@ -72,6 +85,12 @@ class ITransport {
     void CallNotificationRouter(const NotificationBase& InNotification);
     void CallErrorResponseRouter(const ErrorResponseBase& InError);
 
+    // Connection management
+    void RegisterConnection(const ConnectionID& InConnectionID);
+    void UnregisterConnection(const ConnectionID& InConnectionID);
+    [[nodiscard]] bool IsConnectionRegistered(const ConnectionID& InConnectionID) const;
+    [[nodiscard]] std::vector<ConnectionID> GetActiveConnections() const;
+
   protected:
     TransportState m_CurrentState{TransportState::Disconnected};
 
@@ -80,6 +99,9 @@ class ITransport {
     ResponseHandler m_ResponseRouter;
     NotificationHandler m_NotificationRouter;
     ErrorResponseHandler m_ErrorResponseRouter;
+
+    // Connection tracking
+    std::unordered_set<ConnectionID> m_ActiveConnections;
 };
 
 // Transport factory

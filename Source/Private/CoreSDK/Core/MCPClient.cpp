@@ -64,7 +64,7 @@ MCPTask<InitializeResponse::Result> MCPClient::Initialize() {
 
         // Store negotiated capabilities
         m_ClientCapabilities = Response.Result.Capabilities;
-        m_ServerInfo = Response.ServerInfo;
+        m_ServerInfo = Response.Result.ServerInfo;
 
         // Send initialized notification
         co_await SendNotification(NotificationBase("initialized"));

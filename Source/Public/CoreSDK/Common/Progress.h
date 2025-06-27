@@ -5,35 +5,43 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
-#include "Utilities/Async/MCPTask.h"
-
-// Forward declarations
-class MCPProtocol;
 
 MCP_NAMESPACE_BEGIN
 
 // A progress token, used to associate progress notifications with the original request.
-// TODO: @HalcyonOmega - Relook handling - schema does not have any subfields
 struct ProgressToken {
     std::variant<std::string, int64_t> Token;
 
-    JKEY(TOKENKEY, Token, "token")
+    ProgressToken() = default;
+    ProgressToken(const std::string& InValue) : Token(InValue) {}
+    ProgressToken(int64_t InValue) : Token(InValue) {}
+    ProgressToken(const std::variant<std::string, int64_t>& InValue) : Token(InValue) {}
 
-    DEFINE_TYPE_JSON(ProgressToken, TOKENKEY)
-};
+    std::string ToString() const {
+        return std::visit(
+            [](const auto& InValue) -> std::string {
+                if constexpr (std::is_same_v<std::decay_t<decltype(InValue)>, std::string>) {
+                    return InValue;
+                } else {
+                    return std::to_string(InValue);
+                }
+            },
+            Token);
+    }
 
-// Progress tracking class for long-running operations
-class ProgressTracker {
-  public:
-    ProgressTracker(const std::string& InRequestID, std::shared_ptr<MCPProtocol> InProtocol);
+    friend void to_json(JSONValue& InJSON, const ProgressToken& InProgressToken) {
+        InJSON = InProgressToken.ToString();
+    }
 
-    MCPTask_Void UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
-    MCPTask_Void CompleteProgress();
-
-  private:
-    std::string m_RequestID;
-    std::shared_ptr<MCPProtocol> m_Protocol{nullptr};
-    bool m_IsComplete{false};
+    friend void from_json(const JSONValue& InJSON, ProgressToken& InProgressToken) {
+        if (InJSON.is_string()) {
+            InProgressToken.Token = InJSON.get<std::string>();
+        } else if (InJSON.is_number_integer()) {
+            InProgressToken.Token = InJSON.get<int64_t>();
+        } else {
+            throw std::invalid_argument("ProgressToken must be string or integer");
+        }
+    }
 };
 
 MCP_NAMESPACE_END

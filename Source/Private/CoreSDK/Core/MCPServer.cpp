@@ -702,11 +702,9 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
     const Tool& InTool,
     const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
     const RequestID& InRequestID) {
-    auto progressTracker = std::make_shared<ProgressTracker>(InRequestID, m_Protocol);
-
     try {
         // Update progress at 0%
-        co_await progressTracker->UpdateProgress(0.0);
+        co_await UpdateProgress(0.0);
 
         // Find and execute tool handler
         auto handlerIter = m_ToolHandlers.find(InTool.Name);
@@ -715,7 +713,7 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
             auto result = co_await handlerIter->second(InArguments);
 
             // Complete progress
-            co_await progressTracker->CompleteProgress();
+            co_await UpdateProgress(1.0);
 
             co_return result;
         } else {
@@ -724,9 +722,26 @@ MCPTask<ToolCallResponse> MCPServer::ExecuteToolWithProgress(
         }
     } catch (const std::exception& e) {
         // Ensure progress is marked complete even on error
-        co_await progressTracker->CompleteProgress();
+        co_await UpdateProgress(1.0);
         throw;
     }
+}
+
+MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t> InTotal) {
+    if (m_IsComplete.load() || !m_Protocol) { co_return; }
+
+    try {
+        ProgressNotification notification;
+        notification.ProgressToken = m_RequestID;
+        notification.Progress = InProgress;
+        if (InTotal.has_value()) { notification.Total = *InTotal; }
+
+        co_await SendNotification(notification);
+    } catch (const std::exception&) {
+        // Ignore progress reporting errors to not break main operation
+    }
+
+    co_return;
 }
 
 MCP_NAMESPACE_END
