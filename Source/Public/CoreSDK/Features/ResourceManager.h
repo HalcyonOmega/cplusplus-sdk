@@ -3,6 +3,7 @@
 #include <any>
 #include <functional>
 #include <future>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -84,6 +85,7 @@ class ResourceManager {
     std::unordered_map<std::string, Resource> m_Resources;
     std::unordered_map<std::string, std::pair<ResourceTemplate, ResourceFunction>> m_Templates;
     bool m_WarnOnDuplicateResources;
+    mutable std::mutex m_ResourcesMutex;
 
     /**
      * Check if a URI matches a template and extract parameters.

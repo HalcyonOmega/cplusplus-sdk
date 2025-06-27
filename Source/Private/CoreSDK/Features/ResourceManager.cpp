@@ -11,20 +11,21 @@ ResourceManager::ResourceManager(bool InWarnOnDuplicateResources)
     : m_WarnOnDuplicateResources(InWarnOnDuplicateResources) {}
 
 Resource ResourceManager::AddResource(const Resource& InResource) {
-    const std::string URIString = InResource.URI.ToString();
-
+    const MCP::URI URIString = InResource.URI;
     // Log the addition attempt
-    MCP::Logger::Debug("Adding resource - URI: " + URIString + ", Name: " + InResource.Name);
+    MCP::Logger::Debug("Adding resource - URI: " + URIString.toString()
+                       + ", Name: " + InResource.Name);
+    std::lock_guard<std::mutex> Lock(m_ResourcesMutex);
 
-    const auto ExistingIt = m_Resources.find(URIString);
+    const auto ExistingIt = m_Resources.find(URIString.toString());
     if (ExistingIt != m_Resources.end()) {
         if (m_WarnOnDuplicateResources) {
-            MCP::Logger::Warning("Resource already exists: " + URIString);
+            MCP::Logger::Warning("Resource already exists: " + URIString.toString());
         }
         return ExistingIt->second;
     }
 
-    m_Resources[URIString] = InResource;
+    m_Resources[URIString.toString()] = InResource;
     return InResource;
 }
 
@@ -115,6 +116,8 @@ std::vector<ResourceTemplate> ResourceManager::ListTemplates() const {
 }
 
 bool ResourceManager::HasResource(const std::string& InURI) const {
+    std::lock_guard<std::mutex> Lock(m_ResourcesMutex);
+
     return m_Resources.find(InURI) != m_Resources.end();
 }
 

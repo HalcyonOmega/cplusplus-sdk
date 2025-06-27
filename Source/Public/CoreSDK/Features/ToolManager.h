@@ -3,6 +3,7 @@
 #include <any>
 #include <functional>
 #include <future>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -55,22 +56,21 @@ class ToolManager {
     std::vector<Tool> ListTools() const;
 
     /**
-     * Add a tool from a function.
-     * @param InFunction The function to execute when the tool is called
-     * @param InTool The tool configuration
+     * Add a tool (tool must have Handler member set).
+     * @param InTool The tool configuration with handler
      * @return The added tool. If a tool with the same name exists, returns the existing tool.
      */
-    Tool AddTool(ToolFunction InFunction, const Tool& InTool);
+    Tool AddTool(const Tool& InTool);
 
     /**
-     * Add a tool with automatic schema generation (simplified version).
-     * @param InFunction The function to execute when the tool is called
+     * Add a tool with automatic schema generation.
+     * @param InHandler The function to execute when the tool is called
      * @param InName The name of the tool
      * @param InDescription Optional description of the tool
      * @param InAnnotations Optional tool annotations
      * @return The added tool
      */
-    Tool AddTool(ToolFunction InFunction, const std::string& InName,
+    Tool AddTool(ToolFunction InHandler, const std::string& InName,
                  const std::optional<std::string>& InDescription = std::nullopt,
                  const std::optional<ToolAnnotations>& InAnnotations = std::nullopt);
 
@@ -104,8 +104,9 @@ class ToolManager {
     bool HasTool(const std::string& InName) const;
 
   private:
-    std::unordered_map<std::string, std::pair<Tool, ToolFunction>> m_Tools;
+    std::unordered_map<std::string, Tool> m_Tools;
     bool m_WarnOnDuplicateTools;
+    mutable std::mutex m_ToolsMutex;
 
     /**
      * Create a basic JSON schema for a tool.

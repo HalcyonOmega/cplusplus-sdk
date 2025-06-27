@@ -12,4 +12,21 @@ DEFINE_ENUM_JSON(LoggingLevel, {LoggingLevel::Debug, "debug"}, {LoggingLevel::In
                  {LoggingLevel::Error, "error"}, {LoggingLevel::Critical, "critical"},
                  {LoggingLevel::Alert, "alert"}, {LoggingLevel::Emergency, "emergency"})
 
+class Logger {
+  public:
+    Logger();
+    ~Logger();
+
+    void Log(const std::string& InMessage, LoggingLevel InLevel = LoggingLevel::Info);
+
+    static void Debug(const std::string& InMessage);
+    static void Info(const std::string& InMessage);
+    static void Notice(const std::string& InMessage);
+    static void Warning(const std::string& InMessage);
+    static void Error(const std::string& InMessage);
+    static void Critical(const std::string& InMessage);
+    static void Alert(const std::string& InMessage);
+    static void Emergency(const std::string& InMessage);
+};
+
 MCP_NAMESPACE_END

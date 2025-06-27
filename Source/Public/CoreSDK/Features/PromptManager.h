@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -53,6 +54,7 @@ class PromptManager {
   private:
     std::unordered_map<std::string, Prompt> m_Prompts;
     bool m_WarnOnDuplicatePrompts;
+    mutable std::mutex m_PromptsMutex;
 };
 
 MCP_NAMESPACE_END

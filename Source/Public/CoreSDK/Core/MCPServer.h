@@ -3,6 +3,9 @@
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Core/IMCP.h"
 #include "CoreSDK/Features/FeatureSignatures.h"
+#include "CoreSDK/Features/PromptManager.h"
+#include "CoreSDK/Features/ResourceManager.h"
+#include "CoreSDK/Features/ToolManager.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -61,21 +64,17 @@ class MCPServer : public MCPProtocol {
     // Server state
     bool m_IsRunning{false};
 
-    // Tool management
-    std::unordered_map<Tool, ToolHandler> m_Tools;
+    // Feature managers (thread-safe)
+    PromptManager m_PromptManager;
+    ResourceManager m_ResourceManager;
+    ToolManager m_ToolManager;
+
+    // Handler mappings for legacy compatibility
     std::unordered_map<std::string, ToolHandler> m_ToolHandlers;
-    mutable std::mutex m_ToolsMutex;
-
-    // Prompt management
-    std::unordered_map<Prompt, PromptHandler> m_Prompts;
     std::unordered_map<std::string, PromptHandler> m_PromptHandlers;
-    mutable std::mutex m_PromptsMutex;
-
-    // Resource management
-    std::unordered_map<Resource, ResourceHandler> m_Resources;
     std::unordered_map<std::string, ResourceHandler> m_ResourceHandlers;
-    std::unordered_map<ResourceTemplate, ResourceTemplateHandler> m_ResourceTemplates;
-    mutable std::mutex m_ResourcesMutex;
+    std::unordered_map<std::string, ResourceTemplateHandler> m_ResourceTemplateHandlers;
+    mutable std::mutex m_HandlerMappingMutex;
 
     // Root management
     std::unordered_map<Root, RootHandler> m_Roots;

@@ -10,11 +10,12 @@ PromptManager::PromptManager(bool InWarnOnDuplicatePrompts)
 Prompt PromptManager::AddPrompt(const Prompt& InPrompt) {
     // Log the addition attempt
     MCP::Logger::Debug("Adding prompt: " + InPrompt.Name);
+    std::lock_guard<std::mutex> Lock(m_PromptsMutex);
 
     const auto ExistingIt = m_Prompts.find(InPrompt.Name);
     if (ExistingIt != m_Prompts.end()) {
         if (m_WarnOnDuplicatePrompts) {
-            MCP::Logger::Warning("Prompt already exists: " + InPrompt.Name);
+            Logger::Warning("Prompt already exists: " + InPrompt.Name);
         }
         return ExistingIt->second;
     }
@@ -24,12 +25,16 @@ Prompt PromptManager::AddPrompt(const Prompt& InPrompt) {
 }
 
 std::optional<Prompt> PromptManager::GetPrompt(const std::string& InName) const {
+    std::lock_guard<std::mutex> Lock(m_PromptsMutex);
+
     const auto It = m_Prompts.find(InName);
     if (It != m_Prompts.end()) { return It->second; }
     return std::nullopt;
 }
 
 std::vector<Prompt> PromptManager::ListPrompts() const {
+    std::lock_guard<std::mutex> Lock(m_PromptsMutex);
+
     std::vector<Prompt> Result;
     Result.reserve(m_Prompts.size());
 
@@ -39,6 +44,8 @@ std::vector<Prompt> PromptManager::ListPrompts() const {
 }
 
 bool PromptManager::HasPrompt(const std::string& InName) const {
+    std::lock_guard<std::mutex> Lock(m_PromptsMutex);
+
     return m_Prompts.find(InName) != m_Prompts.end();
 }
 

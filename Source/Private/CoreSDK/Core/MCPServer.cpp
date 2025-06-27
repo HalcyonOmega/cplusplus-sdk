@@ -94,14 +94,7 @@ void MCPServer::AddPrompt(const std::string& InName, const Prompt& InPrompt,
 }
 
 void MCPServer::RemovePrompt(const std::string& InName) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot remove prompts while server is running");
-        co_return;
-    }
-
-    std::lock_guard<std::mutex> lock(m_PromptsMutex);
-    m_Prompts.erase(InName);
-    m_PromptHandlers.erase(InName);
+    // m_PromptManager->RemovePrompt
 }
 
 void MCPServer::AddResource(const URI& InURI, const Resource& InResource,

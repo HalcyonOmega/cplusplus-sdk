@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <optional>
 #include <string>
 
@@ -7,6 +8,9 @@
 #include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
+
+using ToolHandler =
+    std::function<std::future<std::any>(const JSONValue& InArgs, MCPContext* InContext)>;
 
 // Additional properties describing a Tool to clients.
 // NOTE: all properties in ToolAnnotations are **hints**.
@@ -62,6 +66,8 @@ struct Tool {
     JKEY(ANNOTATIONSKEY, Annotations, "annotations")
 
     DEFINE_TYPE_JSON(Tool, NAMEKEY, DESCRIPTIONKEY, INPUTSCHEMAKEY, OUTPUTSCHEMAKEY, ANNOTATIONSKEY)
+
+    ToolHandler Handler;
 };
 
 template <typename T>
