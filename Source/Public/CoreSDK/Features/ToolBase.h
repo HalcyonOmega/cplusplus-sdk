@@ -4,13 +4,13 @@
 #include <optional>
 #include <string>
 
+#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
-
-using ToolHandler =
-    std::function<std::future<std::any>(const JSONValue& InArgs, MCPContext* InContext)>;
+using ToolFunction =
+    std::function<std::future<std::any>(const JSONValue& InArguments, MCPContext* InContext)>;
 
 // Additional properties describing a Tool to clients.
 // NOTE: all properties in ToolAnnotations are **hints**.
@@ -67,7 +67,7 @@ struct Tool {
 
     DEFINE_TYPE_JSON(Tool, NAMEKEY, DESCRIPTIONKEY, INPUTSCHEMAKEY, OUTPUTSCHEMAKEY, ANNOTATIONSKEY)
 
-    ToolHandler Handler;
+    ToolFunction Function;
 };
 
 template <typename T>

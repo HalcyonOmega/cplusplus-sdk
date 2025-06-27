@@ -20,7 +20,7 @@ class MCPServer : public MCPProtocol {
     void NotifyInitialized();
 
     // Tool management
-    void AddTool(const Tool& InTool, ToolHandler InHandler);
+    void AddTool(const Tool& InTool);
     void RemoveTool(const Tool& InTool);
     MCPTask_Void NotifyToolListChanged();
 
@@ -64,17 +64,9 @@ class MCPServer : public MCPProtocol {
     // Server state
     bool m_IsRunning{false};
 
-    // Feature managers (thread-safe)
     PromptManager m_PromptManager;
     ResourceManager m_ResourceManager;
     ToolManager m_ToolManager;
-
-    // Handler mappings for legacy compatibility
-    std::unordered_map<std::string, ToolHandler> m_ToolHandlers;
-    std::unordered_map<std::string, PromptHandler> m_PromptHandlers;
-    std::unordered_map<std::string, ResourceHandler> m_ResourceHandlers;
-    std::unordered_map<std::string, ResourceTemplateHandler> m_ResourceTemplateHandlers;
-    mutable std::mutex m_HandlerMappingMutex;
 
     // Root management
     std::unordered_map<Root, RootHandler> m_Roots;

@@ -91,11 +91,11 @@ template <> struct MCPTask<void> {
             return MCPTask<void>{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        std::suspend_always initial_suspend() noexcept {
+        static std::suspend_always initial_suspend() noexcept {
             return {};
         }
 
-        std::suspend_always final_suspend() noexcept {
+        std::suspend_always final_suspend() const noexcept {
             // Resume awaiter when this task completes
             if (m_Awaiter) { m_Awaiter.resume(); }
             return {};
@@ -133,7 +133,7 @@ template <> struct MCPTask<void> {
         return m_Handle && m_Handle.done();
     }
 
-    void await_suspend(std::coroutine_handle<> InAwaiter) {
+    void await_suspend(std::coroutine_handle<> InAwaiter) const {
         // Store awaiter to resume when this task completes
         m_Handle.promise().m_Awaiter = InAwaiter;
         // Resume this task if not started

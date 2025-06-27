@@ -17,7 +17,7 @@ class Logger {
     Logger();
     ~Logger();
 
-    void Log(const std::string& InMessage, LoggingLevel InLevel = LoggingLevel::Info);
+    static void Log(const std::string& InMessage, LoggingLevel InLevel = LoggingLevel::Info);
 
     static void Debug(const std::string& InMessage);
     static void Info(const std::string& InMessage);

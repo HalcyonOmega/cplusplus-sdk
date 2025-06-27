@@ -11,7 +11,6 @@
 #include <Poco/URI.h>
 
 #include <algorithm>
-#include <format>
 #include <mutex>
 #include <sstream>
 #include <unordered_set>

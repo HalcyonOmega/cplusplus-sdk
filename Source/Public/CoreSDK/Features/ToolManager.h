@@ -113,7 +113,7 @@ class ToolManager {
      * @param InName The tool name
      * @return A basic JSON schema
      */
-    JSONSchema CreateBasicSchema(const std::string& InName) const;
+    static JSONSchema CreateBasicSchema(const std::string& InName);
 };
 
 MCP_NAMESPACE_END

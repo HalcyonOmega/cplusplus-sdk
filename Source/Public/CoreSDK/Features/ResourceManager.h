@@ -11,7 +11,6 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "ResourceBase.h"
-#include "URIProxy.h"
 
 MCP_NAMESPACE_BEGIN
 

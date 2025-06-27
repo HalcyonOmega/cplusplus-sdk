@@ -27,8 +27,8 @@ Prompt PromptManager::AddPrompt(const Prompt& InPrompt) {
 std::optional<Prompt> PromptManager::GetPrompt(const std::string& InName) const {
     std::lock_guard<std::mutex> Lock(m_PromptsMutex);
 
-    const auto It = m_Prompts.find(InName);
-    if (It != m_Prompts.end()) { return It->second; }
+    const auto Iter = m_Prompts.find(InName);
+    if (Iter != m_Prompts.end()) { return Iter->second; }
     return std::nullopt;
 }
 

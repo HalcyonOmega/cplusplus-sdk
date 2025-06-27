@@ -38,7 +38,12 @@ class HTTPTransportClient : public ITransport, public Poco::Runnable {
     MCPTask_Void Connect() override;
     MCPTask_Void Disconnect() override;
 
-    MCPTask_Void TransmitMessage(const JSONValue& InMessage) override;
+    MCPTask_Void TransmitMessage(
+        const JSONValue& InMessage,
+        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+    MCPTask<JSONValue> TransmitRequest(
+        const JSONValue& InRequest,
+        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
     [[nodiscard]] std::string GetConnectionInfo() const override;
 

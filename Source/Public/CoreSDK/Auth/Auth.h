@@ -8,10 +8,11 @@
 #include <unordered_map>
 
 #include "CoreSDK/Common/Macros.h"
+#include "JSONProxy.h"
 #include "Poco/Timespan.h"
 #include "Poco/Timestamp.h"
 #include "Utilities/Async/MCPTask.h"
-#include "json.hpp"
+
 
 // TODO: @HalcyonOmega - Is this using proper Poco auth?
 

@@ -80,6 +80,20 @@ struct SamplingMessage {
     DEFINE_TYPE_JSON(SamplingMessage, ROLEKEY, CONTENTKEY)
 };
 
+// Result of LLM sampling
+// TODO: @HalcyonOmega Cross check with @MCPMessages under SamplingMessage type if possible
+struct SamplingResult {
+    std::variant<TextContent, ImageContent> Result;
+    std::optional<std::string> Model;
+    std::optional<std::string> StopReason;
+
+    JKEY(RESULTKEY, Result, "result")
+    JKEY(MODELKEY, Model, "model")
+    JKEY(STOPREASONKEY, StopReason, "stopReason")
+
+    DEFINE_TYPE_JSON(SamplingResult, RESULTKEY, MODELKEY, STOPREASONKEY)
+};
+
 template <typename T>
 concept SamplingType = requires(T Type) {
     { Type.Role } -> std::same_as<MCP::Role>;
