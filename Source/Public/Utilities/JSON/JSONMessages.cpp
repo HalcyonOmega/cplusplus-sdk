@@ -52,4 +52,16 @@ bool IsValidJSONRPC(const JSONValue& InMessage) {
     return false;
 }
 
+std::optional<MessageType> GetValidMessageType(const JSONValue& InMessage) {
+    if (InMessage.contains("id") && InMessage.contains("method")) { return MessageType::Request; }
+    if (InMessage.contains("id") && InMessage.contains("result") && !InMessage.contains("error")) {
+        return MessageType::Response;
+    }
+    if (InMessage.contains("id") && InMessage.contains("error")) { return MessageType::Error; }
+    if (InMessage.contains("method") && !InMessage.contains("id")) {
+        return MessageType::Notification;
+    }
+    return std::nullopt;
+}
+
 MCP_NAMESPACE_END

@@ -1,10 +1,6 @@
 #pragma once
 
-#include <any>
 #include <functional>
-#include <iostream>
-#include <map>
-#include <memory>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -18,23 +14,14 @@
 #include "CoreSDK/Messages/RequestBase.h"
 #include "CoreSDK/Messages/ResponseBase.h"
 #include "JSONProxy.h"
+#include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
 class MessageManager {
   public:
-    // Handler function signatures for different message types
     template <typename T>
-    using RequestHandlerFunction = std::function<void(const T&, std::optional<MCPContext*>)>;
-
-    template <typename T>
-    using ResponseHandlerFunction = std::function<void(const T&, std::optional<MCPContext*>)>;
-
-    template <typename T>
-    using NotificationHandlerFunction = std::function<void(const T&, std::optional<MCPContext*>)>;
-
-    template <typename T>
-    using ErrorHandlerFunction = std::function<void(const T&, std::optional<MCPContext*>)>;
+    using HandlerFunction = std::function<void(const T&, std::optional<MCPContext*>)>;
 
     // Register handlers for specific concrete message types
     template <ConcreteRequest T, typename Function>
@@ -45,13 +32,13 @@ class MessageManager {
 
         std::scoped_lock lock(m_RequestMutex);
 
-        if (m_WarnOnDuplicateHandlers && m_RequestHandlers.count(T::MessageName)) {
+        if (m_WarnOnDuplicateHandlers && m_RequestHandlers.count(T::Method)) {
             HandleRuntimeError("Request handler already exists for message: "
-                               + std::string(T::MessageName));
+                               + std::string(T::Method));
             return false;
         }
 
-        m_RequestHandlers[T::MessageName] =
+        m_RequestHandlers[T::Method] =
             [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
                                                           std::optional<MCPContext*> InContext) {
                 JSONValue JSONRequest = InMessage;
@@ -70,13 +57,13 @@ class MessageManager {
 
         std::scoped_lock lock(m_ResponseMutex);
 
-        if (m_WarnOnDuplicateHandlers && m_ResponseHandlers.count(T::MessageName)) {
+        if (m_WarnOnDuplicateHandlers && m_ResponseHandlers.count(T::ID.ToString())) {
             HandleRuntimeError("Response handler already exists for message: "
-                               + std::string(T::MessageName));
+                               + std::string(T::ID.ToString()));
             return false;
         }
 
-        m_ResponseHandlers[T::MessageName] =
+        m_ResponseHandlers[T::ID.ToString()] =
             [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
                                                           std::optional<MCPContext*> InContext) {
                 JSONValue JSONResponse = InMessage;
@@ -95,13 +82,13 @@ class MessageManager {
 
         std::scoped_lock lock(m_NotificationMutex);
 
-        if (m_WarnOnDuplicateHandlers && m_NotificationHandlers.count(T::MessageName)) {
+        if (m_WarnOnDuplicateHandlers && m_NotificationHandlers.count(T::Method)) {
             HandleRuntimeError("Notification handler already exists for message: "
-                               + std::string(T::MessageName));
+                               + std::string(T::Method));
             return false;
         }
 
-        m_NotificationHandlers[T::MessageName] =
+        m_NotificationHandlers[T::Method] =
             [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
                                                           std::optional<MCPContext*> InContext) {
                 JSONValue JSONNotification = InMessage;
@@ -120,13 +107,13 @@ class MessageManager {
 
         std::scoped_lock lock(m_ErrorMutex);
 
-        if (m_WarnOnDuplicateHandlers && m_ErrorHandlers.count(T::MessageName)) {
+        if (m_WarnOnDuplicateHandlers && m_ErrorHandlers.count(T::ID.ToString())) {
             HandleRuntimeError("Error handler already exists for message: "
-                               + std::string(T::MessageName));
+                               + std::string(T::ID.ToString()));
             return false;
         }
 
-        m_ErrorHandlers[T::MessageName] =
+        m_ErrorHandlers[T::ID.ToString()] =
             [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
                                                           std::optional<MCPContext*> InContext) {
                 JSONValue JSONError = InMessage;
@@ -143,35 +130,23 @@ class MessageManager {
         try {
             JSONValue Message = JSONValue::parse(InMessage);
 
-            if (!IsValidJSONRPC(Message)) {
-                HandleRuntimeError("Invalid JSON-RPC message received");
-                return false;
+            std::optional<MessageType> MessageType = GetValidMessageType(Message);
+
+            if (MessageType) {
+                switch (MessageType.value()) {
+                    case MessageType::Request: return RouteRequest(Message, InContext);
+                    case MessageType::Response: return RouteResponse(Message, InContext);
+                    case MessageType::Error: return RouteError(Message, InContext);
+                    case MessageType::Notification: return RouteNotification(Message, InContext);
+                    default:
+                        HandleRuntimeError("Invalid message type: "
+                                           + std::to_string(static_cast<int>(MessageType.value())));
+                        return false;
+                }
             }
 
-            // Determine message type and route accordingly
-            if (Message.contains("method")) {
-                if (Message.contains("id")) {
-                    // Request message - has both method and id
-                    return RouteRequest(Message, InContext);
-                } else {
-                    // Notification message - has method but no id
-                    return RouteNotification(Message, InContext);
-                }
-            } else if (Message.contains("id")) {
-                if (Message.contains("result")) {
-                    // Response message - has id and result
-                    return RouteResponse(Message, InContext);
-                } else if (Message.contains("error")) {
-                    // Error response - has id and error
-                    return RouteError(Message, InContext);
-                } else {
-                    HandleRuntimeError("Invalid message: has id but neither result nor error");
-                    return false;
-                }
-            } else {
-                HandleRuntimeError("Invalid message: missing required fields");
-                return false;
-            }
+            HandleRuntimeError("Invalid JSON-RPC message received");
+            return false;
 
         } catch (const std::exception& e) {
             HandleRuntimeError("Error parsing message: " + std::string(e.what()));
@@ -190,10 +165,10 @@ class MessageManager {
             if (it != m_RequestHandlers.end()) {
                 it->second(InMessage, InContext);
                 return true;
-            } else {
-                HandleRuntimeError("No handler registered for request method: " + method);
-                return false;
             }
+            HandleRuntimeError("No handler registered for request method: " + method);
+            return false;
+
         } catch (const std::exception& e) {
             HandleRuntimeError("Error routing request: " + std::string(e.what()));
             return false;
@@ -202,20 +177,17 @@ class MessageManager {
 
     bool RouteResponse(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
         try {
-            // For responses, we need to determine the response type
-            // This could be based on the original request or other metadata
-            // For now, we'll use a generic approach
-            std::string responseType = DetermineResponseType(InMessage);
+            RequestID responseID = ExtractRequestID(InMessage);
 
             std::scoped_lock lock(m_ResponseMutex);
-            auto it = m_ResponseHandlers.find(responseType);
+            auto it = m_ResponseHandlers.find(responseID.ToString());
             if (it != m_ResponseHandlers.end()) {
                 it->second(InMessage, InContext);
                 return true;
-            } else {
-                HandleRuntimeError("No handler registered for response type: " + responseType);
-                return false;
             }
+            HandleRuntimeError("No handler registered for response ID: " + responseID.ToString());
+            return false;
+
         } catch (const std::exception& e) {
             HandleRuntimeError("Error routing response: " + std::string(e.what()));
             return false;
@@ -231,10 +203,10 @@ class MessageManager {
             if (it != m_NotificationHandlers.end()) {
                 it->second(InMessage, InContext);
                 return true;
-            } else {
-                HandleRuntimeError("No handler registered for notification method: " + method);
-                return false;
             }
+            HandleRuntimeError("No handler registered for notification method: " + method);
+            return false;
+
         } catch (const std::exception& e) {
             HandleRuntimeError("Error routing notification: " + std::string(e.what()));
             return false;
@@ -243,66 +215,21 @@ class MessageManager {
 
     bool RouteError(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
         try {
-            std::string errorType = DetermineErrorType(InMessage);
+            RequestID errorID = ExtractRequestID(InMessage);
 
             std::scoped_lock lock(m_ErrorMutex);
-            auto it = m_ErrorHandlers.find(errorType);
+            auto it = m_ErrorHandlers.find(errorID.ToString());
             if (it != m_ErrorHandlers.end()) {
                 it->second(InMessage, InContext);
                 return true;
-            } else {
-                HandleRuntimeError("No handler registered for error type: " + errorType);
-                return false;
             }
+            HandleRuntimeError("No handler registered for error ID: " + errorID.ToString());
+            return false;
+
         } catch (const std::exception& e) {
             HandleRuntimeError("Error routing error: " + std::string(e.what()));
             return false;
         }
-    }
-
-    // Helper functions for JSON parsing and validation
-    bool IsValidJSONRPC(const JSONValue& InMessage) const {
-        return InMessage.is_object() && InMessage.contains("jsonrpc")
-               && InMessage["jsonrpc"].get<std::string>() == "2.0";
-    }
-
-    std::string ExtractMethod(const JSONValue& InMessage) const {
-        if (InMessage.contains("method") && InMessage["method"].is_string()) {
-            return InMessage["method"].get<std::string>();
-        }
-        throw std::runtime_error("Message does not contain valid method field");
-    }
-
-    std::string ExtractRequestID(const JSONValue& InMessage) const {
-        if (InMessage.contains("id")) {
-            if (InMessage["id"].is_string()) {
-                return InMessage["id"].get<std::string>();
-            } else if (InMessage["id"].is_number()) {
-                return std::to_string(InMessage["id"].get<int64_t>());
-            }
-        }
-        throw std::runtime_error("Message does not contain valid id field");
-    }
-
-    JSONValue ExtractParams(const JSONValue& InMessage) const {
-        if (InMessage.contains("params")) { return InMessage["params"]; }
-        return JSONValue::object(); // Return empty object if no params
-    }
-
-    std::string DetermineResponseType(const JSONValue& InMessage) const {
-        (void)InMessage; // Mark as unused for now
-        // This is a simplified approach - in a real implementation, you might
-        // track pending requests to determine the response type
-        // For now, return a generic response type
-        return "DefaultResponse";
-    }
-
-    std::string DetermineErrorType(const JSONValue& InMessage) const {
-        (void)InMessage; // Mark as unused for now
-        // This is a simplified approach - in a real implementation, you might
-        // track pending requests to determine the error type
-        // For now, return a generic error type
-        return "DefaultErrorResponse";
     }
 
     // Handler storage with type erasure
@@ -314,7 +241,7 @@ class MessageManager {
     std::unordered_map<std::string, RequestHandler> m_RequestHandlers;
     std::unordered_map<std::string, ResponseHandler> m_ResponseHandlers;
     std::unordered_map<std::string, NotificationHandler> m_NotificationHandlers;
-    std::unordered_map<std::string, ErrorHandler> m_ErrorHandlers;
+    std::unordered_map<std::string, ErrorResponseHandler> m_ErrorHandlers;
 
     // Mutexes for thread safety
     std::mutex m_RequestMutex;
