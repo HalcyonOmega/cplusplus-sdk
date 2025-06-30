@@ -38,7 +38,7 @@ class NotificationManager {
      * @param InHandler The handler function to execute
      * @return True if successfully registered, false if method already exists
      */
-    bool RegisterNotificationHandler(const std::string& InMethod,
+    bool RegisterNotificationHandler(std::string_view InMethod,
                                      NotificationHandlerFunction InHandler);
 
     /**
@@ -46,7 +46,7 @@ class NotificationManager {
      * @param InMethod The notification method name to unregister
      * @return True if successfully unregistered, false if method didn't exist
      */
-    bool UnregisterNotificationHandler(const std::string& InMethod);
+    bool UnregisterNotificationHandler(std::string_view InMethod);
 
     /**
      * Route an incoming notification to the appropriate handler.
@@ -62,7 +62,7 @@ class NotificationManager {
      * @param InMethod The method name to check
      * @return True if handler exists, false otherwise
      */
-    bool HasNotificationHandler(const std::string& InMethod) const;
+    bool HasNotificationHandler(std::string_view InMethod) const;
 
     /**
      * Get the handler for a specific notification method.
@@ -70,7 +70,7 @@ class NotificationManager {
      * @return The handler function if found, nullopt otherwise
      */
     std::optional<NotificationHandlerFunction>
-    GetNotificationHandler(const std::string& InMethod) const;
+    GetNotificationHandler(std::string_view InMethod) const;
 
     /**
      * List all registered methods.

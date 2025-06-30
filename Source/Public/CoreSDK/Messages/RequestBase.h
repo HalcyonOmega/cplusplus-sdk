@@ -6,6 +6,7 @@
 #include <utility>
 #include <variant>
 
+#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/Progress.h"
 #include "CoreSDK/Messages/MessageBase.h"
 #include "JSONProxy.h"
@@ -15,7 +16,8 @@ struct RequestBase;
 
 MCP_NAMESPACE_BEGIN
 
-using RequestHandler = std::function<void(const RequestBase& InRequest)>;
+using RequestHandler =
+    std::function<void(const RequestBase& InRequest, std::optional<MCPContext*> InContext)>;
 
 struct RequestID {
     std::variant<std::string, int64_t> Value;
@@ -93,24 +95,25 @@ struct RequestBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
-    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt,
-                std::optional<RequestHandler> InHandler = std::nullopt)
-        : MessageBase(), ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)),
-          Handler(std::move(InHandler)) {}
+    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
+        : MessageBase(), ID(GenerateUUID()), Method(InMethod), Params(std::move(InParams)) {}
 
     RequestBase(RequestID InID, std::string_view InMethod,
-                std::optional<RequestParams> InParams = std::nullopt,
-                std::optional<RequestHandler> InHandler = std::nullopt)
-        : MessageBase(), ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)),
-          Handler(std::move(InHandler)) {}
+                std::optional<RequestParams> InParams = std::nullopt)
+        : MessageBase(), ID(std::move(InID)), Method(InMethod), Params(std::move(InParams)) {}
 
-    std::optional<RequestHandler> Handler;
+    static constexpr std::string_view MessageName{"DefaultRequest"};
 
     // Get typed params - cast the base Params to the derived request's Params type
     template <typename TParamsType> [[nodiscard]] std::optional<TParamsType> GetParams() const {
         if (Params) { return static_cast<const TParamsType&>(*Params); }
         return std::nullopt;
     }
+};
+
+template <typename T>
+concept ConcreteRequest = std::is_base_of_v<RequestBase, T> && requires {
+    { T::MessageName } -> std::same_as<std::string_view>;
 };
 
 MCP_NAMESPACE_END

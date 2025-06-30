@@ -9,6 +9,7 @@
 #include "CoreSDK/Features/PromptManager.h"
 #include "CoreSDK/Features/ResourceManager.h"
 #include "CoreSDK/Features/ToolManager.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -43,7 +44,7 @@ class MCPServer : public MCPProtocol {
     void RemoveResource(const Resource& InResource);
     void RemoveResourceTemplate(const ResourceTemplate& InTemplate);
     MCPTask_Void NotifyResourceListChanged();
-    MCPTask_Void NotifyResourceUpdated(const Resource& InResource);
+    MCPTask_Void NotifyResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
 
     // Root management
     void AddRoot(const Root& InRoot);
@@ -51,21 +52,15 @@ class MCPServer : public MCPProtocol {
     MCPTask_Void NotifyRootsListChanged();
 
     // Logging
-    MCPTask_Void LogMessage(LoggingLevel InLevel, const std::string& InLogger,
-                            const JSONValue& InData);
+    MCPTask_Void LogMessage(const LoggingMessageNotification::Params& InParams);
 
     // Sampling requests (servers can request sampling from clients)
-    MCPTask<CreateMessageResponse::CreateMessageResult>
-    RequestSampling(const std::vector<SamplingMessage>& InMessages, int64_t InMaxTokens,
-                    const std::string& InSystemPrompt = "",
-                    const std::string& InIncludeContext = "none",
-                    double InTemperature = DEFAULT_TEMPERATURE,
-                    const std::vector<std::string>& InStopSequences = {},
-                    const ModelPreferences& InModelPrefs = {}, const JSONValue& InMetadata = {});
+    MCPTask<CreateMessageResponse::Result>
+    RequestSampling(const CreateMessageRequest::Params& InParams);
 
     // Progress reporting
-    MCPTask_Void ReportProgress(const RequestID& InRequestID, double InProgress,
-                                int64_t InTotal = -1);
+    MCPTask_Void ReportProgress(const ProgressNotification::Params& InParams);
+
     MCPTask_Void CancelRequest(const RequestID& InRequestID, const std::string& InReason = "");
 
     // Access to managers for MCPContext
@@ -104,22 +99,17 @@ class MCPServer : public MCPProtocol {
     void SetupDefaultHandlers();
 
     // Request handlers that delegate to managers
-    void HandleInitialize(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleToolsList(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleToolCall(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandlePromptsList(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandlePromptGet(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleResourcesList(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleResourceRead(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleResourceSubscribe(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleResourceUnsubscribe(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleSamplingCreateMessage(const JSONValue& InParams, const RequestID& InRequestID);
-    void HandleCompletionComplete(const JSONValue& InParams, const RequestID& InRequestID);
-
-    // Pagination helper methods
-    std::string EncodeCursor(size_t InIndex) const;
-    size_t DecodeCursor(const std::string& InCursor) const;
-    static constexpr size_t DEFAULT_PAGE_SIZE = 100;
+    void HandleInitialize(const InitializeRequest& InRequest, MCPContext* InContext);
+    void HandleToolsList(const ListToolsRequest& InRequest, MCPContext* InContext);
+    void HandleToolCall(const CallToolRequest& InRequest, MCPContext* InContext);
+    void HandlePromptsList(const ListPromptsRequest& InRequest, MCPContext* InContext);
+    void HandlePromptGet(const GetPromptRequest& InRequest, MCPContext* InContext);
+    void HandleResourcesList(const ListResourcesRequest& InRequest, MCPContext* InContext);
+    void HandleResourceRead(const ReadResourceRequest& InRequest, MCPContext* InContext);
+    void HandleResourceSubscribe(const SubscribeRequest& InRequest, MCPContext* InContext);
+    void HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest, MCPContext* InContext);
+    void HandleSamplingCreateMessage(const CreateMessageRequest& InRequest, MCPContext* InContext);
+    void HandleCompletionComplete(const CompleteRequest& InRequest, MCPContext* InContext);
 
     // Progress tracking and tool execution
     MCPTask<CallToolResponse> ExecuteToolWithProgress(

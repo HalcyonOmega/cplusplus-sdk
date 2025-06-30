@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Messages/MessageBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 #include "JSONProxy.h"
@@ -12,7 +13,8 @@ struct ErrorResponseBase;
 
 MCP_NAMESPACE_BEGIN
 
-using ErrorResponseHandler = std::function<void(const ErrorResponseBase& InError)>;
+using ErrorResponseHandler =
+    std::function<void(const ErrorResponseBase& InError, std::optional<MCPContext*> InContext)>;
 
 struct MCPError {
     int64_t Code;
@@ -44,12 +46,15 @@ struct ErrorResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, MessageBase, IDKEY, ERRORKEY)
 
-    ErrorResponseBase(RequestID InID, MCPError InError,
-                      std::optional<ErrorResponseHandler> InHandler = std::nullopt)
-        : MessageBase(), ID(std::move(InID)), Error(std::move(InError)),
-          Handler(std::move(InHandler)) {}
+    ErrorResponseBase(RequestID InID, MCPError InError)
+        : MessageBase(), ID(std::move(InID)), Error(std::move(InError)) {}
 
-    std::optional<ErrorResponseHandler> Handler;
+    static constexpr std::string_view MessageName{"DefaultErrorResponse"};
+};
+
+template <typename T>
+concept ConcreteErrorResponse = std::is_base_of_v<ErrorResponseBase, T> && requires {
+    { T::MessageName } -> std::same_as<std::string_view>;
 };
 
 MCP_NAMESPACE_END

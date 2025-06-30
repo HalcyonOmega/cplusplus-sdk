@@ -12,7 +12,8 @@ struct ResponseBase;
 
 MCP_NAMESPACE_BEGIN
 
-using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
+using ResponseHandler =
+    std::function<void(const ResponseBase& InResponse, std::optional<MCPContext*> InContext)>;
 
 struct ResultParams {
     std::optional<JSONValue> Meta;
@@ -41,17 +42,20 @@ struct ResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
-    ResponseBase(RequestID InID, ResultParams InResult = ResultParams{},
-                 std::optional<ResponseHandler> InHandler = std::nullopt)
-        : MessageBase(), ID(std::move(InID)), Result(std::move(InResult)),
-          Handler(std::move(InHandler)) {}
+    ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
+        : MessageBase(), ID(std::move(InID)), Result(std::move(InResult)) {}
 
-    std::optional<ResponseHandler> Handler;
+    static constexpr std::string_view MessageName{"DefaultResponse"};
 
     // Get typed result - cast the base Result to the derived response's Result type
     template <typename TResultType> [[nodiscard]] const TResultType& GetResult() const {
         return static_cast<const TResultType&>(Result);
     }
+};
+
+template <typename T>
+concept ConcreteResponse = std::is_base_of_v<ResponseBase, T> && requires {
+    { T::MessageName } -> std::same_as<std::string_view>;
 };
 
 MCP_NAMESPACE_END

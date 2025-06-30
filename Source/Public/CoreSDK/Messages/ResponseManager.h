@@ -93,6 +93,14 @@ class ResponseManager {
         m_PendingRequestHandlers; // Request ID -> Handler
     bool m_WarnOnDuplicateHandlers;
     mutable std::mutex m_PendingRequestsMutex;
+
+  public:
+    template <ConcreteResponse T, typename Function> void RegisterHandler(Function&& InHandler) {
+        static_assert(std::is_invocable_v<Function, const T&, std::optional<MCPContext*>>,
+                      "Handler must be callable with '(const ConcreteMessageType&, MCPContext*)' ");
+
+        std::scoped_lock lock(m_PendingRequestsMutex);
+    }
 };
 
 MCP_NAMESPACE_END

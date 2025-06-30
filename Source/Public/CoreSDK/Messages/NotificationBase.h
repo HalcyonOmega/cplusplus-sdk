@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Messages/MessageBase.h"
 #include "JSONProxy.h"
 
@@ -11,7 +12,8 @@ struct NotificationBase;
 
 MCP_NAMESPACE_BEGIN
 
-using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
+using NotificationHandler = std::function<void(const NotificationBase& InNotification,
+                                               std::optional<MCPContext*> InContext)>;
 
 struct NotificationParams {
     struct NotificationParamsMeta {
@@ -45,18 +47,21 @@ struct NotificationBase : MessageBase {
     DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
     NotificationBase(std::string_view InMethod,
-                     std::optional<NotificationParams> InParams = std::nullopt,
-                     std::optional<NotificationHandler> InHandler = std::nullopt)
-        : MessageBase(), Method(InMethod), Params(std::move(InParams)),
-          Handler(std::move(InHandler)) {}
+                     std::optional<NotificationParams> InParams = std::nullopt)
+        : MessageBase(), Method(InMethod), Params(std::move(InParams)) {}
 
-    std::optional<NotificationHandler> Handler;
+    static constexpr std::string_view MessageName{"DefaultNotification"};
 
     // Get typed params - cast the base Params to the derived notification's Params type
     template <typename TParamsType> [[nodiscard]] std::optional<TParamsType> GetParams() const {
         if (Params) { return static_cast<const TParamsType&>(*Params); }
         return std::nullopt;
     }
+};
+
+template <typename T>
+concept ConcreteNotification = std::is_base_of_v<NotificationBase, T> && requires {
+    { T::MessageName } -> std::same_as<std::string_view>;
 };
 
 MCP_NAMESPACE_END

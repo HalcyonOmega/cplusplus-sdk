@@ -13,14 +13,12 @@
 MCP_NAMESPACE_BEGIN
 
 // Message handlers
-using ToolHandler = std::function<MCPTask<CallToolResponse::CallToolResult>(const Tool& InTool)>;
-using PromptHandler =
-    std::function<MCPTask<GetPromptResponse::GetPromptResult>(const Prompt& InPrompt)>;
+using ToolHandler = std::function<MCPTask<CallToolResponse::Result>(const Tool& InTool)>;
+using PromptHandler = std::function<MCPTask<GetPromptResponse::Result>(const Prompt& InPrompt)>;
 using ResourceHandler =
-    std::function<MCPTask<ReadResourceResponse::ReadResourceResult>(const Resource& InResource)>;
-using ResourceTemplateHandler = std::function<MCPTask<ReadResourceResponse::ReadResourceResult>(
+    std::function<MCPTask<ReadResourceResponse::Result>(const Resource& InResource)>;
+using ResourceTemplateHandler = std::function<MCPTask<ReadResourceResponse::Result>(
     const ResourceTemplate& InResourceTemplate)>;
-using RootHandler =
-    std::function<MCPTask<ReadResourceResponse::ReadResourceResult>(const Root& InRoot)>;
+using RootHandler = std::function<MCPTask<ReadResourceResponse::Result>(const Root& InRoot)>;
 
 MCP_NAMESPACE_END

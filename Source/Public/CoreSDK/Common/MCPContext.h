@@ -19,6 +19,7 @@ class MCPServer;
 class ResourceManager;
 class PromptManager;
 class ToolManager;
+struct RequestID;
 
 MCP_NAMESPACE_BEGIN
 
@@ -112,8 +113,6 @@ class MCPContext {
     void ReportProgressSync(float InProgress, const std::optional<float>& InTotal = std::nullopt,
                             const std::optional<std::string>& InMessage = std::nullopt);
 
-    std::vector<std::variant<TextResourceContents, BlobResourceContents>>
-    ReadResourceSync(const std::string& InURI);
     std::vector<std::variant<TextResourceContents, BlobResourceContents>>
     ReadResourceSync(const MCP::URI& InURI);
 

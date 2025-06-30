@@ -133,68 +133,36 @@ void MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate) {
     m_ResourceManager->RemoveTemplate(InTemplate);
 }
 
-MCPTask_Void MCPServer::NotifyResourceUpdated(const Resource& InResource) {
-    ResourceUpdatedNotification notification;
-    notification.Params.URI = MCP::URI(InURI);
-
-    co_await SendNotification("notifications/resources/updated", JSONValue(notification));
+MCPTask_Void MCPServer::NotifyResourceUpdated(const ResourceUpdatedNotification::Params& InParams) {
+    co_await SendNotification(ResourceUpdatedNotification(InParams));
 }
 
 MCPTask_Void MCPServer::NotifyResourceListChanged() {
-    ResourceListChangedNotification notification;
-
-    co_await SendNotification("notifications/resources/list_changed", JSONValue(notification));
+    co_await SendNotification(ResourceListChangedNotification());
 }
 
 MCPTask_Void MCPServer::NotifyToolListChanged() {
-    ToolListChangedNotification notification;
-
-    co_await SendNotification("notifications/tools/list_changed", JSONValue(notification));
+    co_await SendNotification(ToolListChangedNotification());
 }
 
 MCPTask_Void MCPServer::NotifyPromptListChanged() {
-    PromptListChangedNotification notification;
-
-    co_await SendNotification("notifications/prompts/list_changed", JSONValue(notification));
+    co_await SendNotification(PromptListChangedNotification());
 }
 
-MCPTask_Void MCPServer::ReportProgress(const RequestID& InRequestID, double InProgress,
-                                       int64_t InTotal) {
-    ProgressNotification notification;
-    notification.Params.ProgressToken = ProgressToken(InRequestID);
-    notification.Params.Progress = InProgress;
-    if (InTotal >= 0) { notification.Params.Total = InTotal; }
-
-    co_await SendNotification("notifications/progress", JSONValue(notification));
+MCPTask_Void MCPServer::ReportProgress(const ProgressNotification::Params& InParams) {
+    co_await SendNotification(ProgressNotification(InParams));
 }
 
-MCPTask_Void MCPServer::LogMessage(LoggingLevel InLevel, const std::string& InLogger,
-                                   const JSONValue& InData) {
-    LoggingMessageNotification notification;
-    notification.Params.Level = InLevel;
-    notification.Params.Data = InData;
-    if (!InLogger.empty()) { notification.Params.Logger = InLogger; }
-
-    co_await SendNotification("notifications/message", JSONValue(notification));
+MCPTask_Void MCPServer::LogMessage(const LoggingMessageNotification::Params& InParams) {
+    co_await SendNotification(LoggingMessageNotification(InParams));
 }
 
 void MCPServer::SetupDefaultHandlers() {
     // Register request handlers using the RegisterRequestHandler method
-    RegisterRequestHandler(
-        RequestBase("initialize", std::nullopt, [this](const RequestBase& InRequest) {
-            try {
-                JSONValue paramsJSON;
-                if (InRequest.Params.has_value()) {
-                    to_json(paramsJSON, InRequest.Params.value());
-                } else {
-                    paramsJSON = JSONValue::object();
-                }
-                HandleInitialize(paramsJSON, InRequest.ID);
-            } catch (const std::exception& e) {
-                SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                                  JSONValue::object({{"details", e.what()}}));
-            }
-        }));
+    RegisterRequestHandler(InitializeRequest(),
+                           [this](const RequestBase& InRequest, MCPContext* InContext) {
+                               HandleInitialize(InRequest.Params.value(), InRequest.ID);
+                           });
 
     // Tools handlers
     RegisterRequestHandler(RequestBase("tools/list", std::nullopt,
@@ -450,7 +418,7 @@ void MCPServer::HandleToolsList(const JSONValue& InParams, const RequestID& InRe
     try {
         auto request = InParams.get<ListToolsRequest::Params>();
 
-        ListToolsResponse::ListToolsResult response;
+        ListToolsResponse::Result response;
         response.Tools = m_ToolManager.ListTools();
 
         SendResponse(InRequestID, JSONValue(response));
@@ -463,12 +431,12 @@ void MCPServer::HandleToolsList(const JSONValue& InParams, const RequestID& InRe
 
 void MCPServer::HandleToolCall(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<CallToolRequest::CallToolParams>();
+        auto request = InParams.get<CallToolRequest::Params>();
 
         // Use ToolManager to call the tool
         auto result = m_ToolManager.CallToolSync(request.Name, request.Arguments);
 
-        CallToolResponse::CallToolResult response;
+        CallToolResponse::Result response;
         response.Content = result.Content;
         response.IsError = result.IsError;
 
@@ -484,7 +452,7 @@ void MCPServer::HandlePromptsList(const JSONValue& InParams, const RequestID& In
     try {
         auto request = InParams.get<ListPromptsRequest::Params>();
 
-        ListPromptsResponse::ListPromptsResult response;
+        ListPromptsResponse::Result response;
         response.Prompts = m_PromptManager.ListPrompts();
 
         SendResponse(InRequestID, JSONValue(response));
@@ -497,12 +465,12 @@ void MCPServer::HandlePromptsList(const JSONValue& InParams, const RequestID& In
 
 void MCPServer::HandlePromptGet(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<GetPromptRequest::GetPromptParams>();
+        auto request = InParams.get<GetPromptRequest::Params>();
 
         // Use PromptManager to get the prompt
         auto result = m_PromptManager.GetPromptSync(request.Name, request.Arguments);
 
-        GetPromptResponse::GetPromptResult response;
+        GetPromptResponse::Result response;
         response.Description = result.Description;
         response.Messages = result.Messages;
 
@@ -518,7 +486,7 @@ void MCPServer::HandleResourcesList(const JSONValue& InParams, const RequestID& 
     try {
         auto request = InParams.get<ListResourcesRequest::Params>();
 
-        ListResourcesResponse::ListResourcesResult response;
+        ListResourcesResponse::Result response;
         response.Resources = m_ResourceManager.ListResources();
 
         SendResponse(InRequestID, JSONValue(response));
@@ -531,12 +499,12 @@ void MCPServer::HandleResourcesList(const JSONValue& InParams, const RequestID& 
 
 void MCPServer::HandleResourceRead(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<ReadResourceRequest::ReadResourceParams>();
+        auto request = InParams.get<ReadResourceRequest::Params>();
 
         // Use ResourceManager to read the resource
         auto result = m_ResourceManager.GetResourceSync(request.URI.ToString());
 
-        ReadResourceResponse::ReadResourceResult response;
+        ReadResourceResponse::Result response;
         response.Contents = result.Contents;
 
         SendResponse(InRequestID, JSONValue(response));
@@ -549,7 +517,7 @@ void MCPServer::HandleResourceRead(const JSONValue& InParams, const RequestID& I
 
 void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<SubscribeRequest::SubscribeParams>();
+        auto request = InParams.get<SubscribeRequest::Params>();
         std::string uri = request.URI.ToString();
         std::string clientID = GetCurrentClientID();
 
@@ -577,7 +545,7 @@ void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const Request
 
 void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
     try {
-        auto request = InParams.get<UnsubscribeRequest::UnsubscribeParams>();
+        auto request = InParams.get<UnsubscribeRequest::Params>();
         std::string uri = request.URI.ToString();
         std::string clientID = GetCurrentClientID();
 
@@ -632,6 +600,7 @@ MCPTask_Void MCPServer::NotifyResourceSubscribers(const std::string& InURI) {
 }
 
 // Client identification helper (simplified - in production would use transport session data)
+// TODO: @HalcyonOmega - Implement this
 std::string MCPServer::GetCurrentClientID() const {
     // For now, return a default client ID
     // In a real implementation, this would extract the client ID from the current transport session
@@ -639,19 +608,20 @@ std::string MCPServer::GetCurrentClientID() const {
 }
 
 // Send notification to specific client (simplified implementation)
+// TODO: @HalcyonOmega - Implement this
 MCPTask_Void
 MCPServer::SendNotificationToClient(const std::string& InClientID,
                                     const ResourceUpdatedNotification& InNotification) {
     // For now, send to all clients via the protocol
     // In a real implementation, this would route to the specific client
-    co_await SendNotification("notifications/resources/updated", JSONValue(InNotification));
+    co_await SendNotification(InNotification);
     co_return;
 }
 
 void MCPServer::HandleSamplingCreateMessage(const JSONValue& InParams,
                                             const std::string& InRequestID) {
     try {
-        auto request = InParams.get<CreateMessageRequest::CreateMessageParams>();
+        auto request = InParams.get<CreateMessageRequest::Params>();
 
         if (!m_SamplingHandler) {
             SendErrorResponse(InRequestID, -32601, "Sampling not supported", JSONValue::object());
@@ -673,7 +643,7 @@ void MCPServer::HandleSamplingCreateMessage(const JSONValue& InParams,
 void MCPServer::HandleCompletionComplete(const JSONValue& InParams,
                                          const std::string& InRequestID) {
     try {
-        auto request = InParams.get<CompleteRequest::CompleteParams>();
+        auto request = InParams.get<CompleteRequest::Params>();
 
         if (!m_CompletionHandler) {
             SendErrorResponse(InRequestID, -32601, "Completion not supported", JSONValue::object());
@@ -690,60 +660,6 @@ void MCPServer::HandleCompletionComplete(const JSONValue& InParams,
         SendErrorResponse(InRequestID, -32603, "Internal error",
                           JSONValue::object({{"details", e.what()}}));
     }
-}
-
-std::string MCPServer::EncodeCursor(size_t InIndex) const {
-    // Use base64 encoding for cursor
-    std::string indexStr = std::to_string(InIndex);
-
-    // Simple base64 encoding (for production, use a proper base64 library)
-    static const std::string chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    std::string result;
-    int val = 0;
-    int valb = -6;
-
-    for (unsigned char c : indexStr) {
-        val = (val << 8) + c;
-        valb += 8;
-        while (valb >= 0) {
-            result.push_back(chars[(val >> valb) & 0x3F]);
-            valb -= 6;
-        }
-    }
-    if (valb > -6) { result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]); }
-    while (result.size() % 4) { result.push_back('='); }
-
-    return result;
-}
-
-size_t MCPServer::DecodeCursor(const std::string& InCursor) const {
-    try {
-        // Simple base64 decoding
-        static const int T[128] = {
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62,
-            -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -2, -1, -1, -1, 0,
-            1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-            23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
-            39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1};
-
-        std::string decoded;
-        int val = 0;
-        int valb = -8;
-
-        for (unsigned char c : InCursor) {
-            if (T[c] == -1) break;
-            val = (val << 6) + T[c];
-            valb += 6;
-            if (valb >= 0) {
-                decoded.push_back(char((val >> valb) & 0xFF));
-                valb -= 8;
-            }
-        }
-
-        return std::stoull(decoded);
-    } catch (const std::exception&) { throw std::invalid_argument("Invalid cursor format"); }
 }
 
 // Enhanced tool execution with progress reporting
@@ -772,12 +688,12 @@ MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(
 
 MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t> InTotal) {
     try {
-        ProgressNotification notification;
-        notification.Params.ProgressToken = ProgressToken("current_request");
-        notification.Params.Progress = InProgress;
-        if (InTotal.has_value()) { notification.Params.Total = *InTotal; }
+        ProgressNotification::Params Params;
+        Params.ProgressToken = ProgressToken("current_request");
+        Params.Progress = InProgress;
+        if (InTotal.has_value()) { Params.Total = *InTotal; }
 
-        co_await SendNotification("notifications/progress", JSONValue(notification));
+        co_await SendNotification(ProgressNotification(Params));
     } catch (const std::exception&) {
         // Ignore progress reporting errors to not break main operation
     }
@@ -788,6 +704,12 @@ MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t>
 MCPTask_Void MCPServer::CompleteProgress() {
     co_await UpdateProgress(1.0);
     co_return;
+}
+
+MCPTask<CreateMessageResponse::Result>
+MCPServer::RequestSampling(const CreateMessageRequest::Params& InParams) {
+    auto Response = co_await SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
+    co_return Response.Result.value();
 }
 
 MCP_NAMESPACE_END
