@@ -80,7 +80,9 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
     co_return;
 }
 
-MCPTask<ToolListResponse> MCPClient::ListTools(const std::optional<std::string>& InCursor) {
+void MCPClient::OnNotified_Initialized() {}
+
+MCPTask<ToolListResponse> MCPClient::Request_ListTools(const std::optional<std::string>& InCursor) {
     ToolListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
@@ -88,8 +90,8 @@ MCPTask<ToolListResponse> MCPClient::ListTools(const std::optional<std::string>&
     co_return response.get<ToolListResponse>();
 }
 
-MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
-                                              const JSONData& InArguments) {
+MCPTask<ToolCallResponse> MCPClient::Request_CallTool(const std::string& InToolName,
+                                                      const JSONData& InArguments) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -103,7 +105,10 @@ MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
     co_return response.get<ToolCallResponse>();
 }
 
-MCPTask<PromptListResponse> MCPClient::ListPrompts(const std::optional<std::string>& InCursor) {
+void MCPClient::OnNotified_ToolListChanged() {}
+
+MCPTask<PromptListResponse>
+MCPClient::Request_ListPrompts(const std::optional<std::string>& InCursor) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -116,8 +121,9 @@ MCPTask<PromptListResponse> MCPClient::ListPrompts(const std::optional<std::stri
     co_return response.get<PromptListResponse>();
 }
 
-MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
-                                                const std::optional<JSONData>& InArguments) {
+MCPTask<PromptGetResponse>
+MCPClient::Request_GetPrompt(const std::string& InPromptName,
+                             const std::optional<JSONData>& InArguments) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -131,7 +137,10 @@ MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
     co_return response.get<PromptGetResponse>();
 }
 
-MCPTask<ResourceListResponse> MCPClient::ListResources(const std::optional<std::string>& InCursor) {
+void MCPClient::OnNotified_PromptListChanged() {}
+
+MCPTask<ResourceListResponse>
+MCPClient::Request_ListResources(const std::optional<std::string>& InCursor) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -144,7 +153,7 @@ MCPTask<ResourceListResponse> MCPClient::ListResources(const std::optional<std::
     co_return response.get<ResourceListResponse>();
 }
 
-MCPTask<ResourceReadResponse> MCPClient::ReadResource(const std::string& InResourceURI) {
+MCPTask<ResourceReadResponse> MCPClient::Request_ReadResource(const std::string& InResourceURI) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -157,7 +166,7 @@ MCPTask<ResourceReadResponse> MCPClient::ReadResource(const std::string& InResou
     co_return response.get<ResourceReadResponse>();
 }
 
-MCPTask_Void MCPClient::SubscribeToResource(const std::string& InResourceURI) {
+MCPTask_Void MCPClient::Request_Subscribe(const std::string& InResourceURI) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -169,7 +178,7 @@ MCPTask_Void MCPClient::SubscribeToResource(const std::string& InResourceURI) {
     co_await SendRequest("resources/subscribe", JSONData(request));
 }
 
-MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI) {
+MCPTask_Void MCPClient::Request_Unsubscribe(const std::string& InResourceURI) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -181,8 +190,39 @@ MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI
     co_await SendRequest("resources/unsubscribe", JSONData(request));
 }
 
-MCPTask<SamplingCreateMessageResponse>
-MCPClient::OnRequest_CreateMessage(const SamplingCreateMessageRequest& InRequest) {
+void MCPClient::OnNotified_ResourceListChanged() {}
+
+void MCPClient::OnNotified_ResourceUpdated() {}
+
+MCPTask<RootListResponse> MCPClient::Request_ListRoots() {
+    if (!IsConnected()) {
+        HandleRuntimeError("Client not connected");
+        co_return;
+    }
+
+    RootListRequest request;
+
+    auto response = co_await SendRequest("roots/list", JSONData(request));
+    co_return response.get<RootListResponse>();
+}
+
+void MCPClient::OnNotified_RootsListChanged() {}
+
+MCPTask_Void MCPClient::Request_SetLoggingLevel(LoggingLevel InLevel) {
+    if (!IsConnected()) {
+        HandleRuntimeError("Client not connected");
+        co_return;
+    }
+
+    LoggingLevelRequest request;
+    request.Level = InLevel;
+
+    co_await SendRequest("logging/setLevel", JSONData(request));
+}
+
+void MCPClient::OnNotified_LogMessage() {}
+
+void MCPClient::OnRequest_CreateMessage(const SamplingCreateMessageRequest& InRequest) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -192,8 +232,7 @@ MCPClient::OnRequest_CreateMessage(const SamplingCreateMessageRequest& InRequest
     co_return response.get<SamplingCreateMessageResponse>();
 }
 
-MCPTask<CompletionCompleteResponse>
-MCPClient::CompleteText(const CompletionCompleteRequest& InRequest) {
+MCPTask_Void MCPClient::Request_Complete(const CompleteRequest& InRequest) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -203,93 +242,74 @@ MCPClient::CompleteText(const CompletionCompleteRequest& InRequest) {
     co_return response.get<CompletionCompleteResponse>();
 }
 
-void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
-    m_ResourceUpdatedHandler = InHandler;
+// Old Handler Setters
+// void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
+//     m_ResourceUpdatedHandler = InHandler;
 
-    // Set up protocol notification handler
-    SetNotificationHandler("notifications/resources/updated", [this](const JSONData& InParams) {
-        if (m_ResourceUpdatedHandler) {
-            auto notification = InParams.get<ResourceUpdatedNotification>();
-            m_ResourceUpdatedHandler(notification);
-        }
-    });
-}
+//     // Set up protocol notification handler
+//     SetNotificationHandler("notifications/resources/updated", [this](const JSONData& InParams) {
+//         if (m_ResourceUpdatedHandler) {
+//             auto notification = InParams.get<ResourceUpdatedNotification>();
+//             m_ResourceUpdatedHandler(notification);
+//         }
+//     });
+// }
 
-void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandler) {
-    m_ResourceListChangedHandler = InHandler;
+// void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandler) {
+//     m_ResourceListChangedHandler = InHandler;
 
-    SetNotificationHandler(
-        "notifications/resources/list_changed", [this](const JSONData& InParams) {
-            if (m_ResourceListChangedHandler) {
-                auto notification = InParams.get<ResourceListChangedNotification>();
-                m_ResourceListChangedHandler(notification);
-            }
-        });
-}
+//     SetNotificationHandler(
+//         "notifications/resources/list_changed", [this](const JSONData& InParams) {
+//             if (m_ResourceListChangedHandler) {
+//                 auto notification = InParams.get<ResourceListChangedNotification>();
+//                 m_ResourceListChangedHandler(notification);
+//             }
+//         });
+// }
 
-void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
-    m_ToolListChangedHandler = InHandler;
+// void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
+//     m_ToolListChangedHandler = InHandler;
 
-    SetNotificationHandler("notifications/tools/list_changed", [this](const JSONData& InParams) {
-        if (m_ToolListChangedHandler) {
-            auto notification = InParams.get<ToolListChangedNotification>();
-            m_ToolListChangedHandler(notification);
-        }
-    });
-}
+//     SetNotificationHandler("notifications/tools/list_changed", [this](const JSONData& InParams) {
+//         if (m_ToolListChangedHandler) {
+//             auto notification = InParams.get<ToolListChangedNotification>();
+//             m_ToolListChangedHandler(notification);
+//         }
+//     });
+// }
 
-void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) {
-    m_PromptListChangedHandler = InHandler;
+// void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) {
+//     m_PromptListChangedHandler = InHandler;
 
-    SetNotificationHandler("notifications/prompts/list_changed", [this](const JSONData& InParams) {
-        if (m_PromptListChangedHandler) {
-            auto notification = InParams.get<PromptListChangedNotification>();
-            m_PromptListChangedHandler(notification);
-        }
-    });
-}
+//     SetNotificationHandler("notifications/prompts/list_changed", [this](const JSONData& InParams)
+//     {
+//         if (m_PromptListChangedHandler) {
+//             auto notification = InParams.get<PromptListChangedNotification>();
+//             m_PromptListChangedHandler(notification);
+//         }
+//     });
+// }
 
-void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
-    m_ProgressHandler = InHandler;
+// void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
+//     m_ProgressHandler = InHandler;
 
-    SetNotificationHandler("notifications/progress", [this](const JSONData& InParams) {
-        if (m_ProgressHandler) {
-            auto notification = InParams.get<ProgressNotification>();
-            m_ProgressHandler(notification);
-        }
-    });
-}
+//     SetNotificationHandler("notifications/progress", [this](const JSONData& InParams) {
+//         if (m_ProgressHandler) {
+//             auto notification = InParams.get<ProgressNotification>();
+//             m_ProgressHandler(notification);
+//         }
+//     });
+// }
 
-void MCPClient::SetLogHandler(LogHandler InHandler) {
-    m_LogHandler = InHandler;
+// void MCPClient::SetLogHandler(LogHandler InHandler) {
+//     m_LogHandler = InHandler;
 
-    SetNotificationHandler("notifications/message", [this](const JSONData& InParams) {
-        if (m_LogHandler) {
-            auto notification = InParams.get<LoggingMessageNotification>();
-            m_LogHandler(notification);
-        }
-    });
-}
-
-void MCPClient::CreateTransport() {
-    switch (m_TransportType) {
-        case TransportType::Stdio: {
-            auto stdioOptions =
-                dynamic_cast<StdioClientTransportOptions*>(m_TransportOptions.get());
-            if (!stdioOptions) {
-                throw std::invalid_argument("Invalid options for stdio transport");
-            }
-            m_Transport = std::make_unique<StdioClientTransport>(*stdioOptions);
-            break;
-        }
-        case TransportType::StreamableHTTP: {
-            auto httpOptions = dynamic_cast<HTTPTransportOptions*>(m_TransportOptions.get());
-            if (!httpOptions) { throw std::invalid_argument("Invalid options for HTTP transport"); }
-            m_Transport = std::make_unique<HTTPTransportClient>(*httpOptions);
-            break;
-        }
-        default: throw std::invalid_argument("Unsupported transport type");
-    }
-}
+//     SetNotificationHandler("notifications/message", [this](const JSONData& InParams) {
+//         if (m_LogHandler) {
+//             auto notification = InParams.get<LoggingMessageNotification>();
+//             m_LogHandler(notification);
+//         }
+//     });
+// }
 
 MCP_NAMESPACE_END
