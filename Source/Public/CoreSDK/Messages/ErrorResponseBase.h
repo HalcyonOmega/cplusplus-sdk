@@ -21,6 +21,10 @@ struct MCPError {
     JKEY(DATAKEY, Data, "data")
 
     DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
+
+    MCPError(int64_t InCode, std::string_view InMessage,
+             std::optional<JSONValue> InData = std::nullopt)
+        : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
 };
 
 // Standard JSON-RPC 2.0 error codes
@@ -34,15 +38,15 @@ static constexpr int64_t INTERNAL_ERROR = -32603;
 
 struct ErrorResponseBase : MessageBase {
     RequestID ID;
-    MCPError Error;
+    MCPError ErrorData;
 
     JKEY(IDKEY, ID, "id")
-    JKEY(ERRORKEY, Error, "error")
+    JKEY(ERRORKEY, ErrorData, "error")
 
     DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, MessageBase, IDKEY, ERRORKEY)
 
     ErrorResponseBase(RequestID InID, MCPError InError)
-        : MessageBase(), ID(std::move(InID)), Error(std::move(InError)) {}
+        : MessageBase(), ID(std::move(InID)), ErrorData(std::move(InError)) {}
 };
 
 using ErrorResponseHandler =

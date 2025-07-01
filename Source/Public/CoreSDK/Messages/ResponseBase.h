@@ -35,23 +35,24 @@ struct PaginatedResultParams : ResultParams {
 
 struct ResponseBase : MessageBase {
     RequestID ID;
-    ResultParams Result;
+    ResultParams ResultData;
 
     JKEY(IDKEY, ID, "id")
-    JKEY(RESULTKEY, Result, "result")
+    JKEY(RESULTKEY, ResultData, "result")
 
     DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
     ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
-        : MessageBase(), ID(std::move(InID)), Result(std::move(InResult)) {}
-
-    // Get typed result - cast the base Result to the derived response's Result type
-    template <typename TResultType> [[nodiscard]] const TResultType& GetResult() const {
-        return static_cast<const TResultType&>(Result);
-    }
+        : MessageBase(), ID(std::move(InID)), ResultData(std::move(InResult)) {}
 };
 
 template <typename T>
 concept ConcreteResponse = std::is_base_of_v<ResponseBase, T>;
+
+// Get typed result - cast the base Result to the derived response's Result type
+template <typename TResultType, ConcreteResponse T>
+[[nodiscard]] TResultType GetResponseResult(T& InResponse) {
+    return static_cast<const TResultType&>(InResponse.ResultData);
+}
 
 MCP_NAMESPACE_END

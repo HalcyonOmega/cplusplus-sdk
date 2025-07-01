@@ -81,7 +81,7 @@ class ITransport {
     TransportState m_CurrentState{TransportState::Disconnected};
 
     // Event handlers
-    std::function<void(const JSONValue&, std::optional<MCPContext*>)> m_MessageRouter;
+    std::function<void(const JSONValue&)> m_MessageRouter;
 
     // Connection tracking
     std::unordered_set<ConnectionID> m_ActiveConnections;

@@ -39,8 +39,6 @@ struct InitializeRequest : RequestBase {
 
     InitializeRequest(const InitializeRequest::Params& InParams = InitializeRequest::Params{})
         : RequestBase("initialize", InParams) {}
-
-    static constexpr std::string_view MessageName{"InitializeRequest"};
 };
 
 struct InitializeResponse : ResponseBase {
@@ -60,36 +58,26 @@ struct InitializeResponse : ResponseBase {
     InitializeResponse(const RequestID& InRequestID,
                        const InitializeResponse::Result& InResult = InitializeResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"InitializeResponse"};
 };
 
 // Initialized notification
 struct InitializedNotification : NotificationBase {
     InitializedNotification() : NotificationBase("notifications/initialized") {}
-
-    static constexpr std::string_view MessageName{"InitializedNotification"};
 };
 
 // Ping request/response
 struct PingRequest : RequestBase {
     PingRequest() : RequestBase("ping") {}
-
-    static constexpr std::string_view MessageName{"PingRequest"};
 };
 
 struct PingResponse : ResponseBase {
     PingResponse(const RequestID& InRequestID) : ResponseBase(InRequestID) {}
-
-    static constexpr std::string_view MessageName{"PingResponse"};
 };
 
 // Tool-related messages
 struct ListToolsRequest : RequestBase {
     ListToolsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("tools/list", InParams) {}
-
-    static constexpr std::string_view MessageName{"ListToolsRequest"};
 };
 
 struct ListToolsResponse : ResponseBase {
@@ -104,8 +92,6 @@ struct ListToolsResponse : ResponseBase {
     ListToolsResponse(const RequestID& InRequestID,
                       const ListToolsResponse::Result& InResult = ListToolsResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"ListToolsResponse"};
 };
 
 struct CallToolRequest : RequestBase {
@@ -121,8 +107,6 @@ struct CallToolRequest : RequestBase {
 
     CallToolRequest(const CallToolRequest::Params& InParams = CallToolRequest::Params{})
         : RequestBase("tools/call", InParams) {}
-
-    static constexpr std::string_view MessageName{"CallToolRequest"};
 };
 
 struct CallToolResponse : ResponseBase {
@@ -139,16 +123,12 @@ struct CallToolResponse : ResponseBase {
     CallToolResponse(const RequestID& InRequestID,
                      const CallToolResponse::Result& InResult = CallToolResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"CallToolResponse"};
 };
 
 // Prompt-related messages
 struct ListPromptsRequest : RequestBase {
     ListPromptsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("prompts/list", InParams) {}
-
-    static constexpr std::string_view MessageName{"ListPromptsRequest"};
 };
 
 struct ListPromptsResponse : ResponseBase {
@@ -163,8 +143,6 @@ struct ListPromptsResponse : ResponseBase {
     ListPromptsResponse(const RequestID& InRequestID,
                         const ListPromptsResponse::Result& InResult = ListPromptsResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"ListPromptsResponse"};
 };
 
 struct GetPromptRequest : RequestBase {
@@ -180,8 +158,6 @@ struct GetPromptRequest : RequestBase {
 
     GetPromptRequest(const GetPromptRequest::Params& InParams = GetPromptRequest::Params{})
         : RequestBase("prompts/get", InParams) {}
-
-    static constexpr std::string_view MessageName{"GetPromptRequest"};
 };
 
 struct GetPromptResponse : ResponseBase {
@@ -199,16 +175,12 @@ struct GetPromptResponse : ResponseBase {
     GetPromptResponse(const RequestID& InRequestID,
                       const GetPromptResponse::Result& InResult = GetPromptResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"GetPromptResponse"};
 };
 
 // Resource-related messages
 struct ListResourcesRequest : RequestBase {
     ListResourcesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("resources/list", InParams) {}
-
-    static constexpr std::string_view MessageName{"ListResourcesRequest"};
 };
 
 struct ListResourcesResponse : ResponseBase {
@@ -224,8 +196,6 @@ struct ListResourcesResponse : ResponseBase {
         const RequestID& InRequestID,
         const ListResourcesResponse::Result& InResult = ListResourcesResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"ListResourcesResponse"};
 };
 
 struct ReadResourceRequest : RequestBase {
@@ -239,8 +209,6 @@ struct ReadResourceRequest : RequestBase {
 
     ReadResourceRequest(const ReadResourceRequest::Params& InParams = ReadResourceRequest::Params{})
         : RequestBase("resources/read", InParams) {}
-
-    static constexpr std::string_view MessageName{"ReadResourceRequest"};
 };
 
 struct ReadResourceResponse : ResponseBase {
@@ -256,8 +224,6 @@ struct ReadResourceResponse : ResponseBase {
         const RequestID& InRequestID,
         const ReadResourceResponse::Result& InResult = ReadResourceResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"ReadResourceResponse"};
 };
 
 // Subscribe/Unsubscribe
@@ -272,8 +238,6 @@ struct SubscribeRequest : RequestBase {
 
     SubscribeRequest(const SubscribeRequest::Params& InParams = SubscribeRequest::Params{})
         : RequestBase("resources/subscribe", InParams) {}
-
-    static constexpr std::string_view MessageName{"SubscribeRequest"};
 };
 
 struct UnsubscribeRequest : RequestBase {
@@ -287,8 +251,6 @@ struct UnsubscribeRequest : RequestBase {
 
     UnsubscribeRequest(const UnsubscribeRequest::Params& InParams = UnsubscribeRequest::Params{})
         : RequestBase("resources/unsubscribe", InParams) {}
-
-    static constexpr std::string_view MessageName{"UnsubscribeRequest"};
 };
 
 // Sampling-related messages
@@ -320,8 +282,6 @@ struct CreateMessageRequest : RequestBase {
     CreateMessageRequest(
         const CreateMessageRequest::Params& InParams = CreateMessageRequest::Params{})
         : RequestBase("sampling/createMessage", InParams) {}
-
-    static constexpr std::string_view MessageName{"CreateMessageRequest"};
 };
 
 struct CreateMessageResponse : ResponseBase {
@@ -342,16 +302,12 @@ struct CreateMessageResponse : ResponseBase {
         const RequestID& InRequestID,
         const CreateMessageResponse::Result& InResult = CreateMessageResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"CreateMessageResponse"};
 };
 
 // Roots-related messages
 struct ListRootsRequest : RequestBase {
     ListRootsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("roots/list", InParams) {}
-
-    static constexpr std::string_view MessageName{"ListRootsRequest"};
 };
 
 struct ListRootsResponse : ResponseBase {
@@ -366,8 +322,6 @@ struct ListRootsResponse : ResponseBase {
     ListRootsResponse(const RequestID& InRequestID,
                       const ListRootsResponse::Result& InResult = ListRootsResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"ListRootsResponse"};
 };
 
 // Logging messages
@@ -382,8 +336,6 @@ struct SetLevelRequest : RequestBase {
 
     SetLevelRequest(const SetLevelRequest::Params& InParams = SetLevelRequest::Params{})
         : RequestBase("logging/setLevel", InParams) {}
-
-    static constexpr std::string_view MessageName{"SetLevelRequest"};
 };
 
 struct LoggingMessageNotification : NotificationBase {
@@ -407,8 +359,6 @@ struct LoggingMessageNotification : NotificationBase {
     LoggingMessageNotification(
         const LoggingMessageNotification::Params& InParams = LoggingMessageNotification::Params{})
         : NotificationBase("notifications/message", InParams) {}
-
-    static constexpr std::string_view MessageName{"LoggingMessageNotification"};
 };
 
 // Progress notification
@@ -431,8 +381,6 @@ struct ProgressNotification : NotificationBase {
     ProgressNotification(
         const ProgressNotification::Params& InParams = ProgressNotification::Params{})
         : NotificationBase("notifications/progress", InParams) {}
-
-    static constexpr std::string_view MessageName{"ProgressNotification"};
 };
 
 // Cancellation notification
@@ -451,15 +399,11 @@ struct CancelledNotification : NotificationBase {
     CancelledNotification(
         const CancelledNotification::Params& InParams = CancelledNotification::Params{})
         : NotificationBase("notifications/cancelled", InParams) {}
-
-    static constexpr std::string_view MessageName{"CancelledNotification"};
 };
 
 // Change notifications
 struct ResourceListChangedNotification : NotificationBase {
     ResourceListChangedNotification() : NotificationBase("notifications/resources/list_changed") {}
-
-    static constexpr std::string_view MessageName{"ResourceListChangedNotification"};
 };
 
 struct ResourceUpdatedNotification : NotificationBase {
@@ -473,26 +417,18 @@ struct ResourceUpdatedNotification : NotificationBase {
 
     ResourceUpdatedNotification(const Params& InParams = Params{})
         : NotificationBase("notifications/resources/updated", InParams) {}
-
-    static constexpr std::string_view MessageName{"ResourceUpdatedNotification"};
 };
 
 struct PromptListChangedNotification : NotificationBase {
     PromptListChangedNotification() : NotificationBase("notifications/prompts/list_changed") {}
-
-    static constexpr std::string_view MessageName{"PromptListChangedNotification"};
 };
 
 struct ToolListChangedNotification : NotificationBase {
     ToolListChangedNotification() : NotificationBase("notifications/tools/list_changed") {}
-
-    static constexpr std::string_view MessageName{"ToolListChangedNotification"};
 };
 
 struct RootsListChangedNotification : NotificationBase {
     RootsListChangedNotification() : NotificationBase("notifications/roots/list_changed") {}
-
-    static constexpr std::string_view MessageName{"RootsListChangedNotification"};
 };
 
 // Completion request/response
@@ -529,8 +465,6 @@ struct CompleteRequest : RequestBase {
 
     CompleteRequest(const CompleteRequest::Params& InParams = CompleteRequest::Params{})
         : RequestBase("completion/complete", InParams) {}
-
-    static constexpr std::string_view MessageName{"CompleteRequest"};
 };
 
 struct CompleteResponse : ResponseBase {
@@ -555,8 +489,6 @@ struct CompleteResponse : ResponseBase {
     CompleteResponse(const RequestID& InRequestID,
                      const CompleteResponse::Result& InResult = CompleteResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
-
-    static constexpr std::string_view MessageName{"CompleteResponse"};
 };
 
 // Union types for polymorphic handling

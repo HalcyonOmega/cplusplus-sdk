@@ -58,7 +58,6 @@ bool MCPServer::IsRunning() const {
     return m_IsRunning;
 }
 
-// Tool management - delegate to ToolManager
 void MCPServer::AddTool(const Tool& InTool) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add tools while server is running");
@@ -77,7 +76,6 @@ void MCPServer::RemoveTool(const Tool& InTool) {
     m_ToolManager->RemoveTool(InTool.Name);
 }
 
-// Prompt management - delegate to PromptManager
 void MCPServer::AddPrompt(const Prompt& InPrompt) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add prompts while server is running");
@@ -96,7 +94,6 @@ void MCPServer::RemovePrompt(const Prompt& InPrompt) {
     m_PromptManager->RemovePrompt(InPrompt);
 }
 
-// Resource management - delegate to ResourceManager
 void MCPServer::AddResource(const Resource& InResource) {
     if (m_IsRunning) {
         HandleRuntimeError("Cannot add resources while server is running");
@@ -207,15 +204,17 @@ void MCPServer::SetupDefaultHandlers() {
 
 void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
                                  std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<InitializeRequest::Params>();
+        InitializeRequest::Params Request =
+            GetRequestParams<InitializeRequest::Params>(InRequest).value();
 
         // CRITICAL: Validate protocol version first
         static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS = {"2024-11-05",
                                                                              "2025-03-26"};
 
         auto iter = std::find(SUPPORTED_PROTOCOL_VERSIONS.begin(),
-                              SUPPORTED_PROTOCOL_VERSIONS.end(), request.ProtocolVersion);
+                              SUPPORTED_PROTOCOL_VERSIONS.end(), Request.ProtocolVersion);
 
         if (iter == SUPPORTED_PROTOCOL_VERSIONS.end()) {
             std::string supportedVersions;
@@ -225,15 +224,15 @@ void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
             }
 
             SendErrorResponse(InRequestID, -32602,
-                              "Unsupported protocol version: " + request.ProtocolVersion
+                              "Unsupported protocol version: " + Request.ProtocolVersion
                                   + ". Supported versions: " + supportedVersions,
                               JSONValue::object());
             return;
         }
 
-        InitializeResponse::Result response;
-        response.ProtocolVersion = request.ProtocolVersion; // Use negotiated version
-        response.ServerInfo = m_ServerInfo;
+        InitializeResponse::Result Result;
+        Result.ProtocolVersion = Request.ProtocolVersion; // Use negotiated version
+        Result.ServerInfo = m_ServerInfo;
 
         // Set up capabilities based on what we support
         ServerCapabilities capabilities;
@@ -263,134 +262,143 @@ void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
         // Sampling capability if handler is set
         if (m_SamplingHandler) { capabilities.Sampling = SamplingCapability{}; }
 
-        response.Capabilities = capabilities;
+        Result.Capabilities = capabilities;
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandleToolsList(const ListToolsRequest& InRequest,
                                 std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<ListToolsRequest::Params>();
+        auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-        ListToolsResponse::Result response;
-        response.Tools = m_ToolManager->ListTools();
+        ListToolsResponse::Result Result;
+        Result.Tools = m_ToolManager->ListTools();
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandleToolCall(const CallToolRequest& InRequest,
                                std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<CallToolRequest::Params>();
+        auto Request = GetRequestParams<CallToolRequest::Params>(InRequest);
 
         // Use ToolManager to call the tool
-        auto result = m_ToolManager.CallToolSync(request.Name, request.Arguments);
+        auto Result = m_ToolManager->CallToolSync(Request.Name, Request.Arguments);
 
-        CallToolResponse::Result response;
-        response.Content = result.Content;
-        response.IsError = result.IsError;
+        CallToolResponse::Result ResponseResult;
+        ResponseResult.Content = Result.Content;
+        ResponseResult.IsError = Result.IsError;
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), ResponseResult));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandlePromptsList(const ListPromptsRequest& InRequest,
                                   std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<ListPromptsRequest::Params>();
+        auto Request = GetRequestParams<ListPromptsRequest::Params>(InRequest);
 
-        ListPromptsResponse::Result response;
-        response.Prompts = m_PromptManager.ListPrompts();
+        ListPromptsResponse::Result Result;
+        Result.Prompts = m_PromptManager.ListPrompts();
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandlePromptGet(const GetPromptRequest& InRequest,
                                 std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<GetPromptRequest::Params>();
+        auto Request = GetRequestParams<GetPromptRequest::Params>(InRequest);
 
         // Use PromptManager to get the prompt
-        auto result = m_PromptManager.GetPromptSync(request.Name, request.Arguments);
+        auto Result = m_PromptManager->GetPromptSync(Request.Name, Request.Arguments);
 
-        GetPromptResponse::Result response;
-        response.Description = result.Description;
-        response.Messages = result.Messages;
+        GetPromptResponse::Result ResponseResult;
+        ResponseResult.Description = Result.Description;
+        ResponseResult.Messages = Result.Messages;
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), ResponseResult));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandleResourcesList(const ListResourcesRequest& InRequest,
                                     std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<ListResourcesRequest::Params>();
+        auto Request = GetRequestParams<ListResourcesRequest::Params>(InRequest);
 
-        ListResourcesResponse::Result response;
-        response.Resources = m_ResourceManager.ListResources();
+        ListResourcesResponse::Result Result;
+        Result.Resources = m_ResourceManager.ListResources();
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandleResourceRead(const ReadResourceRequest& InRequest,
                                    std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<ReadResourceRequest::Params>();
+        auto Request = GetRequestParams<ReadResourceRequest::Params>(InRequest);
 
         // Use ResourceManager to read the resource
-        auto result = m_ResourceManager.GetResourceSync(request.URI.ToString());
+        auto Result = m_ResourceManager.GetResourceSync(Request.URI.ToString());
 
-        ReadResourceResponse::Result response;
-        response.Contents = result.Contents;
+        ReadResourceResponse::Result ResponseResult;
+        ResponseResult.Contents = Result.Contents;
 
-        SendResponse(InRequestID, JSONValue(response));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), ResponseResult));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
                                         std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<SubscribeRequest::Params>();
-        std::string uri = request.URI.ToString();
+        auto Request = GetRequestParams<SubscribeRequest::Params>(InRequest);
+        std::string uri = Request.URI.ToString();
         std::string clientID = GetCurrentClientID();
 
         // Validate resource exists
         if (!m_ResourceManager.HasResource(uri)) {
-            SendErrorResponse(InRequestID, -32601, "Resource not found",
-                              JSONValue::object({{"uri", uri}}));
+            SendErrorResponse(
+                ErrorResponseBase(InRequest.GetRequestID(),
+                                  MCPError(ErrorCodes::INVALID_REQUEST, "Resource not found",
+                                           JSONValue::object({{"uri", uri}}))));
             return;
         }
 
@@ -401,19 +409,20 @@ void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
         }
 
         // Send empty response to indicate success
-        SendResponse(InRequestID, JSONValue::object());
+        SendResponse(ResponseBase(InRequest.GetRequestID(), JSONValue::object()));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
 void MCPServer::HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
                                           std::optional<MCPContext*> InContext) {
+    (void)InContext;
     try {
-        auto request = InParams.get<UnsubscribeRequest::Params>();
-        std::string uri = request.URI.ToString();
+        auto Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest);
+        std::string uri = Request.URI.ToString();
         std::string clientID = GetCurrentClientID();
 
         // Remove from subscriptions
@@ -428,11 +437,61 @@ void MCPServer::HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
         }
 
         // Send empty response
-        SendResponse(InRequestID, JSONValue::object());
+        SendResponse(ResponseBase(InRequest.GetRequestID(), JSONValue::object()));
 
     } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
+    }
+}
+
+void MCPServer::HandleSamplingCreateMessage(const CreateMessageRequest& InRequest,
+                                            std::optional<MCPContext*> InContext) {
+    (void)InContext;
+    try {
+        auto Request = GetRequestParams<CreateMessageRequest::Params>(InRequest);
+
+        if (!m_SamplingHandler) {
+            SendErrorResponse(
+                ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::METHOD_NOT_FOUND,
+                                                                     "Sampling not supported")));
+            return;
+        }
+
+        // Call handler
+        // auto response = m_SamplingHandler(request);
+        // SendResponse(InRequestID, JSONValue(response));
+
+        // TODO: Implement actual sampling handler call
+
+    } catch (const std::exception& e) {
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
+    }
+}
+
+void MCPServer::HandleCompletionComplete(const CompleteRequest& InRequest,
+                                         std::optional<MCPContext*> InContext) {
+    (void)InContext;
+    try {
+        auto Request = GetRequestParams<CompleteRequest::Params>(InRequest);
+
+        if (!m_CompletionHandler) {
+            SendErrorResponse(
+                ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::METHOD_NOT_FOUND,
+                                                                     "Completion not supported")));
+            return;
+        }
+
+        // Call handler
+        // auto response = m_CompletionHandler(request);
+        // SendResponse(InRequestID, JSONValue(response));
+
+        // TODO: Implement actual completion handler call
+
+    } catch (const std::exception& e) {
+        SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
+                                            MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
     }
 }
 
@@ -483,50 +542,6 @@ MCPServer::SendNotificationToClient(const std::string& InClientID,
     // In a real implementation, this would route to the specific client
     co_await SendNotification(InNotification);
     co_return;
-}
-
-void MCPServer::HandleSamplingCreateMessage(const JSONValue& InParams,
-                                            const std::string& InRequestID) {
-    try {
-        auto request = InParams.get<CreateMessageRequest::Params>();
-
-        if (!m_SamplingHandler) {
-            SendErrorResponse(InRequestID, -32601, "Sampling not supported", JSONValue::object());
-            return;
-        }
-
-        // Call handler
-        // auto response = m_SamplingHandler(request);
-        // SendResponse(InRequestID, JSONValue(response));
-
-        // TODO: Implement actual sampling handler call
-
-    } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
-    }
-}
-
-void MCPServer::HandleCompletionComplete(const JSONValue& InParams,
-                                         const std::string& InRequestID) {
-    try {
-        auto request = InParams.get<CompleteRequest::Params>();
-
-        if (!m_CompletionHandler) {
-            SendErrorResponse(InRequestID, -32601, "Completion not supported", JSONValue::object());
-            return;
-        }
-
-        // Call handler
-        // auto response = m_CompletionHandler(request);
-        // SendResponse(InRequestID, JSONValue(response));
-
-        // TODO: Implement actual completion handler call
-
-    } catch (const std::exception& e) {
-        SendErrorResponse(InRequestID, -32603, "Internal error",
-                          JSONValue::object({{"details", e.what()}}));
-    }
 }
 
 // Enhanced tool execution with progress reporting

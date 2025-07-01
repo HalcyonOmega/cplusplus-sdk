@@ -39,25 +39,28 @@ struct NotificationParams {
 
 struct NotificationBase : MessageBase {
     std::string Method;
-    std::optional<NotificationParams> Params;
+    std::optional<NotificationParams> ParamsData;
 
     JKEY(METHODKEY, Method, "method")
-    JKEY(PARAMSKEY, Params, "params")
+    JKEY(PARAMSKEY, ParamsData, "params")
 
     DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
     NotificationBase(std::string_view InMethod,
                      std::optional<NotificationParams> InParams = std::nullopt)
-        : MessageBase(), Method(InMethod), Params(std::move(InParams)) {}
-
-    // Get typed params - cast the base Params to the derived notification's Params type
-    template <typename TParamsType> [[nodiscard]] std::optional<TParamsType> GetParams() const {
-        if (Params) { return static_cast<const TParamsType&>(*Params); }
-        return std::nullopt;
-    }
+        : MessageBase(), Method(InMethod), ParamsData(std::move(InParams)) {}
 };
 
 template <typename T>
 concept ConcreteNotification = std::is_base_of_v<NotificationBase, T>;
+
+// Get typed params - cast the base Params to the derived notification's Params type
+template <typename TParamsType, ConcreteNotification T>
+[[nodiscard]] std::optional<TParamsType> GetNotificationParams(T& InNotification) {
+    if (InNotification.ParamsData) {
+        return static_cast<const TParamsType&>(*InNotification.ParamsData);
+    }
+    return std::nullopt;
+}
 
 MCP_NAMESPACE_END

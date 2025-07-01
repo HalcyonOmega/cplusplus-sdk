@@ -15,6 +15,9 @@ MCP_NAMESPACE_BEGIN
  * - Access request metadata
  * - Interact with the underlying server
  */
-class MCPContext {};
+class MCPContext {
+  public:
+    MCPContext();
+};
 
 MCP_NAMESPACE_END
