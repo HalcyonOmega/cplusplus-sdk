@@ -22,29 +22,24 @@ class MCPServer : public MCPProtocol {
     // Lifecycle methods
     MCPTask_Void Start() override;
     MCPTask_Void Stop() override;
-    bool IsRunning() const;
 
     // Initialization
-    void OnRequest_Initialize(const InitializeRequest& InRequest,
-                              std::optional<MCPContext*> InContext);
+    void OnRequest_Initialize(const InitializeRequest& InRequest);
     void Notify_Initialized();
 
     // Tool management
     void AddTool(const Tool& InTool);
     void RemoveTool(const Tool& InTool);
     MCPTask_Void Notify_ToolListChanged();
-    void OnRequest_ListTools(const ListToolsRequest& InRequest,
-                             std::optional<MCPContext*> InContext);
-    void OnRequest_CallTool(const CallToolRequest& InRequest, std::optional<MCPContext*> InContext);
+    void OnRequest_ListTools(const ListToolsRequest& InRequest);
+    void OnRequest_CallTool(const CallToolRequest& InRequest);
 
     // Prompt management
     void AddPrompt(const Prompt& InPrompt);
     void RemovePrompt(const Prompt& InPrompt);
     MCPTask_Void Notify_PromptListChanged();
-    void OnRequest_ListPrompts(const ListPromptsRequest& InRequest,
-                               std::optional<MCPContext*> InContext);
-    void OnRequest_GetPrompt(const GetPromptRequest& InRequest,
-                             std::optional<MCPContext*> InContext);
+    void OnRequest_ListPrompts(const ListPromptsRequest& InRequest);
+    void OnRequest_GetPrompt(const GetPromptRequest& InRequest);
 
     // Resource management
     void AddResource(const Resource& InResource);
@@ -53,14 +48,10 @@ class MCPServer : public MCPProtocol {
     void RemoveResourceTemplate(const ResourceTemplate& InTemplate);
     MCPTask_Void Notify_ResourceListChanged();
     MCPTask_Void Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
-    void OnRequest_ListResources(const ListResourcesRequest& InRequest,
-                                 std::optional<MCPContext*> InContext);
-    void OnRequest_ReadResource(const ReadResourceRequest& InRequest,
-                                std::optional<MCPContext*> InContext);
-    void OnRequest_SubscribeResource(const SubscribeRequest& InRequest,
-                                     std::optional<MCPContext*> InContext);
-    void OnRequest_UnsubscribeResource(const UnsubscribeRequest& InRequest,
-                                       std::optional<MCPContext*> InContext);
+    void OnRequest_ListResources(const ListResourcesRequest& InRequest);
+    void OnRequest_ReadResource(const ReadResourceRequest& InRequest);
+    void OnRequest_SubscribeResource(const SubscribeRequest& InRequest);
+    void OnRequest_UnsubscribeResource(const UnsubscribeRequest& InRequest);
 
     // Root management
     void AddRoot(const Root& InRoot);
@@ -73,16 +64,15 @@ class MCPServer : public MCPProtocol {
     // Sampling requests (servers can request sampling from clients)
     MCPTask<CreateMessageResponse::Result>
     Request_CreateMessage(const CreateMessageRequest::Params& InParams);
-    void OnRequest_CreateMessage(const CreateMessageRequest& InRequest,
-                                 std::optional<MCPContext*> InContext);
 
-    MCPTask_Void Request_Complete(const CompleteRequest& InRequest);
-    void OnRequest_Complete(const CompleteRequest& InRequest, std::optional<MCPContext*> InContext);
+    // Autocomplete
+    void OnRequest_Complete(const CompleteRequest& InRequest);
 
     // Progress reporting
     MCPTask_Void Notify_Progress(const ProgressNotification::Params& InParams);
-
-    MCPTask_Void CancelRequest(const RequestID& InRequestID, const std::string& InReason = "");
+    MCPTask_Void Notify_CancelRequest(const CancelledNotification::Params& InParams);
+    void OnNotified_Progress(const ProgressNotification& InNotification);
+    void OnNotified_CancelRequest(const CancelledNotification& InNotification);
 
     // Access to managers for MCPContext
     std::weak_ptr<ToolManager> GetToolManager() {

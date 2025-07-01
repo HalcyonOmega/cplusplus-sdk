@@ -46,14 +46,16 @@ class MCPClient : public MCPProtocol {
     void OnNotified_LogMessage();
 
     // Sampling (for servers that want to sample via client)
-    MCPTask<CreateMessageResponse::Result>
-    OnRequest_CreateMessage(const CreateMessageRequest& InRequest);
-
-    // Progress
-    void OnNotified_Progress();
+    void OnRequest_CreateMessage(const CreateMessageRequest& InRequest);
 
     // Autocomplete
-    MCPTask<CompleteResponse::Result> OnRequest_Complete(const CompleteRequest& InRequest);
+    MCPTask_Void Request_Complete(const CompleteRequest& InRequest);
+
+    // Progress
+    MCPTask_Void Notify_Progress(const ProgressNotification::Params& InParams);
+    MCPTask_Void Notify_CancelRequest(const CancelledNotification::Params& InParams);
+    void OnNotified_Progress(const ProgressNotification& InNotification);
+    void OnNotified_CancelRequest(const CancelledNotification& InNotification);
 };
 
 MCP_NAMESPACE_END
