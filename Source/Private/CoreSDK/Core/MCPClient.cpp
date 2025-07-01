@@ -18,7 +18,7 @@ MCPTask_Void MCPClient::Start() {
     }
 
     try {
-        InitializeResponse::InitializeResult Result = co_await Initialize();
+        InitializeResponse::InitializeResult Result = co_await Request_Initialize();
         IsConnected() = true;
         m_ClientInfo = InClientInfo;
     } catch (const std::exception& e) {
@@ -43,7 +43,7 @@ MCPTask_Void MCPClient::Stop() {
     co_return;
 }
 
-MCPTask<InitializeResponse::Result> MCPClient::Initialize() {
+MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
     if (IsInitialized()) {
         HandleRuntimeError("Protocol already initialized");
         co_return;
@@ -182,7 +182,7 @@ MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI
 }
 
 MCPTask<SamplingCreateMessageResponse>
-MCPClient::CreateMessage(const SamplingCreateMessageRequest& InRequest) {
+MCPClient::OnRequest_CreateMessage(const SamplingCreateMessageRequest& InRequest) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;

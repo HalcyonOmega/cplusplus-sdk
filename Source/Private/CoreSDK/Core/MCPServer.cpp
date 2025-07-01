@@ -130,27 +130,28 @@ void MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate) {
     m_ResourceManager->RemoveTemplate(InTemplate);
 }
 
-MCPTask_Void MCPServer::NotifyResourceUpdated(const ResourceUpdatedNotification::Params& InParams) {
+MCPTask_Void
+MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams) {
     co_await SendNotification(ResourceUpdatedNotification(InParams));
 }
 
-MCPTask_Void MCPServer::NotifyResourceListChanged() {
+MCPTask_Void MCPServer::Notify_ResourceListChanged() {
     co_await SendNotification(ResourceListChangedNotification());
 }
 
-MCPTask_Void MCPServer::NotifyToolListChanged() {
+MCPTask_Void MCPServer::Notify_ToolListChanged() {
     co_await SendNotification(ToolListChangedNotification());
 }
 
-MCPTask_Void MCPServer::NotifyPromptListChanged() {
+MCPTask_Void MCPServer::Notify_PromptListChanged() {
     co_await SendNotification(PromptListChangedNotification());
 }
 
-MCPTask_Void MCPServer::ReportProgress(const ProgressNotification::Params& InParams) {
+MCPTask_Void MCPServer::Notify_Progress(const ProgressNotification::Params& InParams) {
     co_await SendNotification(ProgressNotification(InParams));
 }
 
-MCPTask_Void MCPServer::LogMessage(const LoggingMessageNotification::Params& InParams) {
+MCPTask_Void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InParams) {
     co_await SendNotification(LoggingMessageNotification(InParams));
 }
 
@@ -158,52 +159,52 @@ void MCPServer::SetupDefaultHandlers() {
     // Register request handlers using the RegisterRequestHandler method
     m_MessageManager->RegisterRequestHandler<InitializeRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleInitialize(request, InContext);
+            return OnRequest_Initialize(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<ListToolsRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleToolsList(request, InContext);
+            return OnRequest_ListTools(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<CallToolRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleToolCall(request, InContext);
+            return OnRequest_CallTool(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<ListPromptsRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandlePromptsList(request, InContext);
+            return OnRequest_ListPrompts(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<GetPromptRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandlePromptGet(request, InContext);
+            return OnRequest_GetPrompt(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<ListResourcesRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleResourcesList(request, InContext);
+            return OnRequest_ListResources(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<ReadResourceRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleResourceRead(request, InContext);
+            return OnRequest_ReadResource(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<SubscribeRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleResourceSubscribe(request, InContext);
+            return OnRequest_SubscribeResource(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<UnsubscribeRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleResourceUnsubscribe(request, InContext);
+            return OnRequest_UnsubscribeResource(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<CreateMessageRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleSamplingCreateMessage(request, InContext);
+            return OnRequest_CreateMessage(request, InContext);
         });
     m_MessageManager->RegisterRequestHandler<CompleteRequest>(
         [this](const auto& request, std::optional<MCPContext*> InContext) {
-            return HandleCompletionComplete(request, InContext);
+            return OnRequest_Complete(request, InContext);
         });
 }
 
-void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
-                                 std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest,
+                                     std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         InitializeRequest::Params Request =
@@ -272,8 +273,8 @@ void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
     }
 }
 
-void MCPServer::HandleToolsList(const ListToolsRequest& InRequest,
-                                std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest,
+                                    std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
@@ -289,8 +290,8 @@ void MCPServer::HandleToolsList(const ListToolsRequest& InRequest,
     }
 }
 
-void MCPServer::HandleToolCall(const CallToolRequest& InRequest,
-                               std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest,
+                                   std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<CallToolRequest::Params>(InRequest);
@@ -310,8 +311,8 @@ void MCPServer::HandleToolCall(const CallToolRequest& InRequest,
     }
 }
 
-void MCPServer::HandlePromptsList(const ListPromptsRequest& InRequest,
-                                  std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest,
+                                      std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<ListPromptsRequest::Params>(InRequest);
@@ -327,8 +328,8 @@ void MCPServer::HandlePromptsList(const ListPromptsRequest& InRequest,
     }
 }
 
-void MCPServer::HandlePromptGet(const GetPromptRequest& InRequest,
-                                std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest,
+                                    std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<GetPromptRequest::Params>(InRequest);
@@ -348,8 +349,8 @@ void MCPServer::HandlePromptGet(const GetPromptRequest& InRequest,
     }
 }
 
-void MCPServer::HandleResourcesList(const ListResourcesRequest& InRequest,
-                                    std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_ListResources(const ListResourcesRequest& InRequest,
+                                        std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<ListResourcesRequest::Params>(InRequest);
@@ -365,8 +366,8 @@ void MCPServer::HandleResourcesList(const ListResourcesRequest& InRequest,
     }
 }
 
-void MCPServer::HandleResourceRead(const ReadResourceRequest& InRequest,
-                                   std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest,
+                                       std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<ReadResourceRequest::Params>(InRequest);
@@ -385,8 +386,8 @@ void MCPServer::HandleResourceRead(const ReadResourceRequest& InRequest,
     }
 }
 
-void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
-                                        std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest,
+                                            std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<SubscribeRequest::Params>(InRequest);
@@ -417,8 +418,8 @@ void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
     }
 }
 
-void MCPServer::HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
-                                          std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InRequest,
+                                              std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest);
@@ -445,8 +446,8 @@ void MCPServer::HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
     }
 }
 
-void MCPServer::HandleSamplingCreateMessage(const CreateMessageRequest& InRequest,
-                                            std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_CreateMessage(const CreateMessageRequest& InRequest,
+                                        std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<CreateMessageRequest::Params>(InRequest);
@@ -470,8 +471,8 @@ void MCPServer::HandleSamplingCreateMessage(const CreateMessageRequest& InReques
     }
 }
 
-void MCPServer::HandleCompletionComplete(const CompleteRequest& InRequest,
-                                         std::optional<MCPContext*> InContext) {
+void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest,
+                                   std::optional<MCPContext*> InContext) {
     (void)InContext;
     try {
         auto Request = GetRequestParams<CompleteRequest::Params>(InRequest);
@@ -588,7 +589,7 @@ MCPTask_Void MCPServer::CompleteProgress() {
 }
 
 MCPTask<CreateMessageResponse::Result>
-MCPServer::RequestSampling(const CreateMessageRequest::Params& InParams) {
+MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams) {
     auto Response = co_await SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
     co_return Response.Result.value();
 }
