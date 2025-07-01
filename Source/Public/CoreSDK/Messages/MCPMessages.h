@@ -213,7 +213,7 @@ struct ReadResourceRequest : RequestBase {
 
 struct ReadResourceResponse : ResponseBase {
     struct Result : ResultParams {
-        std::vector<Content> Contents;
+        std::vector<std::variant<TextResourceContents, BlobResourceContents>> Contents;
 
         JKEY(CONTENTSKEY, Contents, "contents")
 
