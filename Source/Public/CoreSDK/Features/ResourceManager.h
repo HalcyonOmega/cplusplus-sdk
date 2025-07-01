@@ -7,8 +7,10 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
+#include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Macros.h"
 #include "ResourceBase.h"
 
@@ -59,18 +61,12 @@ class ResourceManager {
     void RemoveTemplate(const ResourceTemplate& InTemplate);
 
     /**
-     * Get resource by URI, checking concrete resources first, then templates.
+     * Get resource content by URI, checking concrete resources first, then templates.
      * @param InURI The URI to search for
-     * @return Future containing the resource if found, nullopt otherwise
+     * @return The resource content if found, nullopt otherwise
      */
-    std::future<std::optional<Resource>> GetResource(const MCP::URI& InURI);
-
-    /**
-     * Get resource by URI synchronously, checking concrete resources first, then templates.
-     * @param InURI The URI to search for
-     * @return The resource if found, nullopt otherwise
-     */
-    std::optional<Resource> GetResourceSync(const MCP::URI& InURI);
+    std::optional<std::variant<TextResourceContents, BlobResourceContents>>
+    GetResource(const MCP::URI& InURI);
 
     /**
      * List all registered resources.

@@ -6,7 +6,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/ErrorResponseBase.h"
 #include "CoreSDK/Messages/NotificationBase.h"

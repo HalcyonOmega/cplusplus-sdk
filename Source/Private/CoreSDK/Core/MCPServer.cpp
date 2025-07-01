@@ -1,5 +1,6 @@
 #include "CoreSDK/Core/MCPServer.h"
 
+#include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Progress.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 
@@ -111,7 +112,7 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest) {
         capabilities.Logging = LoggingCapability{};
 
         // Sampling capability if handler is set
-        if (m_SamplingHandler) { capabilities.Sampling = SamplingCapability{}; }
+        if (m_SamplingManager) { capabilities.Sampling = SamplingCapability{}; }
 
         Result.Capabilities = capabilities;
 
@@ -208,11 +209,12 @@ MCPTask_Void MCPServer::Notify_PromptListChanged() {
 
 void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest) {
     try {
-        ListPromptsRequest::Params Request =
-            GetRequestParams<ListPromptsRequest::Params>(InRequest).value();
+        PaginatedRequestParams RequestParams =
+            GetRequestParams<PaginatedRequestParams>(InRequest).value();
 
         ListPromptsResponse::Result Result;
         Result.Prompts = m_PromptManager->ListPrompts();
+        Result.Cursor = RequestParams.Cursor;
 
         SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
@@ -307,11 +309,12 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest) {
         ReadResourceRequest::Params Request =
             GetRequestParams<ReadResourceRequest::Params>(InRequest).value();
 
-        // Use ResourceManager to read the resource
-        auto Result = m_ResourceManager->GetResourceSync(Request.URI).value();
+        // Use ResourceManager to read the resource content
+        std::variant<TextResourceContents, BlobResourceContents> ResourceContent =
+            m_ResourceManager->GetResource(Request.URI);
 
         ReadResourceResponse::Result ResponseResult;
-        ResponseResult.Contents = Result.Contents;
+        ResponseResult.Contents.emplace_back(ResourceContent);
 
         SendResponse(ResponseBase(InRequest.GetRequestID(), ResponseResult));
 
@@ -408,8 +411,9 @@ MCPTask_Void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Para
 
 MCPTask<CreateMessageResponse::Result>
 MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams) {
-    auto Response = co_await SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
-    co_return Response.ResultData;
+    CreateMessageResponse Response =
+        co_await SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
+    co_return GetResponseResult<CreateMessageResponse::Result>(Response);
 }
 
 void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest) {
@@ -445,11 +449,20 @@ MCPTask_Void MCPServer::Notify_CancelRequest(const CancelledNotification::Params
 }
 
 void MCPServer::OnNotified_Progress(const ProgressNotification& InNotification) {
-    (void)InNotification;
+    // Ensure this method requires instance access
+    if (!IsInitialized()) { return; }
+
+    ProgressNotification::Params Params =
+        GetNotificationParams<ProgressNotification::Params>(InNotification).value();
+
     // TODO: Implement progress notification handling
+    (void)Params;
 }
 
 void MCPServer::OnNotified_CancelRequest(const CancelledNotification& InNotification) {
+    // Ensure this method requires instance access
+    if (!IsInitialized()) { return; }
+
     (void)InNotification;
     // TODO: Implement cancel request handling
 }
@@ -521,6 +534,7 @@ std::string_view MCPServer::GetCurrentClientID() const {
 MCPTask_Void
 MCPServer::SendNotificationToClient(std::string_view InClientID,
                                     const ResourceUpdatedNotification& InNotification) {
+    (void)InClientID;
     // For now, send to all clients via the protocol
     // In a real implementation, this would route to the specific client
     co_return co_await SendNotification(InNotification);
@@ -546,7 +560,7 @@ MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(
 MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t> InTotal) {
     try {
         ProgressNotification::Params Params;
-        Params.ProgressToken = ProgressToken("current_request");
+        Params.ProgressToken = ProgressToken(std::string("current_request"));
         Params.Progress = InProgress;
         if (InTotal.has_value()) { Params.Total = *InTotal; }
 

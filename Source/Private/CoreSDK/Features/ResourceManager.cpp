@@ -55,13 +55,8 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
     return Template;
 }
 
-std::future<std::optional<Resource>> ResourceManager::GetResource(const MCP::URI& InURI) {
-    return std::async(std::launch::async, [this, InURI]() -> std::optional<Resource> {
-        return GetResourceSync(InURI);
-    });
-}
-
-std::optional<Resource> ResourceManager::GetResourceSync(const MCP::URI& InURI) {
+std::optional<std::variant<TextResourceContents, BlobResourceContents>>
+ResourceManager::GetResource(const MCP::URI& InURI) {
     MCP::Logger::Debug("Getting resource: " + InURI.toString());
 
     // First check concrete resources
