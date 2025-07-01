@@ -125,11 +125,11 @@ void StdioClientTransport::ProcessIncomingData() {
 }
 
 void StdioClientTransport::ProcessLine(const std::string& InLine) {
-    CallMessageRouter(JSONValue::parse(InLine));
+    CallMessageRouter(JSONData::parse(InLine));
 }
 
 MCPTask_Void StdioClientTransport::TransmitMessage(
-    const JSONValue& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
+    const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
     (void)InConnectionIDs;
 
     if (!m_StdinStream || !IsConnected()) {
@@ -279,11 +279,11 @@ void StdioServerTransport::ProcessIncomingData() {
 }
 
 void StdioServerTransport::ProcessLine(const std::string& InLine) {
-    CallMessageRouter(JSONValue::parse(InLine));
+    CallMessageRouter(JSONData::parse(InLine));
 }
 
 MCPTask_Void StdioServerTransport::TransmitMessage(
-    const JSONValue& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
+    const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
     (void)InConnectionIDs;
 
     try {

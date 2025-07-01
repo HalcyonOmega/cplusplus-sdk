@@ -226,7 +226,7 @@ void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
             SendErrorResponse(InRequestID, -32602,
                               "Unsupported protocol version: " + Request.ProtocolVersion
                                   + ". Supported versions: " + supportedVersions,
-                              JSONValue::object());
+                              JSONData::object());
             return;
         }
 
@@ -398,7 +398,7 @@ void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
             SendErrorResponse(
                 ErrorResponseBase(InRequest.GetRequestID(),
                                   MCPError(ErrorCodes::INVALID_REQUEST, "Resource not found",
-                                           JSONValue::object({{"uri", uri}}))));
+                                           JSONData::object({{"uri", uri}}))));
             return;
         }
 
@@ -409,7 +409,7 @@ void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
         }
 
         // Send empty response to indicate success
-        SendResponse(ResponseBase(InRequest.GetRequestID(), JSONValue::object()));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), JSONData::object()));
 
     } catch (const std::exception& e) {
         SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
@@ -437,7 +437,7 @@ void MCPServer::HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
         }
 
         // Send empty response
-        SendResponse(ResponseBase(InRequest.GetRequestID(), JSONValue::object()));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), JSONData::object()));
 
     } catch (const std::exception& e) {
         SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
@@ -460,7 +460,7 @@ void MCPServer::HandleSamplingCreateMessage(const CreateMessageRequest& InReques
 
         // Call handler
         // auto response = m_SamplingHandler(request);
-        // SendResponse(InRequestID, JSONValue(response));
+        // SendResponse(InRequestID, JSONData(response));
 
         // TODO: Implement actual sampling handler call
 
@@ -485,7 +485,7 @@ void MCPServer::HandleCompletionComplete(const CompleteRequest& InRequest,
 
         // Call handler
         // auto response = m_CompletionHandler(request);
-        // SendResponse(InRequestID, JSONValue(response));
+        // SendResponse(InRequestID, JSONData(response));
 
         // TODO: Implement actual completion handler call
 
@@ -546,8 +546,7 @@ MCPServer::SendNotificationToClient(const std::string& InClientID,
 
 // Enhanced tool execution with progress reporting
 MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(
-    const Tool& InTool,
-    const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
+    const Tool& InTool, const std::optional<std::unordered_map<std::string, JSONData>>& InArguments,
     const RequestID& InRequestID) {
     try {
         // Update progress at 0%

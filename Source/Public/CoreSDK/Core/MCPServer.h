@@ -120,7 +120,7 @@ class MCPServer : public MCPProtocol {
     // Progress tracking and tool execution
     MCPTask<CallToolResponse> ExecuteToolWithProgress(
         const Tool& InTool,
-        const std::optional<std::unordered_map<std::string, JSONValue>>& InArguments,
+        const std::optional<std::unordered_map<std::string, JSONData>>& InArguments,
         const RequestID& InRequestID);
 
     // Resource subscription management

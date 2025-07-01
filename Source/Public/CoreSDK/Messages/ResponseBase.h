@@ -16,7 +16,7 @@ using ResponseHandler =
     std::function<void(const ResponseBase& InResponse, std::optional<MCPContext*> InContext)>;
 
 struct ResultParams {
-    std::optional<JSONValue> Meta;
+    std::optional<JSONData> Meta;
 
     JKEY(METAKEY, Meta, "_meta")
 

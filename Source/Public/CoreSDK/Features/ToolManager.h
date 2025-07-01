@@ -33,7 +33,7 @@ class ToolError : public std::runtime_error {
  */
 class ToolManager {
   public:
-    using ToolFunction = std::function<std::future<std::any>(const JSONValue&, MCPContext*)>;
+    using ToolFunction = std::function<std::future<std::any>(const JSONData&, MCPContext*)>;
 
     /**
      * Constructor
@@ -94,7 +94,7 @@ class ToolManager {
      * @param InConvertResult Whether to convert the result format
      * @return Future containing the result of the tool execution
      */
-    std::future<std::any> CallTool(const std::string& InName, const JSONValue& InArguments,
+    std::future<std::any> CallTool(const std::string& InName, const JSONData& InArguments,
                                    MCPContext* InContext = nullptr, bool InConvertResult = false);
 
     /**
@@ -105,7 +105,7 @@ class ToolManager {
      * @param InConvertResult Whether to convert the result format
      * @return The result of the tool execution
      */
-    std::any CallToolSync(const std::string& InName, const JSONValue& InArguments,
+    std::any CallToolSync(const std::string& InName, const JSONData& InArguments,
                           MCPContext* InContext = nullptr, bool InConvertResult = false);
 
     /**

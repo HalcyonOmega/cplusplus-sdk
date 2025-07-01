@@ -11,7 +11,7 @@ MCP_NAMESPACE_BEGIN
 struct RootsCapability {
     std::optional<bool>
         ListChanged; // Whether the client supports notifications for changes to the roots list.
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
@@ -20,7 +20,7 @@ struct RootsCapability {
 };
 
 struct SamplingCapability {
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
@@ -28,7 +28,7 @@ struct SamplingCapability {
 };
 
 struct ExperimentalCapability {
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
@@ -36,7 +36,7 @@ struct ExperimentalCapability {
 };
 
 struct LoggingCapability {
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
@@ -46,7 +46,7 @@ struct LoggingCapability {
 struct PromptsCapability {
     std::optional<bool> ListChanged; // Whether this server supports notifications for changes
                                      // to the prompt list.
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
@@ -58,7 +58,7 @@ struct ResourcesCapability {
     std::optional<bool> Subscribe; // Whether this server supports subscribing to resource updates.
     std::optional<bool> ListChanged; // Whether this server supports notifications for changes
                                      // to the resource list.
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(SUBSCRIBEKEY, Subscribe, "subscribe")
     JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
@@ -68,7 +68,7 @@ struct ResourcesCapability {
 };
 
 struct CompletionCapability {
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
@@ -78,7 +78,7 @@ struct CompletionCapability {
 struct ToolsCapability {
     std::optional<bool>
         ListChanged; // Whether this server supports notifications for changes to the tool list.
-    JSONValue AdditionalProperties;
+    JSONData AdditionalProperties;
 
     JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
     JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")

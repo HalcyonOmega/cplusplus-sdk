@@ -16,11 +16,11 @@ void ITransport::SetState(TransportState InNewState) {
     // TODO: Implement state change handler
 }
 
-void ITransport::SetMessageRouter(std::function<void(const JSONValue&)> InRouter) {
+void ITransport::SetMessageRouter(std::function<void(const JSONData&)> InRouter) {
     m_MessageRouter = std::move(InRouter);
 }
 
-void ITransport::CallMessageRouter(const JSONValue& InMessage) {
+void ITransport::CallMessageRouter(const JSONData& InMessage) {
     if (m_MessageRouter) { m_MessageRouter(InMessage); }
 }
 
@@ -43,7 +43,7 @@ void ITransport::UnregisterConnection(const ConnectionID& InConnectionID) {
 
 MCPTask_Void
 ITransport::TransmitMessageToConnections(const std::vector<ConnectionID>& InConnectionIDs,
-                                         const JSONValue& InMessage) {
+                                         const JSONData& InMessage) {
     for (const auto& ConnectionID : InConnectionIDs) {
         if (IsConnectionRegistered(ConnectionID)) {
             co_await TransmitMessageToConnection(ConnectionID, InMessage);
@@ -51,7 +51,7 @@ ITransport::TransmitMessageToConnections(const std::vector<ConnectionID>& InConn
     }
 }
 
-MCPTask_Void ITransport::TransmitMessageToAllConnections(const JSONValue& InMessage) {
+MCPTask_Void ITransport::TransmitMessageToAllConnections(const JSONData& InMessage) {
     auto Connections = GetActiveConnections();
     co_await TransmitMessageToConnections(Connections, InMessage);
 }

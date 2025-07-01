@@ -97,7 +97,7 @@ struct ListToolsResponse : ResponseBase {
 struct CallToolRequest : RequestBase {
     struct Params : RequestParams {
         std::string Name;
-        std::optional<std::unordered_map<std::string, JSONValue>> Arguments;
+        std::optional<std::unordered_map<std::string, JSONData>> Arguments;
 
         JKEY(NAMEKEY, Name, "name")
         JKEY(ARGUMENTSKEY, Arguments, "arguments")
@@ -263,7 +263,7 @@ struct CreateMessageRequest : RequestBase {
         std::optional<double> Temperature;
         std::optional<std::vector<std::string>> StopSequences;
         std::optional<ModelPreferences> ModelPrefs;
-        std::optional<JSONValue> Metadata;
+        std::optional<JSONData> Metadata;
 
         JKEY(MESSAGESKEY, Messages, "messages")
         JKEY(MAXTOKENSKEY, MaxTokens, "maxTokens")
@@ -341,7 +341,7 @@ struct SetLevelRequest : RequestBase {
 struct LoggingMessageNotification : NotificationBase {
     struct Params : NotificationParams {
         LoggingLevel Level;
-        JSONValue Data;
+        JSONData Data;
         std::optional<std::string> Logger;
 
         JKEY(LEVELKEY, Level, "level")
@@ -351,7 +351,7 @@ struct LoggingMessageNotification : NotificationBase {
         DEFINE_TYPE_JSON_DERIVED(LoggingMessageNotification::Params, NotificationParams, LEVELKEY,
                                  LOGGERKEY, DATAKEY)
 
-        Params(LoggingLevel InLevel = LoggingLevel::Info, JSONValue InData = JSONValue::object(),
+        Params(LoggingLevel InLevel = LoggingLevel::Info, JSONData InData = JSONData::object(),
                const std::optional<std::string>& InLogger = std::nullopt)
             : Level(InLevel), Data(std::move(InData)), Logger(InLogger) {}
     };

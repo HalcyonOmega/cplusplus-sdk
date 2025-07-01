@@ -24,7 +24,7 @@ class StdioClientTransport : public ITransport {
     MCPTask_Void Disconnect() override;
 
     MCPTask_Void TransmitMessage(
-        const JSONValue& InMessage,
+        const JSONData& InMessage,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
     std::string GetConnectionInfo() const override;
@@ -72,10 +72,10 @@ class StdioServerTransport : public ITransport {
     MCPTask_Void Disconnect() override;
 
     MCPTask_Void TransmitMessage(
-        const JSONValue& InMessage,
+        const JSONData& InMessage,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
-    MCPTask<JSONValue> TransmitRequest(
-        const JSONValue& InRequest,
+    MCPTask<JSONData> TransmitRequest(
+        const JSONData& InRequest,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
     std::string GetConnectionInfo() const override;

@@ -63,7 +63,7 @@ class MCPProtocol {
     // Request tracking
     struct PendingResponse {
         RequestID RequestID;
-        std::promise<JSONValue> Promise;
+        std::promise<JSONData> Promise;
         std::chrono::steady_clock::time_point StartTime;
     };
 

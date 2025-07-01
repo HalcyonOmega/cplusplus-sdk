@@ -93,7 +93,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
         request.set("Accept", "text/event-stream");
 
         // TODO: @HalcyonOmega Update this to use the actual ping type
-        JSONValue pingMessage = {{"jsonrpc", "2.0"}, {"method", "ping"}, {"id", "connection_test"}};
+        JSONData pingMessage = {{"jsonrpc", "2.0"}, {"method", "ping"}, {"id", "connection_test"}};
 
         std::string body = pingMessage.dump();
         request.setContentLength(body.length());
@@ -121,7 +121,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer() {
     co_return;
 }
 
-MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONValue& InMessage) {
+MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONData& InMessage) {
     if (!m_HTTPSession) {
         HandleRuntimeError("HTTP session not initialized");
         co_return;
@@ -193,7 +193,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
         // SSE format: "data: <json>\n"
         if (InLine.substr(0, 6) == "data: ") {
             std::string jsonData = InLine.substr(6);
-            auto message = JSONValue::parse(jsonData);
+            auto message = JSONData::parse(jsonData);
 
             if (!IsValidJSONRPC(message)) {
                 HandleRuntimeError("Invalid JSON-RPC message received via SSE");
@@ -223,7 +223,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
             // Handle as request or notification
             if (message.contains("method")) {
                 std::string method = ExtractMethod(message);
-                JSONValue params = ExtractParams(message);
+                JSONData params = ExtractParams(message);
 
                 if (message.contains("id")) {
                     // Request
@@ -491,7 +491,7 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID) {
     }
 }
 
-MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONValue& InMessage) {
+MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONData& InMessage) {
     std::lock_guard<std::mutex> lock(m_ClientsMutex);
 
     std::string messageStr = "data: " + InMessage.dump() + "\n\n";
@@ -517,7 +517,7 @@ MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONValue& InMessage) {
 
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
     try {
-        auto message = JSONValue::parse(InMessage);
+        auto message = JSONData::parse(InMessage);
 
         if (!IsValidJSONRPC(message)) {
             HandleRuntimeError("Invalid JSON-RPC message received");
@@ -546,7 +546,7 @@ void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
         // Handle as request or notification
         if (message.contains("method")) {
             std::string method = ExtractMethod(message);
-            JSONValue params = ExtractParams(message);
+            JSONData params = ExtractParams(message);
 
             if (message.contains("id")) {
                 // Request

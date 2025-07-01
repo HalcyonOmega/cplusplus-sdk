@@ -29,11 +29,11 @@ struct ProgressToken {
             Token);
     }
 
-    friend void to_json(JSONValue& InJSON, const ProgressToken& InProgressToken) {
+    friend void to_json(JSONData& InJSON, const ProgressToken& InProgressToken) {
         InJSON = InProgressToken.ToString();
     }
 
-    friend void from_json(const JSONValue& InJSON, ProgressToken& InProgressToken) {
+    friend void from_json(const JSONData& InJSON, ProgressToken& InProgressToken) {
         if (InJSON.is_string()) {
             InProgressToken.Token = InJSON.get<std::string>();
         } else if (InJSON.is_number_integer()) {

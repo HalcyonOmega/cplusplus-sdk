@@ -45,7 +45,7 @@ Tool ToolManager::AddTool(const Tool& InTool) {
     return InTool;
 }
 
-std::future<std::any> ToolManager::CallTool(const std::string& InName, const JSONValue& InArguments,
+std::future<std::any> ToolManager::CallTool(const std::string& InName, const JSONData& InArguments,
                                             MCPContext* InContext, bool /*InConvertResult*/) {
     std::lock_guard<std::mutex> Lock(m_ToolsMutex);
 
@@ -62,7 +62,7 @@ std::future<std::any> ToolManager::CallTool(const std::string& InName, const JSO
     });
 }
 
-std::any ToolManager::CallToolSync(const std::string& InName, const JSONValue& InArguments,
+std::any ToolManager::CallToolSync(const std::string& InName, const JSONData& InArguments,
                                    MCPContext* InContext, bool /*InConvertResult*/) {
     auto Future = CallTool(InName, InArguments, InContext, false);
     return Future.get();
@@ -77,12 +77,12 @@ bool ToolManager::HasTool(const std::string& InName) const {
 JSONSchema ToolManager::CreateBasicSchema(const std::string& InName) {
     JSONSchema Schema;
     Schema.Type = "object";
-    Schema.Properties = std::unordered_map<std::string, JSONValue>();
+    Schema.Properties = std::unordered_map<std::string, JSONData>();
     Schema.Required = std::vector<std::string>();
 
     // Add a basic property for demonstration
     (*Schema.Properties)["input"] =
-        JSONValue{{"type", "string"}, {"description", "Input parameter for " + InName}};
+        JSONData{{"type", "string"}, {"description", "Input parameter for " + InName}};
 
     return Schema;
 }

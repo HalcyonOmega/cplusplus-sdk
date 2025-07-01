@@ -153,14 +153,14 @@ concept IsEnumType = std::is_enum_v<EnumerationType>;
         }                                                                                          \
     }
 
-using JSONValue = nlohmann::json;
+using JSONData = nlohmann::json;
 
 // JSON Schema
 struct JSONSchema {
     std::string Type{"object"};
-    std::optional<std::unordered_map<std::string, JSONValue>> Properties;
+    std::optional<std::unordered_map<std::string, JSONData>> Properties;
     std::optional<std::vector<std::string>> Required;
-    std::optional<JSONValue> AdditionalProperties;
+    std::optional<JSONData> AdditionalProperties;
 
     JKEY(TYPEKEY, Type, "type")
     JKEY(PROPERTIESKEY, Properties, "properties")

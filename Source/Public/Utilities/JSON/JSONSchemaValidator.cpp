@@ -7,12 +7,12 @@
 MCP_NAMESPACE_BEGIN
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateAgainstSchema(const JSONValue& InData, const JSONSchema& InSchema) {
+JSONSchemaValidator::ValidateAgainstSchema(const JSONData& InData, const JSONSchema& InSchema) {
     return ValidateRecursive(InData, InSchema, "");
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateRecursive(const JSONValue& InData, const JSONSchema& InSchema,
+JSONSchemaValidator::ValidateRecursive(const JSONData& InData, const JSONSchema& InSchema,
                                        std::string_view InPath) {
     ValidationResult result;
 
@@ -61,7 +61,7 @@ JSONSchemaValidator::ValidateRecursive(const JSONValue& InData, const JSONSchema
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateObjectType(const JSONValue& InData, const JSONSchema& InSchema) {
+JSONSchemaValidator::ValidateObjectType(const JSONData& InData, const JSONSchema& InSchema) {
     ValidationResult result;
 
     if (!InData.is_object()) {
@@ -102,7 +102,7 @@ JSONSchemaValidator::ValidateObjectType(const JSONValue& InData, const JSONSchem
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateArrayType(const JSONValue& InData, const JSONSchema& /*InSchema*/) {
+JSONSchemaValidator::ValidateArrayType(const JSONData& InData, const JSONSchema& /*InSchema*/) {
     ValidationResult result;
 
     if (!InData.is_array()) {
@@ -117,7 +117,7 @@ JSONSchemaValidator::ValidateArrayType(const JSONValue& InData, const JSONSchema
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateStringType(const JSONValue& InData, const JSONSchema& /*InSchema*/) {
+JSONSchemaValidator::ValidateStringType(const JSONData& InData, const JSONSchema& /*InSchema*/) {
     ValidationResult result;
 
     if (!InData.is_string()) {
@@ -132,7 +132,7 @@ JSONSchemaValidator::ValidateStringType(const JSONValue& InData, const JSONSchem
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateNumberType(const JSONValue& InData, const JSONSchema& InSchema) {
+JSONSchemaValidator::ValidateNumberType(const JSONData& InData, const JSONSchema& InSchema) {
     ValidationResult result;
 
     if (!InData.is_number()) {
@@ -152,7 +152,7 @@ JSONSchemaValidator::ValidateNumberType(const JSONValue& InData, const JSONSchem
 }
 
 JSONSchemaValidator::ValidationResult
-JSONSchemaValidator::ValidateBooleanType(const JSONValue& InData, const JSONSchema& /*InSchema*/) {
+JSONSchemaValidator::ValidateBooleanType(const JSONData& InData, const JSONSchema& /*InSchema*/) {
     ValidationResult result;
 
     if (!InData.is_boolean()) { result.AddError("Expected boolean type"); }
@@ -160,7 +160,7 @@ JSONSchemaValidator::ValidateBooleanType(const JSONValue& InData, const JSONSche
     return result;
 }
 
-bool JSONSchemaValidator::IsValidType(const JSONValue& InData, std::string_view InType) {
+bool JSONSchemaValidator::IsValidType(const JSONData& InData, std::string_view InType) {
     if (InType == "object") { return InData.is_object(); }
     if (InType == "array") { return InData.is_array(); }
     if (InType == "string") { return InData.is_string(); }
@@ -172,7 +172,7 @@ bool JSONSchemaValidator::IsValidType(const JSONValue& InData, std::string_view 
     return false;
 }
 
-std::string JSONSchemaValidator::GetJSONType(const JSONValue& InData) {
+std::string JSONSchemaValidator::GetJSONType(const JSONData& InData) {
     if (InData.is_object()) { return "object"; }
     if (InData.is_array()) { return "array"; }
     if (InData.is_string()) { return "string"; }

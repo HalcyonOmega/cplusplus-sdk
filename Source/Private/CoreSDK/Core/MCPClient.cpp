@@ -84,12 +84,12 @@ MCPTask<ToolListResponse> MCPClient::ListTools(const std::optional<std::string>&
     ToolListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
-    auto response = co_await SendRequest("tools/list", JSONValue(request));
+    auto response = co_await SendRequest("tools/list", JSONData(request));
     co_return response.get<ToolListResponse>();
 }
 
 MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
-                                              const JSONValue& InArguments) {
+                                              const JSONData& InArguments) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -99,7 +99,7 @@ MCPTask<ToolCallResponse> MCPClient::CallTool(const std::string& InToolName,
     request.Name = InToolName;
     request.Arguments = InArguments;
 
-    auto response = co_await SendRequest("tools/call", JSONValue(request));
+    auto response = co_await SendRequest("tools/call", JSONData(request));
     co_return response.get<ToolCallResponse>();
 }
 
@@ -112,12 +112,12 @@ MCPTask<PromptListResponse> MCPClient::ListPrompts(const std::optional<std::stri
     PromptListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
-    auto response = co_await SendRequest("prompts/list", JSONValue(request));
+    auto response = co_await SendRequest("prompts/list", JSONData(request));
     co_return response.get<PromptListResponse>();
 }
 
 MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
-                                                const std::optional<JSONValue>& InArguments) {
+                                                const std::optional<JSONData>& InArguments) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -127,7 +127,7 @@ MCPTask<PromptGetResponse> MCPClient::GetPrompt(const std::string& InPromptName,
     request.Name = InPromptName;
     if (InArguments.has_value()) { request.Arguments = InArguments.value(); }
 
-    auto response = co_await SendRequest("prompts/get", JSONValue(request));
+    auto response = co_await SendRequest("prompts/get", JSONData(request));
     co_return response.get<PromptGetResponse>();
 }
 
@@ -140,7 +140,7 @@ MCPTask<ResourceListResponse> MCPClient::ListResources(const std::optional<std::
     ResourceListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
-    auto response = co_await SendRequest("resources/list", JSONValue(request));
+    auto response = co_await SendRequest("resources/list", JSONData(request));
     co_return response.get<ResourceListResponse>();
 }
 
@@ -153,7 +153,7 @@ MCPTask<ResourceReadResponse> MCPClient::ReadResource(const std::string& InResou
     ResourceReadRequest request;
     request.URI = InResourceURI;
 
-    auto response = co_await SendRequest("resources/read", JSONValue(request));
+    auto response = co_await SendRequest("resources/read", JSONData(request));
     co_return response.get<ResourceReadResponse>();
 }
 
@@ -166,7 +166,7 @@ MCPTask_Void MCPClient::SubscribeToResource(const std::string& InResourceURI) {
     ResourceSubscribeRequest request;
     request.URI = InResourceURI;
 
-    co_await SendRequest("resources/subscribe", JSONValue(request));
+    co_await SendRequest("resources/subscribe", JSONData(request));
 }
 
 MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI) {
@@ -178,7 +178,7 @@ MCPTask_Void MCPClient::UnsubscribeFromResource(const std::string& InResourceURI
     ResourceUnsubscribeRequest request;
     request.URI = InResourceURI;
 
-    co_await SendRequest("resources/unsubscribe", JSONValue(request));
+    co_await SendRequest("resources/unsubscribe", JSONData(request));
 }
 
 MCPTask<SamplingCreateMessageResponse>
@@ -188,7 +188,7 @@ MCPClient::CreateMessage(const SamplingCreateMessageRequest& InRequest) {
         co_return;
     }
 
-    auto response = co_await SendRequest("sampling/createMessage", JSONValue(InRequest));
+    auto response = co_await SendRequest("sampling/createMessage", JSONData(InRequest));
     co_return response.get<SamplingCreateMessageResponse>();
 }
 
@@ -199,7 +199,7 @@ MCPClient::CompleteText(const CompletionCompleteRequest& InRequest) {
         co_return;
     }
 
-    auto response = co_await SendRequest("completion/complete", JSONValue(InRequest));
+    auto response = co_await SendRequest("completion/complete", JSONData(InRequest));
     co_return response.get<CompletionCompleteResponse>();
 }
 
@@ -207,7 +207,7 @@ void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
     m_ResourceUpdatedHandler = InHandler;
 
     // Set up protocol notification handler
-    SetNotificationHandler("notifications/resources/updated", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/resources/updated", [this](const JSONData& InParams) {
         if (m_ResourceUpdatedHandler) {
             auto notification = InParams.get<ResourceUpdatedNotification>();
             m_ResourceUpdatedHandler(notification);
@@ -219,7 +219,7 @@ void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandl
     m_ResourceListChangedHandler = InHandler;
 
     SetNotificationHandler(
-        "notifications/resources/list_changed", [this](const JSONValue& InParams) {
+        "notifications/resources/list_changed", [this](const JSONData& InParams) {
             if (m_ResourceListChangedHandler) {
                 auto notification = InParams.get<ResourceListChangedNotification>();
                 m_ResourceListChangedHandler(notification);
@@ -230,7 +230,7 @@ void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandl
 void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
     m_ToolListChangedHandler = InHandler;
 
-    SetNotificationHandler("notifications/tools/list_changed", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/tools/list_changed", [this](const JSONData& InParams) {
         if (m_ToolListChangedHandler) {
             auto notification = InParams.get<ToolListChangedNotification>();
             m_ToolListChangedHandler(notification);
@@ -241,7 +241,7 @@ void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
 void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) {
     m_PromptListChangedHandler = InHandler;
 
-    SetNotificationHandler("notifications/prompts/list_changed", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/prompts/list_changed", [this](const JSONData& InParams) {
         if (m_PromptListChangedHandler) {
             auto notification = InParams.get<PromptListChangedNotification>();
             m_PromptListChangedHandler(notification);
@@ -252,7 +252,7 @@ void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) 
 void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
     m_ProgressHandler = InHandler;
 
-    SetNotificationHandler("notifications/progress", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/progress", [this](const JSONData& InParams) {
         if (m_ProgressHandler) {
             auto notification = InParams.get<ProgressNotification>();
             m_ProgressHandler(notification);
@@ -263,7 +263,7 @@ void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
 void MCPClient::SetLogHandler(LogHandler InHandler) {
     m_LogHandler = InHandler;
 
-    SetNotificationHandler("notifications/message", [this](const JSONValue& InParams) {
+    SetNotificationHandler("notifications/message", [this](const JSONData& InParams) {
         if (m_LogHandler) {
             auto notification = InParams.get<LoggingMessageNotification>();
             m_LogHandler(notification);

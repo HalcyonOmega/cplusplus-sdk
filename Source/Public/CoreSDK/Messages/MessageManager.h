@@ -19,7 +19,7 @@ MCP_NAMESPACE_BEGIN
 
 class MessageManager {
   public:
-    using MessageHandler = std::function<void(const JSONValue&, std::optional<MCPContext*>)>;
+    using MessageHandler = std::function<void(const JSONData&, std::optional<MCPContext*>)>;
 
     // Register handlers for specific concrete message types
     template <ConcreteRequest T, typename Function>
@@ -37,9 +37,9 @@ class MessageManager {
         }
 
         m_RequestHandlers[T::Method] =
-            [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
+            [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage,
                                                           std::optional<MCPContext*> InContext) {
-                JSONValue JSONRequest = InMessage;
+                JSONData JSONRequest = InMessage;
                 T Request = JSONRequest.get<T>();
                 Handler(Request, InContext);
             };
@@ -62,9 +62,9 @@ class MessageManager {
         }
 
         m_ResponseHandlers[T::ID.ToString()] =
-            [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
+            [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage,
                                                           std::optional<MCPContext*> InContext) {
-                JSONValue JSONResponse = InMessage;
+                JSONData JSONResponse = InMessage;
                 T Response = JSONResponse.get<T>();
                 Handler(Response, InContext);
             };
@@ -87,9 +87,9 @@ class MessageManager {
         }
 
         m_NotificationHandlers[T::Method] =
-            [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
+            [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage,
                                                           std::optional<MCPContext*> InContext) {
-                JSONValue JSONNotification = InMessage;
+                JSONData JSONNotification = InMessage;
                 T Notification = JSONNotification.get<T>();
                 Handler(Notification, InContext);
             };
@@ -112,9 +112,9 @@ class MessageManager {
         }
 
         m_ErrorHandlers[T::ID.ToString()] =
-            [Handler = std::forward<Function>(InHandler)](const JSONValue& InMessage,
+            [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage,
                                                           std::optional<MCPContext*> InContext) {
-                JSONValue JSONError = InMessage;
+                JSONData JSONError = InMessage;
                 T Error = JSONError.get<T>();
                 Handler(Error, InContext);
             };
@@ -126,7 +126,7 @@ class MessageManager {
     bool RouteMessage(const std::string& InMessage,
                       std::optional<MCPContext*> InContext = std::nullopt) {
         try {
-            JSONValue Message = JSONValue::parse(InMessage);
+            JSONData Message = JSONData::parse(InMessage);
 
             std::optional<MessageType> MessageType = GetValidMessageType(Message);
 
@@ -154,7 +154,7 @@ class MessageManager {
 
   private:
     // Message type routing functions
-    bool RouteRequest(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
+    bool RouteRequest(const JSONData& InMessage, std::optional<MCPContext*> InContext) {
         try {
             std::string method = ExtractMethod(InMessage);
 
@@ -173,7 +173,7 @@ class MessageManager {
         }
     }
 
-    bool RouteResponse(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
+    bool RouteResponse(const JSONData& InMessage, std::optional<MCPContext*> InContext) {
         try {
             std::optional<RequestID> RequestID = ExtractRequestID(InMessage);
 
@@ -198,7 +198,7 @@ class MessageManager {
         }
     }
 
-    bool RouteNotification(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
+    bool RouteNotification(const JSONData& InMessage, std::optional<MCPContext*> InContext) {
         try {
             std::string method = ExtractMethod(InMessage);
 
@@ -217,7 +217,7 @@ class MessageManager {
         }
     }
 
-    bool RouteError(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
+    bool RouteError(const JSONData& InMessage, std::optional<MCPContext*> InContext) {
         try {
             std::optional<RequestID> errorID = ExtractRequestID(InMessage);
 

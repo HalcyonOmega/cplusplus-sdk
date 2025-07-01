@@ -50,7 +50,7 @@ MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
 
     try {
         // Send request via transport
-        JSONValue requestJSON;
+        JSONData requestJSON;
         to_json(requestJSON, InRequest);
         co_await m_Transport->TransmitMessage(requestJSON);
 
@@ -65,19 +65,19 @@ MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
 }
 
 MCPTask_Void MCPProtocol::SendResponse(const ResponseBase& InResponse) {
-    JSONValue responseJSON;
+    JSONData responseJSON;
     to_json(responseJSON, InResponse);
     co_await m_Transport->TransmitMessage(responseJSON);
 }
 
 MCPTask_Void MCPProtocol::SendNotification(const NotificationBase& InNotification) {
-    JSONValue notificationJSON;
+    JSONData notificationJSON;
     to_json(notificationJSON, InNotification);
     co_await m_Transport->TransmitMessage(notificationJSON);
 }
 
 MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResponse) {
-    JSONValue errorJSON;
+    JSONData errorJSON;
     to_json(errorJSON, InErrorResponse);
     co_await m_Transport->TransmitMessage(errorJSON);
 }
@@ -86,7 +86,7 @@ void MCPProtocol::SetupTransportRouter() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetMessageRouter([this](const JSONValue& InMessage) {
+    m_Transport->SetMessageRouter([this](const JSONData& InMessage) {
         std::optional<MCPContext*> Context = std::nullopt;
         m_MessageManager->RouteMessage(InMessage, Context);
     });

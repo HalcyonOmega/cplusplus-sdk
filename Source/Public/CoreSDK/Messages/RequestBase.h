@@ -40,11 +40,11 @@ struct RequestID {
             Value);
     }
 
-    friend void to_json(JSONValue& InJSON, const RequestID& InRequestID) {
+    friend void to_json(JSONData& InJSON, const RequestID& InRequestID) {
         InJSON = InRequestID.ToString();
     }
 
-    friend void from_json(const JSONValue& InJSON, RequestID& InRequestID) {
+    friend void from_json(const JSONData& InJSON, RequestID& InRequestID) {
         if (InJSON.is_string()) {
             InRequestID.Value = InJSON.get<std::string>();
         } else if (InJSON.is_number_integer()) {

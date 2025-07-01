@@ -17,13 +17,13 @@ using NotificationHandler = std::function<void(const NotificationBase& InNotific
 
 struct NotificationParams {
     struct NotificationParamsMeta {
-        friend void to_json(JSONValue& InJSON,
+        friend void to_json(JSONData& InJSON,
                             const NotificationParamsMeta& InNotificationParamsMeta) {
-            InJSON = JSONValue::object();
+            InJSON = JSONData::object();
             (void)InNotificationParamsMeta;
         }
 
-        friend void from_json(const JSONValue& InJSON,
+        friend void from_json(const JSONData& InJSON,
                               NotificationParamsMeta& InNotificationParamsMeta) {
             (void)InJSON;
             InNotificationParamsMeta = NotificationParamsMeta{};

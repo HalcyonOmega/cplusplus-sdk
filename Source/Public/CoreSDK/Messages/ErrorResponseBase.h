@@ -14,7 +14,7 @@ MCP_NAMESPACE_BEGIN
 struct MCPError {
     int64_t Code;
     std::string Message;
-    std::optional<JSONValue> Data;
+    std::optional<JSONData> Data;
 
     JKEY(CODEKEY, Code, "code")
     JKEY(MESSAGEKEY, Message, "message")
@@ -23,7 +23,7 @@ struct MCPError {
     DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
 
     MCPError(int64_t InCode, std::string_view InMessage,
-             std::optional<JSONValue> InData = std::nullopt)
+             std::optional<JSONData> InData = std::nullopt)
         : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
 };
 

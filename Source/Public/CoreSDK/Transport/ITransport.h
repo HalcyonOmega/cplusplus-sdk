@@ -55,10 +55,10 @@ class ITransport {
     virtual MCPTask_Void Connect() = 0;
     virtual MCPTask_Void Disconnect() = 0;
     virtual MCPTask_Void TransmitMessage(
-        const JSONValue& InMessage,
+        const JSONData& InMessage,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) = 0;
-    virtual MCPTask<JSONValue> TransmitRequest(
-        const JSONValue& InRequest,
+    virtual MCPTask<JSONData> TransmitRequest(
+        const JSONData& InRequest,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) = 0;
     [[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
@@ -67,9 +67,9 @@ class ITransport {
     [[nodiscard]] TransportState GetState() const;
     void SetState(TransportState InNewState);
 
-    void SetMessageRouter(std::function<void(const JSONValue&)> InRouter);
+    void SetMessageRouter(std::function<void(const JSONData&)> InRouter);
 
-    void CallMessageRouter(const JSONValue& InMessage);
+    void CallMessageRouter(const JSONData& InMessage);
 
     // Connection management
     void RegisterConnection(const ConnectionID& InConnectionID);
@@ -81,7 +81,7 @@ class ITransport {
     TransportState m_CurrentState{TransportState::Disconnected};
 
     // Event handlers
-    std::function<void(const JSONValue&)> m_MessageRouter;
+    std::function<void(const JSONData&)> m_MessageRouter;
 
     // Connection tracking
     std::unordered_set<ConnectionID> m_ActiveConnections;

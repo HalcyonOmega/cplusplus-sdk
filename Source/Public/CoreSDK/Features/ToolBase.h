@@ -10,7 +10,7 @@
 
 MCP_NAMESPACE_BEGIN
 using ToolFunction =
-    std::function<std::future<std::any>(const JSONValue& InArguments, MCPContext* InContext)>;
+    std::function<std::future<std::any>(const JSONData& InArguments, MCPContext* InContext)>;
 
 // Additional properties describing a Tool to clients.
 // NOTE: all properties in ToolAnnotations are **hints**.
