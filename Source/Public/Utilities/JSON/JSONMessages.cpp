@@ -15,12 +15,12 @@ std::string ExtractMethod(const JSONValue& InMessage) {
     return "";
 }
 
-std::string ExtractRequestID(const JSONValue& InMessage) {
+std::optional<RequestID> ExtractRequestID(const JSONValue& InMessage) {
     if (InMessage.contains("id")) {
-        if (InMessage["id"].is_string()) { return InMessage["id"].get<std::string>(); }
-        if (InMessage["id"].is_number()) { return std::to_string(InMessage["id"].get<int64_t>()); }
+        if (InMessage["id"].is_string()) { return RequestID{InMessage["id"].get<std::string>()}; }
+        if (InMessage["id"].is_number()) { return RequestID{InMessage["id"].get<int64_t>()}; }
     }
-    return "";
+    return std::nullopt;
 }
 
 JSONValue ExtractParams(const JSONValue& InMessage) {

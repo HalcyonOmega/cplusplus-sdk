@@ -9,12 +9,7 @@
 #include "CoreSDK/Messages/RequestBase.h"
 #include "JSONProxy.h"
 
-struct ErrorResponseBase;
-
 MCP_NAMESPACE_BEGIN
-
-using ErrorResponseHandler =
-    std::function<void(const ErrorResponseBase& InError, std::optional<MCPContext*> InContext)>;
 
 struct MCPError {
     int64_t Code;
@@ -49,6 +44,9 @@ struct ErrorResponseBase : MessageBase {
     ErrorResponseBase(RequestID InID, MCPError InError)
         : MessageBase(), ID(std::move(InID)), Error(std::move(InError)) {}
 };
+
+using ErrorResponseHandler =
+    std::function<void(const ErrorResponseBase& InError, std::optional<MCPContext*> InContext)>;
 
 template <typename T>
 concept ConcreteErrorResponse = std::is_base_of_v<ErrorResponseBase, T>;

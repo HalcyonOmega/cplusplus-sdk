@@ -6,9 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Common/Macros.h"
-#include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 #include "CoreSDK/Messages/MessageManager.h"
 #include "CoreSDK/Transport/ITransport.h"
@@ -54,13 +52,11 @@ class MCPProtocol {
     void RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse);
 
   private:
-    void SetupTransportRouters();
+    void SetupTransportRouter();
 
   protected:
     MCPProtocolState m_State;
     std::unique_ptr<ITransport> m_Transport;
-
-    // Message managers for routing incoming messages
     std::unique_ptr<MessageManager> m_MessageManager;
 
   private:

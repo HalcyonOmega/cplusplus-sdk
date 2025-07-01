@@ -9,7 +9,6 @@
 #include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/ErrorResponseBase.h"
-#include "CoreSDK/Messages/MessageBase.h"
 #include "CoreSDK/Messages/NotificationBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 #include "CoreSDK/Messages/ResponseBase.h"
@@ -20,8 +19,7 @@ MCP_NAMESPACE_BEGIN
 
 class MessageManager {
   public:
-    template <typename T>
-    using HandlerFunction = std::function<void(const T&, std::optional<MCPContext*>)>;
+    using MessageHandler = std::function<void(const JSONValue&, std::optional<MCPContext*>)>;
 
     // Register handlers for specific concrete message types
     template <ConcreteRequest T, typename Function>
@@ -161,9 +159,9 @@ class MessageManager {
             std::string method = ExtractMethod(InMessage);
 
             std::scoped_lock lock(m_RequestMutex);
-            auto it = m_RequestHandlers.find(method);
-            if (it != m_RequestHandlers.end()) {
-                it->second(InMessage, InContext);
+            auto Iter = m_RequestHandlers.find(method);
+            if (Iter != m_RequestHandlers.end()) {
+                Iter->second(InMessage, InContext);
                 return true;
             }
             HandleRuntimeError("No handler registered for request method: " + method);
@@ -177,15 +175,21 @@ class MessageManager {
 
     bool RouteResponse(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
         try {
-            RequestID responseID = ExtractRequestID(InMessage);
+            std::optional<RequestID> RequestID = ExtractRequestID(InMessage);
+
+            if (!RequestID) {
+                HandleRuntimeError("No request ID found in response");
+                return false;
+            }
 
             std::scoped_lock lock(m_ResponseMutex);
-            auto it = m_ResponseHandlers.find(responseID.ToString());
-            if (it != m_ResponseHandlers.end()) {
-                it->second(InMessage, InContext);
+            auto Iter = m_ResponseHandlers.find(RequestID.value().ToString());
+            if (Iter != m_ResponseHandlers.end()) {
+                Iter->second(InMessage, InContext);
                 return true;
             }
-            HandleRuntimeError("No handler registered for response ID: " + responseID.ToString());
+            HandleRuntimeError("No handler registered for response ID: "
+                               + RequestID.value().ToString());
             return false;
 
         } catch (const std::exception& e) {
@@ -199,9 +203,9 @@ class MessageManager {
             std::string method = ExtractMethod(InMessage);
 
             std::scoped_lock lock(m_NotificationMutex);
-            auto it = m_NotificationHandlers.find(method);
-            if (it != m_NotificationHandlers.end()) {
-                it->second(InMessage, InContext);
+            auto Iter = m_NotificationHandlers.find(method);
+            if (Iter != m_NotificationHandlers.end()) {
+                Iter->second(InMessage, InContext);
                 return true;
             }
             HandleRuntimeError("No handler registered for notification method: " + method);
@@ -215,15 +219,20 @@ class MessageManager {
 
     bool RouteError(const JSONValue& InMessage, std::optional<MCPContext*> InContext) {
         try {
-            RequestID errorID = ExtractRequestID(InMessage);
+            std::optional<RequestID> errorID = ExtractRequestID(InMessage);
+
+            if (!errorID) {
+                HandleRuntimeError("No request ID found in error");
+                return false;
+            }
 
             std::scoped_lock lock(m_ErrorMutex);
-            auto it = m_ErrorHandlers.find(errorID.ToString());
-            if (it != m_ErrorHandlers.end()) {
-                it->second(InMessage, InContext);
+            auto Iter = m_ErrorHandlers.find(errorID.value().ToString());
+            if (Iter != m_ErrorHandlers.end()) {
+                Iter->second(InMessage, InContext);
                 return true;
             }
-            HandleRuntimeError("No handler registered for error ID: " + errorID.ToString());
+            HandleRuntimeError("No handler registered for error ID: " + errorID.value().ToString());
             return false;
 
         } catch (const std::exception& e) {
@@ -232,16 +241,10 @@ class MessageManager {
         }
     }
 
-    // Handler storage with type erasure
-    using RequestHandler = std::function<void(const JSONValue&, std::optional<MCPContext*>)>;
-    using ResponseHandler = std::function<void(const JSONValue&, std::optional<MCPContext*>)>;
-    using NotificationHandler = std::function<void(const JSONValue&, std::optional<MCPContext*>)>;
-    using ErrorHandler = std::function<void(const JSONValue&, std::optional<MCPContext*>)>;
-
-    std::unordered_map<std::string, RequestHandler> m_RequestHandlers;
-    std::unordered_map<std::string, ResponseHandler> m_ResponseHandlers;
-    std::unordered_map<std::string, NotificationHandler> m_NotificationHandlers;
-    std::unordered_map<std::string, ErrorResponseHandler> m_ErrorHandlers;
+    std::unordered_map<std::string, MessageHandler> m_RequestHandlers;
+    std::unordered_map<std::string, MessageHandler> m_ResponseHandlers;
+    std::unordered_map<std::string, MessageHandler> m_NotificationHandlers;
+    std::unordered_map<std::string, MessageHandler> m_ErrorHandlers;
 
     // Mutexes for thread safety
     std::mutex m_RequestMutex;

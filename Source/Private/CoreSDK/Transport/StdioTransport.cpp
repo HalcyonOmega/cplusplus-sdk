@@ -9,7 +9,6 @@
 #include <thread>
 
 #include "CoreSDK/Common/RuntimeError.h"
-#include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -126,57 +125,13 @@ void StdioClientTransport::ProcessIncomingData() {
 }
 
 void StdioClientTransport::ProcessLine(const std::string& InLine) {
-    try {
-        auto message = JSONValue::parse(InLine);
-
-        if (!IsValidJSONRPC(message)) {
-            HandleRuntimeError("Invalid JSON-RPC message received");
-            return;
-        }
-
-        // TODO: @HalcyonOmega - Consider using deserialize from stream in Nlohmann::JSON library
-
-        // Check if it's a response to a pending request
-        if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
-            std::string requestID = ExtractRequestID(message);
-
-            std::lock_guard<std::mutex> lock(m_RequestsMutex);
-            auto it = m_PendingRequests.find(requestID);
-            if (it != m_PendingRequests.end()) {
-                if (message.contains("result")) {
-                    it->second->Promise.set_value(message["result"].dump());
-                } else {
-                    std::string errorMsg = message["error"]["message"].get<std::string>();
-                    it->second->Promise.set_exception(
-                        std::make_exception_ptr(std::runtime_error(errorMsg)));
-                }
-                m_PendingRequests.erase(it);
-                return;
-            }
-        }
-
-        // Handle as request or notification
-        if (message.contains("method")) {
-            std::string method = ExtractMethod(message);
-            JSONValue params = ExtractParams(message);
-
-            if (message.contains("id")) {
-                // Request
-                if (m_RequestHandler) {
-                    std::string requestID = ExtractRequestID(message);
-                    m_RequestHandler(method, params, requestID);
-                }
-            } else {
-                // Notification
-                if (m_NotificationHandler) { m_NotificationHandler(method, params); }
-            }
-        }
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Error parsing message: " + std::string(e.what()));
-    }
+    CallMessageRouter(JSONValue::parse(InLine));
 }
 
-MCPTask_Void StdioClientTransport::TransmitMessage(const JSONValue& InMessage) {
+MCPTask_Void StdioClientTransport::TransmitMessage(
+    const JSONValue& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
+    (void)InConnectionIDs;
+
     if (!m_StdinStream || !IsConnected()) {
         HandleRuntimeError("Transport not connected");
         co_return;
@@ -235,7 +190,7 @@ StdioServerTransport::StdioServerTransport() {}
 StdioServerTransport::~StdioServerTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
-            Disconnect().GetResult();
+            Disconnect().await_resume();
         } catch (...) {
             // Ignore errors during destruction
         }
@@ -324,55 +279,13 @@ void StdioServerTransport::ProcessIncomingData() {
 }
 
 void StdioServerTransport::ProcessLine(const std::string& InLine) {
-    try {
-        auto message = JSONValue::parse(InLine);
-
-        if (!IsValidJSONRPC(message)) {
-            HandleRuntimeError("Invalid JSON-RPC message received");
-            return;
-        }
-
-        // Check if it's a response to a pending request
-        if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
-            std::string requestID = ExtractRequestID(message);
-
-            std::lock_guard<std::mutex> lock(m_RequestsMutex);
-            auto Iterator = m_PendingRequests.find(requestID);
-            if (Iterator != m_PendingRequests.end()) {
-                if (message.contains("result")) {
-                    Iterator->second->Promise.set_value(message["result"].dump());
-                } else {
-                    std::string errorMsg = message["error"]["message"].get<std::string>();
-                    Iterator->second->Promise.set_exception(
-                        std::make_exception_ptr(std::runtime_error(errorMsg)));
-                }
-                m_PendingRequests.erase(Iterator);
-                return;
-            }
-        }
-
-        // Handle as request or notification
-        if (message.contains("method")) {
-            std::string method = ExtractMethod(message);
-            JSONValue params = ExtractParams(message);
-
-            if (message.contains("id")) {
-                // Request
-                if (m_RequestHandler) {
-                    std::string requestID = ExtractRequestID(message);
-                    m_RequestHandler(method, params, requestID);
-                }
-            } else {
-                // Notification
-                if (m_NotificationHandler) { m_NotificationHandler(method, params); }
-            }
-        }
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Error parsing message: " + std::string(e.what()));
-    }
+    CallMessageRouter(JSONValue::parse(InLine));
 }
 
-MCPTask_Void StdioServerTransport::TransmitMessage(const JSONValue& InMessage) {
+MCPTask_Void StdioServerTransport::TransmitMessage(
+    const JSONValue& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
+    (void)InConnectionIDs;
+
     try {
         std::lock_guard<std::mutex> lock(m_WriteMutex);
 

@@ -29,28 +29,29 @@ Resource ResourceManager::AddResource(const Resource& InResource) {
     return InResource;
 }
 
-ResourceTemplate ResourceManager::AddTemplate(ResourceFunction InFunction,
-                                              const std::string& InURITemplate,
-                                              const ResourceTemplate& InTemplate) {
+ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate) {
     // Validate URI template
-    if (InURITemplate.empty()) { throw std::invalid_argument("URI template cannot be empty"); }
+    if (InTemplate.URITemplate.ToString().empty()) {
+        throw std::invalid_argument("URI template cannot be empty");
+    }
 
     // Check for existing template
-    const auto ExistingIt = m_Templates.find(InURITemplate);
+    const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString());
     if (ExistingIt != m_Templates.end()) {
         if (m_WarnOnDuplicateResources) {
-            MCP::Logger::Warning("Resource template already exists: " + InURITemplate);
+            MCP::Logger::Warning("Resource template already exists: "
+                                 + InTemplate.URITemplate.ToString());
         }
         return ExistingIt->second.first;
     }
 
     // Create a copy of the template with the correct URI template
     ResourceTemplate Template = InTemplate;
-    Template.URITemplate = MCP::URITemplate(InURITemplate);
+    Template.URITemplate = MCP::URITemplate(InTemplate.URITemplate.ToString());
 
-    m_Templates[InURITemplate] = std::make_pair(Template, InFunction);
+    m_Templates[InTemplate.URITemplate.ToString()] = std::make_pair(Template, InTemplate.Function);
 
-    MCP::Logger::Debug("Added resource template: " + InURITemplate);
+    MCP::Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
     return Template;
 }
 

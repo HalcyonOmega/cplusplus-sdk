@@ -1,16 +1,12 @@
 #include "CoreSDK/Core/IMCP.h"
 
-#include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Messages/NotificationBase.h"
 
 MCP_NAMESPACE_BEGIN
 
 MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport)
-    : m_Transport(std::move(InTransport)), m_RequestManager(std::make_unique<RequestManager>(true)),
-      m_ResponseManager(std::make_unique<ResponseManager>(true)),
-      m_NotificationManager(std::make_unique<NotificationManager>(true)),
-      m_ErrorManager(std::make_unique<ErrorManager>(true)) {
-    SetupTransportRouters();
+    : m_Transport(std::move(InTransport)), m_MessageManager(std::make_unique<MessageManager>()) {
+    SetupTransportRouter();
 }
 
 bool MCPProtocol::IsInitialized() const {
@@ -31,40 +27,6 @@ ITransport* MCPProtocol::GetTransport() const {
 
 bool MCPProtocol::IsConnected() const {
     return m_Transport->IsConnected();
-}
-
-void MCPProtocol::RegisterRequestHandler(const RequestBase& InRequest) {
-    if (InRequest.Handler.has_value()) {
-        m_RequestManager->RegisterRequestHandler(
-            InRequest.Method, [handler = InRequest.Handler.value()](
-                                  const RequestBase& InReq, MCPContext* InCtx) { handler(InReq); });
-    }
-}
-
-void MCPProtocol::RegisterResponseHandler(const ResponseBase& InResponse) {
-    if (InResponse.Handler.has_value()) {
-        m_ResponseManager->RegisterPendingRequest(
-            InResponse.ID, [handler = InResponse.Handler.value()](
-                               const ResponseBase& InResp, MCPContext* InCtx) { handler(InResp); });
-    }
-}
-
-void MCPProtocol::RegisterNotificationHandler(const NotificationBase& InNotification) {
-    if (InNotification.Handler.has_value()) {
-        m_NotificationManager->RegisterNotificationHandler(
-            InNotification.Method,
-            [handler = InNotification.Handler.value()](const NotificationBase& InNotif,
-                                                       MCPContext* InCtx) { handler(InNotif); });
-    }
-}
-
-void MCPProtocol::RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse) {
-    if (InErrorResponse.Handler.has_value()) {
-        m_ErrorManager->RegisterRequestErrorHandler(
-            InErrorResponse.ID,
-            [handler = InErrorResponse.Handler.value()](const ErrorResponseBase& InErr,
-                                                        MCPContext* InCtx) { handler(InErr); });
-    }
 }
 
 MCPTask_Void MCPProtocol::SendRequest(const RequestBase& InRequest) {
@@ -120,20 +82,14 @@ MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResp
     co_await m_Transport->TransmitMessage(errorJSON);
 }
 
-void MCPProtocol::SetupTransportRouters() {
+void MCPProtocol::SetupTransportRouter() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetMessageRouter(
-        [this](const JSONValue& InMessage) { m_MessageManager->RouteMessage(InMessage); });
-    m_Transport->SetRequestRouter(
-        [this](const RequestBase& InRequest) { RouteRequest(InRequest); });
-    m_Transport->SetResponseRouter(
-        [this](const ResponseBase& InResponse) { RouteResponse(InResponse); });
-    m_Transport->SetNotificationRouter(
-        [this](const NotificationBase& InNotification) { RouteNotification(InNotification); });
-    m_Transport->SetErrorResponseRouter(
-        [this](const ErrorResponseBase& InError) { RouteErrorResponse(InError); });
+    m_Transport->SetMessageRouter([this](const JSONValue& InMessage) {
+        std::optional<MCPContext*> Context = std::nullopt;
+        m_MessageManager->RouteMessage(InMessage, Context);
+    });
 }
 
 MCP_NAMESPACE_END

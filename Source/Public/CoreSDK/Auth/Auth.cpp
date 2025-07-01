@@ -107,7 +107,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
                                                                result.Scopes.end());
             bool hasRequiredScope = false;
             for (const auto& requiredScope : requiredScopes) {
-                if (clientScopes.count(requiredScope)) {
+                if (clientScopes.contains(requiredScope)) {
                     hasRequiredScope = true;
                     break;
                 }
@@ -115,7 +115,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
 
             if (!hasRequiredScope) {
                 result.IsAuthorized = false;
-                result.ErrorMessage = std::format("Insufficient scope for method: {}", InMethod);
+                result.ErrorMessage = Poco::format("Insufficient scope for method: {}", InMethod);
                 co_return result;
             }
         }
@@ -124,7 +124,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
         co_return result;
 
     } catch (const std::exception& e) {
-        result.ErrorMessage = std::format("Authorization error: {}", e.what());
+        result.ErrorMessage = Poco::format("Authorization error: {}", e.what());
         co_return result;
     }
 }
@@ -153,7 +153,7 @@ MCPTask<JSONValue> OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::st
 
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK) {
             throw std::runtime_error(
-                std::format("Token validation failed with status: {}", response.getStatus()));
+                Poco::format("Token validation failed with status: {}", response.getStatus()));
         }
 
         std::string responseBody;
@@ -162,7 +162,7 @@ MCPTask<JSONValue> OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::st
         co_return JSONValue::parse(responseBody);
 
     } catch (const std::exception& e) {
-        throw std::runtime_error(std::format("Token validation error: {}", e.what()));
+        throw std::runtime_error(Poco::format("Token validation error: {}", e.what()));
     }
 }
 
@@ -217,7 +217,7 @@ MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string&
                                                                result.Scopes.end());
             bool hasRequiredScope = false;
             for (const auto& requiredScope : requiredScopes) {
-                if (clientScopes.count(requiredScope)) {
+                if (clientScopes.contains(requiredScope)) {
                     hasRequiredScope = true;
                     break;
                 }
@@ -225,14 +225,14 @@ MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string&
 
             if (!hasRequiredScope) {
                 result.IsAuthorized = false;
-                result.ErrorMessage = std::format("Insufficient scope for method: {}", InMethod);
+                result.ErrorMessage = Poco::format("Insufficient scope for method: {}", InMethod);
             }
         }
 
         co_return result;
 
     } catch (const std::exception& e) {
-        result.ErrorMessage = std::format("Authorization error: {}", e.what());
+        result.ErrorMessage = Poco::format("Authorization error: {}", e.what());
         co_return result;
     }
 }

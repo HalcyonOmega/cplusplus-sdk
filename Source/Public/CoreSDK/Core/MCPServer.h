@@ -5,7 +5,6 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Core/IMCP.h"
-#include "CoreSDK/Features/FeatureSignatures.h"
 #include "CoreSDK/Features/PromptManager.h"
 #include "CoreSDK/Features/ResourceManager.h"
 #include "CoreSDK/Features/ToolManager.h"

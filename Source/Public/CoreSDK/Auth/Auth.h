@@ -13,7 +13,6 @@
 #include "Poco/Timestamp.h"
 #include "Utilities/Async/MCPTask.h"
 
-
 // TODO: @HalcyonOmega - Is this using proper Poco auth?
 
 // Forward declarations
@@ -65,7 +64,8 @@ class OAuth2AuthProvider final : public MCPAuthProvider {
 
   private:
     MCPTask<JSONValue> ValidateTokenWithAuthServer(const std::string& InToken);
-    bool IsMethodAllowed(const std::string& InMethod, const std::vector<std::string>& InScopes);
+    static bool IsMethodAllowed(const std::string& InMethod,
+                                const std::vector<std::string>& InScopes);
 
     OAuth2Config m_Config;
     std::shared_ptr<Poco::Net::HTTPClientSession> m_AuthSession;
