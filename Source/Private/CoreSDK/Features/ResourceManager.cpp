@@ -55,24 +55,24 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
     return Template;
 }
 
-std::future<std::optional<Resource>> ResourceManager::GetResource(const std::string& InURI) {
+std::future<std::optional<Resource>> ResourceManager::GetResource(const MCP::URI& InURI) {
     return std::async(std::launch::async, [this, InURI]() -> std::optional<Resource> {
         return GetResourceSync(InURI);
     });
 }
 
-std::optional<Resource> ResourceManager::GetResourceSync(const std::string& InURI) {
-    MCP::Logger::Debug("Getting resource: " + InURI);
+std::optional<Resource> ResourceManager::GetResourceSync(const MCP::URI& InURI) {
+    MCP::Logger::Debug("Getting resource: " + InURI.toString());
 
     // First check concrete resources
-    const auto ResourceIt = m_Resources.find(InURI);
+    const auto ResourceIt = m_Resources.find(InURI.toString());
     if (ResourceIt != m_Resources.end()) { return ResourceIt->second; }
 
     // Then check templates
     for (const auto& [TemplateURI, TemplatePair] : m_Templates) {
         const auto& [Template, Function] = TemplatePair;
 
-        if (auto Parameters = MatchTemplate(Template, InURI)) {
+        if (auto Parameters = MatchTemplate(Template, InURI.toString())) {
             try {
                 // For sync version, we'll create a basic resource
                 // In a full implementation, this would involve calling the function
@@ -116,14 +116,14 @@ std::vector<ResourceTemplate> ResourceManager::ListTemplates() const {
     return Result;
 }
 
-bool ResourceManager::HasResource(const std::string& InURI) const {
+bool ResourceManager::HasResource(const MCP::URI& InURI) const {
     std::lock_guard<std::mutex> Lock(m_ResourcesMutex);
 
-    return m_Resources.find(InURI) != m_Resources.end();
+    return m_Resources.find(InURI.toString()) != m_Resources.end();
 }
 
 std::optional<std::unordered_map<std::string, std::string>>
-ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const std::string& InURI) const {
+ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI) const {
     // Basic URI template matching - this is a simplified implementation
     // A full implementation would use RFC 6570 URI template matching
 
@@ -151,7 +151,7 @@ ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const std::st
         std::regex URIRegex(ResultPattern);
         std::smatch URIMatch;
 
-        if (std::regex_match(InURI, URIMatch, URIRegex)) {
+        if (std::regex_match(InURI.toString(), URIMatch, URIRegex)) {
             // Extract variable names and values
             std::string::const_iterator VarSearchStart(TemplateString.cbegin());
             std::smatch VarMatch;

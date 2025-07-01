@@ -7,6 +7,8 @@
 #include "CoreSDK/Core/IMCP.h"
 #include "CoreSDK/Features/PromptManager.h"
 #include "CoreSDK/Features/ResourceManager.h"
+#include "CoreSDK/Features/RootManager.h"
+#include "CoreSDK/Features/SamplingManager.h"
 #include "CoreSDK/Features/ToolManager.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 
@@ -84,6 +86,12 @@ class MCPServer : public MCPProtocol {
     std::weak_ptr<PromptManager> GetPromptManager() {
         return m_PromptManager;
     }
+    std::weak_ptr<RootManager> GetRootManager() {
+        return m_RootManager;
+    }
+    std::weak_ptr<SamplingManager> GetSamplingManager() {
+        return m_SamplingManager;
+    }
 
   private:
     // Server state
@@ -93,14 +101,11 @@ class MCPServer : public MCPProtocol {
     std::shared_ptr<ToolManager> m_ToolManager;
     std::shared_ptr<PromptManager> m_PromptManager;
     std::shared_ptr<ResourceManager> m_ResourceManager;
-
-    // Root management
-    std::vector<Root> m_Roots;
-    mutable std::mutex m_RootsMutex;
+    std::shared_ptr<RootManager> m_RootManager;
+    std::shared_ptr<SamplingManager> m_SamplingManager;
 
     // Feature handlers
     // TODO: @HalcyonOmega Cleanup, fix, or remove these handlers
-    std::function<void()> m_SamplingHandler;
     std::function<void()> m_CompletionHandler;
 
     // Handler management

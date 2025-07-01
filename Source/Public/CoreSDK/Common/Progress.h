@@ -17,7 +17,7 @@ struct ProgressToken {
     ProgressToken(int64_t InValue) : Token(InValue) {}
     ProgressToken(const std::variant<std::string, int64_t>& InValue) : Token(InValue) {}
 
-    std::string ToString() const {
+    [[nodiscard]] std::string ToString() const {
         return std::visit(
             [](const auto& InValue) -> std::string {
                 if constexpr (std::is_same_v<std::decay_t<decltype(InValue)>, std::string>) {

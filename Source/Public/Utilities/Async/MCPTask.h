@@ -23,10 +23,11 @@ template <typename T> struct MCPTask {
         }
 
         std::suspend_always initial_suspend() noexcept {
+            (void)m_Result; // Prevent static suggestion - this is a coroutine promise method
             return {};
         }
 
-        std::suspend_always final_suspend() noexcept {
+        [[nodiscard]] std::suspend_always final_suspend() const noexcept {
             // Resume awaiter when this task completes
             if (m_Awaiter) { m_Awaiter.resume(); }
             return {};
@@ -91,11 +92,12 @@ template <> struct MCPTask<void> {
             return MCPTask<void>{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        static std::suspend_always initial_suspend() noexcept {
+        std::suspend_always initial_suspend() noexcept {
+            (void)m_Exception; // Prevent static suggestion - this is a coroutine promise method
             return {};
         }
 
-        std::suspend_always final_suspend() const noexcept {
+        [[nodiscard]] std::suspend_always final_suspend() const noexcept {
             // Resume awaiter when this task completes
             if (m_Awaiter) { m_Awaiter.resume(); }
             return {};

@@ -9,11 +9,7 @@ MCP_NAMESPACE_BEGIN
 
 // TODO: @HalcyonOmega create URI, URIFile, & URITemplate classes
 using URI = Poco::URI;
-
-struct URIFile {
-    static constexpr const char* URI_FILE_PREFIX = "file://";
-    std::string Value = URI_FILE_PREFIX; // This *must* start with "file://" for now.
-};
+using URIFile = Poco::URI;
 
 // TODO: @HalcyonOmega Implement proper URL class
 class URL {

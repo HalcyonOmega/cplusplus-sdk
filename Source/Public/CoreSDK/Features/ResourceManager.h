@@ -63,14 +63,14 @@ class ResourceManager {
      * @param InURI The URI to search for
      * @return Future containing the resource if found, nullopt otherwise
      */
-    std::future<std::optional<Resource>> GetResource(const std::string& InURI);
+    std::future<std::optional<Resource>> GetResource(const MCP::URI& InURI);
 
     /**
      * Get resource by URI synchronously, checking concrete resources first, then templates.
      * @param InURI The URI to search for
      * @return The resource if found, nullopt otherwise
      */
-    std::optional<Resource> GetResourceSync(const std::string& InURI);
+    std::optional<Resource> GetResourceSync(const MCP::URI& InURI);
 
     /**
      * List all registered resources.
@@ -89,7 +89,7 @@ class ResourceManager {
      * @param InURI The URI to check
      * @return True if the resource exists, false otherwise
      */
-    bool HasResource(const std::string& InURI) const;
+    bool HasResource(const MCP::URI& InURI) const;
 
   private:
     std::unordered_map<std::string, Resource> m_Resources;
@@ -104,7 +104,7 @@ class ResourceManager {
      * @return Optional map of template parameters if matched
      */
     std::optional<std::unordered_map<std::string, std::string>>
-    MatchTemplate(const ResourceTemplate& InTemplate, const std::string& InURI) const;
+    MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI) const;
 };
 
 MCP_NAMESPACE_END

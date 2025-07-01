@@ -82,7 +82,8 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
 
 void MCPClient::OnNotified_Initialized() {}
 
-MCPTask<ToolListResponse> MCPClient::Request_ListTools(const std::optional<std::string>& InCursor) {
+MCPTask<ListToolsResponse>
+MCPClient::Request_ListTools(const std::optional<std::string>& InCursor) {
     ToolListRequest request;
     if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
 
@@ -90,7 +91,7 @@ MCPTask<ToolListResponse> MCPClient::Request_ListTools(const std::optional<std::
     co_return response.get<ToolListResponse>();
 }
 
-MCPTask<ToolCallResponse> MCPClient::Request_CallTool(const std::string& InToolName,
+MCPTask<CallToolResponse> MCPClient::Request_CallTool(const std::string& InToolName,
                                                       const JSONData& InArguments) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
@@ -107,7 +108,7 @@ MCPTask<ToolCallResponse> MCPClient::Request_CallTool(const std::string& InToolN
 
 void MCPClient::OnNotified_ToolListChanged() {}
 
-MCPTask<PromptListResponse>
+MCPTask<ListPromptsResponse>
 MCPClient::Request_ListPrompts(const std::optional<std::string>& InCursor) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
@@ -121,7 +122,7 @@ MCPClient::Request_ListPrompts(const std::optional<std::string>& InCursor) {
     co_return response.get<PromptListResponse>();
 }
 
-MCPTask<PromptGetResponse>
+MCPTask<GetPromptResponse>
 MCPClient::Request_GetPrompt(const std::string& InPromptName,
                              const std::optional<JSONData>& InArguments) {
     if (!IsConnected()) {
@@ -139,7 +140,7 @@ MCPClient::Request_GetPrompt(const std::string& InPromptName,
 
 void MCPClient::OnNotified_PromptListChanged() {}
 
-MCPTask<ResourceListResponse>
+MCPTask<ListResourcesResponse>
 MCPClient::Request_ListResources(const std::optional<std::string>& InCursor) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
@@ -153,7 +154,7 @@ MCPClient::Request_ListResources(const std::optional<std::string>& InCursor) {
     co_return response.get<ResourceListResponse>();
 }
 
-MCPTask<ResourceReadResponse> MCPClient::Request_ReadResource(const std::string& InResourceURI) {
+MCPTask<ReadResourceResponse> MCPClient::Request_ReadResource(const std::string& InResourceURI) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -194,7 +195,7 @@ void MCPClient::OnNotified_ResourceListChanged() {}
 
 void MCPClient::OnNotified_ResourceUpdated() {}
 
-MCPTask<RootListResponse> MCPClient::Request_ListRoots() {
+MCPTask<ListRootsResponse> MCPClient::Request_ListRoots() {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -222,7 +223,7 @@ MCPTask_Void MCPClient::Request_SetLoggingLevel(LoggingLevel InLevel) {
 
 void MCPClient::OnNotified_LogMessage() {}
 
-void MCPClient::OnRequest_CreateMessage(const SamplingCreateMessageRequest& InRequest) {
+void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -232,14 +233,14 @@ void MCPClient::OnRequest_CreateMessage(const SamplingCreateMessageRequest& InRe
     co_return response.get<SamplingCreateMessageResponse>();
 }
 
-MCPTask_Void MCPClient::Request_Complete(const CompleteRequest& InRequest) {
+MCPTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest& InRequest) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }
 
-    auto response = co_await SendRequest("completion/complete", JSONData(InRequest));
-    co_return response.get<CompletionCompleteResponse>();
+    auto response = co_await SendRequest(InRequest);
+    co_return response.get<CompleteResponse>();
 }
 
 // Old Handler Setters

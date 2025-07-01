@@ -17,9 +17,9 @@ HTTPTransportClient::HTTPTransportClient(const HTTPTransportOptions& InOptions)
     : m_Options(InOptions) {}
 
 HTTPTransportClient::~HTTPTransportClient() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (GetState() != TransportState::Disconnected) {
         try {
-            Disconnect().GetResult();
+            Disconnect().await_resume();
         } catch (...) {
             // Ignore errors during destruction
         }
@@ -27,7 +27,7 @@ HTTPTransportClient::~HTTPTransportClient() {
 }
 
 MCPTask_Void HTTPTransportClient::Connect() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (GetState() != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started or in progress");
         co_return;
     }
@@ -168,6 +168,7 @@ void HTTPTransportClient::StartSSEConnection() {
         request.set("Cache-Control", "no-cache");
 
         std::ostream& requestStream = sseSession->sendRequest(request);
+        (void)requestStream;
 
         Poco::Net::HTTPResponse response;
         m_SSEStream = std::unique_ptr<std::istream>(&sseSession->receiveResponse(response));
@@ -199,43 +200,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine) {
                 HandleRuntimeError("Invalid JSON-RPC message received via SSE");
                 return;
             }
-
-            // Check if it's a response to a pending request
-            if (message.contains("id")
-                && (message.contains("result") || message.contains("error"))) {
-                std::string requestID = ExtractRequestID(message);
-
-                std::lock_guard<std::mutex> lock(m_RequestsMutex);
-                auto it = m_PendingRequests.find(requestID);
-                if (it != m_PendingRequests.end()) {
-                    if (message.contains("result")) {
-                        it->second->Promise.set_value(message["result"].dump());
-                    } else {
-                        std::string errorMsg = message["error"]["message"].get<std::string>();
-                        it->second->Promise.set_exception(
-                            std::make_exception_ptr(std::runtime_error(errorMsg)));
-                    }
-                    m_PendingRequests.erase(it);
-                    return;
-                }
-            }
-
-            // Handle as request or notification
-            if (message.contains("method")) {
-                std::string method = ExtractMethod(message);
-                JSONData params = ExtractParams(message);
-
-                if (message.contains("id")) {
-                    // Request
-                    if (m_RequestHandler) {
-                        std::string requestID = ExtractRequestID(message);
-                        m_RequestHandler(method, params, requestID);
-                    }
-                } else {
-                    // Notification
-                    if (m_NotificationHandler) { m_NotificationHandler(method, params); }
-                }
-            }
+            CallMessageRouter(message);
         }
     } catch (const std::exception& e) {
         HandleRuntimeError("Error processing SSE line: " + std::string(e.what()));
@@ -288,7 +253,7 @@ HTTPTransportServer::HTTPTransportServer(const HTTPTransportOptions& InOptions)
 HTTPTransportServer::~HTTPTransportServer() {
     if (m_CurrentState != TransportState::Disconnected) {
         try {
-            Disconnect().GetResult();
+            Disconnect().await_resume();
         } catch (...) {
             // Ignore errors during destruction
         }
@@ -296,7 +261,7 @@ HTTPTransportServer::~HTTPTransportServer() {
 }
 
 MCPTask_Void HTTPTransportServer::Connect() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (GetState() != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started");
     }
 
@@ -326,7 +291,7 @@ MCPTask_Void HTTPTransportServer::Connect() {
 }
 
 MCPTask_Void HTTPTransportServer::Disconnect() {
-    if (m_CurrentState == TransportState::Disconnected) { co_return; }
+    if (GetState() == TransportState::Disconnected) { co_return; }
 
     try {
         // Stop HTTP server
@@ -516,57 +481,13 @@ MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONData& InMessage) {
 }
 
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) {
-    try {
-        auto message = JSONData::parse(InMessage);
-
-        if (!IsValidJSONRPC(message)) {
-            HandleRuntimeError("Invalid JSON-RPC message received");
-            return;
-        }
-
-        // Check if it's a response to a pending request
-        if (message.contains("id") && (message.contains("result") || message.contains("error"))) {
-            std::string requestID = ExtractRequestID(message);
-
-            std::lock_guard<std::mutex> lock(m_RequestsMutex);
-            auto it = m_PendingRequests.find(requestID);
-            if (it != m_PendingRequests.end()) {
-                if (message.contains("result")) {
-                    it->second->Promise.set_value(message["result"].dump());
-                } else {
-                    std::string errorMsg = message["error"]["message"].get<std::string>();
-                    it->second->Promise.set_exception(
-                        std::make_exception_ptr(std::runtime_error(errorMsg)));
-                }
-                m_PendingRequests.erase(it);
-                return;
-            }
-        }
-
-        // Handle as request or notification
-        if (message.contains("method")) {
-            std::string method = ExtractMethod(message);
-            JSONData params = ExtractParams(message);
-
-            if (message.contains("id")) {
-                // Request
-                if (m_RequestHandler) {
-                    std::string requestID = ExtractRequestID(message);
-                    m_RequestHandler(method, params, requestID);
-                }
-            } else {
-                // Notification
-                if (m_NotificationHandler) { m_NotificationHandler(method, params); }
-            }
-        }
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Error parsing message: " + std::string(e.what()));
-    }
+    CallMessageRouter(InMessage);
 }
 
 MCPTask_Void
 HTTPTransportServer::HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRequest,
                                               Poco::Net::HTTPServerResponse& InResponse) {
+    (void)InRequest;
     // Set SSE headers
     InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
     InResponse.setContentType("text/event-stream");
