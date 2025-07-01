@@ -16,36 +16,12 @@ void ITransport::SetState(TransportState InNewState) {
     // TODO: Implement state change handler
 }
 
-void ITransport::SetRequestRouter(std::function<void(const RequestBase&)> InRouter) {
-    m_RequestRouter = std::move(InRouter);
+void ITransport::SetMessageRouter(std::function<void(const JSONValue&)> InRouter) {
+    m_MessageRouter = std::move(InRouter);
 }
 
-void ITransport::SetResponseRouter(std::function<void(const ResponseBase&)> InRouter) {
-    m_ResponseRouter = std::move(InRouter);
-}
-
-void ITransport::SetNotificationRouter(std::function<void(const NotificationBase&)> InRouter) {
-    m_NotificationRouter = std::move(InRouter);
-}
-
-void ITransport::SetErrorResponseRouter(std::function<void(const ErrorResponseBase&)> InRouter) {
-    m_ErrorResponseRouter = std::move(InRouter);
-}
-
-void ITransport::CallRequestRouter(const RequestBase& InRequest) {
-    if (m_RequestRouter) { m_RequestRouter(InRequest); }
-}
-
-void ITransport::CallResponseRouter(const ResponseBase& InResponse) {
-    if (m_ResponseRouter) { m_ResponseRouter(InResponse); }
-}
-
-void ITransport::CallNotificationRouter(const NotificationBase& InNotification) {
-    if (m_NotificationRouter) { m_NotificationRouter(InNotification); }
-}
-
-void ITransport::CallErrorResponseRouter(const ErrorResponseBase& InError) {
-    if (m_ErrorResponseRouter) { m_ErrorResponseRouter(InError); }
+void ITransport::CallMessageRouter(const JSONValue& InMessage) {
+    if (m_MessageRouter) { m_MessageRouter(InMessage); }
 }
 
 // Connection management implementations

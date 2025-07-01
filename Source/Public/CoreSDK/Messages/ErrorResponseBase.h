@@ -48,13 +48,9 @@ struct ErrorResponseBase : MessageBase {
 
     ErrorResponseBase(RequestID InID, MCPError InError)
         : MessageBase(), ID(std::move(InID)), Error(std::move(InError)) {}
-
-    static constexpr std::string_view MessageName{"DefaultErrorResponse"};
 };
 
 template <typename T>
-concept ConcreteErrorResponse = std::is_base_of_v<ErrorResponseBase, T> && requires {
-    { T::MessageName } -> std::same_as<std::string_view>;
-};
+concept ConcreteErrorResponse = std::is_base_of_v<ErrorResponseBase, T>;
 
 MCP_NAMESPACE_END

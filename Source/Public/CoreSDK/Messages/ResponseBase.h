@@ -45,8 +45,6 @@ struct ResponseBase : MessageBase {
     ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
         : MessageBase(), ID(std::move(InID)), Result(std::move(InResult)) {}
 
-    static constexpr std::string_view MessageName{"DefaultResponse"};
-
     // Get typed result - cast the base Result to the derived response's Result type
     template <typename TResultType> [[nodiscard]] const TResultType& GetResult() const {
         return static_cast<const TResultType&>(Result);
@@ -54,8 +52,6 @@ struct ResponseBase : MessageBase {
 };
 
 template <typename T>
-concept ConcreteResponse = std::is_base_of_v<ResponseBase, T> && requires {
-    { T::MessageName } -> std::same_as<std::string_view>;
-};
+concept ConcreteResponse = std::is_base_of_v<ResponseBase, T>;
 
 MCP_NAMESPACE_END

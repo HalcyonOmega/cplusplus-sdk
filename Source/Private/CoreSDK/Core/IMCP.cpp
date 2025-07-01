@@ -120,74 +120,12 @@ MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InErrorResp
     co_await m_Transport->TransmitMessage(errorJSON);
 }
 
-void MCPProtocol::RouteRequest(const RequestBase& InRequest) {
-    try {
-        m_RequestManager->RouteRequest(InRequest, nullptr);
-    } catch (const std::exception& e) {
-        // Send internal error response
-        ErrorResponseBase errorResponse(
-            InRequest.ID, MCPError{ErrorCodes::INTERNAL_ERROR,
-                                   "Internal error: " + std::string(e.what()), std::nullopt});
-        SendErrorResponse(errorResponse);
-        HandleRuntimeError("Error handling request: " + std::string(e.what()));
-    }
-}
-
-void MCPProtocol::RouteResponse(const ResponseBase& InResponse) {
-    try {
-        // First handle any registered response handlers
-        m_ResponseManager->RouteResponse(InResponse, nullptr);
-
-        // Then handle pending request promises
-        std::string requestID = InResponse.ID.ToString();
-        std::lock_guard<std::mutex> lock(m_ResponsesMutex);
-        auto it = m_PendingResponses.find(requestID);
-        if (it != m_PendingResponses.end()) {
-            // Convert ResultParams to JSONValue for the promise
-            JSONValue resultJSON;
-            to_json(resultJSON, InResponse.Result);
-            it->second->Promise.set_value(resultJSON);
-            m_PendingResponses.erase(it);
-        }
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Error handling response: " + std::string(e.what()));
-    }
-}
-
-void MCPProtocol::RouteNotification(const NotificationBase& InNotification) {
-    try {
-        // Route notification to registered handlers
-        // Notifications without handlers are simply ignored per JSON-RPC spec
-        m_NotificationManager->RouteNotification(InNotification, nullptr);
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Error handling notification: " + std::string(e.what()));
-    }
-}
-
-void MCPProtocol::RouteErrorResponse(const ErrorResponseBase& InError) {
-    try {
-        // First handle any registered error handlers
-        m_ErrorManager->RouteError(InError, nullptr);
-
-        // Always handle pending request promises for built-in functionality
-        std::string requestID = InError.ID.ToString();
-        std::lock_guard<std::mutex> lock(m_ResponsesMutex);
-        auto Iter = m_PendingResponses.find(requestID);
-        if (Iter != m_PendingResponses.end()) {
-            std::string errorMessage = "Error response: " + InError.Error.Message;
-            Iter->second->Promise.set_exception(
-                std::make_exception_ptr(std::runtime_error(errorMessage)));
-            m_PendingResponses.erase(Iter);
-        }
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Error handling error response: " + std::string(e.what()));
-    }
-}
-
 void MCPProtocol::SetupTransportRouters() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
+    m_Transport->SetMessageRouter(
+        [this](const JSONValue& InMessage) { m_MessageManager->RouteMessage(InMessage); });
     m_Transport->SetRequestRouter(
         [this](const RequestBase& InRequest) { RouteRequest(InRequest); });
     m_Transport->SetResponseRouter(

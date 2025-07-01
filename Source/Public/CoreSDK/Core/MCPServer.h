@@ -99,17 +99,24 @@ class MCPServer : public MCPProtocol {
     void SetupDefaultHandlers();
 
     // Request handlers that delegate to managers
-    void HandleInitialize(const InitializeRequest& InRequest, MCPContext* InContext);
-    void HandleToolsList(const ListToolsRequest& InRequest, MCPContext* InContext);
-    void HandleToolCall(const CallToolRequest& InRequest, MCPContext* InContext);
-    void HandlePromptsList(const ListPromptsRequest& InRequest, MCPContext* InContext);
-    void HandlePromptGet(const GetPromptRequest& InRequest, MCPContext* InContext);
-    void HandleResourcesList(const ListResourcesRequest& InRequest, MCPContext* InContext);
-    void HandleResourceRead(const ReadResourceRequest& InRequest, MCPContext* InContext);
-    void HandleResourceSubscribe(const SubscribeRequest& InRequest, MCPContext* InContext);
-    void HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest, MCPContext* InContext);
-    void HandleSamplingCreateMessage(const CreateMessageRequest& InRequest, MCPContext* InContext);
-    void HandleCompletionComplete(const CompleteRequest& InRequest, MCPContext* InContext);
+    void HandleInitialize(const InitializeRequest& InRequest, std::optional<MCPContext*> InContext);
+    void HandleToolsList(const ListToolsRequest& InRequest, std::optional<MCPContext*> InContext);
+    void HandleToolCall(const CallToolRequest& InRequest, std::optional<MCPContext*> InContext);
+    void HandlePromptsList(const ListPromptsRequest& InRequest,
+                           std::optional<MCPContext*> InContext);
+    void HandlePromptGet(const GetPromptRequest& InRequest, std::optional<MCPContext*> InContext);
+    void HandleResourcesList(const ListResourcesRequest& InRequest,
+                             std::optional<MCPContext*> InContext);
+    void HandleResourceRead(const ReadResourceRequest& InRequest,
+                            std::optional<MCPContext*> InContext);
+    void HandleResourceSubscribe(const SubscribeRequest& InRequest,
+                                 std::optional<MCPContext*> InContext);
+    void HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
+                                   std::optional<MCPContext*> InContext);
+    void HandleSamplingCreateMessage(const CreateMessageRequest& InRequest,
+                                     std::optional<MCPContext*> InContext);
+    void HandleCompletionComplete(const CompleteRequest& InRequest,
+                                  std::optional<MCPContext*> InContext);
 
     // Progress tracking and tool execution
     MCPTask<CallToolResponse> ExecuteToolWithProgress(

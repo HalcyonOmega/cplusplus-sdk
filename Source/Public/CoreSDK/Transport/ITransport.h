@@ -8,11 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/Macros.h"
-#include "CoreSDK/Messages/ErrorResponseBase.h"
-#include "CoreSDK/Messages/NotificationBase.h"
-#include "CoreSDK/Messages/RequestBase.h"
-#include "CoreSDK/Messages/ResponseBase.h"
 #include "JSONProxy.h"
 #include "Utilities/Async/MCPTask.h"
 
@@ -70,15 +67,9 @@ class ITransport {
     [[nodiscard]] TransportState GetState() const;
     void SetState(TransportState InNewState);
 
-    void SetRequestRouter(std::function<void(const RequestBase&)> InRouter);
-    void SetResponseRouter(std::function<void(const ResponseBase&)> InRouter);
-    void SetNotificationRouter(std::function<void(const NotificationBase&)> InRouter);
-    void SetErrorResponseRouter(std::function<void(const ErrorResponseBase&)> InRouter);
+    void SetMessageRouter(std::function<void(const JSONValue&)> InRouter);
 
-    void CallRequestRouter(const RequestBase& InRequest);
-    void CallResponseRouter(const ResponseBase& InResponse);
-    void CallNotificationRouter(const NotificationBase& InNotification);
-    void CallErrorResponseRouter(const ErrorResponseBase& InError);
+    void CallMessageRouter(const JSONValue& InMessage);
 
     // Connection management
     void RegisterConnection(const ConnectionID& InConnectionID);
@@ -90,10 +81,7 @@ class ITransport {
     TransportState m_CurrentState{TransportState::Disconnected};
 
     // Event handlers
-    RequestHandler m_RequestRouter;
-    ResponseHandler m_ResponseRouter;
-    NotificationHandler m_NotificationRouter;
-    ErrorResponseHandler m_ErrorResponseRouter;
+    std::function<void(const JSONValue&, std::optional<MCPContext*>)> m_MessageRouter;
 
     // Connection tracking
     std::unordered_set<ConnectionID> m_ActiveConnections;

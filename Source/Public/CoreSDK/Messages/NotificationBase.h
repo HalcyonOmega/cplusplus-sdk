@@ -50,8 +50,6 @@ struct NotificationBase : MessageBase {
                      std::optional<NotificationParams> InParams = std::nullopt)
         : MessageBase(), Method(InMethod), Params(std::move(InParams)) {}
 
-    static constexpr std::string_view MessageName{"DefaultNotification"};
-
     // Get typed params - cast the base Params to the derived notification's Params type
     template <typename TParamsType> [[nodiscard]] std::optional<TParamsType> GetParams() const {
         if (Params) { return static_cast<const TParamsType&>(*Params); }
@@ -60,8 +58,6 @@ struct NotificationBase : MessageBase {
 };
 
 template <typename T>
-concept ConcreteNotification = std::is_base_of_v<NotificationBase, T> && requires {
-    { T::MessageName } -> std::same_as<std::string_view>;
-};
+concept ConcreteNotification = std::is_base_of_v<NotificationBase, T>;
 
 MCP_NAMESPACE_END

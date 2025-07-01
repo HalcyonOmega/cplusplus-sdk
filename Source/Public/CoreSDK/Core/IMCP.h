@@ -9,11 +9,8 @@
 #include "CoreSDK/Common/EventSignatures.h"
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Common/RuntimeError.h"
-#include "CoreSDK/Messages/ErrorManager.h"
 #include "CoreSDK/Messages/MCPMessages.h"
-#include "CoreSDK/Messages/NotificationManager.h"
-#include "CoreSDK/Messages/RequestManager.h"
-#include "CoreSDK/Messages/ResponseManager.h"
+#include "CoreSDK/Messages/MessageManager.h"
 #include "CoreSDK/Transport/ITransport.h"
 #include "Utilities/Async/MCPTask.h"
 
@@ -58,20 +55,13 @@ class MCPProtocol {
 
   private:
     void SetupTransportRouters();
-    virtual void RouteRequest(const RequestBase& InRequest);
-    virtual void RouteResponse(const ResponseBase& InResponse);
-    virtual void RouteNotification(const NotificationBase& InNotification);
-    virtual void RouteErrorResponse(const ErrorResponseBase& InError);
 
   protected:
     MCPProtocolState m_State;
     std::unique_ptr<ITransport> m_Transport;
 
     // Message managers for routing incoming messages
-    std::unique_ptr<RequestManager> m_RequestManager;
-    std::unique_ptr<ResponseManager> m_ResponseManager;
-    std::unique_ptr<NotificationManager> m_NotificationManager;
-    std::unique_ptr<ErrorManager> m_ErrorManager;
+    std::unique_ptr<MessageManager> m_MessageManager;
 
   private:
     // Request tracking

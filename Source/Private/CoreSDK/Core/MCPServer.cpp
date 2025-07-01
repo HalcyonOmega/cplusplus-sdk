@@ -159,195 +159,54 @@ MCPTask_Void MCPServer::LogMessage(const LoggingMessageNotification::Params& InP
 
 void MCPServer::SetupDefaultHandlers() {
     // Register request handlers using the RegisterRequestHandler method
-    RegisterRequestHandler(InitializeRequest(),
-                           [this](const RequestBase& InRequest, MCPContext* InContext) {
-                               HandleInitialize(InRequest.Params.value(), InRequest.ID);
-                           });
-
-    // Tools handlers
-    RegisterRequestHandler(RequestBase("tools/list", std::nullopt,
-        "initialize", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleInitialize(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<InitializeRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleInitialize(request, InContext);
         });
-
-    // Tools handlers
-    GetRequestManager().RegisterRequestHandler(
-        "tools/list", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleToolsList(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<ListToolsRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleToolsList(request, InContext);
         });
-
-    GetRequestManager().RegisterRequestHandler(
-        "tools/call", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleToolCall(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<CallToolRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleToolCall(request, InContext);
         });
-
-    // Prompts handlers
-    GetRequestManager().RegisterRequestHandler(
-        "prompts/list", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandlePromptsList(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<ListPromptsRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandlePromptsList(request, InContext);
         });
-
-    GetRequestManager().RegisterRequestHandler(
-        "prompts/get", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandlePromptGet(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<GetPromptRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandlePromptGet(request, InContext);
         });
-
-    // Resources handlers
-    GetRequestManager().RegisterRequestHandler(
-        "resources/list", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleResourcesList(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<ListResourcesRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleResourcesList(request, InContext);
         });
-
-    GetRequestManager().RegisterRequestHandler(
-        "resources/read", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleResourceRead(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<ReadResourceRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleResourceRead(request, InContext);
         });
-
-    GetRequestManager().RegisterRequestHandler(
-        "resources/subscribe", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleResourceSubscribe(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<SubscribeRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleResourceSubscribe(request, InContext);
         });
-
-    GetRequestManager().RegisterRequestHandler(
-        "resources/unsubscribe", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleResourceUnsubscribe(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<UnsubscribeRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleResourceUnsubscribe(request, InContext);
         });
-
-    // Sampling handler
-    GetRequestManager().RegisterRequestHandler(
-        "sampling/createMessage", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleSamplingCreateMessage(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<CreateMessageRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleSamplingCreateMessage(request, InContext);
         });
-
-    // Completion handler
-    GetRequestManager().RegisterRequestHandler(
-        "completion/complete", [this](const RequestBase& InRequest, MCPContext* InContext) {
-        try {
-            JSONValue paramsJSON;
-            if (InRequest.Params.has_value()) {
-                to_json(paramsJSON, InRequest.Params.value());
-            } else {
-                paramsJSON = JSONValue::object();
-            }
-            HandleCompletionComplete(paramsJSON, InRequest.ID);
-        } catch (const std::exception& e) {
-            SendErrorResponse(InRequest.ID, -32603, "Internal error",
-                              JSONValue::object({{"details", e.what()}}));
-        }
+    m_MessageManager->RegisterRequestHandler<CompleteRequest>(
+        [this](const auto& request, std::optional<MCPContext*> InContext) {
+            return HandleCompletionComplete(request, InContext);
         });
 }
 
-void MCPServer::HandleInitialize(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleInitialize(const InitializeRequest& InRequest,
+                                 std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<InitializeRequest::Params>();
 
@@ -414,12 +273,13 @@ void MCPServer::HandleInitialize(const JSONValue& InParams, const RequestID& InR
     }
 }
 
-void MCPServer::HandleToolsList(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleToolsList(const ListToolsRequest& InRequest,
+                                std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<ListToolsRequest::Params>();
 
         ListToolsResponse::Result response;
-        response.Tools = m_ToolManager.ListTools();
+        response.Tools = m_ToolManager->ListTools();
 
         SendResponse(InRequestID, JSONValue(response));
 
@@ -429,7 +289,8 @@ void MCPServer::HandleToolsList(const JSONValue& InParams, const RequestID& InRe
     }
 }
 
-void MCPServer::HandleToolCall(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleToolCall(const CallToolRequest& InRequest,
+                               std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<CallToolRequest::Params>();
 
@@ -448,7 +309,8 @@ void MCPServer::HandleToolCall(const JSONValue& InParams, const RequestID& InReq
     }
 }
 
-void MCPServer::HandlePromptsList(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandlePromptsList(const ListPromptsRequest& InRequest,
+                                  std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<ListPromptsRequest::Params>();
 
@@ -463,7 +325,8 @@ void MCPServer::HandlePromptsList(const JSONValue& InParams, const RequestID& In
     }
 }
 
-void MCPServer::HandlePromptGet(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandlePromptGet(const GetPromptRequest& InRequest,
+                                std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<GetPromptRequest::Params>();
 
@@ -482,7 +345,8 @@ void MCPServer::HandlePromptGet(const JSONValue& InParams, const RequestID& InRe
     }
 }
 
-void MCPServer::HandleResourcesList(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleResourcesList(const ListResourcesRequest& InRequest,
+                                    std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<ListResourcesRequest::Params>();
 
@@ -497,7 +361,8 @@ void MCPServer::HandleResourcesList(const JSONValue& InParams, const RequestID& 
     }
 }
 
-void MCPServer::HandleResourceRead(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleResourceRead(const ReadResourceRequest& InRequest,
+                                   std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<ReadResourceRequest::Params>();
 
@@ -515,7 +380,8 @@ void MCPServer::HandleResourceRead(const JSONValue& InParams, const RequestID& I
     }
 }
 
-void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleResourceSubscribe(const SubscribeRequest& InRequest,
+                                        std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<SubscribeRequest::Params>();
         std::string uri = request.URI.ToString();
@@ -543,7 +409,8 @@ void MCPServer::HandleResourceSubscribe(const JSONValue& InParams, const Request
     }
 }
 
-void MCPServer::HandleResourceUnsubscribe(const JSONValue& InParams, const RequestID& InRequestID) {
+void MCPServer::HandleResourceUnsubscribe(const UnsubscribeRequest& InRequest,
+                                          std::optional<MCPContext*> InContext) {
     try {
         auto request = InParams.get<UnsubscribeRequest::Params>();
         std::string uri = request.URI.ToString();
