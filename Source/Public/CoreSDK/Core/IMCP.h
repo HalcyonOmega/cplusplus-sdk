@@ -102,16 +102,6 @@ class MCPProtocol {
     ClientCapabilities GetClientCapabilities() const {
         return m_ClientCapabilities;
     }
-
-    template <typename T> MCPTask<T> SendRequest(const RequestBase& InRequest) {
-        (void)InRequest;
-        co_return {};
-    }
-
-    template <typename T> MCPTask<T> SendResponse(const ResponseBase& InResponse) {
-        (void)InResponse;
-        co_return {};
-    }
 };
 
 MCP_NAMESPACE_END

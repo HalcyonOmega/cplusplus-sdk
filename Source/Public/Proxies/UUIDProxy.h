@@ -17,7 +17,7 @@ MCP_NAMESPACE_BEGIN
  *
  * @return std::string The generated UUID.
  */
-std::string GenerateUUID() {
+inline std::string GenerateUUID() {
     // Get the default UUID generator.
     Poco::UUIDGenerator& Generator = Poco::UUIDGenerator::defaultGenerator();
 

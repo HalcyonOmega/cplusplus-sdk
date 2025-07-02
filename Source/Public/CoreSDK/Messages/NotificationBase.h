@@ -46,6 +46,7 @@ struct NotificationBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
+    NotificationBase() = default;
     NotificationBase(std::string_view InMethod,
                      std::optional<NotificationParams> InParams = std::nullopt)
         : MessageBase(), Method(InMethod), ParamsData(std::move(InParams)) {}

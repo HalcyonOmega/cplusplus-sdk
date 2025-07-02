@@ -13,7 +13,7 @@ void SamplingManager::SetSamplingFunction(SamplingFunction InSamplingFunction) {
     std::lock_guard<std::mutex> Lock(m_SamplingMutex);
 
     m_SamplingFunction = std::move(InSamplingFunction);
-    MCP::Logger::Debug("Sampling function has been configured");
+    Logger::Debug("Sampling function has been configured");
 }
 
 std::future<SamplingResult>
@@ -28,8 +28,8 @@ SamplingManager::RequestSampling(const std::vector<SamplingMessage>& InMessages,
         });
     }
 
-    MCP::Logger::Debug("Requesting LLM sampling with " + std::to_string(InMessages.size())
-                       + " messages");
+    Logger::Debug("Requesting LLM sampling with " + std::to_string(InMessages.size())
+                  + " messages");
 
     const auto EffectivePreferences = GetEffectiveModelPreferences(InModelPreferences);
     return m_SamplingFunction.value()(InMessages, EffectivePreferences, InContext);
@@ -47,7 +47,7 @@ void SamplingManager::SetDefaultModelPreferences(const ModelPreferences& InModel
     std::lock_guard<std::mutex> Lock(m_SamplingMutex);
 
     m_DefaultModelPreferences = InModelPreferences;
-    MCP::Logger::Debug("Default model preferences updated");
+    Logger::Debug("Default model preferences updated");
 }
 
 std::optional<ModelPreferences> SamplingManager::GetDefaultModelPreferences() const {
@@ -60,7 +60,7 @@ void SamplingManager::ClearDefaultModelPreferences() {
     std::lock_guard<std::mutex> Lock(m_SamplingMutex);
 
     m_DefaultModelPreferences.reset();
-    MCP::Logger::Debug("Default model preferences cleared");
+    Logger::Debug("Default model preferences cleared");
 }
 
 bool SamplingManager::HasSamplingFunction() const {

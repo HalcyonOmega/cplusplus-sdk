@@ -10,15 +10,15 @@ RootManager::RootManager(bool InWarnOnDuplicateRoots)
     : m_WarnOnDuplicateRoots(InWarnOnDuplicateRoots) {}
 
 Root RootManager::AddRoot(const Root& InRoot) {
-    MCP::Logger::Debug("Adding root - URI: " + InRoot.URI.toString()
-                       + ", Name: " + InRoot.Name.value_or("(unnamed)"));
+    Logger::Debug("Adding root - URI: " + InRoot.URI.toString()
+                  + ", Name: " + InRoot.Name.value_or("(unnamed)"));
     std::lock_guard<std::mutex> Lock(m_RootsMutex);
 
     const std::string Key = GetRootKey(InRoot.URI);
     const auto ExistingIt = m_Roots.find(Key);
     if (ExistingIt != m_Roots.end()) {
         if (m_WarnOnDuplicateRoots) {
-            MCP::Logger::Warning("Root already exists: " + InRoot.URI.toString());
+            Logger::Warning("Root already exists: " + InRoot.URI.toString());
         }
         return ExistingIt->second;
     }
@@ -40,7 +40,7 @@ void RootManager::RemoveRoot(const Root& InRoot) {
 }
 
 void RootManager::RemoveRoot(const MCP::URIFile& InURI) {
-    MCP::Logger::Debug("Removing root: " + InURI.toString());
+    Logger::Debug("Removing root: " + InURI.toString());
     std::lock_guard<std::mutex> Lock(m_RootsMutex);
 
     const std::string Key = GetRootKey(InURI);
@@ -71,7 +71,7 @@ std::optional<Root> RootManager::GetRootByName(const std::string& InName) const 
 std::vector<Root> RootManager::ListRoots() const {
     std::lock_guard<std::mutex> Lock(m_RootsMutex);
 
-    MCP::Logger::Debug("Listing roots - Count: " + std::to_string(m_Roots.size()));
+    Logger::Debug("Listing roots - Count: " + std::to_string(m_Roots.size()));
 
     std::vector<Root> Result;
     Result.reserve(m_Roots.size());
@@ -99,7 +99,7 @@ bool RootManager::HasRootWithName(const std::string& InName) const {
 void RootManager::ClearRoots() {
     std::lock_guard<std::mutex> Lock(m_RootsMutex);
 
-    MCP::Logger::Debug("Clearing all roots - Count: " + std::to_string(m_Roots.size()));
+    Logger::Debug("Clearing all roots - Count: " + std::to_string(m_Roots.size()));
     m_Roots.clear();
 }
 

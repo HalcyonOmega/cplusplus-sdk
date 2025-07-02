@@ -70,7 +70,7 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest) {
         if (iter == SUPPORTED_PROTOCOL_VERSIONS.end()) {
             std::string supportedVersions;
             for (size_t i = 0; i < SUPPORTED_PROTOCOL_VERSIONS.size(); ++i) {
-                if (i > 0) supportedVersions += ", ";
+                if (i > 0) { supportedVersions += ", "; }
                 supportedVersions += SUPPORTED_PROTOCOL_VERSIONS[i];
             }
 
@@ -111,9 +111,6 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest) {
         // Logging capability
         capabilities.Logging = LoggingCapability{};
 
-        // Sampling capability if handler is set
-        if (m_SamplingManager) { capabilities.Sampling = SamplingCapability{}; }
-
         Result.Capabilities = capabilities;
 
         SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
@@ -143,7 +140,7 @@ void MCPServer::RemoveTool(const Tool& InTool) {
         return;
     }
 
-    m_ToolManager->RemoveTool(InTool.Name);
+    m_ToolManager->RemoveTool(InTool);
 }
 
 MCPTask_Void MCPServer::Notify_ToolListChanged() {
@@ -169,9 +166,10 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest) {
     try {
         CallToolRequest::Params Request =
             GetRequestParams<CallToolRequest::Params>(InRequest).value();
+        Tool Tool = m_ToolManager->GetTool(Request.Name).value();
 
         // Use ToolManager to call the tool
-        auto Result = m_ToolManager->CallToolSync(Request.Name, Request.Arguments);
+        auto Result = m_ToolManager->CallTool(Tool, Request.Arguments);
 
         CallToolResponse::Result ResponseResult;
         ResponseResult.Content = Result.Content;
@@ -311,7 +309,7 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest) {
 
         // Use ResourceManager to read the resource content
         std::variant<TextResourceContents, BlobResourceContents> ResourceContent =
-            m_ResourceManager->GetResource(Request.URI);
+            m_ResourceManager->GetResource(Request.URI).value();
 
         ReadResourceResponse::Result ResponseResult;
         ResponseResult.Contents.emplace_back(ResourceContent);
@@ -411,8 +409,7 @@ MCPTask_Void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Para
 
 MCPTask<CreateMessageResponse::Result>
 MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams) {
-    CreateMessageResponse Response =
-        co_await SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
+    CreateMessageResponse Response = co_await SendRequest(CreateMessageRequest(InParams));
     co_return GetResponseResult<CreateMessageResponse::Result>(Response);
 }
 
@@ -492,20 +489,18 @@ void MCPServer::SetupDefaultHandlers() {
 }
 
 // Enhanced resource change notification
-MCPTask_Void MCPServer::Notify_ResourceSubscribers(const MCP::URI& InURI) {
-    std::set<std::string> subscribers;
+MCPTask_Void MCPServer::Notify_ResourceSubscribers(const Resource& InResource) {
+    std::vector<std::string> subscribers;
 
     {
         std::lock_guard<std::mutex> lock(m_ResourceSubscriptionsMutex);
-        auto iter = m_ResourceSubscriptions.find(InURI.toString());
-        if (iter != m_ResourceSubscriptions.end()) {
-            subscribers = iter->second; // Copy the subscriber set
-        }
+        auto iter = m_ResourceSubscriptions.find(InResource.URI.toString());
+        if (iter != m_ResourceSubscriptions.end()) { subscribers = iter->second; }
     }
 
     if (!subscribers.empty()) {
         ResourceUpdatedNotification notification;
-        notification.Params.URI = InURI;
+        notification.Params.URI = InResource.URI;
 
         // Send notification to all subscribers
         for (const auto& clientID : subscribers) {
@@ -548,7 +543,7 @@ MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(
     co_await UpdateProgress(0.0);
 
     // Use ToolManager to execute tool
-    auto result = co_await m_ToolManager->CallTool(InTool.Name, InArguments);
+    auto result = co_await m_ToolManager->CallTool(InTool, InArguments);
 
     // Complete progress
     co_await UpdateProgress(1.0);

@@ -32,12 +32,12 @@ std::vector<Tool> ToolManager::ListTools() const {
 }
 
 Tool ToolManager::AddTool(const Tool& InTool) {
-    MCP::Logger::Debug("Adding tool: " + InTool.Name);
+    Logger::Debug("Adding tool: " + InTool.Name);
     std::lock_guard<std::mutex> Lock(m_ToolsMutex);
 
     const auto ExistingIt = m_Tools.find(InTool.Name);
     if (ExistingIt != m_Tools.end()) {
-        if (m_WarnOnDuplicateTools) { MCP::Logger::Warning("Tool already exists: " + InTool.Name); }
+        if (m_WarnOnDuplicateTools) { Logger::Warning("Tool already exists: " + InTool.Name); }
         return ExistingIt->second;
     }
 

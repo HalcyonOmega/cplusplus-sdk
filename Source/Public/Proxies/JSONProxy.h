@@ -39,10 +39,18 @@ concept IsOptional = requires { typename T::value_type; } && requires {
     static constexpr struct VarName##_t {                                                          \
         static constexpr const char* json_key = JSONKey;                                           \
         static void to_json(auto& JSON_J, const auto& JSON_T) {                                    \
-            JSON_J[json_key] = JSON_T.Member;                                                      \
+            if constexpr (IsOptional<decltype(JSON_T.Member)>) {                                   \
+                if (JSON_T.Member.has_value()) { JSON_J[json_key] = JSON_T.Member; }               \
+            } else {                                                                               \
+                JSON_J[json_key] = JSON_T.Member;                                                  \
+            }                                                                                      \
         }                                                                                          \
         static void from_json(const auto& JSON_J, auto& JSON_T) {                                  \
-            JSON_J.at(json_key).get_to(JSON_T.Member);                                             \
+            if constexpr (IsOptional<decltype(JSON_T.Member)>) {                                   \
+                if (JSON_J.contains(json_key)) { JSON_J.at(json_key).get_to(JSON_T.Member); }      \
+            } else {                                                                               \
+                JSON_J.at(json_key).get_to(JSON_T.Member);                                         \
+            }                                                                                      \
         }                                                                                          \
     } VarName{};
 

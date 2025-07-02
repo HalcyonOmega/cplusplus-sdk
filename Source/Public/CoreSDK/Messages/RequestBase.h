@@ -6,7 +6,6 @@
 #include <utility>
 #include <variant>
 
-#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/Progress.h"
 #include "CoreSDK/Messages/MessageBase.h"
 #include "JSONProxy.h"
@@ -17,13 +16,12 @@ class MCPContext;
 
 MCP_NAMESPACE_BEGIN
 
-using RequestHandler =
-    std::function<void(const RequestBase& InRequest, std::optional<MCPContext*> InContext)>;
+using RequestHandler = std::function<void(const RequestBase& InRequest)>;
 
 struct RequestID {
     std::variant<std::string, int64_t> Value;
 
-    RequestID() = default;
+    RequestID() : Value("") {}
     RequestID(const std::string& InValue) : Value(InValue) {}
     RequestID(int64_t InValue) : Value(InValue) {}
     RequestID(const std::variant<std::string, int64_t>& InValue) : Value(InValue) {}
@@ -96,6 +94,7 @@ struct RequestBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
+    RequestBase() = default;
     RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
         : MessageBase(), ID(GenerateUUID()), Method(InMethod), ParamsData(std::move(InParams)) {}
 

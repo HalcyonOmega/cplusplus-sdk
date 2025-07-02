@@ -4,7 +4,6 @@
 #include <optional>
 #include <string>
 
-#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Messages/MessageBase.h"
 #include "CoreSDK/Messages/RequestBase.h"
 #include "JSONProxy.h"
@@ -22,6 +21,7 @@ struct MCPError {
 
     DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
 
+    MCPError() = default;
     MCPError(int64_t InCode, std::string_view InMessage,
              std::optional<JSONData> InData = std::nullopt)
         : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
@@ -45,12 +45,12 @@ struct ErrorResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, MessageBase, IDKEY, ERRORKEY)
 
+    ErrorResponseBase() = default;
     ErrorResponseBase(RequestID InID, MCPError InError)
         : MessageBase(), ID(std::move(InID)), ErrorData(std::move(InError)) {}
 };
 
-using ErrorResponseHandler =
-    std::function<void(const ErrorResponseBase& InError, std::optional<MCPContext*> InContext)>;
+using ErrorResponseHandler = std::function<void(const ErrorResponseBase& InError)>;
 
 template <typename T>
 concept ConcreteErrorResponse = std::is_base_of_v<ErrorResponseBase, T>;

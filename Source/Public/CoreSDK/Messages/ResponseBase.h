@@ -42,6 +42,7 @@ struct ResponseBase : MessageBase {
 
     DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
+    ResponseBase() = default;
     ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
         : MessageBase(), ID(std::move(InID)), ResultData(std::move(InResult)) {}
 };

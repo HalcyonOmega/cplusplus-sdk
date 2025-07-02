@@ -9,7 +9,7 @@ PromptManager::PromptManager(bool InWarnOnDuplicatePrompts)
 
 Prompt PromptManager::AddPrompt(const Prompt& InPrompt) {
     // Log the addition attempt
-    MCP::Logger::Debug("Adding prompt: " + InPrompt.Name);
+    Logger::Debug("Adding prompt: " + InPrompt.Name);
     std::lock_guard<std::mutex> Lock(m_PromptsMutex);
 
     const auto ExistingIt = m_Prompts.find(InPrompt.Name);

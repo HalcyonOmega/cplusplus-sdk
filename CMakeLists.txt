@@ -63,118 +63,60 @@ if(BUILD_EXAMPLES AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Examples/CMakeLists.txt
     add_subdirectory(Examples)
 endif()
 
-### Old Code ###
-# Installation
-include(GNUInstallDirs)
-
-# Install headers
-install(DIRECTORY Source/Public/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
-
-# Install third-party licenses
-install(FILES THIRD_PARTY_LICENSES.md 
-    DESTINATION ${CMAKE_INSTALL_DOCDIR})
-
-# Install documentation
-install(DIRECTORY Docs/
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
-    OPTIONAL)
-
-
-# Create package config files (only if Config.cmake.in exists)
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in)
-    include(CMakePackageConfigHelpers)
-
-    configure_package_config_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY SameMajorVersion
-    )
-
-    install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-endif()
-### End Old Code ###
-
-# Gather all source and header files
-file(GLOB_RECURSE ALL_SOURCES
-    "${CMAKE_SOURCE_DIR}/Source/Private/*.cpp"
-    "${CMAKE_SOURCE_DIR}/Source/Public/*.cpp"
+# Gather all source and header files for the library
+file(GLOB_RECURSE SDK_SOURCES
+    "Source/Private/*.cpp"
+    "Source/Public/**/*.cpp"
 )
-file(GLOB_RECURSE ALL_HEADERS
-    "${CMAKE_SOURCE_DIR}/Source/Private/*.h"
-    "${CMAKE_SOURCE_DIR}/Source/Private/*.hpp"
-    "${CMAKE_SOURCE_DIR}/Source/Public/*.h"
-    "${CMAKE_SOURCE_DIR}/Source/Public/*.hpp"
+file(GLOB_RECURSE SDK_HEADERS
+    "Source/Public/**/*.h"
+    "Source/Public/**/*.hpp"
 )
 
-# Create library
-add_library(${PROJECT_NAME} STATIC ${ALL_SOURCES} ${ALL_HEADERS})
+# Create the SDK library
+add_library(${PROJECT_NAME} STATIC ${SDK_SOURCES} ${SDK_HEADERS})
 
-# Set target properties
+# Set C++ standard for the library
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD ${CMAKE_CXX_STANDARD}
     CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
 )
 
-# Include directories
+# Public include directories for the library
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Source/Public/Utilities/ThirdParty>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Source/Public>
+        $<INSTALL_INTERFACE:include>
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/Source/Private
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Private
 )
 
-# Link libraries
-target_link_libraries(${PROJECT_NAME} 
-    PUBLIC 
-        Threads::Threads
-        curl
-)
+# Link external dependencies
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
-# Install rules
+# Fetch and link Poco
+include(FetchContent)
+FetchContent_Declare(
+    poco
+    GIT_REPOSITORY https://github.com/pocoproject/poco.git
+    GIT_TAG poco-1.14.2-release
+)
+FetchContent_MakeAvailable(poco)
+target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::JSON Poco::Foundation)
+
+# Installation rules
+include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
     EXPORT ${PROJECT_NAME}Targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
-# Install headers
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/Source/Public/
+install(DIRECTORY Source/Public/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.h"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
-
-# Install the export set
 install(EXPORT ${PROJECT_NAME}Targets
     FILE ${PROJECT_NAME}Targets.cmake
     NAMESPACE ${PROJECT_NAME}::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-) 
-
-include(FetchContent)
-
-# Poco
-FetchContent_Declare(
-  poco
-  GIT_REPOSITORY https://github.com/pocoproject/poco.git
-  GIT_TAG        poco-1.14.2-release 
 )
-
-FetchContent_MakeAvailable(poco)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::JSON Poco::Foundation Poco::Data)

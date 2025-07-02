@@ -13,14 +13,13 @@ ResourceManager::ResourceManager(bool InWarnOnDuplicateResources)
 Resource ResourceManager::AddResource(const Resource& InResource) {
     const MCP::URI URIString = InResource.URI;
     // Log the addition attempt
-    MCP::Logger::Debug("Adding resource - URI: " + URIString.toString()
-                       + ", Name: " + InResource.Name);
+    Logger::Debug("Adding resource - URI: " + URIString.toString() + ", Name: " + InResource.Name);
     std::lock_guard<std::mutex> Lock(m_ResourcesMutex);
 
     const auto ExistingIt = m_Resources.find(URIString.toString());
     if (ExistingIt != m_Resources.end()) {
         if (m_WarnOnDuplicateResources) {
-            MCP::Logger::Warning("Resource already exists: " + URIString.toString());
+            Logger::Warning("Resource already exists: " + URIString.toString());
         }
         return ExistingIt->second;
     }
@@ -39,8 +38,8 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
     const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString());
     if (ExistingIt != m_Templates.end()) {
         if (m_WarnOnDuplicateResources) {
-            MCP::Logger::Warning("Resource template already exists: "
-                                 + InTemplate.URITemplate.ToString());
+            Logger::Warning("Resource template already exists: "
+                            + InTemplate.URITemplate.ToString());
         }
         return ExistingIt->second.first;
     }
@@ -51,13 +50,13 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
 
     m_Templates[InTemplate.URITemplate.ToString()] = std::make_pair(Template, InTemplate.Function);
 
-    MCP::Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
+    Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
     return Template;
 }
 
 std::optional<std::variant<TextResourceContents, BlobResourceContents>>
 ResourceManager::GetResource(const MCP::URI& InURI) {
-    MCP::Logger::Debug("Getting resource: " + InURI.toString());
+    Logger::Debug("Getting resource: " + InURI.toString());
 
     // First check concrete resources
     const auto ResourceIt = m_Resources.find(InURI.toString());
@@ -90,7 +89,7 @@ ResourceManager::GetResource(const MCP::URI& InURI) {
 }
 
 std::vector<Resource> ResourceManager::ListResources() const {
-    MCP::Logger::Debug("Listing resources - Count: " + std::to_string(m_Resources.size()));
+    Logger::Debug("Listing resources - Count: " + std::to_string(m_Resources.size()));
 
     std::vector<Resource> Result;
     Result.reserve(m_Resources.size());
@@ -101,7 +100,7 @@ std::vector<Resource> ResourceManager::ListResources() const {
 }
 
 std::vector<ResourceTemplate> ResourceManager::ListTemplates() const {
-    MCP::Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
+    Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
 
     std::vector<ResourceTemplate> Result;
     Result.reserve(m_Templates.size());

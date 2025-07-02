@@ -2,7 +2,6 @@
 
 #include <any>
 #include <functional>
-#include <future>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
@@ -11,13 +10,15 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 #include "JSONProxy.h"
 #include "ToolBase.h"
-
-MCP_NAMESPACE_BEGIN
+#include "Utilities/Async/MCPTask.h"
 
 // Forward declarations
 class MCPContext;
+
+MCP_NAMESPACE_BEGIN
 
 /**
  * Exception thrown when tool operations fail.
@@ -28,12 +29,12 @@ class ToolError : public std::runtime_error {
 };
 
 /**
- * Manages FastMCP tools.
+ * Manages MCP tools.
  * Provides functionality for registering, retrieving, listing, and calling tools.
  */
 class ToolManager {
   public:
-    using ToolFunction = std::function<std::future<std::any>(const JSONData&, MCPContext*)>;
+    using ToolFunction = std::function<MCPTask<std::any>(const JSONData&, MCPContext*)>;
 
     /**
      * Constructor
@@ -60,31 +61,13 @@ class ToolManager {
      * @param InTool The tool configuration with handler
      * @return The added tool. If a tool with the same name exists, returns the existing tool.
      */
-    Tool AddTool(const Tool& InTool);
+    bool AddTool(const Tool& InTool);
 
     /**
      * Remove a tool.
      * @param InTool The tool to remove
      */
-    void RemoveTool(const Tool& InTool);
-
-    /**
-     * Add a tool with automatic schema generation.
-     * @param InHandler The function to execute when the tool is called
-     * @param InName The name of the tool
-     * @param InDescription Optional description of the tool
-     * @param InAnnotations Optional tool annotations
-     * @return The added tool
-     */
-    Tool AddTool(ToolFunction InHandler, const std::string& InName,
-                 const std::optional<std::string>& InDescription = std::nullopt,
-                 const std::optional<ToolAnnotations>& InAnnotations = std::nullopt);
-
-    /**
-     * Remove a tool by name.
-     * @param InName The name of the tool to remove
-     */
-    void RemoveTool(const std::string& InName);
+    bool RemoveTool(const Tool& InTool);
 
     /**
      * Call a tool by name with arguments.
@@ -94,19 +77,9 @@ class ToolManager {
      * @param InConvertResult Whether to convert the result format
      * @return Future containing the result of the tool execution
      */
-    std::future<std::any> CallTool(const std::string& InName, const JSONData& InArguments,
-                                   MCPContext* InContext = nullptr, bool InConvertResult = false);
-
-    /**
-     * Call a tool by name with arguments synchronously.
-     * @param InName The name of the tool to call
-     * @param InArguments The arguments to pass to the tool
-     * @param InContext Optional context for the tool execution
-     * @param InConvertResult Whether to convert the result format
-     * @return The result of the tool execution
-     */
-    std::any CallToolSync(const std::string& InName, const JSONData& InArguments,
-                          MCPContext* InContext = nullptr, bool InConvertResult = false);
+    MCPTask<CallToolResponse::Result> CallTool(const Tool& InTool, const JSONData& InArguments,
+                                               MCPContext* InContext = nullptr,
+                                               bool InConvertResult = false);
 
     /**
      * Check if a tool with the given name exists.

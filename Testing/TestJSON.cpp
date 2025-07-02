@@ -1,7 +1,7 @@
 #include <iostream>
 #include <optional>
 
-#include "../Source/Public/CoreSDK/MCPMessages.h"
+#include "../Source/Public/CoreSDK/Messages/MCPMessages.h"
 
 int main() {
     std::cout << "=== Testing JKEY System ===" << std::endl;
