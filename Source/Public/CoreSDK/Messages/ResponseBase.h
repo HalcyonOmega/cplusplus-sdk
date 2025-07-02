@@ -12,8 +12,7 @@ struct ResponseBase;
 
 MCP_NAMESPACE_BEGIN
 
-using ResponseHandler =
-    std::function<void(const ResponseBase& InResponse, std::optional<MCPContext*> InContext)>;
+using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
 
 struct ResultParams {
     std::optional<JSONData> Meta;
@@ -45,6 +44,10 @@ struct ResponseBase : MessageBase {
     ResponseBase() = default;
     ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
         : MessageBase(), ID(std::move(InID)), ResultData(std::move(InResult)) {}
+
+    [[nodiscard]] RequestID GetRequestID() const {
+        return ID;
+    }
 };
 
 template <typename T>

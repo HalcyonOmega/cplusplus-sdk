@@ -48,6 +48,22 @@ struct ErrorResponseBase : MessageBase {
     ErrorResponseBase() = default;
     ErrorResponseBase(RequestID InID, MCPError InError)
         : MessageBase(), ID(std::move(InID)), ErrorData(std::move(InError)) {}
+
+    [[nodiscard]] RequestID GetRequestID() const {
+        return ID;
+    }
+
+    [[nodiscard]] int64_t GetErrorCode() const {
+        return ErrorData.Code;
+    }
+
+    [[nodiscard]] std::string_view GetErrorMessage() const {
+        return ErrorData.Message;
+    }
+
+    [[nodiscard]] std::optional<JSONData> GetErrorData() const {
+        return ErrorData.Data;
+    }
 };
 
 using ErrorResponseHandler = std::function<void(const ErrorResponseBase& InError)>;

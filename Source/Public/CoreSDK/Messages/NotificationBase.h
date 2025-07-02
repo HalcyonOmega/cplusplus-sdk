@@ -4,7 +4,6 @@
 #include <optional>
 #include <string>
 
-#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Messages/MessageBase.h"
 #include "JSONProxy.h"
 
@@ -12,8 +11,7 @@ struct NotificationBase;
 
 MCP_NAMESPACE_BEGIN
 
-using NotificationHandler = std::function<void(const NotificationBase& InNotification,
-                                               std::optional<MCPContext*> InContext)>;
+using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
 
 struct NotificationParams {
     struct NotificationParamsMeta {
@@ -50,6 +48,10 @@ struct NotificationBase : MessageBase {
     NotificationBase(std::string_view InMethod,
                      std::optional<NotificationParams> InParams = std::nullopt)
         : MessageBase(), Method(InMethod), ParamsData(std::move(InParams)) {}
+
+    [[nodiscard]] std::string_view GetNotificationMethod() const {
+        return Method;
+    }
 };
 
 template <typename T>

@@ -26,7 +26,6 @@ class MessageManager {
         static_assert(std::is_invocable_v<Function, const T&>,
                       "Handler must be callable with '(const ConcreteRequestType&)'");
 
-        // Create a temporary instance to get the method name
         T TempInstance{};
         std::string MethodName = std::string(TempInstance.GetRequestMethod());
 
@@ -52,15 +51,18 @@ class MessageManager {
         static_assert(std::is_invocable_v<Function, const T&>,
                       "Handler must be callable with '(const ConcreteResponseType&)'");
 
+        // Create a temporary instance to get the method name
+        T TempInstance{};
+        std::string ResponseID = std::string(TempInstance.GetRequestID().ToString());
+
         std::scoped_lock lock(m_ResponseMutex);
 
-        if (m_WarnOnDuplicateHandlers && m_ResponseHandlers.contains(T::ID.ToString())) {
-            HandleRuntimeError("Response handler already exists for message: "
-                               + std::string(T::ID.ToString()));
+        if (m_WarnOnDuplicateHandlers && m_ResponseHandlers.contains(ResponseID)) {
+            HandleRuntimeError("Response handler already exists for message: " + ResponseID);
             return false;
         }
 
-        m_ResponseHandlers[T::ID.ToString()] =
+        m_ResponseHandlers[ResponseID] =
             [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage) {
                 JSONData JSONResponse = InMessage;
                 T Response = JSONResponse.get<T>();
@@ -75,15 +77,17 @@ class MessageManager {
         static_assert(std::is_invocable_v<Function, const T&>,
                       "Handler must be callable with '(const ConcreteNotificationType&)'");
 
+        T TempInstance{};
+        std::string MethodName = std::string(TempInstance.GetNotificationMethod());
+
         std::scoped_lock lock(m_NotificationMutex);
 
-        if (m_WarnOnDuplicateHandlers && m_NotificationHandlers.contains(T::Method)) {
-            HandleRuntimeError("Notification handler already exists for message: "
-                               + std::string(T::Method));
+        if (m_WarnOnDuplicateHandlers && m_NotificationHandlers.contains(MethodName)) {
+            HandleRuntimeError("Notification handler already exists for message: " + MethodName);
             return false;
         }
 
-        m_NotificationHandlers[T::Method] =
+        m_NotificationHandlers[MethodName] =
             [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage) {
                 JSONData JSONNotification = InMessage;
                 T Notification = JSONNotification.get<T>();
@@ -97,6 +101,9 @@ class MessageManager {
     bool RegisterErrorHandler(Function&& InHandler) {
         static_assert(std::is_invocable_v<Function, const T&>,
                       "Handler must be callable with '(const ConcreteErrorResponseType&)'");
+
+        T TempInstance{};
+        std::string MethodName = std::string(TempInstance.GetRequestMethod());
 
         std::scoped_lock lock(m_ErrorMutex);
 
