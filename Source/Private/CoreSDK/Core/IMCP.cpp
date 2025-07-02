@@ -86,10 +86,8 @@ void MCPProtocol::SetupTransportRouter() {
     if (!m_Transport) { throw std::invalid_argument("Transport cannot be null"); }
 
     // Set up transport handlers
-    m_Transport->SetMessageRouter([this](const JSONData& InMessage) {
-        std::optional<MCPContext*> Context = std::nullopt;
-        m_MessageManager->RouteMessage(InMessage, Context);
-    });
+    m_Transport->SetMessageRouter(
+        [this](const JSONData& InMessage) { m_MessageManager->RouteMessage(InMessage); });
 }
 
 MCP_NAMESPACE_END

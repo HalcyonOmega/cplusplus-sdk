@@ -38,23 +38,23 @@ void ITransport::UnregisterConnection(const ConnectionID& InConnectionID) {
 }
 
 [[nodiscard]] std::vector<ConnectionID> ITransport::GetActiveConnections() const {
-    return std::vector<ConnectionID>(m_ActiveConnections.begin(), m_ActiveConnections.end());
+    return std::vector<ConnectionID>{m_ActiveConnections.begin(), m_ActiveConnections.end()};
 }
 
-MCPTask_Void
-ITransport::TransmitMessageToConnections(const std::vector<ConnectionID>& InConnectionIDs,
-                                         const JSONData& InMessage) {
-    for (const auto& ConnectionID : InConnectionIDs) {
-        if (IsConnectionRegistered(ConnectionID)) {
-            co_await TransmitMessageToConnection(ConnectionID, InMessage);
-        }
-    }
-}
-
-MCPTask_Void ITransport::TransmitMessageToAllConnections(const JSONData& InMessage) {
-    auto Connections = GetActiveConnections();
-    co_await TransmitMessageToConnections(Connections, InMessage);
-}
+// TODO: @HalcyonOmega [Critical] - Implement this
+// MCPTask_Void
+// ITransport::TransmitMessage(const JSONData& InMessage,
+//                             const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
+//     if (InConnectionIDs.has_value()) {
+//         for (const auto& ConnectionID : InConnectionIDs.value()) {
+//             if (IsConnectionRegistered(ConnectionID)) {
+//                 co_await TransmitMessageToConnection(ConnectionID, InMessage);
+//             } else {
+//                 Logger::Warning("Connection not registered: " + ConnectionID);
+//             }
+//         }
+//     }
+// }
 
 // TransportFactory implementation
 std::unique_ptr<ITransport>

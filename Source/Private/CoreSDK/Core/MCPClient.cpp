@@ -18,7 +18,7 @@ MCPTask_Void MCPClient::Start() {
     }
 
     try {
-        InitializeResponse::InitializeResult Result = co_await Request_Initialize();
+        InitializeResponse::Result Result = co_await Request_Initialize();
         IsConnected() = true;
         m_ClientInfo = InClientInfo;
     } catch (const std::exception& e) {
@@ -60,7 +60,7 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
             .ClientInfo = m_ClientInfo,
         }};
 
-        InitializeResponse Response = co_await SendRequest<InitializeResponse>(Request);
+        InitializeResponse Response = co_await SendRequest(Request);
 
         // Store negotiated capabilities
         m_ClientCapabilities = Response.Result.Capabilities;

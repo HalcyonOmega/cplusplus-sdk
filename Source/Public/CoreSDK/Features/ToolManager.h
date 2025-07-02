@@ -1,12 +1,11 @@
 #pragma once
 
-#include <any>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
@@ -34,14 +33,16 @@ class ToolError : public std::runtime_error {
  */
 class ToolManager {
   public:
-    using ToolFunction = std::function<MCPTask<std::any>(const JSONData&, MCPContext*)>;
+    using ToolFunction =
+        std::function<MCPTask<CallToolResponse::Result>(const JSONData&, MCPContext*)>;
 
     /**
      * Constructor
      * @param InWarnOnDuplicateTools Whether to warn when duplicate tools are added
      * @param InTools Optional initial list of tools to register
      */
-    explicit ToolManager(bool InWarnOnDuplicateTools = true, const std::vector<Tool>& InTools = {});
+    explicit ToolManager(bool InWarnOnDuplicateTools = true,
+                         const std::map<Tool, ToolFunction>& InTools = {});
 
     /**
      * Get tool by name.
@@ -61,7 +62,7 @@ class ToolManager {
      * @param InTool The tool configuration with handler
      * @return The added tool. If a tool with the same name exists, returns the existing tool.
      */
-    bool AddTool(const Tool& InTool);
+    bool AddTool(const Tool& InTool, const ToolFunction& InFunction);
 
     /**
      * Remove a tool.
@@ -86,12 +87,12 @@ class ToolManager {
      * @param InName The name to check
      * @return True if the tool exists, false otherwise
      */
-    bool HasTool(const std::string& InName) const;
+    bool HasTool(const Tool& InTool) const;
 
   private:
-    std::unordered_map<std::string, Tool> m_Tools;
+    std::map<Tool, ToolFunction> m_Tools;
     bool m_WarnOnDuplicateTools;
-    mutable std::mutex m_ToolsMutex;
+    mutable std::mutex m_Mutex;
 
     /**
      * Create a basic JSON schema for a tool.

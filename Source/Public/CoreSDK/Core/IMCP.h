@@ -43,7 +43,7 @@ class MCPProtocol {
     // Message sending utilities
     MCPTask_Void SendRequest(const RequestBase& InRequest);
     MCPTask_Void SendResponse(const ResponseBase& InResponse);
-    MCPTask_Void SendNotification(const NotificationBase& InResponse);
+    MCPTask_Void SendNotification(const NotificationBase& InNotification);
     MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError);
 
     void RegisterRequestHandler(const RequestBase& InRequest);

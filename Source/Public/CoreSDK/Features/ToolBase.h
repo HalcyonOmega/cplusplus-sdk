@@ -1,16 +1,12 @@
 #pragma once
 
-#include <future>
 #include <optional>
 #include <string>
 
-#include "CoreSDK/Common/MCPContext.h"
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
 
 MCP_NAMESPACE_BEGIN
-using ToolFunction =
-    std::function<std::future<std::any>(const JSONData& InArguments, MCPContext* InContext)>;
 
 // ToolAnnotations {
 //   MSG_DESCRIPTION
@@ -157,7 +153,9 @@ struct Tool {
 
     DEFINE_TYPE_JSON(Tool, NAMEKEY, DESCRIPTIONKEY, INPUTSCHEMAKEY, OUTPUTSCHEMAKEY, ANNOTATIONSKEY)
 
-    ToolFunction Function;
+    bool operator<(const Tool& InOther) const {
+        return Name < InOther.Name;
+    };
 };
 
 template <typename T>

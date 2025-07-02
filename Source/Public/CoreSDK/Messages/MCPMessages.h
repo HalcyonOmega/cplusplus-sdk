@@ -10,6 +10,7 @@
 #include "CoreSDK/Common/Implementation.h"
 #include "CoreSDK/Common/Logging.h"
 #include "CoreSDK/Common/Roles.h"
+#include "CoreSDK/Features/CompletionBase.h"
 #include "CoreSDK/Features/PromptBase.h"
 #include "CoreSDK/Features/ResourceBase.h"
 #include "CoreSDK/Features/RootBase.h"
@@ -1691,7 +1692,8 @@ struct CompleteRequest : RequestBase {
 struct CompleteResponse : ResponseBase {
     struct Result : ResultParams {
         struct Completion {
-            std::array<std::string, 100>
+            static constexpr size_t MAX_VALUES = 100;
+            std::array<std::string, MAX_VALUES>
                 Values; // An array of completion values. Must not exceed 100 items.
             std::optional<int64_t>
                 Total; // The total number of completion options available. This can exceed the
