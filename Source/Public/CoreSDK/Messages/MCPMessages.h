@@ -22,12 +22,43 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Initialize request/response
+// InitializeRequest {
+//   MSG_DESCRIPTION : "This request is sent from the client to the server when it "
+//                   "first connects, asking it to begin initialization.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_INITIALIZE, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CAPABILITIES : {"$ref" : "#/definitions/ClientCapabilities"},
+//             MSG_CLIENT_INFO : {"$ref" : "#/definitions/Implementation"},
+//             MSG_PROTOCOL_VERSION : {
+//               MSG_DESCRIPTION :
+//                   "The latest version of the Model Context Protocol "
+//                   "that the client supports. The client MAY decide to "
+//                   "support older versions as well.",
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_REQUIRED : [ MSG_CAPABILITIES, MSG_CLIENT_INFO, MSG_PROTOCOL_VERSION ],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * This request is sent from the client to the server when it first connects, asking it to begin
+ * initialization.
+ */
 struct InitializeRequest : RequestBase {
     struct Params : RequestParams {
-        std::string ProtocolVersion;
-        ClientCapabilities Capabilities;
-        Implementation ClientInfo;
+        std::string ProtocolVersion; // The latest version of the Model Context Protocol that the
+                                     // client supports. The client MAY decide to support older
+                                     // versions as well.
+        ClientCapabilities Capabilities; // The capabilities of the client.
+        Implementation ClientInfo;       // The implementation of the client.
 
         JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
         JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
@@ -41,18 +72,66 @@ struct InitializeRequest : RequestBase {
         : RequestBase("initialize", InParams) {}
 };
 
+// InitializeResult {
+//   MSG_DESCRIPTION : "After receiving an initialize request from the client, "
+//                   "the server sends this response.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_CAPABILITIES : {"$ref" : "#/definitions/ServerCapabilities"},
+//         MSG_INSTRUCTIONS : {
+//           MSG_DESCRIPTION :
+//               "Instructions describing how to use the server and its "
+//               "features.\n\nThis can be used by clients to improve the LLM's "
+//               "understanding of available tools, resources, etc. It can be "
+//               "thought of like a \"hint\" to the model. For example, this "
+//               "information MAY be added to the system prompt.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_PROTOCOL_VERSION : {
+//           MSG_DESCRIPTION : "The version of the Model Context Protocol that the "
+//                           "server wants to use. This may not match the version "
+//                           "that the client requested. If the client cannot "
+//                           "support this version, it MUST disconnect.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_SERVER_INFO : {"$ref" : "#/definitions/Implementation"}
+//       },
+//         MSG_REQUIRED : [ MSG_CAPABILITIES, MSG_PROTOCOL_VERSION, MSG_SERVER_INFO ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * After receiving an initialize request from the client, the server sends this response.
+ */
 struct InitializeResponse : ResponseBase {
     struct Result : ResultParams {
-        std::string ProtocolVersion;
-        ServerCapabilities Capabilities;
-        Implementation ServerInfo;
+        std::string ProtocolVersion; // The version of the Model Context Protocol that the server
+                                     // wants to use. This may not match the version that the client
+                                     // requested. If the client cannot support this version, it
+                                     // MUST disconnect.
+        ServerCapabilities Capabilities;         // The capabilities of the server.
+        Implementation ServerInfo;               // The implementation of the server.
+        std::optional<std::string> Instructions; // Instructions describing how to use the server
+                                                 // and its features. This can be used by clients to
+                                                 // improve the LLM's understanding of available
+                                                 // tools, resources, etc. It can be thought of like
+                                                 // a "hint" to the model. For example, this
+                                                 // information MAY be added to the system prompt.
 
         JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
         JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
         JKEY(SERVERINFOKEY, ServerInfo, "serverInfo")
+        JKEY(INSTRUCTIONSKEY, Instructions, "instructions")
 
         DEFINE_TYPE_JSON_DERIVED(InitializeResponse::Result, ResultParams, PROTOCOLVERSIONKEY,
-                                 CAPABILITIESKEY, SERVERINFOKEY)
+                                 CAPABILITIESKEY, SERVERINFOKEY, INSTRUCTIONSKEY)
     };
 
     InitializeResponse(const RequestID& InRequestID,
@@ -60,12 +139,75 @@ struct InitializeResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
-// Initialized notification
+// InitializedNotification {
+//   MSG_DESCRIPTION : "This notification is sent from the client to the "
+//                   "server after initialization has finished.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_INITIALIZED, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to "
+//                               "allow clients and servers to attach "
+//                               "additional metadata to their notifications.",
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * This notification is sent from the client to the server after initialization has finished.
+ */
 struct InitializedNotification : NotificationBase {
     InitializedNotification() : NotificationBase("notifications/initialized") {}
 };
 
-// Ping request/response
+// PingRequest {
+//   MSG_DESCRIPTION : "A ping, issued by either the server or the client, to "
+//                   "check that the other party is still alive. The receiver "
+//                   "must promptly respond, or else may be disconnected.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_PING, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_PROPERTIES : {
+//                 MSG_PROGRESS_TOKEN : {
+//                   "$ref" : "#/definitions/ProgressToken",
+//                   MSG_DESCRIPTION :
+//                       "If specified, the caller is requesting out-of-band "
+//                       "progress notifications for this request (as
+//                       represented " "by notifications/progress). The value of
+//                       this parameter " "is an opaque token that will be
+//                       attached to any " "subsequent notifications. The
+//                       receiver is not obligated " "to provide these
+//                       notifications."
+//                 }
+//               },
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * A ping, issued by either the server or the client, to check that the other party is still alive.
+ * The receiver must promptly respond, or else may be disconnected.
+ */
 struct PingRequest : RequestBase {
     PingRequest() : RequestBase("ping") {}
 };
@@ -324,10 +466,38 @@ struct ListRootsResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
-// Logging messages
+// SetLevelRequest {
+//   MSG_DESCRIPTION
+//       : "A request from the client to the server, to enable or adjust logging.",
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : MTHD_LOGGING_SET_LEVEL, MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_LEVEL : {
+//                 "$ref" : "#/definitions/LoggingLevel",
+//                 MSG_DESCRIPTION :
+//                     "The level of logging that the client wants to "
+//                     "receive from the server. The server should send all "
+//                     "logs at this level and higher (i.e., more severe) "
+//                     "to the client as notifications/message."
+//               }
+//             },
+//             MSG_REQUIRED : [MSG_LEVEL],
+//             MSG_TYPE : MSG_OBJECT
+//           }
+//         },
+//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * A request from the client to the server, to enable or adjust logging.
+ */
 struct SetLevelRequest : RequestBase {
     struct Params : RequestParams {
-        LoggingLevel Level;
+        LoggingLevel Level; // The level of logging that the client wants to receive from the
+                            // server. The server should send all logs at this level and higher
+                            // (i.e., more severe) to the client as notifications/message.
 
         JKEY(LEVELKEY, Level, "level")
 
@@ -338,11 +508,48 @@ struct SetLevelRequest : RequestBase {
         : RequestBase("logging/setLevel", InParams) {}
 };
 
+// LoggingMessageNotification {
+//   MSG_DESCRIPTION
+//       : "Notification of a log message passed from server to client. If no "
+//         "logging/setLevel request has been sent from the client, the server "
+//         "MAY decide which messages to send automatically.",
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_MESSAGE, MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_DATA : {
+//                 MSG_DESCRIPTION :
+//                     "The data to be logged, such as a string message or an "
+//                     "object. Any JSON serializable type is allowed here."
+//               },
+//               MSG_LEVEL : {
+//                 "$ref" : "#/definitions/LoggingLevel",
+//                 MSG_DESCRIPTION : "The severity of this log message."
+//               },
+//               MSG_LOGGER : {
+//                 MSG_DESCRIPTION :
+//                     "An optional name of the logger issuing this message.",
+//                 MSG_TYPE : MSG_STRING
+//               }
+//             },
+//             MSG_REQUIRED : [ MSG_DATA, MSG_LEVEL ],
+//             MSG_TYPE : MSG_OBJECT
+//           }
+//         },
+//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Notification of a log message passed from server to client. If no logging/setLevel request has
+ * been sent from the client, the server MAY decide which messages to send automatically.
+ */
 struct LoggingMessageNotification : NotificationBase {
     struct Params : NotificationParams {
-        LoggingLevel Level;
-        JSONData Data;
-        std::optional<std::string> Logger;
+        LoggingLevel Level; // The severity of this log message.
+        JSONData Data; // The data to be logged, such as a string message or an object. Any JSON
+                       // serializable type is allowed here.
+        std::optional<std::string> Logger; // An optional name of the logger issuing this message.
 
         JKEY(LEVELKEY, Level, "level")
         JKEY(LOGGERKEY, Logger, "logger")
@@ -361,13 +568,61 @@ struct LoggingMessageNotification : NotificationBase {
         : NotificationBase("notifications/message", InParams) {}
 };
 
-// Progress notification
+// ProgressNotification {
+//   MSG_DESCRIPTION : "An out-of-band notification used to inform the receiver "
+//                   "of a progress update for a long-running request.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_PROGRESS, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_MESSAGE : {
+//               MSG_DESCRIPTION :
+//                   "An optional message describing the current progress.",
+//               MSG_TYPE : MSG_STRING
+//             },
+//             MSG_PROGRESS : {
+//               MSG_DESCRIPTION :
+//                   "The progress thus far. This should increase every time "
+//                   "progress is made, even if the total is unknown.",
+//               MSG_TYPE : MSG_NUMBER
+//             },
+//             MSG_PROGRESS_TOKEN : {
+//               "$ref" : "#/definitions/ProgressToken",
+//               MSG_DESCRIPTION :
+//                   "The progress token which was given in the initial request,
+//                   " "used to associate this notification with the request
+//                   that " "is proceeding."
+//             },
+//             "total" : {
+//               MSG_DESCRIPTION : "Total number of items to process (or total "
+//                               "progress required), if known.",
+//               MSG_TYPE : MSG_NUMBER
+//             }
+//           },
+//           MSG_REQUIRED : [ MSG_PROGRESS, MSG_PROGRESS_TOKEN ],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * An out-of-band notification used to inform the receiver of a progress update for a long-running
+ * request.
+ */
 struct ProgressNotification : NotificationBase {
     struct Params : NotificationParams {
-        std::optional<std::string> Message;
-        ProgressToken ProgressToken;
-        double Progress; // 0-1
-        std::optional<int64_t> Total;
+        std::optional<std::string> Message; // An optional message describing the current progress.
+        ProgressToken
+            ProgressToken; // The progress token which was given in the initial request, used to
+                           // associate this notification with the request that is proceeding.
+        // TODO: @HalcyonOmega - Enforce that the progress is between 0 and 1.
+        double Progress; // Range from 0-1. The progress thus far. This should increase every time
+                         // progress is made, even if the total is unknown.
+        std::optional<int64_t>
+            Total; // Total number of items to process (or total progress required), if known.
 
         JKEY(MESSAGEKEY, Message, "message")
         JKEY(PROGRESSTOKENKEY, ProgressToken, "progressToken")

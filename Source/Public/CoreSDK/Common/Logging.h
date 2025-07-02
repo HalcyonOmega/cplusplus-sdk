@@ -5,6 +5,23 @@
 
 MCP_NAMESPACE_BEGIN
 
+// LoggingLevel {
+//   MSG_DESCRIPTION :
+//       "The severity of a log message.\n\nThese map to syslog message "
+//       "severities, as specified in "
+//       "RFC-5424:\nhttps://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1",
+//   MSG_ENUM : [
+//     LOG_ALERT, LOG_CRITICAL, LOG_DEBUG, LOG_EMERGENCY, LOG_ERROR, LOG_INFO, LOG_NOTICE,
+//     LOG_WARNING
+//   ],
+//   MSG_TYPE : MSG_STRING
+// };
+
+/**
+ * The severity of a log message.
+ * These map to syslog message severities, as specified in RFC-5424:
+ * https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1
+ */
 enum class LoggingLevel { Debug, Info, Notice, Warning, Error, Critical, Alert, Emergency };
 
 DEFINE_ENUM_JSON(LoggingLevel, {LoggingLevel::Debug, "debug"}, {LoggingLevel::Info, "info"},

@@ -1,6 +1,7 @@
 #include "CoreSDK/Features/ToolManager.h"
 
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -31,22 +32,24 @@ std::vector<Tool> ToolManager::ListTools() const {
     return Result;
 }
 
-Tool ToolManager::AddTool(const Tool& InTool) {
+bool ToolManager::AddTool(const Tool& InTool) {
     Logger::Debug("Adding tool: " + InTool.Name);
     std::lock_guard<std::mutex> Lock(m_ToolsMutex);
 
     const auto ExistingIt = m_Tools.find(InTool.Name);
     if (ExistingIt != m_Tools.end()) {
         if (m_WarnOnDuplicateTools) { Logger::Warning("Tool already exists: " + InTool.Name); }
-        return ExistingIt->second;
+        return false;
     }
 
     m_Tools[InTool.Name] = InTool;
-    return InTool;
+    return true;
 }
 
-std::future<std::any> ToolManager::CallTool(const std::string& InName, const JSONData& InArguments,
-                                            MCPContext* InContext, bool /*InConvertResult*/) {
+MCPTask<CallToolResponse::Result> ToolManager::CallTool(const Tool& InTool,
+                                                        const JSONData& InArguments,
+                                                        MCPContext* InContext,
+                                                        bool /*InConvertResult*/) {
     std::lock_guard<std::mutex> Lock(m_ToolsMutex);
 
     const auto Iter = m_Tools.find(InName);
@@ -60,12 +63,6 @@ std::future<std::any> ToolManager::CallTool(const std::string& InName, const JSO
     return std::async(std::launch::async, [ToolItem, InArguments, InContext]() -> std::any {
         return ToolItem.Function(InArguments, InContext).get();
     });
-}
-
-std::any ToolManager::CallToolSync(const std::string& InName, const JSONData& InArguments,
-                                   MCPContext* InContext, bool /*InConvertResult*/) {
-    auto Future = CallTool(InName, InArguments, InContext, false);
-    return Future.get();
 }
 
 bool ToolManager::HasTool(const std::string& InName) const {

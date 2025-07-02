@@ -8,6 +8,12 @@
 
 MCP_NAMESPACE_BEGIN
 
+// ProgressToken {
+//   MSG_DESCRIPTION : "A progress token, used to associate progress "
+//                   "notifications with the original request.",
+//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
+// };
+
 // A progress token, used to associate progress notifications with the original request.
 struct ProgressToken {
     std::variant<std::string, int64_t> Token;
