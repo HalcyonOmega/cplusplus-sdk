@@ -18,6 +18,12 @@ MCP_NAMESPACE_BEGIN
 
 using RequestHandler = std::function<void(const RequestBase& InRequest)>;
 
+// RequestID {
+//   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
+//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
+// };
+
+// A uniquely identifying ID for a request in JSON-RPC.
 struct RequestID {
     std::variant<std::string, int64_t> Value;
 
@@ -74,6 +80,25 @@ struct RequestParams {
     DEFINE_TYPE_JSON(RequestParams, METAKEY)
 };
 
+// PaginatedRequest {
+//   MSG_PROPERTIES : {
+//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//     MSG_PARAMS : {
+//       MSG_PROPERTIES : {
+//         MSG_CURSOR : {
+//           MSG_DESCRIPTION :
+//               "An opaque token representing the current pagination position. If provided, the
+//               server should return results starting after this cursor.",
+//           MSG_TYPE : MSG_STRING
+//         }
+//       },
+//       MSG_TYPE : MSG_OBJECT
+//     }
+//   },
+//                  MSG_REQUIRED : [MSG_METHOD],
+//                               MSG_TYPE : MSG_OBJECT
+// };
+
 struct PaginatedRequestParams : RequestParams {
     std::optional<std::string> Cursor; // An opaque token representing the current pagination
                                        // position. If provided, the server should return
@@ -83,6 +108,39 @@ struct PaginatedRequestParams : RequestParams {
     DEFINE_TYPE_JSON_DERIVED(PaginatedRequestParams, RequestParams, CURSORKEY)
 };
 
+// RequestBase {
+//   MSG_DESCRIPTION : "A request that expects a response.",
+//   MSG_PROPERTIES  : {
+//         MSG_ID : {"$ref" : "#/definitions/RequestID"},
+//         MSG_JSON_RPC : {MSG_CONST : MSG_JSON_RPC_VERSION, MSG_TYPE : MSG_STRING},
+//         MSG_METHOD : {MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_PROPERTIES : {
+//                 MSG_PROGRESS_TOKEN : {
+//                   "$ref" : "#/definitions/ProgressToken",
+//                   MSG_DESCRIPTION :
+//                       "If specified, the caller is requesting out-of-band "
+//                       "progress notifications for this request (as represented "
+//                       "by notifications/progress). The value of this parameter "
+//                       "is an opaque token that will be attached to any "
+//                       "subsequent notifications. The receiver is not obligated "
+//                       "to provide these notifications."
+//                 }
+//               },
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_ID, MSG_JSON_RPC, MSG_METHOD ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+// A request that expects a response. Supports JSON-RPC 2.0.
 struct RequestBase : MessageBase {
     RequestID ID;
     std::string Method;

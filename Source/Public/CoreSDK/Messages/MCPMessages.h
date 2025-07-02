@@ -216,12 +216,65 @@ struct PingResponse : ResponseBase {
     PingResponse(const RequestID& InRequestID) : ResponseBase(InRequestID) {}
 };
 
-// Tool-related messages
+// ListToolsRequest {
+//   MSG_DESCRIPTION
+//       : "Sent from the client to request a list of tools the server has.",
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : MTHD_TOOLS_LIST, MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_CURSOR : {
+//                 MSG_DESCRIPTION :
+//                     "An opaque token representing the current pagination "
+//                     "position.\nIf provided, the server should return "
+//                     "results starting after this cursor.",
+//                 MSG_TYPE : MSG_STRING
+//               }
+//             },
+//             MSG_TYPE : MSG_OBJECT
+//           }
+//         },
+//                        MSG_REQUIRED : [MSG_METHOD],
+//                                     MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to request a list of tools the server has.
+ */
 struct ListToolsRequest : RequestBase {
     ListToolsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("tools/list", InParams) {}
 };
 
+// ListToolsResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a tools/list request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//                           "position after the last returned result.\nIf "
+//                           "present, there may be more results available.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_TOOLS : {MSG_ITEMS : {"$ref" : "#/definitions/Tool"}, MSG_TYPE :
+//         MSG_ARRAY}
+//       },
+//         MSG_REQUIRED : [MSG_TOOLS],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a tools/list request from the client.
+ */
 struct ListToolsResponse : ResponseBase {
     struct Result : PaginatedResultParams {
         std::vector<Tool> Tools;
@@ -236,6 +289,28 @@ struct ListToolsResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
+// CallToolRequest {
+//   MSG_DESCRIPTION : "Used by the client to invoke a tool provided by the
+//   server.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_TOOLS_CALL, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_ARGUMENTS : {MSG_ADDITIONAL_PROPERTIES : {}, MSG_TYPE : MSG_OBJECT},
+//             MSG_NAME : {MSG_TYPE : MSG_STRING}
+//           },
+//           MSG_REQUIRED : [MSG_NAME],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Used by the client to invoke a tool provided by the server.
+ */
 struct CallToolRequest : RequestBase {
     struct Params : RequestParams {
         std::string Name;
@@ -251,6 +326,55 @@ struct CallToolRequest : RequestBase {
         : RequestBase("tools/call", InParams) {}
 };
 
+// CallToolResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a tool call.\n\nAny errors that originate "
+//         "from the tool SHOULD be reported inside the result\nobject, with "
+//         "`isError` set to true, _not_ as an MCP protocol-level "
+//         "error\nresponse. Otherwise, the LLM would not be able to see that "
+//         "an error occurred\nand self-correct.\n\nHowever, any errors in "
+//         "_finding_ the tool, an error indicating that the\nserver does not "
+//         "support tool calls, or any other exceptional conditions,\nshould be
+//         " "reported as an MCP error response.", MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_CONTENT : {
+//           MSG_ITEMS : {
+//             "anyOf" : [
+//               {"$ref" : "#/definitions/TextContent"},
+//               {"$ref" : "#/definitions/ImageContent"},
+//               {"$ref" : "#/definitions/AudioContent"},
+//               {"$ref" : "#/definitions/EmbeddedResource"}
+//             ]
+//           },
+//           MSG_TYPE : MSG_ARRAY
+//         },
+//         MSG_IS_ERROR : {
+//           MSG_DESCRIPTION :
+//               "Whether the tool call ended in an error.\n\nIf not set, this
+//               is " "assumed to be false (the call was successful).",
+//           MSG_TYPE : MSG_BOOLEAN
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_CONTENT],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a tool call.
+ * Any errors that originate from the tool SHOULD be reported inside the result object, with
+ * `isError` set to true, _not_ as an MCP protocol-level error response. Otherwise, the LLM would
+ * not be able to see that an error occurred and self-correct.
+ * However, any errors in _finding_ the tool, an error indicating that the server does not support
+ * tool calls, or any other exceptional conditions, should be reported as an MCP error response.
+ */
 struct CallToolResponse : ResponseBase {
     struct Result : ResultParams {
         std::vector<Content> Content;
@@ -267,12 +391,104 @@ struct CallToolResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
-// Prompt-related messages
+// ToolListChangedNotification {
+//   MSG_DESCRIPTION
+//       : "An optional notification from the server to the client, informing "
+//         "it that the list of tools it offers has changed. This may be issued
+//         " "by servers without any previous subscription from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_METHOD :
+//             {MSG_CONST : MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED, MSG_TYPE :
+//             MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
+//               allow "
+//                               "clients and servers to attach additional "
+//                               "metadata to their notifications.",
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * An optional notification from the server to the client, informing it that the list of tools it
+ * offers has changed. This may be issued by servers without any previous subscription from the
+ * client.
+ */
+struct ToolListChangedNotification : NotificationBase {
+    ToolListChangedNotification() : NotificationBase("notifications/tools/list_changed") {}
+};
+
+// ListPromptsRequest {
+//   MSG_DESCRIPTION : "Sent from the client to request a list of prompts and "
+//                   "prompt templates the server has.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_LIST, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CURSOR : {
+//               MSG_DESCRIPTION :
+//                   "An opaque token representing the current pagination "
+//                   "position.\nIf provided, the server should return "
+//                   "results starting after this cursor.",
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to request a list of prompts and prompt templates the server has.
+ */
 struct ListPromptsRequest : RequestBase {
     ListPromptsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("prompts/list", InParams) {}
 };
 
+// ListPromptsResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a prompts/list request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//                           "position after the last returned result.\nIf "
+//                           "present, there may be more results available.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_PROMPTS :
+//             {MSG_ITEMS : {"$ref" : "#/definitions/Prompt"}, MSG_TYPE : MSG_ARRAY}
+//       },
+//         MSG_REQUIRED : [MSG_PROMPTS],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a prompts/list request from the client.
+ */
 struct ListPromptsResponse : ResponseBase {
     struct Result : PaginatedResultParams {
         std::vector<Prompt> Prompts;
@@ -287,10 +503,40 @@ struct ListPromptsResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
+// GetPromptRequest {
+//   MSG_DESCRIPTION : "Used by the client to get a prompt provided by the
+//   server.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_GET, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_ARGUMENTS : {
+//               MSG_ADDITIONAL_PROPERTIES : {MSG_TYPE : MSG_STRING},
+//               MSG_DESCRIPTION : "Arguments to use for templating the prompt.",
+//               MSG_TYPE : MSG_OBJECT
+//             },
+//             MSG_NAME : {
+//               MSG_DESCRIPTION : "The name of the prompt or prompt template.",
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_REQUIRED : [MSG_NAME],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Used by the client to get a prompt provided by the server.
+ */
 struct GetPromptRequest : RequestBase {
     struct Params : RequestParams {
-        std::string Name;
-        std::optional<std::unordered_map<std::string, std::string>> Arguments;
+        std::string Name; // The name of the prompt or prompt template.
+        std::optional<std::unordered_map<std::string, std::string>>
+            Arguments; // Arguments to use for templating the prompt.
 
         JKEY(NAMEKEY, Name, "name")
         JKEY(ARGUMENTSKEY, Arguments, "arguments")
@@ -302,10 +548,39 @@ struct GetPromptRequest : RequestBase {
         : RequestBase("prompts/get", InParams) {}
 };
 
+// GetPromptResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a prompts/get request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_DESCRIPTION : {
+//           MSG_DESCRIPTION : "An optional description for the prompt.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         "messages" : {
+//           MSG_ITEMS : {"$ref" : "#/definitions/PromptMessage"},
+//           MSG_TYPE : MSG_ARRAY
+//         }
+//       },
+//         MSG_REQUIRED : ["messages"],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a prompts/get request from the client.
+ */
 struct GetPromptResponse : ResponseBase {
     struct Result : ResultParams {
-        std::optional<std::string> Description;
-        std::vector<Content> Messages;
+        std::optional<std::string> Description; // An optional description for the prompt.
+        std::vector<PromptMessage> Messages;    // A list of prompt messages.
 
         JKEY(DESCRIPTIONKEY, Description, "description")
         JKEY(MESSAGESKEY, Messages, "messages")
@@ -319,12 +594,104 @@ struct GetPromptResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
-// Resource-related messages
+// PromptListChangedNotification {
+//   MSG_DESCRIPTION : "An optional notification from the server to the client, "
+//                   "informing it that the list of prompts it offers has "
+//                   "changed. This may be issued by servers without any "
+//                   "previous subscription from the client.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD :
+//             {MSG_CONST : MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED, MSG_TYPE :
+//             MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
+//               allow "
+//                               "clients and servers to attach additional "
+//                               "metadata to their notifications.",
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * An optional notification from the server to the client, informing it that the list of prompts it
+ * offers has changed. This may be issued by servers without any previous subscription from the
+ * client.
+ */
+struct PromptListChangedNotification : NotificationBase {
+    PromptListChangedNotification() : NotificationBase("notifications/prompts/list_changed") {}
+};
+
+// ListResourcesRequest {
+//   MSG_DESCRIPTION
+//       : "Sent from the client to request a list of resources the server
+//       has.",
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_LIST, MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_CURSOR : {
+//                 MSG_DESCRIPTION :
+//                     "An opaque token representing the current pagination "
+//                     "position.\nIf provided, the server should return results
+//                     " "starting after this cursor.",
+//                 MSG_TYPE : MSG_STRING
+//               }
+//             },
+//             MSG_TYPE : MSG_OBJECT
+//           }
+//         },
+//                        MSG_REQUIRED : [MSG_METHOD],
+//                                     MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to request a list of resources the server has.
+ */
 struct ListResourcesRequest : RequestBase {
     ListResourcesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("resources/list", InParams) {}
 };
 
+// ListResourcesResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a resources/list request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//                           "position after the last returned result.\nIf "
+//                           "present, there may be more results available.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_RESOURCES :
+//             {MSG_ITEMS : {"$ref" : "#/definitions/Resource"}, MSG_TYPE : MSG_ARRAY}
+//       },
+//         MSG_REQUIRED : [MSG_RESOURCES],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a resources/list request from the client.
+ */
 struct ListResourcesResponse : ResponseBase {
     struct Result : PaginatedResultParams {
         std::vector<Resource> Resources;
@@ -340,9 +707,163 @@ struct ListResourcesResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
+// ListResourceTemplatesRequest {
+//   MSG_DESCRIPTION : "Sent from the client to request a list of resource "
+//                   "templates the server has.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_TEMPLATES_LIST, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_CURSOR : {
+//               MSG_DESCRIPTION :
+//                   "An opaque token representing the current pagination "
+//                   "position.\nIf provided, the server should return "
+//                   "results starting after this cursor.",
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to request a list of resource templates the server has.
+ */
+struct ListResourceTemplatesRequest : RequestBase {
+    ListResourceTemplatesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
+        : RequestBase("resources/templates/list", InParams) {}
+};
+
+// ListResourceTemplatesResult {
+//   MSG_DESCRIPTION : "The server's response to a resources/templates/list "
+//                   "request from the client.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_NEXT_CURSOR : {
+//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//                           "position after the last returned result.\nIf "
+//                           "present, there may be more results available.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_RESOURCE_TEMPLATES : {
+//           MSG_ITEMS : {"$ref" : "#/definitions/ResourceTemplate"},
+//           MSG_TYPE : MSG_ARRAY
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_RESOURCE_TEMPLATES],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a resources/templates/list request from the client.
+ */
+struct ListResourceTemplatesResponse : ResponseBase {
+    struct Result : PaginatedResultParams {
+        std::vector<ResourceTemplate> ResourceTemplates;
+
+        JKEY(RESOURCE_TEMPLATESKEY, ResourceTemplates, "resourceTemplates")
+
+        DEFINE_TYPE_JSON_DERIVED(ListResourceTemplatesResponse::Result, PaginatedResultParams,
+                                 RESOURCE_TEMPLATESKEY)
+    };
+
+    ListResourceTemplatesResponse(const RequestID& InRequestID,
+                                  const ListResourceTemplatesResponse::Result& InResult =
+                                      ListResourceTemplatesResponse::Result{})
+        : ResponseBase(InRequestID, InResult) {}
+};
+
+// ResourceUpdatedNotification {
+//   MSG_DESCRIPTION : "A notification from the server to the client, "
+//                   "informing it that a resource has changed and may need "
+//                   "to be read again. This should only be sent if the "
+//                   "client previously sent a resources/subscribe request.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD :
+//             {MSG_CONST : MTHD_NOTIFICATIONS_RESOURCES_UPDATED, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_URI : {
+//               MSG_DESCRIPTION : "The URI of the resource that has been "
+//                               "updated. This might be a sub-resource of the "
+//                               "one that the client actually subscribed to.",
+//               MSG_FORMAT : MSG_URI,
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_REQUIRED : [MSG_URI],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * A notification from the server to the client, informing it that a resource has changed and may
+ * need to be read again. This should only be sent if the client previously sent a
+ * resources/subscribe request.
+ */
+struct ResourceUpdatedNotification : NotificationBase {
+    struct Params : NotificationParams {
+        MCP::URI URI; // The URI of the resource that has been updated. This might be a sub-resource
+                      // of the one that the client actually subscribed to.
+
+        JKEY(URIKEY, URI, "uri")
+
+        DEFINE_TYPE_JSON_DERIVED(ResourceUpdatedNotification::Params, NotificationParams, URIKEY)
+    };
+
+    ResourceUpdatedNotification(const Params& InParams = Params{})
+        : NotificationBase("notifications/resources/updated", InParams) {}
+};
+
+// ReadResourceRequest {
+//   MSG_DESCRIPTION
+//       : "Sent from the client to the server, to read a specific resource
+//       URI.",
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_READ, MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_URI : {
+//                 MSG_DESCRIPTION : "The URI of the resource to read. The URI can
+//                 "
+//                                 "use any protocol; "
+//                                 "it is up to the server how to interpret
+//                                 it.",
+//                 MSG_FORMAT : MSG_URI,
+//                 MSG_TYPE : MSG_STRING
+//               }
+//             },
+//             MSG_REQUIRED : [MSG_URI],
+//             MSG_TYPE : MSG_OBJECT
+//           }
+//         },
+//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to the server, to read a specific resource URI.
+ */
 struct ReadResourceRequest : RequestBase {
     struct Params : RequestParams {
-        MCP::URI URI;
+        MCP::URI URI; // The URI of the resource to read. The URI can use any protocol; it is up to
+                      // the server how to interpret it.
 
         JKEY(URIKEY, URI, "uri")
 
@@ -353,6 +874,36 @@ struct ReadResourceRequest : RequestBase {
         : RequestBase("resources/read", InParams) {}
 };
 
+// ReadResourceResult {
+//   MSG_DESCRIPTION
+//       : "The server's response to a resources/read request from the client.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//           to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_CONTENTS : {
+//           MSG_ITEMS : {
+//             "anyOf" : [
+//               {"$ref" : "#/definitions/TextResourceContents"},
+//               {"$ref" : "#/definitions/BlobResourceContents"}
+//             ]
+//           },
+//           MSG_TYPE : MSG_ARRAY
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_CONTENTS],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a resources/read request from the client.
+ */
 struct ReadResourceResponse : ResponseBase {
     struct Result : ResultParams {
         std::vector<std::variant<TextResourceContents, BlobResourceContents>> Contents;
@@ -368,10 +919,40 @@ struct ReadResourceResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
-// Subscribe/Unsubscribe
+// SubscribeRequest {
+//   MSG_DESCRIPTION
+//       : "Sent from the client to request resources/updated notifications from
+//       "
+//         "the server whenever a particular resource changes.",
+//         MSG_PROPERTIES : {
+//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_SUBSCRIBE, MSG_TYPE : MSG_STRING},
+//           MSG_PARAMS : {
+//             MSG_PROPERTIES : {
+//               MSG_URI : {
+//                 MSG_DESCRIPTION :
+//                     "The URI of the resource to subscribe to. The URI can use
+//                     " "any " "protocol; it is up to the server how to
+//                     interpret it.",
+//                 MSG_FORMAT : MSG_URI,
+//                 MSG_TYPE : MSG_STRING
+//               }
+//             },
+//             MSG_REQUIRED : [MSG_URI],
+//             MSG_TYPE : MSG_OBJECT
+//           }
+//         },
+//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to request resources/updated notifications from the server whenever a
+ * particular resource changes.
+ */
 struct SubscribeRequest : RequestBase {
     struct Params : RequestParams {
-        MCP::URI URI;
+        MCP::URI URI; // The URI of the resource to subscribe to. The URI can use any protocol; it
+                      // is up to the server how to interpret it.
 
         JKEY(URIKEY, URI, "uri")
 
@@ -382,9 +963,36 @@ struct SubscribeRequest : RequestBase {
         : RequestBase("resources/subscribe", InParams) {}
 };
 
+// UnsubscribeRequest {
+//   MSG_DESCRIPTION : "Sent from the client to request cancellation of "
+//                   "resources/updated notifications from the server. This "
+//                   "should follow a previous resources/subscribe request.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_UNSUBSCRIBE, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_URI : {
+//               MSG_DESCRIPTION : "The URI of the resource to unsubscribe from.",
+//               MSG_FORMAT : MSG_URI,
+//               MSG_TYPE : MSG_STRING
+//             }
+//           },
+//           MSG_REQUIRED : [MSG_URI],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the client to request cancellation of resources/updated notifications from the server.
+ * This should follow a previous resources/subscribe request.
+ */
 struct UnsubscribeRequest : RequestBase {
     struct Params : RequestParams {
-        MCP::URI URI;
+        MCP::URI URI; // The URI of the resource to unsubscribe from.
 
         JKEY(URIKEY, URI, "uri")
 
@@ -395,17 +1003,134 @@ struct UnsubscribeRequest : RequestBase {
         : RequestBase("resources/unsubscribe", InParams) {}
 };
 
-// Sampling-related messages
+// ResourceListChangedNotification {
+//   MSG_DESCRIPTION : "An optional notification from the server to the client, "
+//                   "informing it that the list of resources it can read "
+//                   "from has changed. This may be issued by servers without "
+//                   "any previous subscription from the client.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {
+//           MSG_CONST : MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED,
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_PARAMS : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_PROPERTIES : {
+//             MSG_META : {
+//               MSG_ADDITIONAL_PROPERTIES : {},
+//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
+//               allow "
+//                               "clients and servers to attach additional "
+//                               "metadata to their notifications.",
+//               MSG_TYPE : MSG_OBJECT
+//             }
+//           },
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_METHOD],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * An optional notification from the server to the client, informing it that the list of resources
+ * it can read from has changed. This may be issued by servers without any previous subscription
+ * from the client.
+ */
+struct ResourceListChangedNotification : NotificationBase {
+    ResourceListChangedNotification() : NotificationBase("notifications/resources/list_changed") {}
+};
+
+// CreateMessageRequest {
+//   MSG_DESCRIPTION
+//       : "A request from the server to sample an LLM via the client. The client "
+//         "has full discretion over which model to select. The client should "
+//         "also "
+//         "inform the user before beginning sampling, to allow them to inspect "
+//         "the "
+//         "request (human in the loop) and decide whether to approve it.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_SAMPLING_CREATE_MESSAGE, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             "includeContext" : {
+//               MSG_DESCRIPTION :
+//                   "A request to include context from one or more MCP "
+//                   "servers (including the caller), to be attached to "
+//                   "the prompt. The client MAY ignore this request.",
+//               MSG_ENUM : [ "allServers", "none", "thisServer" ],
+//               MSG_TYPE : MSG_STRING
+//             },
+//             "maxTokens" : {
+//               MSG_DESCRIPTION :
+//                   "The maximum number of tokens to sample, as "
+//                   "requested by the server. The client MAY choose to "
+//                   "sample fewer tokens than requested.",
+//               MSG_TYPE : MSG_INTEGER
+//             },
+//             "messages" : {
+//               MSG_ITEMS : {"$ref" : "#/definitions/SamplingMessage"},
+//               MSG_TYPE : MSG_ARRAY
+//             },
+//             "metadata" : {
+//               MSG_ADDITIONAL_PROPERTIES : true,
+//               MSG_DESCRIPTION :
+//                   "Optional metadata to pass through to the LLM provider. The "
+//                   "format of this metadata is provider-specific.",
+//               MSG_PROPERTIES : {},
+//               MSG_TYPE : MSG_OBJECT
+//             },
+//             "modelPreferences" : {
+//               "$ref" : "#/definitions/ModelPreferences",
+//               MSG_DESCRIPTION :
+//                   "The server's preferences for which model to select. "
+//                   "The client MAY ignore these preferences."
+//             },
+//             "stopSequences" : {MSG_ITEMS : {MSG_TYPE : MSG_STRING}, MSG_TYPE : MSG_ARRAY},
+//             "systemPrompt" : {
+//               MSG_DESCRIPTION : "An optional system prompt the server wants to "
+//                               "use for sampling. "
+//                               "The client MAY modify or omit this prompt.",
+//               MSG_TYPE : MSG_STRING
+//             },
+//             "temperature" : {MSG_TYPE : MSG_NUMBER}
+//           },
+//           MSG_REQUIRED : [ "maxTokens", "messages" ],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * A request from the server to sample an LLM via the client. The client has full discretion over
+ * which model to select. The client should also inform the user before beginning sampling, to allow
+ * them to inspect the request (human in the loop) and decide whether to approve it.
+ */
 struct CreateMessageRequest : RequestBase {
     struct Params : RequestParams {
         std::vector<SamplingMessage> Messages;
-        int64_t MaxTokens;
-        std::optional<std::string> SystemPrompt;
-        std::optional<std::string> IncludeContext; // "allServers", "thisServer", "none"
-        std::optional<double> Temperature;
-        std::optional<std::vector<std::string>> StopSequences;
-        std::optional<ModelPreferences> ModelPrefs;
-        std::optional<JSONData> Metadata;
+        int64_t MaxTokens; // The maximum number of tokens to sample, as requested by the server.
+                           // The client MAY choose to sample fewer tokens than
+                           // requested.
+        std::optional<std::string>
+            SystemPrompt; // An optional system prompt the server wants to use for
+                          // sampling. The client MAY modify or omit this prompt.
+        std::optional<IncludeContext>
+            IncludeContext; // A request to include context from one or more
+                            // MCP servers (including the caller), to be attached to the prompt. The
+                            // client MAY ignore this request.
+        std::optional<double> Temperature; // The temperature to use for sampling.
+        std::optional<std::vector<std::string>>
+            StopSequences; // A list of sequences to stop sampling at.
+        std::optional<ModelPreferences>
+            ModelPreferences; // The server's preferences for which model to select. The client MAY
+                              // ignore these preferences.
+        std::optional<JSONData> Metadata; // Optional metadata to pass through to the LLM provider.
+                                          // The format of this metadata is provider-specific.
 
         JKEY(MESSAGESKEY, Messages, "messages")
         JKEY(MAXTOKENSKEY, MaxTokens, "maxTokens")
@@ -413,7 +1138,7 @@ struct CreateMessageRequest : RequestBase {
         JKEY(INCLUDECONTEXTKEY, IncludeContext, "includeContext")
         JKEY(TEMPERATUREKEY, Temperature, "temperature")
         JKEY(STOPSEQUENCESKEY, StopSequences, "stopSequences")
-        JKEY(MODELPREFSKEY, ModelPrefs, "modelPreferences")
+        JKEY(MODELPREFSKEY, ModelPreferences, "modelPreferences")
         JKEY(METADATAKEY, Metadata, "metadata")
 
         DEFINE_TYPE_JSON_DERIVED(CreateMessageRequest::Params, RequestParams, MESSAGESKEY,
@@ -426,11 +1151,56 @@ struct CreateMessageRequest : RequestBase {
         : RequestBase("sampling/createMessage", InParams) {}
 };
 
+// CreateMessageResult {
+//   MSG_DESCRIPTION
+//       : "The client's response to a sampling/create_message request from the "
+//         "server. The client should inform the user before returning the "
+//         "sampled message, to allow them to inspect the response (human in "
+//         "the loop) and decide whether to allow the server to see it.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_CONTENT : {
+//           "anyOf" : [
+//             {"$ref" : "#/definitions/TextContent"},
+//             {"$ref" : "#/definitions/ImageContent"},
+//             {"$ref" : "#/definitions/AudioContent"}
+//           ]
+//         },
+//         MSG_MODEL : {
+//           MSG_DESCRIPTION : "The name of the model that generated the message.",
+//           MSG_TYPE : MSG_STRING
+//         },
+//         MSG_ROLE : {"$ref" : "#/definitions/Role"},
+//         "stopReason" : {
+//           MSG_DESCRIPTION : "The reason why sampling stopped, if known.",
+//           MSG_TYPE : MSG_STRING
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_CONTENT, MSG_MODEL, MSG_ROLE ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The client's response to a sampling/create_message request from the server. The client should
+ * inform the user before returning the sampled message, to allow them to inspect the response
+ * (human in the loop) and decide whether to allow the server to see it.
+ */
+// TODO: Typescript extended from Result and SamplingMessage - How to convert properly?
 struct CreateMessageResponse : ResponseBase {
     struct Result : ResultParams {
-        std::string Model;
-        Role ResponseRole;
-        Content ResponseContent;
+        std::string Model; // The name of the model that generated the message.
+        Role ResponseRole; // The role of the response.
+        std::variant<TextContent, ImageContent, AudioContent>
+            ResponseContent; // The content of the response.
+        std::optional<std::variant<StopReason, std::string>>
+            StopReason; // The reason why sampling stopped, if known.
 
         JKEY(MODELKEY, Model, "model")
         JKEY(RESPONSEROLEKEY, ResponseRole, "role")
@@ -446,12 +1216,81 @@ struct CreateMessageResponse : ResponseBase {
         : ResponseBase(InRequestID, InResult) {}
 };
 
-// Roots-related messages
+// ListRootsRequest {
+//     MSG_DESCRIPTION
+//         : "Sent from the server to request a list of root URIs from the client. Roots "
+//           "allow\nservers "
+//           "to ask for specific directories or files to operate on. A common example\nfor roots is
+//           " "providing a set of repositories or directories a server should operate\non.\n\nThis
+//           " "request is typically used when the server needs to understand the file "
+//           "system\nstructure "
+//           "or access specific locations that the client has permission to read from.",
+//           MSG_PROPERTIES : {
+//               MSG_METHOD: {MSG_CONST: MTHD_ROOTS_LIST, MSG_TYPE: MSG_STRING},
+//               MSG_PARAMS: {
+//                   MSG_ADDITIONAL_PROPERTIES: {},
+//                   MSG_PROPERTIES: {
+//                       MSG_META: {
+//                           MSG_PROPERTIES: {
+//                               MSG_PROGRESS_TOKEN: {
+//                                   "$ref": "#/definitions/ProgressToken",
+//                                   MSG_DESCRIPTION:
+//                                       "If specified, the caller is requesting out-of-band
+//                                       progress " "notifications for this request (as represented
+//                                       by " "notifications/progress). The value of this parameter
+//                                       is an " "opaque " "token that will be attached to any
+//                                       subsequent " "notifications. The " "receiver is not
+//                                       obligated to provide these notifications."
+//                               }
+//                           },
+//                           MSG_TYPE: MSG_OBJECT
+//                       }
+//                   },
+//                   MSG_TYPE: MSG_OBJECT
+//               }
+//           },
+//                          MSG_REQUIRED : [MSG_METHOD],
+//                                       MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Sent from the server to request a list of root URIs from the client. Roots allow servers to ask
+ * for specific directories or files to operate on. A common example for roots is providing a set of
+ * repositories or directories a server should operate on. This request is typically used when the
+ * server needs to understand the file system structure or access specific locations that the client
+ * has permission to read from.
+ */
 struct ListRootsRequest : RequestBase {
     ListRootsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{})
         : RequestBase("roots/list", InParams) {}
 };
 
+// ListRootsResult {
+//     MSG_DESCRIPTION : "The client's response to a roots/list request from the server.\nThis
+//     result
+//     "
+//                     "contains an array of Root objects, each representing a root directory\nor "
+//                     "file that the server can operate on.",
+//                     MSG_PROPERTIES
+//         : {
+//             MSG_META: {
+//                 MSG_ADDITIONAL_PROPERTIES: {},
+//                 MSG_DESCRIPTION: "This result property is reserved by the protocol to allow
+//                 clients
+//                 "
+//                                "and servers to attach additional metadata to their responses.",
+//                 MSG_TYPE: MSG_OBJECT
+//             },
+//             MSG_ROOTS: {MSG_ITEMS: {"$ref": "#/definitions/Root"}, MSG_TYPE: MSG_ARRAY}
+//         },
+//           MSG_REQUIRED : [MSG_ROOTS],
+//                        MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The client's response to a roots/list request from the server. This result contains an array of
+ * Root objects, each representing a root directory or file that the server can operate on.
+ */
 struct ListRootsResponse : ResponseBase {
     struct Result : PaginatedResultParams {
         std::vector<Root> Roots;
@@ -464,6 +1303,41 @@ struct ListRootsResponse : ResponseBase {
     ListRootsResponse(const RequestID& InRequestID,
                       const ListRootsResponse::Result& InResult = ListRootsResponse::Result{})
         : ResponseBase(InRequestID, InResult) {}
+};
+
+// RootsListChangedNotification {
+//     MSG_DESCRIPTION : "A notification from the client to the server, informing it that the "
+//                     "list of roots has changed.\nThis notification should be sent whenever "
+//                     "the client adds, removes, or modifies any root.\nThe server should "
+//                     "then request an updated list of roots using the ListRootsRequest.",
+//                     MSG_PROPERTIES
+//         : {
+//             MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED, MSG_TYPE: MSG_STRING},
+//             MSG_PARAMS: {
+//                 MSG_ADDITIONAL_PROPERTIES: {},
+//                 MSG_PROPERTIES: {
+//                     MSG_META: {
+//                         MSG_ADDITIONAL_PROPERTIES: {},
+//                         MSG_DESCRIPTION:
+//                             "This parameter name is reserved by MCP to allow clients and "
+//                             "servers to attach additional metadata to their notifications.",
+//                         MSG_TYPE: MSG_OBJECT
+//                     }
+//                 },
+//                 MSG_TYPE: MSG_OBJECT
+//             }
+//         },
+//           MSG_REQUIRED : [MSG_METHOD],
+//                        MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * A notification from the client to the server, informing it that the list of roots has changed.
+ * This notification should be sent whenever the client adds, removes, or modifies any root. The
+ * server should then request an updated list of roots using the ListRootsRequest.
+ */
+struct RootsListChangedNotification : NotificationBase {
+    RootsListChangedNotification() : NotificationBase("notifications/roots/list_changed") {}
 };
 
 // SetLevelRequest {
@@ -638,11 +1512,58 @@ struct ProgressNotification : NotificationBase {
         : NotificationBase("notifications/progress", InParams) {}
 };
 
-// Cancellation notification
+// CancelledNotification {
+//   MSG_DESCRIPTION
+//       : "This notification can be sent by either side to indicate that it is
+//       "
+//         "cancelling a previously-issued request.\n\nThe request SHOULD still
+//         " "be in-flight, but due to communication latency, it is always "
+//         "possible that this notification MAY arrive after the request has "
+//         "already finished.\n\nThis notification indicates that the result "
+//         "will be unused, so any associated processing SHOULD cease.\n\nA "
+//         "client MUST NOT attempt to cancel its `initialize` request.",
+//         MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_CANCELLED, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             "reason" : {
+//               MSG_DESCRIPTION :
+//                   "An optional string describing the reason for the "
+//                   "cancellation. This MAY be logged or presented to the
+//                   user.",
+//               MSG_TYPE : MSG_STRING
+//             },
+//             MSG_REQUEST_ID : {
+//               "$ref" : "#/definitions/RequestID",
+//               MSG_DESCRIPTION :
+//                   "The ID of the request to cancel.\n\nThis MUST correspond
+//                   to " "the ID of a request previously issued in the same
+//                   direction."
+//             }
+//           },
+//           MSG_REQUIRED : [MSG_REQUEST_ID],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * This notification can be sent by either side to indicate that it is cancelling a
+ * previously-issued request. The request SHOULD still be in-flight, but due to communication
+ * latency, it is always possible that this notification MAY arrive after the request has already
+ * finished. This notification indicates that the result will be unused, so any associated
+ * processing SHOULD cease. A client MUST NOT attempt to cancel its `initialize` request.
+ */
 struct CancelledNotification : NotificationBase {
     struct Params : NotificationParams {
-        RequestID CancelRequestID;
-        std::optional<std::string> Reason;
+        RequestID CancelRequestID; // The ID of the request to cancel. This MUST correspond to the
+                                   // ID of a request previously issued in the same direction.
+        std::optional<std::string>
+            Reason; // An optional string describing the reason for the cancellation.
+                    // This MAY be logged or presented to the user.
 
         JKEY(CANCELREQUESTIDKEY, CancelRequestID, "requestId")
         JKEY(REASONKEY, Reason, "reason")
@@ -656,54 +1577,55 @@ struct CancelledNotification : NotificationBase {
         : NotificationBase("notifications/cancelled", InParams) {}
 };
 
-// Change notifications
-struct ResourceListChangedNotification : NotificationBase {
-    ResourceListChangedNotification() : NotificationBase("notifications/resources/list_changed") {}
-};
+// CompleteRequest {
+//   MSG_DESCRIPTION : "A request from the client to the server, to ask for "
+//                   "completion options.",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_METHOD : {MSG_CONST : MTHD_COMPLETION_COMPLETE, MSG_TYPE : MSG_STRING},
+//         MSG_PARAMS : {
+//           MSG_PROPERTIES : {
+//             MSG_ARGUMENT : {
+//               MSG_DESCRIPTION : "The argument's information",
+//               MSG_PROPERTIES : {
+//                 MSG_NAME : {
+//                   MSG_DESCRIPTION : "The name of the argument",
+//                   MSG_TYPE : MSG_STRING
+//                 },
+//                 MSG_VALUE : {
+//                   MSG_DESCRIPTION : "The value of the argument to use for "
+//                                   "completion matching.",
+//                   MSG_TYPE : MSG_STRING
+//                 }
+//               },
+//               MSG_REQUIRED : [ MSG_NAME, MSG_VALUE ],
+//               MSG_TYPE : MSG_OBJECT
+//             },
+//             MSG_REF : {
+//               "anyOf" : [
+//                 {"$ref" : "#/definitions/PromptReference"},
+//                 {"$ref" : "#/definitions/ResourceReference"}
+//               ]
+//             }
+//           },
+//           MSG_REQUIRED : [ MSG_ARGUMENT, MSG_REF ],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE : MSG_OBJECT
+// };
 
-struct ResourceUpdatedNotification : NotificationBase {
-    struct Params : NotificationParams {
-        MCP::URI URI;
-
-        JKEY(URIKEY, URI, "uri")
-
-        DEFINE_TYPE_JSON_DERIVED(ResourceUpdatedNotification::Params, NotificationParams, URIKEY)
-    };
-
-    ResourceUpdatedNotification(const Params& InParams = Params{})
-        : NotificationBase("notifications/resources/updated", InParams) {}
-};
-
-struct PromptListChangedNotification : NotificationBase {
-    PromptListChangedNotification() : NotificationBase("notifications/prompts/list_changed") {}
-};
-
-struct ToolListChangedNotification : NotificationBase {
-    ToolListChangedNotification() : NotificationBase("notifications/tools/list_changed") {}
-};
-
-struct RootsListChangedNotification : NotificationBase {
-    RootsListChangedNotification() : NotificationBase("notifications/roots/list_changed") {}
-};
-
-// Completion request/response
+/**
+ * A request from the client to the server, to ask for completion options.
+ */
 struct CompleteRequest : RequestBase {
     struct Params : RequestParams {
-        struct Reference {
-            // TODO: @HalcyonOmega - Consider using an enum for the type
-            std::string Type; // "ref/prompt" or "ref/resource"
-            MCP::URI URI;
-
-            JKEY(TYPEKEY, Type, "type")
-            JKEY(URIKEY, URI, "uri")
-
-            DEFINE_TYPE_JSON(CompleteRequest::Params::Reference, TYPEKEY, URIKEY)
-
-        } Reference;
+        std::variant<PromptReference, ResourceReference> Reference;
 
         struct Argument {
-            std::string Name;
-            std::string Value;
+            std::string Name;  // The name of the argument
+            std::string Value; // The value of the argument to use for completion matching.
 
             JKEY(NAMEKEY, Name, "name")
             JKEY(VALUEKEY, Value, "value")
@@ -722,12 +1644,61 @@ struct CompleteRequest : RequestBase {
         : RequestBase("completion/complete", InParams) {}
 };
 
+// CompleteResult {
+//   MSG_DESCRIPTION : "The server's response to a completion/complete request",
+//                   MSG_PROPERTIES
+//       : {
+//         MSG_META : {
+//           MSG_ADDITIONAL_PROPERTIES : {},
+//           MSG_DESCRIPTION : "This result property is reserved by the protocol to "
+//                           "allow clients and servers to attach additional "
+//                           "metadata to their responses.",
+//           MSG_TYPE : MSG_OBJECT
+//         },
+//         MSG_COMPLETION : {
+//           MSG_PROPERTIES : {
+//             MSG_HAS_MORE : {
+//               MSG_DESCRIPTION :
+//                   "Indicates whether there are additional completion options "
+//                   "beyond those provided in the current response, even if the "
+//                   "exact total is unknown.",
+//               MSG_TYPE : MSG_BOOLEAN
+//             },
+//             MSG_TOTAL : {
+//               MSG_DESCRIPTION :
+//                   "The total number of completion options available. This can "
+//                   "exceed the number of values actually sent in the response.",
+//               MSG_TYPE : MSG_INTEGER
+//             },
+//             MSG_VALUES : {
+//               MSG_DESCRIPTION :
+//                   "An array of completion values. Must not exceed 100 items.",
+//               MSG_ITEMS : {MSG_TYPE : MSG_STRING},
+//               MSG_TYPE : MSG_ARRAY
+//             }
+//           },
+//           MSG_REQUIRED : [MSG_VALUES],
+//           MSG_TYPE : MSG_OBJECT
+//         }
+//       },
+//         MSG_REQUIRED : [MSG_COMPLETION],
+//                      MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * The server's response to a completion/complete request
+ */
 struct CompleteResponse : ResponseBase {
     struct Result : ResultParams {
         struct Completion {
-            std::vector<std::string> Values;
-            std::optional<int64_t> Total;
-            std::optional<bool> HasMore;
+            std::array<std::string, 100>
+                Values; // An array of completion values. Must not exceed 100 items.
+            std::optional<int64_t>
+                Total; // The total number of completion options available. This can exceed the
+                       // number of values actually sent in the response.
+            std::optional<bool>
+                HasMore; // Indicates whether there are additional completion options beyond those
+                         // provided in the current response, even if the exact total is unknown.
 
             JKEY(VALUESKEY, Values, "values")
             JKEY(TOTALKEY, Total, "total")

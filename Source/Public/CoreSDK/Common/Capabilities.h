@@ -7,7 +7,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Individual capability structures (defined before they are used)
 struct RootsCapability {
     std::optional<bool>
         ListChanged; // Whether the client supports notifications for changes to the roots list.
@@ -86,8 +85,45 @@ struct ToolsCapability {
     DEFINE_TYPE_JSON(ToolsCapability, LISTCHANGEDKEY, ADDITIONALPROPERTIESKEY)
 };
 
-// Capabilities a client may support. Known capabilities are defined here, in this schema, but
-// this is not a closed set: any client can define its own, additional capabilities.
+// ClientCapabilities {
+//     MSG_DESCRIPTION
+//         : "Capabilities a client may support. Known capabilities are defined
+//         here, in this schema, "
+//           "but this is not a closed set: any client can define its own,
+//           additional capabilities.", MSG_PROPERTIES
+//         : {
+//             MSG_EXPERIMENTAL: {
+//                 MSG_ADDITIONAL_PROPERTIES:
+//                     {MSG_ADDITIONAL_PROPERTIES: true, MSG_PROPERTIES: {}, MSG_TYPE:
+//                     MSG_OBJECT},
+//                 MSG_DESCRIPTION: "Experimental, non-standard capabilities that
+//                 the client supports.", MSG_TYPE: MSG_OBJECT
+//             },
+//             MSG_ROOTS: {
+//                 MSG_DESCRIPTION: "Present if the client supports listing
+//                 roots.", MSG_PROPERTIES: {
+//                     MSG_LIST_CHANGED: {
+//                         MSG_DESCRIPTION: "Whether the client supports
+//                         notifications for changes to "
+//                                        "the roots list.",
+//                         MSG_TYPE: MSG_BOOLEAN
+//                     }
+//                 },
+//                 MSG_TYPE: MSG_OBJECT
+//             },
+//             MSG_SAMPLING: {
+//                 MSG_ADDITIONAL_PROPERTIES: true,
+//                 MSG_DESCRIPTION: "Present if the client supports sampling from
+//                 an LLM.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
+//             }
+//         },
+//           MSG_TYPE : MSG_OBJECT
+// };
+
+/**
+ * Capabilities a client may support. Known capabilities are defined here, in this schema, but this
+ * is not a closed set: any client can define its own, additional capabilities.
+ */
 struct ClientCapabilities {
     std::optional<ExperimentalCapability>
         Experimental; // Experimental, non-standard capabilities that the client supports.
@@ -102,8 +138,80 @@ struct ClientCapabilities {
     DEFINE_TYPE_JSON(ClientCapabilities, ROOTSKEY, SAMPLINGKEY, EXPERIMENTALKEY)
 };
 
-// Capabilities that a server may support. Known capabilities are defined here, in this schema,
-// but this is not a closed set: any server can define its own, additional capabilities.
+// ServerCapabilities {
+//     MSG_DESCRIPTION: "Capabilities that a server may support. Known
+//     capabilities are defined here,
+//     "
+//                    "in this schema, but this is not a closed set: any server
+//                    can define its own, " "additional capabilities.",
+//     MSG_PROPERTIES: {
+//         MSG_COMPLETIONS: {
+//             MSG_ADDITIONAL_PROPERTIES: true,
+//             MSG_DESCRIPTION: "Present if the server supports argument
+//             autocompletion suggestions.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
+//         },
+//         MSG_EXPERIMENTAL: {
+//             MSG_ADDITIONAL_PROPERTIES:
+//                 {MSG_ADDITIONAL_PROPERTIES: true, MSG_PROPERTIES: {}, MSG_TYPE:
+//                 MSG_OBJECT},
+//             MSG_DESCRIPTION: "Experimental, non-standard capabilities that the
+//             server supports.", MSG_TYPE: MSG_OBJECT
+//         },
+//         MSG_LOGGING: {
+//             MSG_ADDITIONAL_PROPERTIES: true,
+//             MSG_DESCRIPTION: "Present if the server supports sending log
+//             messages to the client.", MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
+//         },
+//         MSG_PROMPTS: {
+//             MSG_DESCRIPTION: "Present if the server offers any prompt
+//             templates.", MSG_PROPERTIES: {
+//                 MSG_LIST_CHANGED: {
+//                     MSG_DESCRIPTION: "Whether this server supports
+//                     notifications for changes to the
+//                     "
+//                                    "prompt list.",
+//                     MSG_TYPE: MSG_BOOLEAN
+//                 }
+//             },
+//             MSG_TYPE: MSG_OBJECT
+//         },
+//         MSG_RESOURCES: {
+//             MSG_DESCRIPTION: "Present if the server offers any resources to
+//             read.", MSG_PROPERTIES: {
+//                 MSG_LIST_CHANGED: {
+//                     MSG_DESCRIPTION: "Whether this server supports
+//                     notifications for changes to the
+//                     "
+//                                    "resource list.",
+//                     MSG_TYPE: MSG_BOOLEAN
+//                 },
+//                 MSG_SUBSCRIBE: {
+//                     MSG_DESCRIPTION: "Whether this server supports subscribing
+//                     to resource updates.", MSG_TYPE: MSG_BOOLEAN
+//                 }
+//             },
+//             MSG_TYPE: MSG_OBJECT
+//         },
+//         MSG_TOOLS: {
+//             MSG_DESCRIPTION: "Present if the server offers any tools to call.",
+//             MSG_PROPERTIES: {
+//                 MSG_LIST_CHANGED: {
+//                     MSG_DESCRIPTION: "Whether this server supports
+//                     notifications for changes to "
+//                                    "the tool list.",
+//                     MSG_TYPE: MSG_BOOLEAN
+//                 }
+//             },
+//             MSG_TYPE: MSG_OBJECT
+//         }
+//     },
+//     MSG_TYPE: MSG_OBJECT
+// };
+
+/**
+ * Capabilities that a server may support. Known capabilities are defined here, in this schema, but
+ * this is not a closed set: any server can define its own, additional capabilities.
+ */
 struct ServerCapabilities {
     std::optional<ExperimentalCapability>
         Experimental; // Experimental, non-standard capabilities that the server supports.
