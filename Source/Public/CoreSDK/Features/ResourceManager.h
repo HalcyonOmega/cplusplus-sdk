@@ -1,8 +1,7 @@
 #pragma once
 
-#include <any>
 #include <functional>
-#include <future>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -22,8 +21,8 @@ MCP_NAMESPACE_BEGIN
  */
 class ResourceManager {
   public:
-    using ResourceFunction =
-        std::function<std::future<std::any>(const std::unordered_map<std::string, std::string>&)>;
+    using ResourceFunction = std::function<std::variant<TextResourceContents, BlobResourceContents>(
+        const std::unordered_map<std::string, std::string>&)>;
 
     /**
      * Constructor
@@ -52,7 +51,7 @@ class ResourceManager {
      * @param InTemplate The resource template configuration
      * @return The added resource template
      */
-    ResourceTemplate AddTemplate(const ResourceTemplate& InTemplate);
+    ResourceTemplate AddTemplate(const ResourceTemplate& InTemplate, ResourceFunction InFunction);
 
     /**
      * Remove a template from the manager.
@@ -88,10 +87,10 @@ class ResourceManager {
     bool HasResource(const MCP::URI& InURI) const;
 
   private:
-    std::unordered_map<std::string, Resource> m_Resources;
+    std::map<MCP::URI, Resource> m_Resources;
     std::unordered_map<std::string, std::pair<ResourceTemplate, ResourceFunction>> m_Templates;
     bool m_WarnOnDuplicateResources;
-    mutable std::mutex m_ResourcesMutex;
+    mutable std::mutex m_Mutex;
 
     /**
      * Check if a URI matches a template and extract parameters.
@@ -99,8 +98,8 @@ class ResourceManager {
      * @param InURI The URI to match
      * @return Optional map of template parameters if matched
      */
-    std::optional<std::unordered_map<std::string, std::string>>
-    MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI) const;
+    static std::optional<std::unordered_map<std::string, std::string>>
+    MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI);
 };
 
 MCP_NAMESPACE_END

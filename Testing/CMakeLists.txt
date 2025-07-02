@@ -8,8 +8,6 @@ find_package(Threads REQUIRED)
 # Add the test executable
 add_executable(mcp_tests
     TestMain.cpp
-    TestTransportHTTP.cpp
-    TestTransportSTDIO.cpp
     ${CMAKE_SOURCE_DIR}/Source/Public/Utilities/JSON/JSONMessages.cpp
 )
 

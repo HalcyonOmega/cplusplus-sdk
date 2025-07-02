@@ -1,8 +1,10 @@
 #include "CoreSDK/Features/ResourceManager.h"
 
+#include <map>
 #include <regex>
 #include <stdexcept>
 
+#include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Logging.h"
 
 MCP_NAMESPACE_BEGIN
@@ -11,28 +13,31 @@ ResourceManager::ResourceManager(bool InWarnOnDuplicateResources)
     : m_WarnOnDuplicateResources(InWarnOnDuplicateResources) {}
 
 Resource ResourceManager::AddResource(const Resource& InResource) {
-    const MCP::URI URIString = InResource.URI;
+    const MCP::URI& URI = InResource.URI;
     // Log the addition attempt
-    Logger::Debug("Adding resource - URI: " + URIString.toString() + ", Name: " + InResource.Name);
-    std::lock_guard<std::mutex> Lock(m_ResourcesMutex);
+    Logger::Debug("Adding resource - URI: " + URI.toString() + ", Name: " + InResource.Name);
+    std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    const auto ExistingIt = m_Resources.find(URIString.toString());
+    const auto ExistingIt = m_Resources.find(URI);
     if (ExistingIt != m_Resources.end()) {
         if (m_WarnOnDuplicateResources) {
-            Logger::Warning("Resource already exists: " + URIString.toString());
+            Logger::Warning("Resource already exists: " + URI.toString());
         }
         return ExistingIt->second;
     }
 
-    m_Resources[URIString.toString()] = InResource;
+    m_Resources[URI] = InResource;
     return InResource;
 }
 
-ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate) {
+ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate,
+                                              ResourceFunction InFunction) {
     // Validate URI template
     if (InTemplate.URITemplate.ToString().empty()) {
         throw std::invalid_argument("URI template cannot be empty");
     }
+
+    std::lock_guard<std::mutex> Lock(m_Mutex);
 
     // Check for existing template
     const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString());
@@ -48,7 +53,7 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
     ResourceTemplate Template = InTemplate;
     Template.URITemplate = MCP::URITemplate(InTemplate.URITemplate.ToString());
 
-    m_Templates[InTemplate.URITemplate.ToString()] = std::make_pair(Template, InTemplate.Function);
+    m_Templates[InTemplate.URITemplate.ToString()] = std::make_pair(Template, InFunction);
 
     Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
     return Template;
@@ -57,27 +62,24 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
 std::optional<std::variant<TextResourceContents, BlobResourceContents>>
 ResourceManager::GetResource(const MCP::URI& InURI) {
     Logger::Debug("Getting resource: " + InURI.toString());
+    std::lock_guard<std::mutex> Lock(m_Mutex);
 
     // First check concrete resources
-    const auto ResourceIt = m_Resources.find(InURI.toString());
-    if (ResourceIt != m_Resources.end()) { return ResourceIt->second; }
+    const auto ResourceIt = m_Resources.find(InURI);
+    if (ResourceIt != m_Resources.end()) {
+        // Note: The current design stores Resource metadata, not content.
+        // Returning nullopt because we can't provide content for concrete resources yet.
+        return std::nullopt;
+    }
 
     // Then check templates
     for (const auto& [TemplateURI, TemplatePair] : m_Templates) {
         const auto& [Template, Function] = TemplatePair;
 
-        if (auto Parameters = MatchTemplate(Template, InURI.toString())) {
+        if (auto Parameters = MatchTemplate(Template, InURI)) {
             try {
-                // For sync version, we'll create a basic resource
-                // In a full implementation, this would involve calling the function
-                Resource TemplateResource;
-                TemplateResource.URI = MCP::URI(InURI);
-                TemplateResource.Name = Template.Name;
-                TemplateResource.Description = Template.Description;
-                TemplateResource.MIMEType = Template.MIMEType;
-                TemplateResource.Annotations = Template.Annotations;
-
-                return TemplateResource;
+                if (Function) { return Function(*Parameters); }
+                throw std::runtime_error("No function provided for template");
             } catch (const std::exception& Exception) {
                 throw std::runtime_error("Error creating resource from template: "
                                          + std::string(Exception.what()));
@@ -92,6 +94,7 @@ std::vector<Resource> ResourceManager::ListResources() const {
     Logger::Debug("Listing resources - Count: " + std::to_string(m_Resources.size()));
 
     std::vector<Resource> Result;
+    std::lock_guard<std::mutex> Lock(m_Mutex);
     Result.reserve(m_Resources.size());
 
     for (const auto& [URI, ResourceData] : m_Resources) { Result.push_back(ResourceData); }
@@ -103,6 +106,7 @@ std::vector<ResourceTemplate> ResourceManager::ListTemplates() const {
     Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
 
     std::vector<ResourceTemplate> Result;
+    std::lock_guard<std::mutex> Lock(m_Mutex);
     Result.reserve(m_Templates.size());
 
     for (const auto& [URI, TemplatePair] : m_Templates) { Result.push_back(TemplatePair.first); }
@@ -111,17 +115,18 @@ std::vector<ResourceTemplate> ResourceManager::ListTemplates() const {
 }
 
 bool ResourceManager::HasResource(const MCP::URI& InURI) const {
-    std::lock_guard<std::mutex> Lock(m_ResourcesMutex);
+    std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    return m_Resources.find(InURI.toString()) != m_Resources.end();
+    return m_Resources.find(InURI) != m_Resources.end();
 }
 
 std::optional<std::unordered_map<std::string, std::string>>
-ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI) const {
+ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI) {
     // Basic URI template matching - this is a simplified implementation
     // A full implementation would use RFC 6570 URI template matching
 
     const std::string TemplateString = InTemplate.URITemplate.ToString();
+    const std::string URIString = InURI.toString();
 
     // Convert URI template to regex pattern
     std::string Pattern = TemplateString;
@@ -145,7 +150,7 @@ ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::UR
         std::regex URIRegex(ResultPattern);
         std::smatch URIMatch;
 
-        if (std::regex_match(InURI.toString(), URIMatch, URIRegex)) {
+        if (std::regex_match(URIString, URIMatch, URIRegex)) {
             // Extract variable names and values
             std::string::const_iterator VarSearchStart(TemplateString.cbegin());
             std::smatch VarMatch;
@@ -162,8 +167,9 @@ ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::UR
 
             return Parameters;
         }
-    } catch (const std::exception&) {
-        // Regex compilation or matching failed
+    } catch (const std::regex_error& e) {
+        // Regex compilation failed, log the error
+        Logger::Error("Regex error in MatchTemplate: " + std::string(e.what()));
         return std::nullopt;
     }
 

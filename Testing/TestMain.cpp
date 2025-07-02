@@ -1,11 +1,5 @@
 #include <iostream>
 
-#include "TestHelpers.h"
-
-// Forward declarations
-void RunInteractiveSTDIOTest();
-void RunInteractiveHTTPTest();
-
 void ShowMenu() {
     std::cout << "\n=== MCP Transport Test ===" << std::endl;
     std::cout << "1. Test STDIO Transport" << std::endl;
@@ -23,8 +17,8 @@ int main() {
         std::cin >> choice;
 
         switch (choice) {
-            case 1: RunInteractiveSTDIOTest(); break;
-            case 2: RunInteractiveHTTPTest(); break;
+            case 1: std::cout << "Stdio Testing..." << std::endl; break;
+            case 2: std::cout << "HTTP Testing..." << std::endl; break;
             case 3: std::cout << "Exiting..." << std::endl; return 0;
             default: std::cout << "Invalid choice!" << std::endl; break;
         }

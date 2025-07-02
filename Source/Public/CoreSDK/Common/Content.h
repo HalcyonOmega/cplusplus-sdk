@@ -8,7 +8,6 @@
 
 #include "CoreSDK/Common/Annotations.h"
 #include "CoreSDK/Common/Macros.h"
-#include "CoreSDK/Common/Roles.h"
 #include "JSONProxy.h"
 #include "URIProxy.h"
 
