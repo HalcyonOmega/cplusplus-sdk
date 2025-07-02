@@ -53,7 +53,7 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
         // Start transport
         co_await m_Transport->Connect();
 
-        // Send initialize request t
+        // Send initialize request
         InitializeRequest Request{InitializeRequest::Params{
             .ProtocolVersion = m_ClientInfo.Version,
             .Capabilities = m_ClientCapabilities,
