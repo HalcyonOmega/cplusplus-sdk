@@ -6,75 +6,90 @@
 
 MCP_NAMESPACE_BEGIN
 
-PromptManager::PromptManager(bool InWarnOnDuplicatePrompts)
-    : m_WarnOnDuplicatePrompts(InWarnOnDuplicatePrompts) {}
+PromptManager::PromptManager(bool InWarnOnDuplicatePrompts) : m_WarnOnDuplicatePrompts(InWarnOnDuplicatePrompts) {}
 
-bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction) {
-    // Log the addition attempt
-    Logger::Debug("Adding prompt: " + InPrompt.Name);
-    std::lock_guard<std::mutex> Lock(m_Mutex);
+bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction)
+{
+	// Log the addition attempt
+	Logger::Debug("Adding prompt: " + InPrompt.Name);
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    const auto ExistingIt = m_Prompts.find(InPrompt);
-    if (ExistingIt != m_Prompts.end()) {
-        if (m_WarnOnDuplicatePrompts) {
-            Logger::Warning("Prompt already exists: " + InPrompt.Name);
-        }
-        return false;
-    }
+	const auto ExistingIt = m_Prompts.find(InPrompt);
+	if (ExistingIt != m_Prompts.end())
+	{
+		if (m_WarnOnDuplicatePrompts)
+		{
+			Logger::Warning("Prompt already exists: " + InPrompt.Name);
+		}
+		return false;
+	}
 
-    m_Prompts[InPrompt] = InFunction;
-    return true;
+	m_Prompts[InPrompt] = InFunction;
+	return true;
 }
 
-bool PromptManager::RemovePrompt(const Prompt& InPrompt) {
-    std::lock_guard<std::mutex> Lock(m_Mutex);
+bool PromptManager::RemovePrompt(const Prompt& InPrompt)
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    const auto ExistingIt = m_Prompts.find(InPrompt);
-    if (ExistingIt == m_Prompts.end()) {
-        Logger::Warning("Prompt does not exist: " + InPrompt.Name);
-        return false;
-    }
+	const auto ExistingIt = m_Prompts.find(InPrompt);
+	if (ExistingIt == m_Prompts.end())
+	{
+		Logger::Warning("Prompt does not exist: " + InPrompt.Name);
+		return false;
+	}
 
-    m_Prompts.erase(ExistingIt);
-    return true;
+	m_Prompts.erase(ExistingIt);
+	return true;
 }
 
-GetPromptResponse::Result
-PromptManager::GetPrompt(const GetPromptRequest::Params& InRequest) const {
-    std::lock_guard<std::mutex> Lock(m_Mutex);
+GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Params& InRequest) const
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
-    if (!FoundPrompt) {
-        Logger::Warning("Prompt does not exist: " + InRequest.Name);
-        return GetPromptResponse::Result{};
-    }
+	std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
+	if (!FoundPrompt)
+	{
+		Logger::Warning("Prompt does not exist: " + InRequest.Name);
+		return GetPromptResponse::Result{};
+	}
 
-    return GetPromptResponse::Result{
-        .Messages = m_Prompts.find(FoundPrompt.value())->second(InRequest.Arguments.value()),
-        .Description = FoundPrompt->Description,
-    };
+	return GetPromptResponse::Result{
+		.Messages = m_Prompts.find(FoundPrompt.value())->second(InRequest.Arguments.value()),
+		.Description = FoundPrompt->Description,
+	};
 }
 
-std::vector<Prompt> PromptManager::ListPrompts() const {
-    std::lock_guard<std::mutex> Lock(m_Mutex);
+ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestParams& InRequest) const
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    std::vector<Prompt> Result;
-    Result.reserve(m_Prompts.size());
+	std::vector<Prompt> Result;
+	Result.reserve(m_Prompts.size());
 
-    for (const auto& [Prompt, Function] : m_Prompts) { Result.emplace_back(Prompt); }
+	for (const auto& [Prompt, Function] : m_Prompts)
+	{
+		Result.emplace_back(Prompt);
+	}
 
-    return Result;
+	return ListPromptsResponse::Result{
+		.Prompts = Result,
+		.NextCursor = InRequest.NextCursor,
+	};
 }
 
-std::optional<Prompt> PromptManager::FindPrompt(const std::string& InName) const {
-    std::lock_guard<std::mutex> Lock(m_Mutex);
+std::optional<Prompt> PromptManager::FindPrompt(const std::string& InName) const
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    auto Iterator = std::ranges::find_if(
-        m_Prompts, [&](const auto& Pair) { return Pair.first.Name == InName; });
+	auto Iterator = std::ranges::find_if(m_Prompts, [&](const auto& Pair) { return Pair.first.Name == InName; });
 
-    if (Iterator != m_Prompts.end()) { return Iterator->first; }
+	if (Iterator != m_Prompts.end())
+	{
+		return Iterator->first;
+	}
 
-    return std::nullopt;
+	return std::nullopt;
 }
 
 MCP_NAMESPACE_END

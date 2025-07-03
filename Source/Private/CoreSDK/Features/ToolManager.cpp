@@ -5,99 +5,107 @@
 
 MCP_NAMESPACE_BEGIN
 
-ToolManager::ToolManager(bool InWarnOnDuplicateTools,
-                         const std::map<Tool, ToolFunction> &InTools)
-    : m_WarnOnDuplicateTools(InWarnOnDuplicateTools) {
-  std::lock_guard<std::mutex> Lock(m_Mutex);
+ToolManager::ToolManager(bool InWarnOnDuplicateTools, const std::map<Tool, ToolFunction>& InTools) :
+	m_WarnOnDuplicateTools(InWarnOnDuplicateTools)
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-  // Register initial tools if provided
-  for (const auto &[ToolItem, Function] : InTools) {
-    AddTool(ToolItem, Function);
-  }
+	// Register initial tools if provided
+	for (const auto& [ToolItem, Function] : InTools)
+	{
+		AddTool(ToolItem, Function);
+	}
 }
 
-ListToolsResponse::Result
-ToolManager::ListTools(const PaginatedRequestParams &InRequest) const {
-  std::lock_guard<std::mutex> Lock(m_Mutex);
-  (void)InRequest; // TODO: @HalcyonOmega - Implement pagination
+ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams& InRequest) const
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
+	(void)InRequest; // TODO: @HalcyonOmega - Implement pagination
 
-  std::vector<Tool> Result;
-  Result.reserve(m_Tools.size());
+	std::vector<Tool> Result;
+	Result.reserve(m_Tools.size());
 
-  for (const auto &[ToolItem, Function] : m_Tools) {
-    Result.emplace_back(ToolItem);
-  }
+	for (const auto& [ToolItem, Function] : m_Tools)
+	{
+		Result.emplace_back(ToolItem);
+	}
 
-  return ListToolsResponse::Result{.Tools = Result, .NextCursor = std::nullopt};
+	return ListToolsResponse::Result{ std::move(Result) };
 }
 
-bool ToolManager::AddTool(const Tool &InTool, const ToolFunction &InFunction) {
-  Logger::Debug("Adding tool: " + InTool.Name);
-  std::lock_guard<std::mutex> Lock(m_Mutex);
+bool ToolManager::AddTool(const Tool& InTool, const ToolFunction& InFunction)
+{
+	Logger::Debug("Adding tool: " + InTool.Name);
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-  const auto ExistingIt = m_Tools.find(InTool);
-  if (ExistingIt != m_Tools.end()) {
-    if (m_WarnOnDuplicateTools) {
-      Logger::Warning("Tool already exists: " + InTool.Name);
-    }
-    return false;
-  }
+	const auto ExistingIt = m_Tools.find(InTool);
+	if (ExistingIt != m_Tools.end())
+	{
+		if (m_WarnOnDuplicateTools)
+		{
+			Logger::Warning("Tool already exists: " + InTool.Name);
+		}
+		return false;
+	}
 
-  m_Tools.emplace(InTool, InFunction);
-  return true;
+	m_Tools.emplace(InTool, InFunction);
+	return true;
 }
 
-bool ToolManager::RemoveTool(const Tool &InTool) {
-  std::lock_guard<std::mutex> Lock(m_Mutex);
+bool ToolManager::RemoveTool(const Tool& InTool)
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-  const auto ExistingIt = m_Tools.find(InTool);
-  if (ExistingIt == m_Tools.end()) {
-    Logger::Warning("Tool does not exist: " + InTool.Name);
-    return false;
-  }
+	const auto ExistingIt = m_Tools.find(InTool);
+	if (ExistingIt == m_Tools.end())
+	{
+		Logger::Warning("Tool does not exist: " + InTool.Name);
+		return false;
+	}
 
-  m_Tools.erase(ExistingIt);
-  return true;
+	m_Tools.erase(ExistingIt);
+	return true;
 }
 
-CallToolResponse::Result
-ToolManager::CallTool(const CallToolRequest::Params &InRequest,
-                      MCPContext *InContext) {
-  std::lock_guard<std::mutex> Lock(m_Mutex);
+CallToolResponse::Result ToolManager::CallTool(const CallToolRequest::Params& InRequest, MCPContext* InContext)
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-  std::optional<Tool> FoundTool = FindTool(InRequest.Name);
-  if (!FoundTool) {
-    throw ToolError("Unknown tool: " + InRequest.Name);
-  }
+	std::optional<Tool> FoundTool = FindTool(InRequest.Name);
+	if (!FoundTool)
+	{
+		throw ToolError("Unknown tool: " + InRequest.Name);
+	}
 
-  return m_Tools.find(FoundTool.value())
-      ->second(InRequest.Arguments, InContext);
+	return m_Tools.find(FoundTool.value())->second(InRequest.Arguments, InContext);
 }
 
-std::optional<Tool> ToolManager::FindTool(const std::string &InName) const {
-  std::lock_guard<std::mutex> Lock(m_Mutex);
+std::optional<Tool> ToolManager::FindTool(const std::string& InName) const
+{
+	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-  auto Iterator = std::ranges::find_if(
-      m_Tools, [&](const auto &Pair) { return Pair.first.Name == InName; });
+	auto Iterator = std::ranges::find_if(m_Tools, [&](const auto& Pair) { return Pair.first.Name == InName; });
 
-  if (Iterator != m_Tools.end()) {
-    return Iterator->first;
-  }
+	if (Iterator != m_Tools.end())
+	{
+		return Iterator->first;
+	}
 
-  return std::nullopt;
+	return std::nullopt;
 }
 
-JSONSchema ToolManager::CreateBasicSchema(const std::string &InName) {
-  JSONSchema Schema;
-  Schema.Type = "object";
-  Schema.Properties = std::unordered_map<std::string, JSONData>();
-  Schema.Required = std::vector<std::string>();
+JSONSchema ToolManager::CreateBasicSchema(const std::string& InName)
+{
+	JSONSchema Schema;
+	Schema.Type = "object";
+	Schema.Properties = std::unordered_map<std::string, JSONData>();
+	Schema.Required = std::vector<std::string>();
 
-  // Add a basic property for demonstration
-  (*Schema.Properties)["input"] = JSONData{
-      {"type", "string"}, {"description", "Input parameter for " + InName}};
+	// Add a basic property for demonstration
+	(*Schema.Properties)["input"]
+		= JSONData{ { "type", "string" }, { "description", "Input parameter for " + InName } };
 
-  return Schema;
+	return Schema;
 }
 
 MCP_NAMESPACE_END

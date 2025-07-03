@@ -27,14 +27,14 @@ using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
 //         MSG_TYPE : MSG_OBJECT
 // };
 
-struct ResultParams {
-    std::optional<JSONData>
-        Meta; // This result property is reserved by the protocol to allow clients and
-              // servers to attach additional metadata to their responses.
+struct ResultParams
+{
+	std::optional<JSONData> Meta; // This result property is reserved by the protocol to allow clients and
+								  // servers to attach additional metadata to their responses.
 
-    JKEY(METAKEY, Meta, "_meta")
+	JKEY(METAKEY, Meta, "_meta")
 
-    DEFINE_TYPE_JSON(ResultParams, METAKEY)
+	DEFINE_TYPE_JSON(ResultParams, METAKEY)
 };
 
 // PaginatedResult {
@@ -56,17 +56,18 @@ struct ResultParams {
 //                  MSG_TYPE : MSG_OBJECT
 // };
 
-struct PaginatedResultParams : ResultParams {
-    std::optional<std::string> NextCursor; // An opaque token representing the next pagination
-                                           // position. If provided, the client should use this
-                                           // cursor to fetch the next page of results.
+struct PaginatedResultParams : ResultParams
+{
+	std::optional<std::string> NextCursor; // An opaque token representing the next pagination
+										   // position. If provided, the client should use this
+										   // cursor to fetch the next page of results.
 
-    JKEY(NEXT_CURSORKEY, NextCursor, "nextCursor")
+	JKEY(NEXT_CURSORKEY, NextCursor, "nextCursor")
 
-    DEFINE_TYPE_JSON_DERIVED(PaginatedResultParams, ResultParams, NEXT_CURSORKEY)
+	DEFINE_TYPE_JSON_DERIVED(PaginatedResultParams, ResultParams, NEXT_CURSORKEY)
 
-    PaginatedResultParams(std::optional<std::string> InNextCursor = std::nullopt)
-        : NextCursor(std::move(InNextCursor)) {}
+	PaginatedResultParams(std::optional<std::string> InNextCursor = std::nullopt) : NextCursor(std::move(InNextCursor))
+	{}
 };
 
 // ResponseBase {
@@ -81,31 +82,32 @@ struct PaginatedResultParams : ResultParams {
 // };
 
 // A successful (non-error) response to a request. Supports JSON-RPC 2.0.
-struct ResponseBase : MessageBase {
-    RequestID ID;
-    ResultParams ResultData;
+struct ResponseBase : MessageBase
+{
+	RequestID ID;
+	ResultParams ResultData;
 
-    JKEY(IDKEY, ID, "id")
-    JKEY(RESULTKEY, ResultData, "result")
+	JKEY(IDKEY, ID, "id")
+	JKEY(RESULTKEY, ResultData, "result")
 
-    DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
+	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
-    ResponseBase() = default;
-    ResponseBase(RequestID InID, ResultParams InResult = ResultParams{})
-        : MessageBase(), ID(std::move(InID)), ResultData(std::move(InResult)) {}
+	ResponseBase() = default;
+	ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
+	ResponseBase(RequestID InID, const ResultParams& InResult) :
+		MessageBase(), ID(std::move(InID)), ResultData(InResult)
+	{}
 
-    [[nodiscard]] RequestID GetRequestID() const {
-        return ID;
-    }
+	[[nodiscard]] RequestID GetRequestID() const { return ID; }
 };
 
 template <typename T>
 concept ConcreteResponse = std::is_base_of_v<ResponseBase, T>;
 
 // Get typed result - cast the base Result to the derived response's Result type
-template <typename TResultType, ConcreteResponse T>
-[[nodiscard]] TResultType GetResponseResult(T& InResponse) {
-    return static_cast<const TResultType&>(InResponse.ResultData);
+template <typename TResultType, ConcreteResponse T> [[nodiscard]] TResultType GetResponseResult(T& InResponse)
+{
+	return static_cast<const TResultType&>(InResponse.ResultData);
 }
 
 MCP_NAMESPACE_END
