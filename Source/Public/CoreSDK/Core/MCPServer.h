@@ -30,24 +30,25 @@ class MCPServer : public MCPProtocol {
     void Notify_Initialized();
 
     // Tool management
-    void AddTool(const Tool& InTool);
-    void RemoveTool(const Tool& InTool);
+    bool AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction);
+    bool RemoveTool(const Tool& InTool);
     MCPTask_Void Notify_ToolListChanged();
     void OnRequest_ListTools(const ListToolsRequest& InRequest);
     void OnRequest_CallTool(const CallToolRequest& InRequest);
 
     // Prompt management
-    void AddPrompt(const Prompt& InPrompt);
-    void RemovePrompt(const Prompt& InPrompt);
+    bool AddPrompt(const Prompt& InPrompt, const PromptManager::PromptFunction& InFunction);
+    bool RemovePrompt(const Prompt& InPrompt);
     MCPTask_Void Notify_PromptListChanged();
     void OnRequest_ListPrompts(const ListPromptsRequest& InRequest);
     void OnRequest_GetPrompt(const GetPromptRequest& InRequest);
 
     // Resource management
-    void AddResource(const Resource& InResource);
-    void AddResourceTemplate(const ResourceTemplate& InTemplate);
-    void RemoveResource(const Resource& InResource);
-    void RemoveResourceTemplate(const ResourceTemplate& InTemplate);
+    bool AddResource(const Resource& InResource);
+    bool AddResourceTemplate(const ResourceTemplate& InTemplate,
+                             const ResourceManager::ResourceFunction& InFunction);
+    bool RemoveResource(const Resource& InResource);
+    bool RemoveResourceTemplate(const ResourceTemplate& InTemplate);
     MCPTask_Void Notify_ResourceListChanged();
     MCPTask_Void Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
     void OnRequest_ListResources(const ListResourcesRequest& InRequest);
@@ -56,8 +57,8 @@ class MCPServer : public MCPProtocol {
     void OnRequest_UnsubscribeResource(const UnsubscribeRequest& InRequest);
 
     // Root management
-    void AddRoot(const Root& InRoot);
-    void RemoveRoot(const Root& InRoot);
+    bool AddRoot(const Root& InRoot);
+    bool RemoveRoot(const Root& InRoot);
     MCPTask_Void Notify_RootsListChanged();
 
     // Logging

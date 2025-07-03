@@ -112,6 +112,12 @@ struct Prompt {
     JKEY(ARGUMENTSKEY, Arguments, "arguments")
 
     DEFINE_TYPE_JSON(Prompt, NAMEKEY, DESCRIPTIONKEY, ARGUMENTSKEY)
+
+    bool operator<(const Prompt& InOther) const {
+        if (Name != InOther.Name) { return Name < InOther.Name; }
+        if (Description != InOther.Description) { return Description < InOther.Description; }
+        return false;
+    }
 };
 
 template <typename T>

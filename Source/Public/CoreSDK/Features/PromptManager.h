@@ -1,9 +1,9 @@
 #pragma once
 
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
@@ -12,11 +12,14 @@
 MCP_NAMESPACE_BEGIN
 
 /**
- * Manages FastMCP prompts.
+ * Manages MCP prompts.
  * Provides functionality for registering, retrieving, and listing prompts.
  */
 class PromptManager {
   public:
+    using PromptFunction =
+        std::function<std::vector<PromptMessage>(const std::vector<PromptArgument>&)>;
+
     /**
      * Constructor
      * @param InWarnOnDuplicatePrompts Whether to warn when duplicate prompts are added
@@ -26,23 +29,27 @@ class PromptManager {
     /**
      * Add a prompt to the manager.
      * @param InPrompt The prompt to add
-     * @return The added prompt. If a prompt with the same name already exists, returns the existing
-     * prompt.
+     * @return True if the prompt was added, false if a prompt with the same name already exists
      */
-    Prompt AddPrompt(const Prompt& InPrompt);
+    bool AddPrompt(const Prompt& InPrompt);
 
     /**
      * Remove a prompt from the manager.
      * @param InPrompt The prompt to remove
+     * @return True if the prompt was removed, false if the prompt does not exist
      */
-    void RemovePrompt(const Prompt& InPrompt);
+    bool RemovePrompt(const Prompt& InPrompt);
 
     /**
      * Get prompt by name.
      * @param InName The name of the prompt to retrieve
-     * @return The prompt if found, nullopt otherwise
+     * @param InArguments The arguments to use for templating the prompt
+     * @return The prompt if found, nullopt if the prompt does not exist or the arguments are
+     * invalid
      */
-    std::optional<Prompt> GetPrompt(const std::string& InName) const;
+    std::optional<std::vector<PromptMessage>>
+    GetPrompt(const std::string& InName,
+              const std::optional<std::vector<PromptArgument>>& InArguments) const;
 
     /**
      * List all registered prompts.
@@ -58,9 +65,9 @@ class PromptManager {
     bool HasPrompt(const std::string& InName) const;
 
   private:
-    std::unordered_map<std::string, Prompt> m_Prompts;
+    std::map<Prompt, PromptFunction> m_Prompts;
     bool m_WarnOnDuplicatePrompts;
-    mutable std::mutex m_PromptsMutex;
+    mutable std::mutex m_Mutex;
 };
 
 MCP_NAMESPACE_END

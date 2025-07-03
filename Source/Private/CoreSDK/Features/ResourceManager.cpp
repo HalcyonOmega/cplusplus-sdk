@@ -12,7 +12,7 @@ MCP_NAMESPACE_BEGIN
 ResourceManager::ResourceManager(bool InWarnOnDuplicateResources)
     : m_WarnOnDuplicateResources(InWarnOnDuplicateResources) {}
 
-Resource ResourceManager::AddResource(const Resource& InResource) {
+bool ResourceManager::AddResource(const Resource& InResource) {
     const MCP::URI& URI = InResource.URI;
     // Log the addition attempt
     Logger::Debug("Adding resource - URI: " + URI.toString() + ", Name: " + InResource.Name);
@@ -23,15 +23,27 @@ Resource ResourceManager::AddResource(const Resource& InResource) {
         if (m_WarnOnDuplicateResources) {
             Logger::Warning("Resource already exists: " + URI.toString());
         }
-        return ExistingIt->second;
+        return false;
     }
 
     m_Resources[URI] = InResource;
-    return InResource;
+    return true;
 }
 
-ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate,
-                                              ResourceFunction InFunction) {
+bool ResourceManager::RemoveResource(const Resource& InResource) {
+    std::lock_guard<std::mutex> Lock(m_Mutex);
+
+    const auto ExistingIt = m_Resources.find(InResource.URI);
+    if (ExistingIt == m_Resources.end()) {
+        Logger::Warning("Resource does not exist: " + InResource.URI.toString());
+        return false;
+    }
+
+    m_Resources.erase(ExistingIt);
+    return true;
+}
+
+bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, ResourceFunction InFunction) {
     // Validate URI template
     if (InTemplate.URITemplate.ToString().empty()) {
         throw std::invalid_argument("URI template cannot be empty");
@@ -46,7 +58,7 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
             Logger::Warning("Resource template already exists: "
                             + InTemplate.URITemplate.ToString());
         }
-        return ExistingIt->second.first;
+        return false;
     }
 
     // Create a copy of the template with the correct URI template
@@ -56,7 +68,18 @@ ResourceTemplate ResourceManager::AddTemplate(const ResourceTemplate& InTemplate
     m_Templates[InTemplate.URITemplate.ToString()] = std::make_pair(Template, InFunction);
 
     Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
-    return Template;
+    return true;
+}
+
+bool ResourceManager::RemoveTemplate(const ResourceTemplate& InTemplate) {
+    const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString());
+    if (ExistingIt == m_Templates.end()) {
+        Logger::Warning("Resource template does not exist: " + InTemplate.URITemplate.ToString());
+        return false;
+    }
+
+    m_Templates.erase(ExistingIt);
+    return true;
 }
 
 std::optional<std::variant<TextResourceContents, BlobResourceContents>>

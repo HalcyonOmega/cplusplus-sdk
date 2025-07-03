@@ -536,7 +536,7 @@ struct ListPromptsResponse : ResponseBase {
 struct GetPromptRequest : RequestBase {
     struct Params : RequestParams {
         std::string Name; // The name of the prompt or prompt template.
-        std::optional<std::unordered_map<std::string, std::string>>
+        std::optional<std::vector<PromptArgument>>
             Arguments; // Arguments to use for templating the prompt.
 
         JKEY(NAMEKEY, Name, "name")
@@ -580,8 +580,8 @@ struct GetPromptRequest : RequestBase {
  */
 struct GetPromptResponse : ResponseBase {
     struct Result : ResultParams {
-        std::optional<std::string> Description; // An optional description for the prompt.
         std::vector<PromptMessage> Messages;    // A list of prompt messages.
+        std::optional<std::string> Description; // An optional description for the prompt.
 
         JKEY(DESCRIPTIONKEY, Description, "description")
         JKEY(MESSAGESKEY, Messages, "messages")

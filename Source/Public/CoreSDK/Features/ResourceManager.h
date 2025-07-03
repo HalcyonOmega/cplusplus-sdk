@@ -36,13 +36,13 @@ class ResourceManager {
      * @return The added resource. If a resource with the same URI already exists, returns the
      * existing resource.
      */
-    Resource AddResource(const Resource& InResource);
+    bool AddResource(const Resource& InResource);
 
     /**
      * Remove a resource from the manager.
      * @param InResource The resource to remove
      */
-    void RemoveResource(const Resource& InResource);
+    bool RemoveResource(const Resource& InResource);
 
     /**
      * Add a template from a function.
@@ -51,13 +51,13 @@ class ResourceManager {
      * @param InTemplate The resource template configuration
      * @return The added resource template
      */
-    ResourceTemplate AddTemplate(const ResourceTemplate& InTemplate, ResourceFunction InFunction);
+    bool AddTemplate(const ResourceTemplate& InTemplate, ResourceFunction InFunction);
 
     /**
      * Remove a template from the manager.
      * @param InTemplate The template to remove
      */
-    void RemoveTemplate(const ResourceTemplate& InTemplate);
+    bool RemoveTemplate(const ResourceTemplate& InTemplate);
 
     /**
      * Get resource content by URI, checking concrete resources first, then templates.

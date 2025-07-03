@@ -45,30 +45,25 @@ class ToolManager {
                          const std::map<Tool, ToolFunction>& InTools = {});
 
     /**
-     * Get tool by name.
-     * @param InName The name of the tool to retrieve
-     * @return The tool if found, nullopt otherwise
-     */
-    std::optional<Tool> GetTool(const std::string& InName) const;
-
-    /**
-     * List all registered tools.
-     * @return Vector containing all registered tools
-     */
-    std::vector<Tool> ListTools() const;
-
-    /**
      * Add a tool (tool must have Handler member set).
      * @param InTool The tool configuration with handler
-     * @return The added tool. If a tool with the same name exists, returns the existing tool.
+     * @return True if the tool was added, false if a tool with the same name already exists
      */
     bool AddTool(const Tool& InTool, const ToolFunction& InFunction);
 
     /**
      * Remove a tool.
      * @param InTool The tool to remove
+     * @return True if the tool was removed, false if the tool does not exist
      */
     bool RemoveTool(const Tool& InTool);
+
+    /**
+     * Get tool by name.
+     * @param InName The name of the tool to retrieve
+     * @return The tool if found, nullopt otherwise
+     */
+    std::optional<Tool> GetTool(const std::string& InName) const;
 
     /**
      * Call a tool by name with arguments.
@@ -81,6 +76,12 @@ class ToolManager {
     MCPTask<CallToolResponse::Result> CallTool(const Tool& InTool, const JSONData& InArguments,
                                                MCPContext* InContext = nullptr,
                                                bool InConvertResult = false);
+
+    /**
+     * List all registered tools.
+     * @return Vector containing all registered tools
+     */
+    std::vector<Tool> ListTools() const;
 
     /**
      * Check if a tool with the given name exists.

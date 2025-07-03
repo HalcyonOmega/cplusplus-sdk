@@ -125,22 +125,24 @@ void MCPServer::Notify_Initialized() {
     SendNotification(InitializedNotification());
 }
 
-void MCPServer::AddTool(const Tool& InTool) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot add tools while server is running");
-        return;
+bool MCPServer::AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction) {
+    if (!m_ToolManager->AddTool(InTool, InFunction)) {
+        HandleRuntimeError("Failed to add tool: " + InTool.Name);
+        return false;
     }
 
-    m_ToolManager->AddTool(InTool);
+    Notify_ToolListChanged();
+    return true;
 }
 
-void MCPServer::RemoveTool(const Tool& InTool) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot remove tools while server is running");
-        return;
+bool MCPServer::RemoveTool(const Tool& InTool) {
+    if (!m_ToolManager->RemoveTool(InTool)) {
+        HandleRuntimeError("Failed to remove tool: " + InTool.Name);
+        return false;
     }
 
-    m_ToolManager->RemoveTool(InTool);
+    Notify_ToolListChanged();
+    return true;
 }
 
 MCPTask_Void MCPServer::Notify_ToolListChanged() {
@@ -183,22 +185,24 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest) {
     }
 }
 
-void MCPServer::AddPrompt(const Prompt& InPrompt) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot add prompts while server is running");
-        return;
+bool MCPServer::AddPrompt(const Prompt& InPrompt) {
+    if (!m_PromptManager->AddPrompt(InPrompt)) {
+        HandleRuntimeError("Failed to add prompt: " + InPrompt.Name);
+        return false;
     }
 
-    m_PromptManager->AddPrompt(InPrompt);
+    Notify_PromptListChanged();
+    return true;
 }
 
-void MCPServer::RemovePrompt(const Prompt& InPrompt) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot remove prompts while server is running");
-        return;
+bool MCPServer::RemovePrompt(const Prompt& InPrompt) {
+    if (!m_PromptManager->RemovePrompt(InPrompt)) {
+        HandleRuntimeError("Failed to remove prompt: " + InPrompt.Name);
+        return false;
     }
 
-    m_PromptManager->RemovePrompt(InPrompt);
+    Notify_PromptListChanged();
+    return true;
 }
 
 MCPTask_Void MCPServer::Notify_PromptListChanged() {
@@ -228,7 +232,7 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest) {
             GetRequestParams<GetPromptRequest::Params>(InRequest).value();
 
         // Use PromptManager to get the prompt
-        auto Result = m_PromptManager->GetPromptSync(Request.Name, Request.Arguments);
+        auto Result = m_PromptManager->GetPrompt(Request.Name, Request.Arguments);
 
         GetPromptResponse::Result ResponseResult;
         ResponseResult.Description = Result.Description;
@@ -242,40 +246,45 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest) {
     }
 }
 
-void MCPServer::AddResource(const Resource& InResource) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot add resources while server is running");
-        return;
+bool MCPServer::AddResource(const Resource& InResource) {
+    if (!m_ResourceManager->AddResource(InResource)) {
+        HandleRuntimeError("Failed to add resource: " + InResource.URI.toString());
+        return false;
     }
 
-    m_ResourceManager->AddResource(InResource);
+    Notify_ResourceListChanged();
+    return true;
 }
 
-void MCPServer::AddResourceTemplate(const ResourceTemplate& InTemplate) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot add resource templates while server is running");
-        return;
+bool MCPServer::AddResourceTemplate(const ResourceTemplate& InTemplate,
+                                    const ResourceManager::ResourceFunction& InFunction) {
+    if (!m_ResourceManager->AddTemplate(InTemplate, InFunction)) {
+        HandleRuntimeError("Failed to add resource template: " + InTemplate.Name);
+        return false;
     }
 
-    m_ResourceManager->AddTemplate(InTemplate);
+    Notify_ResourceListChanged();
+    return true;
 }
 
-void MCPServer::RemoveResource(const Resource& InResource) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot remove resources while server is running");
-        return;
+bool MCPServer::RemoveResource(const Resource& InResource) {
+    if (!m_ResourceManager->RemoveResource(InResource)) {
+        HandleRuntimeError("Failed to remove resource: " + InResource.URI.toString());
+        return false;
     }
 
-    m_ResourceManager->RemoveResource(InResource);
+    Notify_ResourceListChanged();
+    return true;
 }
 
-void MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot remove resource templates while server is running");
-        return;
+bool MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate) {
+    if (!m_ResourceManager->RemoveTemplate(InTemplate)) {
+        HandleRuntimeError("Failed to remove resource template: " + InTemplate.Name);
+        return false;
     }
 
-    m_ResourceManager->RemoveTemplate(InTemplate);
+    Notify_ResourceListChanged();
+    return true;
 }
 
 MCPTask_Void MCPServer::Notify_ResourceListChanged() {
@@ -381,22 +390,24 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
     }
 }
 
-void MCPServer::AddRoot(const Root& InRoot) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot add roots while server is running");
-        return;
+bool MCPServer::AddRoot(const Root& InRoot) {
+    if (!m_RootManager->AddRoot(InRoot)) {
+        HandleRuntimeError("Failed to add root: " + InRoot.Name);
+        return false;
     }
 
-    m_RootManager->AddRoot(InRoot);
+    Notify_RootsListChanged();
+    return true;
 }
 
-void MCPServer::RemoveRoot(const Root& InRoot) {
-    if (m_IsRunning) {
-        HandleRuntimeError("Cannot remove roots while server is running");
-        return;
+bool MCPServer::RemoveRoot(const Root& InRoot) {
+    if (!m_RootManager->RemoveRoot(InRoot)) {
+        HandleRuntimeError("Failed to remove root: " + InRoot.Name);
+        return false;
     }
 
-    m_RootManager->RemoveRoot(InRoot);
+    Notify_RootsListChanged();
+    return true;
 }
 
 MCPTask_Void MCPServer::Notify_RootsListChanged() {
