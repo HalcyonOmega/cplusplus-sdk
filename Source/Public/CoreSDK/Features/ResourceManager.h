@@ -52,7 +52,7 @@ public:
 	 * @param InTemplate The resource template configuration
 	 * @return The added resource template
 	 */
-	bool AddTemplate(const ResourceTemplate& InTemplate, ResourceFunction InFunction);
+	bool AddTemplate(const ResourceTemplate& InTemplate, const ResourceFunction& InFunction);
 
 	/**
 	 * Remove a template from the manager.

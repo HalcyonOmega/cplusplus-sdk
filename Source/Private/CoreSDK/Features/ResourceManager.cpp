@@ -49,7 +49,7 @@ bool ResourceManager::RemoveResource(const Resource& InResource)
 	return true;
 }
 
-bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, ResourceFunction InFunction)
+bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, const ResourceFunction& InFunction)
 {
 	// Validate URI template
 	if (InTemplate.URITemplate.ToString().empty())
@@ -152,7 +152,7 @@ ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequ
 	};
 }
 
-std::vector<ResourceTemplate> ResourceManager::ListTemplates() const
+ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const PaginatedRequestParams& InRequest) const
 {
 	Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
 
@@ -165,7 +165,10 @@ std::vector<ResourceTemplate> ResourceManager::ListTemplates() const
 		Result.push_back(TemplatePair.first);
 	}
 
-	return Result;
+	return ListResourceTemplatesResponse::Result{
+		.Templates = Result,
+		.NextCursor = InRequest.NextCursor,
+	};
 }
 
 bool ResourceManager::HasResource(const MCP::URI& InURI) const
@@ -185,7 +188,7 @@ std::optional<std::unordered_map<std::string, std::string>> ResourceManager::Mat
 	const std::string URIString = InURI.toString();
 
 	// Convert URI template to regex pattern
-	std::string Pattern = TemplateString;
+	const std::string& Pattern = TemplateString;
 	std::regex VariableRegex(R"(\{([^}]+)\})");
 	std::smatch Match;
 	std::unordered_map<std::string, std::string> Parameters;
@@ -228,10 +231,10 @@ std::optional<std::unordered_map<std::string, std::string>> ResourceManager::Mat
 			return Parameters;
 		}
 	}
-	catch (const std::regex_error& e)
+	catch (const std::regex_error& Except)
 	{
 		// Regex compilation failed, log the error
-		Logger::Error("Regex error in MatchTemplate: " + std::string(e.what()));
+		Logger::Error("Regex error in MatchTemplate: " + std::string(Except.what()));
 		return std::nullopt;
 	}
 

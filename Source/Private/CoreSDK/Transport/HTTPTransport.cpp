@@ -74,10 +74,10 @@ MCPTask_Void HTTPTransportClient::Disconnect()
 		Cleanup();
 		SetState(TransportState::Disconnected);
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
 		SetState(TransportState::Error);
-		HandleRuntimeError("Error stopping HTTP transport: " + std::string(e.what()));
+		HandleRuntimeError("Error stopping HTTP transport: " + std::string(Except.what()));
 	}
 
 	co_return;
@@ -102,26 +102,26 @@ MCPTask_Void HTTPTransportClient::ConnectToServer()
 		m_HTTPSession->setTimeout(m_Options.ConnectTimeout);
 
 		// Test connection with a ping
-		Poco::Net::HTTPRequest request(
+		Poco::Net::HTTPRequest Request(
 			Poco::Net::HTTPRequest::HTTP_POST, m_Options.Path, Poco::Net::HTTPMessage::HTTP_1_1);
-		request.setContentType("application/json");
-		request.set("Accept", "text/event-stream");
+		Request.setContentType("application/json");
+		Request.set("Accept", "text/event-stream");
 
 		// TODO: @HalcyonOmega Update this to use the actual ping type
-		JSONData pingMessage = { { "jsonrpc", "2.0" }, { "method", "ping" }, { "id", "connection_test" } };
+		JSONData PingMessage = { { "jsonrpc", "2.0" }, { "method", "ping" }, { "id", "connection_test" } };
 
-		std::string body = pingMessage.dump();
-		request.setContentLength(body.length());
+		std::string Body = PingMessage.dump();
+		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
 
-		std::ostream& requestStream = m_HTTPSession->sendRequest(request);
-		requestStream << body;
+		std::ostream& RequestStream = m_HTTPSession->sendRequest(Request);
+		RequestStream << Body;
 
-		Poco::Net::HTTPResponse response;
-		std::istream& responseStream = m_HTTPSession->receiveResponse(response);
+		Poco::Net::HTTPResponse Response;
+		std::istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
 
-		if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+		if (Response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
 		{
-			HandleRuntimeError("Server connection failed: " + response.getReason());
+			HandleRuntimeError("Server connection failed: " + Response.getReason());
 			co_return;
 		}
 
@@ -158,7 +158,7 @@ MCPTask_Void HTTPTransportClient::TransmitMessage(
 		Request.setContentType("application/json");
 
 		std::string Body = InMessage.dump();
-		Request.setContentLength(Body.length());
+		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
 
 		std::ostream& RequestStream = m_HTTPSession->sendRequest(Request);
 		RequestStream << Body;
@@ -420,13 +420,13 @@ void HTTPTransportServer::HandleHTTPRequest(
 			InResponse.set("Access-Control-Allow-Headers", "Content-Type");
 			InResponse.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 
-			std::string clientID = GenerateUUID();
-			RegisterSSEClient(clientID, InResponse);
+			std::string ClientID = GenerateUUID();
+			RegisterSSEClient(ClientID, InResponse);
 
 			// Send initial connection event
-			std::ostream& responseStream = InResponse.send();
-			responseStream << "data: {\"type\":\"connection_established\",\"clientId\":\"" << clientID << "\"}\n\n";
-			responseStream.flush();
+			std::ostream& ResponseStream = InResponse.send();
+			ResponseStream << "data: {\"type\":\"connection_established\",\"clientId\":\"" << ClientID << "\"}\n\n";
+			ResponseStream.flush();
 
 			// Keep connection alive until client disconnects
 			while (true)
@@ -434,8 +434,8 @@ void HTTPTransportServer::HandleHTTPRequest(
 				{
 					std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
-					auto it = m_SSEClients.find(clientID);
-					if (it == m_SSEClients.end() || !it->second->IsActive)
+					auto Iter = m_SSEClients.find(ClientID);
+					if (Iter == m_SSEClients.end() || !Iter->second->IsActive)
 					{
 						break;
 					}
@@ -443,7 +443,7 @@ void HTTPTransportServer::HandleHTTPRequest(
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 		}
-		else if (path == m_Options.Path + "/events")
+		else if (Path == m_Options.Path + "/events")
 		{
 			// Legacy SSE endpoint (kept for backwards compatibility)
 			InResponse.setContentType("text/event-stream");
@@ -451,20 +451,20 @@ void HTTPTransportServer::HandleHTTPRequest(
 			InResponse.set("Connection", "keep-alive");
 			InResponse.set("Access-Control-Allow-Origin", "*");
 
-			std::string clientID = GenerateUUID();
-			RegisterSSEClient(clientID, InResponse);
+			std::string ClientID = GenerateUUID();
+			RegisterSSEClient(ClientID, InResponse);
 
 			// Keep connection alive
-			std::ostream& responseStream = InResponse.send();
-			responseStream << "data: {\"type\":\"connection_established\"}\n\n";
-			responseStream.flush();
+			std::ostream& ResponseStream = InResponse.send();
+			ResponseStream << "data: {\"type\":\"connection_established\"}\n\n";
+			ResponseStream.flush();
 
 			// Wait until client disconnects
 			while (true)
 			{
 				std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
-				auto Iterator = m_SSEClients.find(clientID);
+				auto Iterator = m_SSEClients.find(ClientID);
 				if (Iterator == m_SSEClients.end() || !Iterator->second->IsActive)
 				{
 					break;

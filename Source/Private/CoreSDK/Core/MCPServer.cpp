@@ -32,9 +32,9 @@ MCPTask_Void MCPServer::Start()
 		// Server doesn't need to call Initialize - it responds to client
 		// initialization
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
-		HandleRuntimeError("Failed to start server: " + std::string(e.what()));
+		HandleRuntimeError("Failed to start server: " + std::string(Except.what()));
 		co_return;
 	}
 
@@ -54,9 +54,9 @@ MCPTask_Void MCPServer::Stop()
 		co_await m_Transport->Disconnect();
 		m_IsRunning = false;
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
-		HandleRuntimeError("Failed to stop server: " + std::string(e.what()));
+		HandleRuntimeError("Failed to stop server: " + std::string(Except.what()));
 		co_return;
 	}
 
@@ -147,9 +147,10 @@ void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest)
 
 		SendResponse(ListToolsResponse(InRequest.GetRequestID(), Result));
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
-		SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, e.what())));
+		SendErrorResponse(
+			ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -337,7 +338,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 	{
 		SubscribeRequest::Params Request = GetRequestParams<SubscribeRequest::Params>(InRequest).value();
 
-		std::string_view clientID = GetCurrentClientID();
+		std::string_view ClientID = GetCurrentClientID();
 
 		// Validate resource exists
 		if (!m_ResourceManager->HasResource(Request.URI))
@@ -350,8 +351,8 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 
 		// Add subscription with proper client tracking
 		{
-			std::lock_guard<std::mutex> lock(m_ResourceSubscriptionsMutex);
-			m_ResourceSubscriptions[Request.URI.toString()].emplace_back(clientID);
+			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
+			m_ResourceSubscriptions[Request.URI.toString()].emplace_back(ClientID);
 		}
 
 		// Send empty response to indicate success
@@ -370,20 +371,20 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 	{
 		UnsubscribeRequest::Params Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest).value();
 
-		std::string_view clientID = GetCurrentClientID();
+		std::string_view ClientID = GetCurrentClientID();
 
 		// Remove from subscriptions
 		{
-			std::lock_guard<std::mutex> lock(m_ResourceSubscriptionsMutex);
-			auto iter = m_ResourceSubscriptions.find(Request.URI.toString());
-			if (iter != m_ResourceSubscriptions.end())
+			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
+			auto Iter = m_ResourceSubscriptions.find(Request.URI.toString());
+			if (Iter != m_ResourceSubscriptions.end())
 			{
-				auto& Subscribers = iter->second;
-				std::erase(Subscribers, std::string(clientID));
+				auto& Subscribers = Iter->second;
+				std::erase(Subscribers, std::string(ClientID));
 				// Clean up empty subscription sets
 				if (Subscribers.empty())
 				{
-					m_ResourceSubscriptions.erase(iter);
+					m_ResourceSubscriptions.erase(Iter);
 				}
 			}
 		}
