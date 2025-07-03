@@ -35,6 +35,10 @@ class HTTPTransportClient : public ITransport,
 public:
 	explicit HTTPTransportClient(const HTTPTransportOptions& InOptions);
 	~HTTPTransportClient() noexcept override;
+	HTTPTransportClient(const HTTPTransportClient&) noexcept = delete;
+	HTTPTransportClient(HTTPTransportClient&&) noexcept = delete;
+	HTTPTransportClient& operator=(const HTTPTransportClient&) noexcept = delete;
+	HTTPTransportClient& operator=(HTTPTransportClient&&) noexcept = delete;
 
 	// ITransport interface
 	MCPTask_Void Connect() override;

@@ -27,7 +27,9 @@ Diagnostics:
       - "performance-*"
       - "cppcoreguidelines-*"
     Remove:
-      - "modernize-use-trailing-return-type" 
+      - "modernize-use-trailing-return-type"
+      - "cppcoreguidelines-pro-bounds-pointer-arithmetic"
+      - "cppcoreguidelines-macro-usage"
     CheckOptions:
       # Classes, Structs, Enums - PascalCase
       readability-identifier-naming.ClassCase: CamelCase
@@ -46,7 +48,13 @@ Diagnostics:
       readability-identifier-naming.ParameterCase: CamelCase
       readability-identifier-naming.MemberCase: CamelCase
       readability-identifier-naming.StaticVariableCase: CamelCase
+      readability-identifier-naming.StaticVariablePrefix: s_
       readability-identifier-naming.GlobalVariableCase: CamelCase
+      readability-identifier-naming.GlobalVariablePrefix: g_
+      readability-identifier-naming.PrivateMemberCase: CamelCase
+      readability-identifier-naming.PrivateMemberPrefix: m_
+      readability-identifier-naming.ProtectedMemberCase: CamelCase
+      readability-identifier-naming.ProtectedMemberPrefix: m_
 
   # Constants - UPPER_CASE for non-acronym constants
       readability-identifier-naming.ConstantCase: UPPER_CASE

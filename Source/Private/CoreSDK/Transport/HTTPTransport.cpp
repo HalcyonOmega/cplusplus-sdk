@@ -13,7 +13,7 @@ MCP_NAMESPACE_BEGIN
 
 HTTPTransportClient::HTTPTransportClient(const HTTPTransportOptions& InOptions) : m_Options(InOptions) {}
 
-HTTPTransportClient::~HTTPTransportClient()
+HTTPTransportClient::~HTTPTransportClient() noexcept
 {
 	if (GetState() != TransportState::Disconnected)
 	{
@@ -85,8 +85,8 @@ MCPTask_Void HTTPTransportClient::Disconnect()
 
 std::string HTTPTransportClient::GetConnectionInfo() const
 {
-	std::string protocol = m_Options.UseHTTPS ? "https" : "http";
-	return protocol + "://" + m_Options.Host + ":" + std::to_string(m_Options.Port) + m_Options.Path;
+	std::string Protocol = m_Options.UseHTTPS ? "https" : "http";
+	return Protocol + "://" + m_Options.Host + ":" + std::to_string(m_Options.Port) + m_Options.Path;
 }
 
 void HTTPTransportClient::run() { StartSSEConnection(); }
@@ -151,30 +151,31 @@ MCPTask_Void HTTPTransportClient::TransmitMessage(
 
 	try
 	{
-		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+		std::lock_guard<std::mutex> Lock(m_ConnectionMutex);
 
-		Poco::Net::HTTPRequest request(
+		Poco::Net::HTTPRequest Request(
 			Poco::Net::HTTPRequest::HTTP_POST, m_Options.Path, Poco::Net::HTTPMessage::HTTP_1_1);
-		request.setContentType("application/json");
+		Request.setContentType("application/json");
 
-		std::string body = InMessage.dump();
-		request.setContentLength(body.length());
+		std::string Body = InMessage.dump();
+		Request.setContentLength(Body.length());
 
-		std::ostream& requestStream = m_HTTPSession->sendRequest(request);
-		requestStream << body;
+		std::ostream& RequestStream = m_HTTPSession->sendRequest(Request);
+		RequestStream << Body;
 
-		Poco::Net::HTTPResponse response;
-		std::istream& responseStream = m_HTTPSession->receiveResponse(response);
+		Poco::Net::HTTPResponse Response;
+		std::istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
+		(void)ResponseStream;
 
-		if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+		if (Response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
 		{
-			HandleRuntimeError("HTTP request failed: " + response.getReason());
+			HandleRuntimeError("HTTP request failed: " + Response.getReason());
 			co_return;
 		}
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
-		HandleRuntimeError("Error sending HTTP message: " + std::string(e.what()));
+		HandleRuntimeError("Error sending HTTP message: " + std::string(Except.what()));
 		co_return;
 	}
 
@@ -186,40 +187,40 @@ void HTTPTransportClient::StartSSEConnection()
 	try
 	{
 		// Create separate session for SSE
-		auto sseSession = std::make_unique<Poco::Net::HTTPClientSession>(m_Options.Host, m_Options.Port);
+		auto SSESession = std::make_unique<Poco::Net::HTTPClientSession>(m_Options.Host, m_Options.Port);
 
-		Poco::Net::HTTPRequest request(
+		Poco::Net::HTTPRequest Request(
 			Poco::Net::HTTPRequest::HTTP_GET, m_Options.Path + "/events", Poco::Net::HTTPMessage::HTTP_1_1);
-		request.set("Accept", "text/event-stream");
-		request.set("Cache-Control", "no-cache");
+		Request.set("Accept", "text/event-stream");
+		Request.set("Cache-Control", "no-cache");
 
-		std::ostream& requestStream = sseSession->sendRequest(request);
-		(void)requestStream;
+		std::ostream& RequestStream = SSESession->sendRequest(Request);
+		(void)RequestStream;
 
-		Poco::Net::HTTPResponse response;
-		m_SSEStream = std::unique_ptr<std::istream>(&sseSession->receiveResponse(response));
+		Poco::Net::HTTPResponse Response;
+		m_SSEStream = std::unique_ptr<std::istream>(&SSESession->receiveResponse(Response));
 
-		if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+		if (Response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
 		{
-			HandleRuntimeError("SSE connection failed: " + response.getReason());
+			HandleRuntimeError("SSE connection failed: " + Response.getReason());
 			return;
 		}
 
 		// Process SSE events
-		std::string line;
-		while (!m_ShouldStop && std::getline(*m_SSEStream, line))
+		std::string Line;
+		while (!m_ShouldStop && std::getline(*m_SSEStream, Line))
 		{
-			if (!line.empty())
+			if (!Line.empty())
 			{
-				ProcessSSELine(line);
+				ProcessSSELine(Line);
 			}
 		}
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
 		if (!m_ShouldStop)
 		{
-			HandleRuntimeError("SSE connection error: " + std::string(e.what()));
+			HandleRuntimeError("SSE connection error: " + std::string(Except.what()));
 		}
 	}
 }
@@ -231,20 +232,20 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine)
 		// SSE format: "data: <json>\n"
 		if (InLine.substr(0, 6) == "data: ")
 		{
-			std::string jsonData = InLine.substr(6);
-			auto message = JSONData::parse(jsonData);
+			std::string JSONData = InLine.substr(6);
+			auto Message = JSONData::parse(JSONData);
 
-			if (!IsValidJSONRPC(message))
+			if (!IsValidJSONRPC(Message))
 			{
 				HandleRuntimeError("Invalid JSON-RPC message received via SSE");
 				return;
 			}
-			CallMessageRouter(message);
+			CallMessageRouter(Message);
 		}
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
-		HandleRuntimeError("Error processing SSE line: " + std::string(e.what()));
+		HandleRuntimeError("Error processing SSE line: " + std::string(Except.what()));
 	}
 }
 
@@ -258,7 +259,7 @@ void HTTPTransportClient::Cleanup()
 
 	// Clear pending requests
 	{
-		std::lock_guard<std::mutex> lock(m_RequestsMutex);
+		std::lock_guard<std::mutex> Lock(m_RequestsMutex);
 		for (auto& [id, request] : m_PendingRequests)
 		{
 			request->Promise.set_exception(std::make_exception_ptr(std::runtime_error("Transport closed")));
@@ -271,9 +272,9 @@ void HTTPTransportClient::Cleanup()
 MCPHTTPRequestHandler::MCPHTTPRequestHandler(HTTPTransportServer* InServer) : m_Server(InServer) {}
 
 void MCPHTTPRequestHandler::handleRequest(
-	Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
+	Poco::Net::HTTPServerRequest& Request, Poco::Net::HTTPServerResponse& Response)
 {
-	m_Server->HandleHTTPRequest(InRequest, InResponse);
+	m_Server->HandleHTTPRequest(Request, Response);
 }
 
 // MCPHTTPRequestHandlerFactory Implementation
@@ -359,7 +360,7 @@ MCPTask_Void HTTPTransportServer::Disconnect()
 
 		// Close all SSE clients
 		{
-			std::lock_guard<std::mutex> lock(m_ClientsMutex);
+			std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 			for (auto& [id, client] : m_SSEClients)
 			{
 				client->IsActive = false;
@@ -369,7 +370,7 @@ MCPTask_Void HTTPTransportServer::Disconnect()
 
 		// Clear pending requests
 		{
-			std::lock_guard<std::mutex> lock(m_RequestsMutex);
+			std::lock_guard<std::mutex> Lock(m_RequestsMutex);
 			for (auto& [id, request] : m_PendingRequests)
 			{
 				request->Promise.set_exception(std::make_exception_ptr(std::runtime_error("Server stopped")));
@@ -383,10 +384,10 @@ MCPTask_Void HTTPTransportServer::Disconnect()
 
 		SetState(TransportState::Disconnected);
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
 		SetState(TransportState::Error);
-		HandleRuntimeError("Error stopping HTTP server transport: " + std::string(e.what()));
+		HandleRuntimeError("Error stopping HTTP server transport: " + std::string(Except.what()));
 	}
 
 	co_return;
@@ -394,10 +395,10 @@ MCPTask_Void HTTPTransportServer::Disconnect()
 
 std::string HTTPTransportServer::GetConnectionInfo() const
 {
-	std::string protocol = m_Options.UseHTTPS ? "https" : "http";
+	std::string Protocol = m_Options.UseHTTPS ? "https" : "http";
 	// TODO: @HalcyonOmega - Pretty sure spec says you should use 127.0.0.1
 	// instead of 0.0.0.0
-	return protocol + "://0.0.0.0:" + std::to_string(m_Options.Port) + m_Options.Path;
+	return Protocol + "://0.0.0.0:" + std::to_string(m_Options.Port) + m_Options.Path;
 }
 
 void HTTPTransportServer::HandleHTTPRequest(
@@ -405,10 +406,10 @@ void HTTPTransportServer::HandleHTTPRequest(
 {
 	try
 	{
-		std::string path = InRequest.getURI();
-		std::string method = InRequest.getMethod();
+		std::string Path = InRequest.getURI();
+		std::string Method = InRequest.getMethod();
 
-		if (path == "/message" && method == "GET")
+		if (Path == "/message" && Method == "GET")
 		{
 			// MCP StreamableHTTP GET endpoint implementation
 			InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
@@ -431,7 +432,7 @@ void HTTPTransportServer::HandleHTTPRequest(
 			while (true)
 			{
 				{
-					std::lock_guard<std::mutex> lock(m_ClientsMutex);
+					std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
 					auto it = m_SSEClients.find(clientID);
 					if (it == m_SSEClients.end() || !it->second->IsActive)
@@ -461,18 +462,18 @@ void HTTPTransportServer::HandleHTTPRequest(
 			// Wait until client disconnects
 			while (true)
 			{
-				std::lock_guard<std::mutex> lock(m_ClientsMutex);
+				std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
 				auto Iterator = m_SSEClients.find(clientID);
 				if (Iterator == m_SSEClients.end() || !Iterator->second->IsActive)
 				{
 					break;
 				}
-				lock.unlock();
+				Lock.unlock();
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 		}
-		else if (path == m_Options.Path && method == "POST")
+		else if (Path == m_Options.Path && Method == "POST")
 		{
 			// JSON-RPC endpoint
 			InResponse.setContentType("application/json");
@@ -488,7 +489,7 @@ void HTTPTransportServer::HandleHTTPRequest(
 			std::ostream& responseStream = InResponse.send();
 			responseStream << "{\"status\":\"received\"}\n";
 		}
-		else if (method == "OPTIONS")
+		else if (Method == "OPTIONS")
 		{
 			// Handle CORS preflight requests
 			InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
@@ -508,18 +509,18 @@ void HTTPTransportServer::HandleHTTPRequest(
 			responseStream << "404 Not Found\n";
 		}
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
 		InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
 		InResponse.setReason("Internal Server Error");
 		std::ostream& responseStream = InResponse.send();
-		responseStream << "500 Internal Server Error: " << e.what() << "\n";
+		responseStream << "500 Internal Server Error: " << Except.what() << "\n";
 	}
 }
 
 void HTTPTransportServer::RegisterSSEClient(const std::string& InClientID, Poco::Net::HTTPServerResponse& InResponse)
 {
-	std::lock_guard<std::mutex> lock(m_ClientsMutex);
+	std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
 	auto client = std::make_unique<SSEClient>();
 	client->ClientID = InClientID;
@@ -533,42 +534,42 @@ void HTTPTransportServer::RegisterSSEClient(const std::string& InClientID, Poco:
 
 void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID)
 {
-	std::lock_guard<std::mutex> lock(m_ClientsMutex);
+	std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
-	auto it = m_SSEClients.find(InClientID);
-	if (it != m_SSEClients.end())
+	auto It = m_SSEClients.find(InClientID);
+	if (It != m_SSEClients.end())
 	{
-		it->second->IsActive = false;
-		m_SSEClients.erase(it);
+		It->second->IsActive = false;
+		m_SSEClients.erase(It);
 	}
 }
 
 MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 {
-	std::lock_guard<std::mutex> lock(m_ClientsMutex);
+	std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
-	std::string messageStr = "data: " + InMessage.dump() + "\n\n";
+	std::string MessageStr = "data: " + InMessage.dump() + "\n\n";
 
-	auto it = m_SSEClients.begin();
-	while (it != m_SSEClients.end())
+	auto It = m_SSEClients.begin();
+	while (It != m_SSEClients.end())
 	{
 		try
 		{
-			if (it->second->IsActive && (it->second->Stream != nullptr))
+			if (It->second->IsActive && (It->second->Stream != nullptr))
 			{
-				*(it->second->Stream) << messageStr;
-				it->second->Stream->flush();
-				++it;
+				*(It->second->Stream) << MessageStr;
+				It->second->Stream->flush();
+				++It;
 			}
 			else
 			{
-				it = m_SSEClients.erase(it);
+				It = m_SSEClients.erase(It);
 			}
 		}
 		catch (const std::exception&)
 		{
 			// Client disconnected
-			it = m_SSEClients.erase(it);
+			It = m_SSEClients.erase(It);
 		}
 	}
 
@@ -606,9 +607,9 @@ MCPTask_Void HTTPTransportServer::StreamMessagesToClient(const std::string& InCl
 		while (true)
 		{
 			{
-				std::lock_guard<std::mutex> lock(m_ClientsMutex);
-				auto it = m_SSEClients.find(InClientID);
-				if (it == m_SSEClients.end() || !it->second->IsActive)
+				std::lock_guard<std::mutex> Lock(m_ClientsMutex);
+				auto It = m_SSEClients.find(InClientID);
+				if (It == m_SSEClients.end() || !It->second->IsActive)
 				{
 					break;
 				}
@@ -618,7 +619,7 @@ MCPTask_Void HTTPTransportServer::StreamMessagesToClient(const std::string& InCl
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
 		// Client disconnected or error occurred
 		UnregisterSSEClient(InClientID);
