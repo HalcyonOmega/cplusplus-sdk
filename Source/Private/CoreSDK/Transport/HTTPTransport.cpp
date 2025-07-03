@@ -7,7 +7,6 @@
 #include <Poco/URI.h>
 
 #include "CoreSDK/Common/RuntimeError.h"
-#include "CoreSDK/Messages/MessageBase.h"
 #include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN
@@ -139,8 +138,11 @@ MCPTask_Void HTTPTransportClient::ConnectToServer()
 	co_return;
 }
 
-MCPTask_Void HTTPTransportClient::TransmitMessage(const JSONData& InMessage)
+MCPTask_Void HTTPTransportClient::TransmitMessage(
+	const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 {
+	(void)InConnectionIDs;
+
 	if (!m_HTTPSession)
 	{
 		HandleRuntimeError("HTTP session not initialized");
@@ -461,8 +463,8 @@ void HTTPTransportServer::HandleHTTPRequest(
 			{
 				std::lock_guard<std::mutex> lock(m_ClientsMutex);
 
-				auto it = m_SSEClients.find(clientID);
-				if (it == m_SSEClients.end() || !it->second->IsActive)
+				auto Iterator = m_SSEClients.find(clientID);
+				if (Iterator == m_SSEClients.end() || !Iterator->second->IsActive)
 				{
 					break;
 				}
@@ -552,7 +554,7 @@ MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 	{
 		try
 		{
-			if (it->second->IsActive && it->second->Stream)
+			if (it->second->IsActive && (it->second->Stream != nullptr))
 			{
 				*(it->second->Stream) << messageStr;
 				it->second->Stream->flush();

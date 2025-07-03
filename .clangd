@@ -1,9 +1,9 @@
 CompileFlags:
-  # Use compile_commands.json for all flags, but ensure C++20 is used by clangd.
   Remove: 
-    - "-std=*"  # Remove any std flags from compile commands
+    - "-std=*"
   Add:
     - "-std=c++20"
+  Compiler: "clang++"
 
 Index:
   Background: Build
@@ -24,5 +24,43 @@ Diagnostics:
     Add: 
       - "modernize-*"
       - "readability-*"
+      - "performance-*"
+      - "cppcoreguidelines-*"
     Remove:
       - "modernize-use-trailing-return-type" 
+    CheckOptions:
+      # Classes, Structs, Enums - PascalCase
+      readability-identifier-naming.ClassCase: CamelCase
+      readability-identifier-naming.StructCase: CamelCase
+      readability-identifier-naming.EnumCase: CamelCase
+      readability-identifier-naming.UnionCase: CamelCase
+      readability-identifier-naming.TypedefCase: CamelCase
+      readability-identifier-naming.TypeAliasCase: CamelCase
+
+  # Functions and Methods - PascalCase
+      readability-identifier-naming.FunctionCase: CamelCase
+      readability-identifier-naming.MethodCase: CamelCase
+
+  # Variables - PascalCase
+      readability-identifier-naming.VariableCase: CamelCase
+      readability-identifier-naming.ParameterCase: CamelCase
+      readability-identifier-naming.MemberCase: CamelCase
+      readability-identifier-naming.StaticVariableCase: CamelCase
+      readability-identifier-naming.GlobalVariableCase: CamelCase
+
+  # Constants - UPPER_CASE for non-acronym constants
+      readability-identifier-naming.ConstantCase: UPPER_CASE
+      readability-identifier-naming.EnumConstantCase: CamelCase
+      readability-identifier-naming.StaticConstantCase: UPPER_CASE
+      readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+
+  # Namespaces - PascalCase
+      readability-identifier-naming.NamespaceCase: CamelCase
+
+  # Template Parameters - PascalCase
+      readability-identifier-naming.TemplateParameterCase: CamelCase
+
+  # Allow acronym patterns (HTTP, JSON, API, MCP, XML, RPC, JSON_RPC, etc.)
+      readability-identifier-naming.ClassIgnoredRegexp: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+      readability-identifier-naming.FunctionIgnoredRegexp: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+      readability-identifier-naming.VariableIgnoredRegexp: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'

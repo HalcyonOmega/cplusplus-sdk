@@ -29,133 +29,135 @@ class HTTPTransportServer;
 MCP_NAMESPACE_BEGIN
 
 // HTTP Client Transport
-class HTTPTransportClient : public ITransport, public Poco::Runnable {
-  public:
-    explicit HTTPTransportClient(const HTTPTransportOptions& InOptions);
-    ~HTTPTransportClient() noexcept override;
+class HTTPTransportClient : public ITransport,
+							public Poco::Runnable
+{
+public:
+	explicit HTTPTransportClient(const HTTPTransportOptions& InOptions);
+	~HTTPTransportClient() noexcept override;
 
-    // ITransport interface
-    MCPTask_Void Connect() override;
-    MCPTask_Void Disconnect() override;
+	// ITransport interface
+	MCPTask_Void Connect() override;
+	MCPTask_Void Disconnect() override;
 
-    MCPTask_Void TransmitMessage(
-        const JSONData& InMessage,
-        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
-    MCPTask<JSONData> TransmitRequest(
-        const JSONData& InRequest,
-        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	MCPTask_Void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	MCPTask<JSONData> TransmitRequest(const JSONData& InRequest,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
-    [[nodiscard]] std::string GetConnectionInfo() const override;
+	[[nodiscard]] std::string GetConnectionInfo() const override;
 
-  protected:
-    // Poco::Runnable interface for SSE reading
-    void run() override;
+protected:
+	// Poco::Runnable interface for SSE reading
+	void run() override;
 
-  private:
-    MCPTask_Void ConnectToServer();
-    void StartSSEConnection();
-    void ProcessSSELine(const std::string& InLine);
-    void Cleanup();
+private:
+	MCPTask_Void ConnectToServer();
+	void StartSSEConnection();
+	void ProcessSSELine(const std::string& InLine);
+	void Cleanup();
 
-    HTTPTransportOptions m_Options;
-    std::unique_ptr<Poco::Net::HTTPClientSession> m_HTTPSession;
-    std::unique_ptr<std::istream> m_SSEStream;
+	HTTPTransportOptions m_Options;
+	std::unique_ptr<Poco::Net::HTTPClientSession> m_HTTPSession;
+	std::unique_ptr<std::istream> m_SSEStream;
 
-    std::jthread m_SSEThread;
-    std::atomic<bool> m_ShouldStop{false};
-    std::string m_SSEBuffer;
+	std::jthread m_SSEThread;
+	std::atomic<bool> m_ShouldStop{ false };
+	std::string m_SSEBuffer;
 
-    // Response tracking
-    struct PendingRequest {
-        std::string RequestID;
-        std::promise<std::string> Promise;
-        std::chrono::steady_clock::time_point StartTime;
-    };
+	// Response tracking
+	struct PendingRequest
+	{
+		std::string RequestID;
+		std::promise<std::string> Promise;
+		std::chrono::steady_clock::time_point StartTime;
+	};
 
-    std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable std::mutex m_RequestsMutex;
-    mutable std::mutex m_ConnectionMutex;
+	std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
+	mutable std::mutex m_RequestsMutex;
+	mutable std::mutex m_ConnectionMutex;
 };
 
 // HTTP Server Transport Request Handler
-class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler {
-  public:
-    explicit MCPHTTPRequestHandler(HTTPTransportServer* InServer);
-    ~MCPHTTPRequestHandler() noexcept override;
-    void handleRequest(Poco::Net::HTTPServerRequest& InRequest,
-                       Poco::Net::HTTPServerResponse& InResponse) override;
+class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler
+{
+public:
+	explicit MCPHTTPRequestHandler(HTTPTransportServer* InServer);
+	~MCPHTTPRequestHandler() noexcept override;
+	void handleRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse) override;
 
-  private:
-    HTTPTransportServer* m_Server;
+private:
+	HTTPTransportServer* m_Server;
 };
 
 // HTTP Server Transport Request Handler Factory
-class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerFactory {
-  public:
-    explicit MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer);
-    ~MCPHTTPRequestHandlerFactory() noexcept override;
-    [[nodiscard]] Poco::Net::HTTPRequestHandler*
-    createRequestHandler(const Poco::Net::HTTPServerRequest& InRequest) override;
+class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerFactory
+{
+public:
+	explicit MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer);
+	~MCPHTTPRequestHandlerFactory() noexcept override;
+	[[nodiscard]] Poco::Net::HTTPRequestHandler* createRequestHandler(
+		const Poco::Net::HTTPServerRequest& InRequest) override;
 
-  private:
-    HTTPTransportServer* m_Server;
+private:
+	HTTPTransportServer* m_Server;
 };
 
 // HTTP Server Transport
-class HTTPTransportServer : public ITransport {
-  public:
-    explicit HTTPTransportServer(const HTTPTransportOptions& InOptions);
-    ~HTTPTransportServer() noexcept override;
+class HTTPTransportServer : public ITransport
+{
+public:
+	explicit HTTPTransportServer(const HTTPTransportOptions& InOptions);
+	~HTTPTransportServer() noexcept override;
 
-    // ITransport interface
-    MCPTask_Void Connect() override;
-    MCPTask_Void Disconnect() override;
+	// ITransport interface
+	MCPTask_Void Connect() override;
+	MCPTask_Void Disconnect() override;
 
-    MCPTask_Void TransmitMessage(
-        const JSONData& InMessage,
-        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	MCPTask_Void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
-    [[nodiscard]] std::string GetConnectionInfo() const override;
+	[[nodiscard]] std::string GetConnectionInfo() const override;
 
-    // Server-specific methods
-    void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest,
-                           Poco::Net::HTTPServerResponse& InResponse);
-    MCPTask_Void HandleGetMessageEndpoint(Poco::Net::HTTPServerRequest& InRequest,
-                                          Poco::Net::HTTPServerResponse& InResponse);
-    void RegisterSSEClient(const std::string& InClientID,
-                           Poco::Net::HTTPServerResponse& InResponse);
-    void UnregisterSSEClient(const std::string& InClientID);
-    MCPTask_Void StreamMessagesToClient(const std::string& InClientID);
+	// Server-specific methods
+	void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
+	MCPTask_Void HandleGetMessageEndpoint(
+		Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
+	void RegisterSSEClient(const std::string& InClientID, Poco::Net::HTTPServerResponse& InResponse);
+	void UnregisterSSEClient(const std::string& InClientID);
+	MCPTask_Void StreamMessagesToClient(const std::string& InClientID);
 
-  private:
-    void ProcessReceivedMessage(const std::string& InMessage);
+private:
+	void ProcessReceivedMessage(const std::string& InMessage);
 
-    HTTPTransportOptions m_Options;
-    std::unique_ptr<Poco::Net::HTTPServer> m_HTTPServer;
-    std::unique_ptr<Poco::Net::ServerSocket> m_ServerSocket;
-    std::unique_ptr<MCPHTTPRequestHandlerFactory> m_HandlerFactory;
+	HTTPTransportOptions m_Options;
+	std::unique_ptr<Poco::Net::HTTPServer> m_HTTPServer;
+	std::unique_ptr<Poco::Net::ServerSocket> m_ServerSocket;
+	std::unique_ptr<MCPHTTPRequestHandlerFactory> m_HandlerFactory;
 
-    // SSE client management
-    struct SSEClient {
-        std::string ClientID;
-        Poco::Net::HTTPServerResponse* Response;
-        std::ostream* Stream;
-        std::chrono::steady_clock::time_point ConnectedTime;
-        bool IsActive;
-    };
+	// SSE client management
+	struct SSEClient
+	{
+		std::string ClientID;
+		Poco::Net::HTTPServerResponse* Response;
+		std::ostream* Stream;
+		std::chrono::steady_clock::time_point ConnectedTime;
+		bool IsActive;
+	};
 
-    std::unordered_map<std::string, std::unique_ptr<SSEClient>> m_SSEClients;
-    mutable std::mutex m_ClientsMutex;
+	std::unordered_map<std::string, std::unique_ptr<SSEClient>> m_SSEClients;
+	mutable std::mutex m_ClientsMutex;
 
-    // Response tracking
-    struct PendingRequest {
-        std::string RequestID;
-        std::promise<std::string> Promise;
-        std::chrono::steady_clock::time_point StartTime;
-    };
+	// Response tracking
+	struct PendingRequest
+	{
+		std::string RequestID;
+		std::promise<std::string> Promise;
+		std::chrono::steady_clock::time_point StartTime;
+	};
 
-    std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable std::mutex m_RequestsMutex;
+	std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
+	mutable std::mutex m_RequestsMutex;
 };
 
 MCP_NAMESPACE_END
