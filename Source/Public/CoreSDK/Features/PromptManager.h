@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 #include "PromptBase.h"
 
 MCP_NAMESPACE_BEGIN
@@ -18,7 +19,7 @@ MCP_NAMESPACE_BEGIN
 class PromptManager {
   public:
     using PromptFunction =
-        std::function<std::vector<PromptMessage>(const std::vector<PromptArgument>&)>;
+        std::function<std::vector<PromptMessage>(std::optional<std::vector<PromptArgument>>)>;
 
     /**
      * Constructor
@@ -31,7 +32,7 @@ class PromptManager {
      * @param InPrompt The prompt to add
      * @return True if the prompt was added, false if a prompt with the same name already exists
      */
-    bool AddPrompt(const Prompt& InPrompt);
+    bool AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction);
 
     /**
      * Remove a prompt from the manager.
@@ -47,9 +48,7 @@ class PromptManager {
      * @return The prompt if found, nullopt if the prompt does not exist or the arguments are
      * invalid
      */
-    std::optional<std::vector<PromptMessage>>
-    GetPrompt(const std::string& InName,
-              const std::optional<std::vector<PromptArgument>>& InArguments) const;
+    GetPromptResponse::Result GetPrompt(const GetPromptRequest::Params& InRequest) const;
 
     /**
      * List all registered prompts.
@@ -60,9 +59,9 @@ class PromptManager {
     /**
      * Check if a prompt with the given name exists.
      * @param InName The name to check
-     * @return True if the prompt exists, false otherwise
+     * @return An optional reference to the prompt if it exists
      */
-    bool HasPrompt(const std::string& InName) const;
+    std::optional<Prompt> FindPrompt(const std::string& InName) const;
 
   private:
     std::map<Prompt, PromptFunction> m_Prompts;

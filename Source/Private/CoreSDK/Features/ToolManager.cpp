@@ -13,24 +13,16 @@ ToolManager::ToolManager(bool InWarnOnDuplicateTools, const std::map<Tool, ToolF
     for (const auto& [ToolItem, Function] : InTools) { AddTool(ToolItem, Function); }
 }
 
-std::optional<Tool> ToolManager::GetTool(const std::string& InName) const {
+ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams& InRequest) const {
     std::lock_guard<std::mutex> Lock(m_Mutex);
-
-    for (const auto& [ToolItem, Function] : m_Tools) {
-        if (ToolItem.Name == InName) { return ToolItem; }
-    }
-    return std::nullopt;
-}
-
-std::vector<Tool> ToolManager::ListTools() const {
-    std::lock_guard<std::mutex> Lock(m_Mutex);
+    (void)InRequest; // TODO: @HalcyonOmega - Implement pagination
 
     std::vector<Tool> Result;
     Result.reserve(m_Tools.size());
 
     for (const auto& [ToolItem, Function] : m_Tools) { Result.emplace_back(ToolItem); }
 
-    return Result;
+    return ListToolsResponse::Result{.Tools = Result, .NextCursor = std::nullopt};
 }
 
 bool ToolManager::AddTool(const Tool& InTool, const ToolFunction& InFunction) {
@@ -47,22 +39,38 @@ bool ToolManager::AddTool(const Tool& InTool, const ToolFunction& InFunction) {
     return true;
 }
 
-MCPTask<CallToolResponse::Result> ToolManager::CallTool(const Tool& InTool,
-                                                        const JSONData& InArguments,
-                                                        MCPContext* InContext,
-                                                        bool /*InConvertResult*/) {
+bool ToolManager::RemoveTool(const Tool& InTool) {
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    const auto Iter = m_Tools.find(InTool);
-    if (Iter == m_Tools.end()) { throw ToolError("Unknown tool: " + InTool.Name); }
+    const auto ExistingIt = m_Tools.find(InTool);
+    if (ExistingIt == m_Tools.end()) {
+        Logger::Warning("Tool does not exist: " + InTool.Name);
+        return false;
+    }
 
-    return Iter->second(InArguments, InContext);
+    m_Tools.erase(ExistingIt);
+    return true;
 }
 
-bool ToolManager::HasTool(const Tool& InTool) const {
+CallToolResponse::Result ToolManager::CallTool(const CallToolRequest::Params& InRequest,
+                                               MCPContext* InContext) {
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    return m_Tools.find(InTool) != m_Tools.end();
+    std::optional<Tool> FoundTool = FindTool(InRequest.Name);
+    if (!FoundTool) { throw ToolError("Unknown tool: " + InRequest.Name); }
+
+    return m_Tools.find(FoundTool.value())->second(InRequest.Arguments, InContext);
+}
+
+std::optional<Tool> ToolManager::FindTool(const std::string& InName) const {
+    std::lock_guard<std::mutex> Lock(m_Mutex);
+
+    auto Iterator =
+        std::ranges::find_if(m_Tools, [&](const auto& Pair) { return Pair.first.Name == InName; });
+
+    if (Iterator != m_Tools.end()) { return Iterator->first; }
+
+    return std::nullopt;
 }
 
 JSONSchema ToolManager::CreateBasicSchema(const std::string& InName) {

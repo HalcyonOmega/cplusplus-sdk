@@ -140,7 +140,8 @@ std::vector<ResourceTemplate> ResourceManager::ListTemplates() const {
 bool ResourceManager::HasResource(const MCP::URI& InURI) const {
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    return m_Resources.find(InURI) != m_Resources.end();
+    return std::ranges::any_of(m_Resources,
+                               [InURI](const auto& Pair) { return Pair.first == InURI; });
 }
 
 std::optional<std::unordered_map<std::string, std::string>>

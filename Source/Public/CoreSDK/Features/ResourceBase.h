@@ -80,6 +80,15 @@ struct Resource {
 
     DEFINE_TYPE_JSON(Resource, URIKEY, NAMEKEY, DESCRIPTIONKEY, MIMETYPEKEY, ANNOTATIONSKEY,
                      SIZEKEY)
+
+    bool operator<(const Resource& InOther) const {
+        if (Name != InOther.Name) { return Name < InOther.Name; }
+        return URI.toString() < InOther.URI.toString();
+    }
+
+    bool operator==(const Resource& InOther) const {
+        return URI == InOther.URI && Name == InOther.Name;
+    }
 };
 
 // ResourceTemplate {
@@ -150,6 +159,15 @@ struct ResourceTemplate {
 
     DEFINE_TYPE_JSON(ResourceTemplate, URITEMPLATEKEY, NAMEKEY, DESCRIPTIONKEY, MIMETYPEKEY,
                      ANNOTATIONSKEY)
+
+    bool operator<(const ResourceTemplate& InOther) const {
+        if (Name != InOther.Name) { return Name < InOther.Name; }
+        return URITemplate.ToString() < InOther.URITemplate.ToString();
+    }
+
+    bool operator==(const ResourceTemplate& InOther) const {
+        return URITemplate.ToString() == InOther.URITemplate.ToString() && Name == InOther.Name;
+    }
 };
 
 template <typename T>

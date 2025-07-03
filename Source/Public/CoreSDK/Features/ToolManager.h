@@ -12,7 +12,6 @@
 #include "CoreSDK/Messages/MCPMessages.h"
 #include "JSONProxy.h"
 #include "ToolBase.h"
-#include "Utilities/Async/MCPTask.h"
 
 // Forward declarations
 class MCPContext;
@@ -33,8 +32,7 @@ class ToolError : public std::runtime_error {
  */
 class ToolManager {
   public:
-    using ToolFunction =
-        std::function<MCPTask<CallToolResponse::Result>(const JSONData&, MCPContext*)>;
+    using ToolFunction = std::function<CallToolResponse::Result(const JSONData&, MCPContext*)>;
 
     /**
      * Constructor
@@ -63,32 +61,23 @@ class ToolManager {
      * @param InName The name of the tool to retrieve
      * @return The tool if found, nullopt otherwise
      */
-    std::optional<Tool> GetTool(const std::string& InName) const;
+    std::optional<Tool> FindTool(const std::string& InName) const;
 
     /**
      * Call a tool by name with arguments.
      * @param InName The name of the tool to call
      * @param InArguments The arguments to pass to the tool
      * @param InContext Optional context for the tool execution
-     * @param InConvertResult Whether to convert the result format
-     * @return Future containing the result of the tool execution
+     * @return The result of the tool execution
      */
-    MCPTask<CallToolResponse::Result> CallTool(const Tool& InTool, const JSONData& InArguments,
-                                               MCPContext* InContext = nullptr,
-                                               bool InConvertResult = false);
+    CallToolResponse::Result CallTool(const CallToolRequest::Params& InRequest,
+                                      MCPContext* InContext = nullptr);
 
     /**
      * List all registered tools.
      * @return Vector containing all registered tools
      */
-    std::vector<Tool> ListTools() const;
-
-    /**
-     * Check if a tool with the given name exists.
-     * @param InName The name to check
-     * @return True if the tool exists, false otherwise
-     */
-    bool HasTool(const Tool& InTool) const;
+    ListToolsResponse::Result ListTools(const PaginatedRequestParams& InRequest) const;
 
   private:
     std::map<Tool, ToolFunction> m_Tools;

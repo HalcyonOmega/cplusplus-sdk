@@ -64,6 +64,9 @@ struct PaginatedResultParams : ResultParams {
     JKEY(NEXT_CURSORKEY, NextCursor, "nextCursor")
 
     DEFINE_TYPE_JSON_DERIVED(PaginatedResultParams, ResultParams, NEXT_CURSORKEY)
+
+    PaginatedResultParams(std::optional<std::string> InNextCursor = std::nullopt)
+        : NextCursor(std::move(InNextCursor)) {}
 };
 
 // ResponseBase {

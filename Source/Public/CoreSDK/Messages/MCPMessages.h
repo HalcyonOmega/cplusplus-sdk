@@ -283,10 +283,15 @@ struct ListToolsResponse : ResponseBase {
         JKEY(TOOLSKEY, Tools, "tools")
 
         DEFINE_TYPE_JSON_DERIVED(ListToolsResponse::Result, PaginatedResultParams, TOOLSKEY)
+
+        Result() : PaginatedResultParams(std::nullopt), Tools{{}} {}
+
+        Result(std::vector<Tool> InTools, std::optional<std::string> InNextCursor = std::nullopt)
+            : PaginatedResultParams(InNextCursor), Tools(std::move(InTools)) {}
     };
 
-    ListToolsResponse(const RequestID& InRequestID,
-                      const ListToolsResponse::Result& InResult = ListToolsResponse::Result{})
+    ListToolsResponse(const RequestID& InRequestID, const ListToolsResponse::Result& InResult =
+                                                        ListToolsResponse::Result{{}, std::nullopt})
         : ResponseBase(InRequestID, InResult) {}
 };
 

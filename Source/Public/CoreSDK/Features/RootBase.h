@@ -50,6 +50,15 @@ struct Root {
     JKEY(NAMEKEY, Name, "name")
 
     DEFINE_TYPE_JSON(Root, URIKEY, NAMEKEY)
+
+    bool operator<(const Root& InOther) const {
+        if (Name && InOther.Name && Name != InOther.Name) { return Name < InOther.Name; }
+        return URI.toString() < InOther.URI.toString();
+    }
+
+    bool operator==(const Root& InOther) const {
+        return URI == InOther.URI && (!Name || !InOther.Name || Name == InOther.Name);
+    }
 };
 
 template <typename T>

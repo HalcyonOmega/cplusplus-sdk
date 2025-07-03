@@ -1,5 +1,7 @@
 #include "CoreSDK/Features/PromptManager.h"
 
+#include <algorithm>
+
 #include "CoreSDK/Common/Logging.h"
 
 MCP_NAMESPACE_BEGIN
@@ -7,12 +9,12 @@ MCP_NAMESPACE_BEGIN
 PromptManager::PromptManager(bool InWarnOnDuplicatePrompts)
     : m_WarnOnDuplicatePrompts(InWarnOnDuplicatePrompts) {}
 
-bool PromptManager::AddPrompt(const Prompt& InPrompt) {
+bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction) {
     // Log the addition attempt
     Logger::Debug("Adding prompt: " + InPrompt.Name);
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    const auto ExistingIt = m_Prompts.find(InPrompt.Name);
+    const auto ExistingIt = m_Prompts.find(InPrompt);
     if (ExistingIt != m_Prompts.end()) {
         if (m_WarnOnDuplicatePrompts) {
             Logger::Warning("Prompt already exists: " + InPrompt.Name);
@@ -20,14 +22,14 @@ bool PromptManager::AddPrompt(const Prompt& InPrompt) {
         return false;
     }
 
-    m_Prompts[InPrompt.Name] = InPrompt;
+    m_Prompts[InPrompt] = InFunction;
     return true;
 }
 
 bool PromptManager::RemovePrompt(const Prompt& InPrompt) {
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    const auto ExistingIt = m_Prompts.find(InPrompt.Name);
+    const auto ExistingIt = m_Prompts.find(InPrompt);
     if (ExistingIt == m_Prompts.end()) {
         Logger::Warning("Prompt does not exist: " + InPrompt.Name);
         return false;
@@ -37,13 +39,20 @@ bool PromptManager::RemovePrompt(const Prompt& InPrompt) {
     return true;
 }
 
-std::optional<std::vector<PromptMessage>>
-PromptManager::GetPrompt(const std::string& InName,
-                         const std::optional<std::vector<PromptArgument>>& InArguments) const {
+GetPromptResponse::Result
+PromptManager::GetPrompt(const GetPromptRequest::Params& InRequest) const {
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    // TODO @Agent - Find Prompt, Ingest Arguments, Construct PromptMessage type
-    return std::nullopt;
+    std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
+    if (!FoundPrompt) {
+        Logger::Warning("Prompt does not exist: " + InRequest.Name);
+        return GetPromptResponse::Result{};
+    }
+
+    return GetPromptResponse::Result{
+        .Messages = m_Prompts.find(FoundPrompt.value())->second(InRequest.Arguments.value()),
+        .Description = FoundPrompt->Description,
+    };
 }
 
 std::vector<Prompt> PromptManager::ListPrompts() const {
@@ -52,15 +61,20 @@ std::vector<Prompt> PromptManager::ListPrompts() const {
     std::vector<Prompt> Result;
     Result.reserve(m_Prompts.size());
 
-    for (const auto& [Name, PromptData] : m_Prompts) { Result.push_back(PromptData); }
+    for (const auto& [Prompt, Function] : m_Prompts) { Result.emplace_back(Prompt); }
 
     return Result;
 }
 
-bool PromptManager::HasPrompt(const std::string& InName) const {
+std::optional<Prompt> PromptManager::FindPrompt(const std::string& InName) const {
     std::lock_guard<std::mutex> Lock(m_Mutex);
 
-    return m_Prompts.find(InName) != m_Prompts.end();
+    auto Iterator = std::ranges::find_if(
+        m_Prompts, [&](const auto& Pair) { return Pair.first.Name == InName; });
+
+    if (Iterator != m_Prompts.end()) { return Iterator->first; }
+
+    return std::nullopt;
 }
 
 MCP_NAMESPACE_END

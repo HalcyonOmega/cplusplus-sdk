@@ -18,17 +18,17 @@ using Variables =
 
 class URITemplate {
   public:
+    explicit URITemplate(const std::string& InTemplateStr);
     /**
      * Returns true if the given string contains any URI template expressions.
      * A template expression is a sequence of characters enclosed in curly
      * braces, like {foo} or {?bar}.
      */
     static bool IsTemplate(const std::string& InString);
-    std::vector<std::string> GetVariableNames() const;
-    explicit URITemplate(const std::string& InTemplateStr);
-    std::string ToString() const;
-    std::string Expand(const Variables& InVariables) const;
-    Variables Match(const std::string& InURI) const;
+    [[nodiscard]] std::vector<std::string> GetVariableNames() const;
+    [[nodiscard]] std::string ToString() const;
+    [[nodiscard]] std::string Expand(const Variables& InVariables) const;
+    [[nodiscard]] Variables Match(const std::string& InURI) const;
 
   private:
     struct TemplatePart {

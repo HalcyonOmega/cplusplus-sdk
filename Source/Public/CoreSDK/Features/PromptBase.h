@@ -118,6 +118,10 @@ struct Prompt {
         if (Description != InOther.Description) { return Description < InOther.Description; }
         return false;
     }
+
+    bool operator==(const Prompt& InOther) const {
+        return Name == InOther.Name && Description == InOther.Description;
+    }
 };
 
 template <typename T>

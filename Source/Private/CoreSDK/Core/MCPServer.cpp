@@ -171,7 +171,7 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest) {
         Tool Tool = m_ToolManager->GetTool(Request.Name).value();
 
         // Use ToolManager to call the tool
-        auto Result = m_ToolManager->CallTool(Tool, Request.Arguments);
+        auto Result = m_ToolManager->CallTool(Request);
 
         CallToolResponse::Result ResponseResult;
         ResponseResult.Content = Result.Content;
@@ -185,8 +185,8 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest) {
     }
 }
 
-bool MCPServer::AddPrompt(const Prompt& InPrompt) {
-    if (!m_PromptManager->AddPrompt(InPrompt)) {
+bool MCPServer::AddPrompt(const Prompt& InPrompt, const PromptManager::PromptFunction& InFunction) {
+    if (!m_PromptManager->AddPrompt(InPrompt, InFunction)) {
         HandleRuntimeError("Failed to add prompt: " + InPrompt.Name);
         return false;
     }
@@ -216,7 +216,6 @@ void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest) {
 
         ListPromptsResponse::Result Result;
         Result.Prompts = m_PromptManager->ListPrompts();
-        Result.Cursor = RequestParams.Cursor;
 
         SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
@@ -231,14 +230,9 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest) {
         GetPromptRequest::Params Request =
             GetRequestParams<GetPromptRequest::Params>(InRequest).value();
 
-        // Use PromptManager to get the prompt
-        auto Result = m_PromptManager->GetPrompt(Request.Name, Request.Arguments);
+        GetPromptResponse::Result Result = m_PromptManager->GetPrompt(Request);
 
-        GetPromptResponse::Result ResponseResult;
-        ResponseResult.Description = Result.Description;
-        ResponseResult.Messages = Result.Messages;
-
-        SendResponse(ResponseBase(InRequest.GetRequestID(), ResponseResult));
+        SendResponse(ResponseBase(InRequest.GetRequestID(), Result));
 
     } catch (const std::exception& e) {
         SendErrorResponse(ErrorResponseBase(InRequest.GetRequestID(),
@@ -298,7 +292,7 @@ MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InP
 
 void MCPServer::OnRequest_ListResources(const ListResourcesRequest& InRequest) {
     try {
-        auto Request = GetRequestParams<ListResourcesRequest::Params>(InRequest);
+        auto Request = GetRequestParams<PaginatedRequestParams>(InRequest);
 
         ListResourcesResponse::Result Result;
         Result.Resources = m_ResourceManager->ListResources();
@@ -392,7 +386,7 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 
 bool MCPServer::AddRoot(const Root& InRoot) {
     if (!m_RootManager->AddRoot(InRoot)) {
-        HandleRuntimeError("Failed to add root: " + InRoot.Name);
+        HandleRuntimeError("Failed to add root: " + InRoot.Name.value());
         return false;
     }
 
@@ -402,7 +396,7 @@ bool MCPServer::AddRoot(const Root& InRoot) {
 
 bool MCPServer::RemoveRoot(const Root& InRoot) {
     if (!m_RootManager->RemoveRoot(InRoot)) {
-        HandleRuntimeError("Failed to remove root: " + InRoot.Name);
+        HandleRuntimeError("Failed to remove root: " + InRoot.Name.value());
         return false;
     }
 

@@ -156,6 +156,10 @@ struct Tool {
     bool operator<(const Tool& InOther) const {
         return Name < InOther.Name;
     };
+
+    bool operator==(const Tool& InOther) const {
+        return Name == InOther.Name;
+    }
 };
 
 template <typename T>
