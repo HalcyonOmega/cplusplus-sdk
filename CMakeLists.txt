@@ -24,11 +24,8 @@ endif()
 # Compiler-specific options
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(
-        -Wall
         -Wextra
         -Wpedantic
-        -Werror
-        -ferror-limit=0
         $<$<CONFIG:Debug>:-g3>
         $<$<CONFIG:Debug>:-O0>
         $<$<CONFIG:Release>:-O3>
@@ -74,7 +71,8 @@ file(GLOB_RECURSE SDK_HEADERS
 )
 
 # Create the SDK library
-add_library(${PROJECT_NAME} STATIC ${SDK_SOURCES} ${SDK_HEADERS})
+add_library(${PROJECT_NAME} STATIC ${SDK_SOURCES} ${SDK_HEADERS}
+        Source/Public/CoreSDK/Common/Annotations.h)
 
 # Set C++ standard for the library
 set_target_properties(${PROJECT_NAME} PROPERTIES

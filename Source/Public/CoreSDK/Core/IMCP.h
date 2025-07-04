@@ -23,6 +23,7 @@ enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, S
 class MCPProtocol {
   public:
     explicit MCPProtocol(std::unique_ptr<ITransport> InTransport);
+	virtual ~MCPProtocol() = default;
 
     // Lifecycle
     virtual MCPTask_Void Start() = 0;
@@ -34,25 +35,20 @@ class MCPProtocol {
     bool IsConnected() const;
 
     // Core protocol operations
-    MCPTask<PingResponse> Ping();
+    MCPTask<PingResponse> Ping(const PingRequest& InRequest);
 
     // Protocol version validation
     static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS;
-    void ValidateProtocolVersion(const std::string& InVersion) const;
+	static void ValidateProtocolVersion(const std::string& InVersion);
 
     // Message sending utilities
     MCPTask_Void SendRequest(const RequestBase& InRequest);
-    MCPTask_Void SendResponse(const ResponseBase& InResponse);
-    MCPTask_Void SendNotification(const NotificationBase& InNotification);
-    MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError);
-
-    void RegisterRequestHandler(const RequestBase& InRequest);
-    void RegisterResponseHandler(const ResponseBase& InResponse);
-    void RegisterNotificationHandler(const NotificationBase& InNotification);
-    void RegisterErrorResponseHandler(const ErrorResponseBase& InErrorResponse);
+    MCPTask_Void SendResponse(const ResponseBase& InResponse) const;
+    MCPTask_Void SendNotification(const NotificationBase& InNotification) const;
+    MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError) const;
 
   private:
-    void SetupTransportRouter();
+    void SetupTransportRouter() const;
 
   protected:
     MCPProtocolState m_State;

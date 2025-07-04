@@ -11,15 +11,15 @@ MCP_NAMESPACE_BEGIN
 
 // Annotations {
 //     MSG_DESCRIPTION : "Optional annotations for the client. The client can use
-//     annotations to inform "
-//                     "how objects are used or displayed",
+//     annotations to inform how objects are used or displayed",
 //                     MSG_PROPERTIES
 //         : {
 //             MSG_AUDIENCE: {
 //                 MSG_DESCRIPTION:
 //                     "Describes who the intended customer of this object or
-//                     data is.\n\nIt " "can include multiple entries to
-//                     indicate content useful for multiple " "audiences (e.g.,
+//                     data is.
+//                     It can include multiple entries to
+//                     indicate content useful for multiple audiences (e.g.,
 //                     `[\"user\", \"assistant\"]`).",
 //                 MSG_ITEMS: {"$ref": "#/definitions/Role"},
 //                 MSG_TYPE: MSG_ARRAY
