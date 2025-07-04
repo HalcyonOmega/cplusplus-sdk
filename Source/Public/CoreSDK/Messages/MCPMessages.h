@@ -72,7 +72,7 @@ struct InitializeRequest : RequestBase
 			InitializeRequest::Params, RequestParams, PROTOCOLVERSIONKEY, CAPABILITIESKEY, CLIENTINFOKEY)
 	};
 
-	InitializeRequest(const InitializeRequest::Params& InParams = InitializeRequest::Params{}) :
+	explicit InitializeRequest(const InitializeRequest::Params& InParams = InitializeRequest::Params{}) :
 		RequestBase("initialize", InParams)
 	{}
 };
@@ -93,11 +93,11 @@ struct InitializeRequest : RequestBase
 //         MSG_CAPABILITIES : {"$ref" : "#/definitions/ServerCapabilities"},
 //         MSG_INSTRUCTIONS : {
 //           MSG_DESCRIPTION :
-//               "Instructions describing how to use the server and its "
-//               "features.\n\nThis can be used by clients to improve the LLM's
-//               " "understanding of available tools, resources, etc. It can be
-//               " "thought of like a \"hint\" to the model. For example, this "
-//               "information MAY be added to the system prompt.",
+//               "Instructions describing how to use the server and its
+//               features.\n\nThis can be used by clients to improve the LLM's
+//               understanding of available tools, resources, etc. It can be
+//               thought of like a \"hint\" to the model. For example, this
+//               information MAY be added to the system prompt.",
 //           MSG_TYPE : MSG_STRING
 //         },
 //         MSG_PROTOCOL_VERSION : {
@@ -146,7 +146,7 @@ struct InitializeResponse : ResponseBase
 			SERVERINFOKEY, INSTRUCTIONSKEY)
 	};
 
-	InitializeResponse(
+	explicit InitializeResponse(
 		const RequestID& InRequestID, const InitializeResponse::Result& InResult = InitializeResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -231,7 +231,7 @@ struct PingRequest : RequestBase
 
 struct PingResponse : ResponseBase
 {
-	PingResponse(const RequestID& InRequestID) : ResponseBase(InRequestID) {}
+	explicit PingResponse(const RequestID& InRequestID) : ResponseBase(InRequestID) {}
 };
 
 // ListToolsRequest {
@@ -261,7 +261,7 @@ struct PingResponse : ResponseBase
  */
 struct ListToolsRequest : RequestBase
 {
-	ListToolsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
+	explicit ListToolsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
 		RequestBase("tools/list", InParams)
 	{}
 };
@@ -299,7 +299,7 @@ struct ListToolsResponse : ResponseBase
 {
 	struct Result : PaginatedResultParams
 	{
-		std::vector<Tool> Tools;
+		std::vector<Tool> Tools{};
 
 		JKEY(TOOLSKEY, Tools, "tools")
 
@@ -307,12 +307,12 @@ struct ListToolsResponse : ResponseBase
 
 		Result() : PaginatedResultParams(std::nullopt), Tools{ {} } {}
 
-		Result(std::vector<Tool> InTools, std::optional<std::string> InNextCursor = std::nullopt) :
+		explicit Result(std::vector<Tool> InTools, std::optional<std::string> InNextCursor = std::nullopt) :
 			PaginatedResultParams(std::move(InNextCursor)), Tools(std::move(InTools))
 		{}
 	};
 
-	ListToolsResponse(const RequestID& InRequestID,
+	explicit ListToolsResponse(const RequestID& InRequestID,
 		const ListToolsResponse::Result& InResult = ListToolsResponse::Result{ {}, std::nullopt }) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -353,7 +353,7 @@ struct CallToolRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(CallToolRequest::Params, RequestParams, NAMEKEY, ARGUMENTSKEY)
 	};
 
-	CallToolRequest(const CallToolRequest::Params& InParams = CallToolRequest::Params{}) :
+	explicit CallToolRequest(const CallToolRequest::Params& InParams = CallToolRequest::Params{}) :
 		RequestBase("tools/call", InParams)
 	{}
 };
@@ -421,7 +421,7 @@ struct CallToolResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(CallToolResponse::Result, ResultParams, CONTENTKEY, ISERRORKEY)
 	};
 
-	CallToolResponse(
+	explicit CallToolResponse(
 		const RequestID& InRequestID, const CallToolResponse::Result& InResult = CallToolResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -495,7 +495,7 @@ struct ToolListChangedNotification : NotificationBase
  */
 struct ListPromptsRequest : RequestBase
 {
-	ListPromptsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
+	explicit ListPromptsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
 		RequestBase("prompts/list", InParams)
 	{}
 };
@@ -541,7 +541,7 @@ struct ListPromptsResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(ListPromptsResponse::Result, PaginatedResultParams, PROMPTSKEY)
 	};
 
-	ListPromptsResponse(
+	explicit ListPromptsResponse(
 		const RequestID& InRequestID, const ListPromptsResponse::Result& InResult = ListPromptsResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -589,7 +589,7 @@ struct GetPromptRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(GetPromptRequest::Params, RequestParams, NAMEKEY, ARGUMENTSKEY)
 	};
 
-	GetPromptRequest(const GetPromptRequest::Params& InParams = GetPromptRequest::Params{}) :
+	explicit GetPromptRequest(const GetPromptRequest::Params& InParams = GetPromptRequest::Params{}) :
 		RequestBase("prompts/get", InParams)
 	{}
 };
@@ -636,7 +636,7 @@ struct GetPromptResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(GetPromptResponse::Result, ResultParams, DESCRIPTIONKEY, MESSAGESKEY)
 	};
 
-	GetPromptResponse(
+	explicit GetPromptResponse(
 		const RequestID& InRequestID, const GetPromptResponse::Result& InResult = GetPromptResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -710,7 +710,7 @@ struct PromptListChangedNotification : NotificationBase
  */
 struct ListResourcesRequest : RequestBase
 {
-	ListResourcesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
+	explicit ListResourcesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
 		RequestBase("resources/list", InParams)
 	{}
 };
@@ -756,7 +756,7 @@ struct ListResourcesResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(ListResourcesResponse::Result, PaginatedResultParams, RESOURCESKEY)
 	};
 
-	ListResourcesResponse(
+	explicit ListResourcesResponse(
 		const RequestID& InRequestID, const ListResourcesResponse::Result& InResult = ListResourcesResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -790,7 +790,7 @@ struct ListResourcesResponse : ResponseBase
  */
 struct ListResourceTemplatesRequest : RequestBase
 {
-	ListResourceTemplatesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
+	explicit ListResourceTemplatesRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
 		RequestBase("resources/templates/list", InParams)
 	{}
 };
@@ -837,7 +837,7 @@ struct ListResourceTemplatesResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(ListResourceTemplatesResponse::Result, PaginatedResultParams, RESOURCE_TEMPLATESKEY)
 	};
 
-	ListResourceTemplatesResponse(const RequestID& InRequestID,
+	explicit ListResourceTemplatesResponse(const RequestID& InRequestID,
 		const ListResourceTemplatesResponse::Result& InResult = ListResourceTemplatesResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -888,7 +888,7 @@ struct ResourceUpdatedNotification : NotificationBase
 		DEFINE_TYPE_JSON_DERIVED(ResourceUpdatedNotification::Params, NotificationParams, URIKEY)
 	};
 
-	ResourceUpdatedNotification(const Params& InParams = Params{}) :
+	explicit ResourceUpdatedNotification(const Params& InParams = Params{}) :
 		NotificationBase("notifications/resources/updated", InParams)
 	{}
 };
@@ -902,7 +902,7 @@ struct ResourceUpdatedNotification : NotificationBase
 //           MSG_STRING}, MSG_PARAMS : {
 //             MSG_PROPERTIES : {
 //               MSG_URI : {
-//                 MSG_DESCRIPTION : "The URI of the resource to read. The URI
+//                 MSG_DESCRIPTION: "The URI of the resource to read. The URI
 //                 can
 //                 "
 //                                 "use any protocol; "
@@ -912,7 +912,7 @@ struct ResourceUpdatedNotification : NotificationBase
 //                 MSG_TYPE : MSG_STRING
 //               }
 //             },
-//             MSG_REQUIRED : [MSG_URI],
+//             MSG_REQUIRED: [MSG_URI],
 //             MSG_TYPE : MSG_OBJECT
 //           }
 //         },
@@ -935,7 +935,7 @@ struct ReadResourceRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(ReadResourceRequest::Params, RequestParams, URIKEY)
 	};
 
-	ReadResourceRequest(const ReadResourceRequest::Params& InParams = ReadResourceRequest::Params{}) :
+	explicit ReadResourceRequest(const ReadResourceRequest::Params& InParams = ReadResourceRequest::Params{}) :
 		RequestBase("resources/read", InParams)
 	{}
 };
@@ -981,18 +981,18 @@ struct ReadResourceResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(ReadResourceResponse::Result, ResultParams, CONTENTSKEY)
 	};
 
-	ReadResourceResponse(
+	explicit ReadResourceResponse(
 		const RequestID& InRequestID, const ReadResourceResponse::Result& InResult = ReadResourceResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
 };
 
 // SubscribeRequest {
-//   MSG_DESCRIPTION
-//       : "Sent from the client to request resources/updated notifications from
+//   MSG_DESCRIPTION:
+//       "Sent from the client to request resources/updated notifications from
 //       "
 //         "the server whenever a particular resource changes.",
-//         MSG_PROPERTIES : {
+//         MSG_PROPERTIES: {
 //           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_SUBSCRIBE, MSG_TYPE :
 //           MSG_STRING}, MSG_PARAMS : {
 //             MSG_PROPERTIES : {
@@ -1029,7 +1029,7 @@ struct SubscribeRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(SubscribeRequest::Params, RequestParams, URIKEY)
 	};
 
-	SubscribeRequest(const SubscribeRequest::Params& InParams = SubscribeRequest::Params{}) :
+	explicit SubscribeRequest(const SubscribeRequest::Params& InParams = SubscribeRequest::Params{}) :
 		RequestBase("resources/subscribe", InParams)
 	{}
 };
@@ -1072,7 +1072,7 @@ struct UnsubscribeRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(UnsubscribeRequest::Params, RequestParams, URIKEY)
 	};
 
-	UnsubscribeRequest(const UnsubscribeRequest::Params& InParams = UnsubscribeRequest::Params{}) :
+	explicit UnsubscribeRequest(const UnsubscribeRequest::Params& InParams = UnsubscribeRequest::Params{}) :
 		RequestBase("resources/unsubscribe", InParams)
 	{}
 };
@@ -1221,7 +1221,7 @@ struct CreateMessageRequest : RequestBase
 			SYSTEMPROMPTKEY, INCLUDECONTEXTKEY, TEMPERATUREKEY, STOPSEQUENCESKEY, MODELPREFSKEY, METADATAKEY)
 	};
 
-	CreateMessageRequest(const CreateMessageRequest::Params& InParams = CreateMessageRequest::Params{}) :
+	explicit CreateMessageRequest(const CreateMessageRequest::Params& InParams = CreateMessageRequest::Params{}) :
 		RequestBase("sampling/createMessage", InParams)
 	{}
 };
@@ -1289,7 +1289,7 @@ struct CreateMessageResponse : ResponseBase
 			CreateMessageResponse::Result, ResultParams, MODELKEY, RESPONSEROLEKEY, RESPONSECONTENTKEY)
 	};
 
-	CreateMessageResponse(
+	explicit CreateMessageResponse(
 		const RequestID& InRequestID, const CreateMessageResponse::Result& InResult = CreateMessageResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -1347,7 +1347,7 @@ struct CreateMessageResponse : ResponseBase
  */
 struct ListRootsRequest : RequestBase
 {
-	ListRootsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
+	explicit ListRootsRequest(const PaginatedRequestParams& InParams = PaginatedRequestParams{}) :
 		RequestBase("roots/list", InParams)
 	{}
 };
@@ -1392,7 +1392,7 @@ struct ListRootsResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(ListRootsResponse::Result, PaginatedResultParams, ROOTSKEY)
 	};
 
-	ListRootsResponse(
+	explicit ListRootsResponse(
 		const RequestID& InRequestID, const ListRootsResponse::Result& InResult = ListRootsResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}
@@ -1480,10 +1480,10 @@ struct SetLevelRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(SetLevelRequest::Params, RequestParams, LEVELKEY)
 
 		Params() = default;
-		Params(LoggingLevel InLevel) : Level(InLevel) {}
+		explicit Params(LoggingLevel InLevel) : Level(InLevel) {}
 	};
 
-	SetLevelRequest(const SetLevelRequest::Params& InParams = SetLevelRequest::Params{}) :
+	explicit SetLevelRequest(const SetLevelRequest::Params& InParams = SetLevelRequest::Params{}) :
 		RequestBase("logging/setLevel", InParams)
 	{}
 };
@@ -1540,13 +1540,13 @@ struct LoggingMessageNotification : NotificationBase
 
 		DEFINE_TYPE_JSON_DERIVED(LoggingMessageNotification::Params, NotificationParams, LEVELKEY, LOGGERKEY, DATAKEY)
 
-		Params(LoggingLevel InLevel = LoggingLevel::Info, JSONData InData = JSONData::object(),
+		explicit Params(LoggingLevel InLevel = LoggingLevel::Info, JSONData InData = JSONData::object(),
 			const std::optional<std::string>& InLogger = std::nullopt) :
 			Level(InLevel), Data(std::move(InData)), Logger(InLogger)
 		{}
 	};
 
-	LoggingMessageNotification(
+	explicit LoggingMessageNotification(
 		const LoggingMessageNotification::Params& InParams = LoggingMessageNotification::Params{}) :
 		NotificationBase("notifications/message", InParams)
 	{}
@@ -1626,7 +1626,7 @@ struct ProgressNotification : NotificationBase
 		{}
 	};
 
-	ProgressNotification(const ProgressNotification::Params& InParams = ProgressNotification::Params{}) :
+	explicit ProgressNotification(const ProgressNotification::Params& InParams = ProgressNotification::Params{}) :
 		NotificationBase("notifications/progress", InParams)
 	{}
 };
@@ -1694,7 +1694,7 @@ struct CancelledNotification : NotificationBase
 		DEFINE_TYPE_JSON_DERIVED(CancelledNotification::Params, NotificationParams, CANCELREQUESTIDKEY, REASONKEY)
 	};
 
-	CancelledNotification(const CancelledNotification::Params& InParams = CancelledNotification::Params{}) :
+	explicit CancelledNotification(const CancelledNotification::Params& InParams = CancelledNotification::Params{}) :
 		NotificationBase("notifications/cancelled", InParams)
 	{}
 };
@@ -1765,7 +1765,7 @@ struct CompleteRequest : RequestBase
 		DEFINE_TYPE_JSON_DERIVED(CompleteRequest::Params, RequestParams, REFERENCEKEY, ARGUMENTKEY)
 	};
 
-	CompleteRequest(const CompleteRequest::Params& InParams = CompleteRequest::Params{}) :
+	explicit CompleteRequest(const CompleteRequest::Params& InParams = CompleteRequest::Params{}) :
 		RequestBase("completion/complete", InParams)
 	{}
 };
@@ -1843,7 +1843,7 @@ struct CompleteResponse : ResponseBase
 		DEFINE_TYPE_JSON_DERIVED(CompleteResponse::Result, ResultParams, COMPLETIONDATAKEY)
 	};
 
-	CompleteResponse(
+	explicit CompleteResponse(
 		const RequestID& InRequestID, const CompleteResponse::Result& InResult = CompleteResponse::Result{}) :
 		ResponseBase(InRequestID, InResult)
 	{}

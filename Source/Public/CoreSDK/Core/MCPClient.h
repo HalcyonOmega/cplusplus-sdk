@@ -16,40 +16,40 @@ class MCPClient final : public MCPProtocol {
     MCPTask_Void Stop() override;
 
     // Requests
-    MCPTask<InitializeResponse::Result> Request_Initialize();
-    void OnNotified_Initialized();
+    MCPTask<InitializeResponse::Result> Request_Initialize(const InitializeRequest::Params& InParams);
+    void OnNotified_Initialized(const InitializedNotification& InNotification);
 
     // Tools
-    MCPTask<ListToolsResponse::Result> Request_ListTools();
-    MCPTask<CallToolResponse::Result> Request_CallTool(const Tool& InTool);
-    void OnNotified_ToolListChanged();
+    MCPTask<ListToolsResponse::Result> Request_ListTools(const PaginatedRequestParams& InParams);
+    MCPTask<CallToolResponse::Result> Request_CallTool(const CallToolRequest::Params& InTool);
+    void OnNotified_ToolListChanged(const ToolListChangedNotification& InNotification);
 
     // Prompts
-    MCPTask<ListPromptsResponse::Result> Request_ListPrompts(const PaginatedRequestParams&);
-    MCPTask<GetPromptResponse::Result> Request_GetPrompt(const Prompt& InPrompt);
-    void OnNotified_PromptListChanged();
+    MCPTask<ListPromptsResponse::Result> Request_ListPrompts(const PaginatedRequestParams& InParams);
+    MCPTask<GetPromptResponse::Result> Request_GetPrompt(const GetPromptRequest::Params& InPrompt);
+    void OnNotified_PromptListChanged(const PromptListChangedNotification& InNotification);
 
     // Resources
-    MCPTask<ListResourcesResponse::Result> Request_ListResources(const PaginatedRequestParams&);
-    MCPTask<ReadResourceResponse::Result> Request_ReadResource(const ReadResourceRequest::Params& InResource);
-    MCPTask_Void Request_Subscribe(const Resource& InResource);
-    MCPTask_Void Request_Unsubscribe(const Resource& InResource);
-    void OnNotified_ResourceListChanged();
-    void OnNotified_ResourceUpdated();
+    MCPTask<ListResourcesResponse::Result> Request_ListResources(const PaginatedRequestParams& InParams);
+    MCPTask<ReadResourceResponse::Result> Request_ReadResource(const ReadResourceRequest::Params& InParams);
+    MCPTask_Void Request_Subscribe(const SubscribeRequest::Params& InParams);
+    MCPTask_Void Request_Unsubscribe(const UnsubscribeRequest::Params& InParams);
+    void OnNotified_ResourceListChanged(const ResourceListChangedNotification& InNotification);
+    void OnNotified_ResourceUpdated(const ResourceUpdatedNotification& InNotification);
 
     // Roots
-    MCPTask<ListRootsResponse::Result> Request_ListRoots();
-    void OnNotified_RootsListChanged();
+    MCPTask<ListRootsResponse::Result> Request_ListRoots(const PaginatedRequestParams& InParams);
+    void OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification);
 
     // Logging
-    MCPTask_Void Request_SetLoggingLevel(LoggingLevel InLevel);
-    void OnNotified_LogMessage();
+    MCPTask_Void Request_SetLoggingLevel(const SetLevelRequest::Params& InParams);
+    void OnNotified_LogMessage(const LoggingMessageNotification& InNotification);
 
     // Sampling (for servers that want to sample via client)
-    void OnRequest_CreateMessage(const CreateMessageRequest& InRequest);
+    void OnRequest_CreateMessage(const CreateMessageRequest::Params& InParams);
 
     // Autocomplete
-    MCPTask_Void Request_Complete(const CompleteRequest& InRequest);
+    MCPTask_Void Request_Complete(const CompleteRequest::Params& InParams);
 
     // Progress
     MCPTask_Void Notify_Progress(const ProgressNotification::Params& InParams);

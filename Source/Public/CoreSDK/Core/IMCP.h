@@ -10,6 +10,7 @@
 #include "CoreSDK/Messages/MCPMessages.h"
 #include "CoreSDK/Messages/MessageManager.h"
 #include "CoreSDK/Transport/ITransport.h"
+#include "IMCP.h"
 #include "Utilities/Async/MCPTask.h"
 
 MCP_NAMESPACE_BEGIN
@@ -18,6 +19,8 @@ static constexpr double DEFAULT_TEMPERATURE{0.7};
 
 // Protocol state
 enum class MCPProtocolState { Uninitialized, Initializing, Initialized, Error, Shutdown };
+
+DEFINE_ENUM_JSON(MCPProtocolState, {{MCPProtocolState::Uninitialized, "uninitialized"}, {MCPProtocolState::Initializing, "initializing"}, {MCPProtocolState::Initialized, "initialized"}, {MCPProtocolState::Error, "error"}, {MCPProtocolState::Shutdown, "shutdown"} });
 
 // Base protocol handler
 class MCPProtocol {

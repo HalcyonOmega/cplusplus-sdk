@@ -2,90 +2,112 @@
 
 #include "CoreSDK/Transport/ITransport.h"
 
+#define RETURN_IF_CLIENT_NOT_CONNECTED              \
+	if (!IsConnected())                             \
+	{                                               \
+		HandleRuntimeError("Client not connected"); \
+		co_return;                                  \
+	}
+
 MCP_NAMESPACE_BEGIN
 
-MCPClient::MCPClient(TransportType InTransportType,
-                     std::optional<std::unique_ptr<TransportOptions>> InOptions,
-                     const Implementation& InClientInfo, const ClientCapabilities& InCapabilities)
-    : MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client,
-                                                    std::move(InOptions))),
-      m_ClientInfo(InClientInfo), m_ClientCapabilities(InCapabilities) {}
+MCPClient::MCPClient(TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
+	const Implementation& InClientInfo, const ClientCapabilities& InCapabilities) :
+	MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, std::move(InOptions))),
+	m_ClientInfo(InClientInfo),
+	m_ClientCapabilities(InCapabilities)
+{}
 
-MCPTask_Void MCPClient::Start() {
-    if (IsConnected()) {
-        HandleRuntimeError("Client already connected");
-        co_return;
-    }
-
-    try {
-        InitializeResponse::Result Result = co_await Request_Initialize();
-        IsConnected() = true;
-        m_ClientInfo = InClientInfo;
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Failed to connect: " + std::string(e.what()));
-        co_return;
-    }
-
-    co_return;
-}
-
-MCPTask_Void MCPClient::Stop() {
-    if (!IsConnected()) { co_return; }
-
-    try {
-        co_await Stop();
-        IsConnected() = false;
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Failed to disconnect: " + std::string(e.what()));
-        co_return;
-    }
-
-    co_return;
-}
-
-MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
-    if (IsInitialized()) {
-        HandleRuntimeError("Protocol already initialized");
-        co_return;
-    }
-
-    try {
-        // Start transport
-        co_await m_Transport->Connect();
-
-        // Send initialize request
-        InitializeRequest Request{InitializeRequest::Params{
-            .ProtocolVersion = m_ClientInfo.Version,
-            .Capabilities = m_ClientCapabilities,
-            .ClientInfo = m_ClientInfo,
-        }};
-
-        InitializeResponse Response = co_await SendRequest(Request);
-
-        // Store negotiated capabilities
-        m_ClientCapabilities = Response.Result.Capabilities;
-        m_ServerInfo = Response.Result.ServerInfo;
-
-        // Send initialized notification
-        co_await SendNotification(NotificationBase("initialized"));
-
-        m_IsInitialized = true;
-
-        if (m_InitializedHandler) { m_InitializedHandler(response); }
-
-    } catch (const std::exception& e) {
-        HandleRuntimeError("Failed to initialize protocol: " + std::string(e.what()));
-    }
-
-    co_return;
-}
-
-void MCPClient::OnNotified_Initialized() {}
-
-MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools() {}
-
-MCPTask<ListToolsResponse> MCPClient::Request_ListTools(const std::optional<std::string>& InCursor)
+MCPTask_Void MCPClient::Start()
 {
+	RETURN_IF_CLIENT_NOT_CONNECTED
+
+	try
+	{
+		InitializeResponse::Result Result = co_await Request_Initialize();
+		IsConnected() = true;
+		m_ClientInfo = InClientInfo;
+	}
+	catch (const std::exception& e)
+	{
+		HandleRuntimeError("Failed to connect: " + std::string(e.what()));
+		co_return;
+	}
+
+	co_return;
+}
+
+MCPTask_Void MCPClient::Stop()
+{
+	if (!IsConnected())
+	{
+		co_return;
+	}
+
+	try
+	{
+		co_await Stop();
+		IsConnected() = false;
+	}
+	catch (const std::exception& Except)
+	{
+		HandleRuntimeError("Failed to disconnect: " + std::string(Except.what()));
+		co_return;
+	}
+
+	co_return;
+}
+
+MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize(const InitializeRequest::Params& InParams)
+{
+	if (IsInitialized())
+	{
+		HandleRuntimeError("Protocol already initialized");
+		co_return;
+	}
+
+	try
+	{
+		// Start transport
+		co_await m_Transport->Connect();
+
+		// Send initialize request
+		InitializeRequest Request{ InitializeRequest::Params{
+			.ProtocolVersion = m_ClientInfo.Version,
+			.Capabilities = m_ClientCapabilities,
+			.ClientInfo = m_ClientInfo,
+		} };
+
+		InitializeResponse Response = co_await SendRequest(Request);
+
+		// Store negotiated capabilities
+		m_ClientCapabilities = Response.Result.Capabilities;
+		m_ServerInfo = Response.Result.ServerInfo;
+
+		// Send initialized notification
+		co_await SendNotification(NotificationBase("initialized"));
+
+		m_IsInitialized = true;
+
+		if (m_InitializedHandler)
+		{
+			m_InitializedHandler(response);
+		}
+	}
+	catch (const std::exception& e)
+	{
+		HandleRuntimeError("Failed to initialize protocol: " + std::string(e.what()));
+	}
+
+	co_return;
+}
+
+void MCPClient::OnNotified_Initialized(const InitializedNotification& InNotification) {}
+
+MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
+
 	ToolListRequest request;
 	if (InCursor.has_value())
 	{
@@ -96,46 +118,31 @@ MCPTask<ListToolsResponse> MCPClient::Request_ListTools(const std::optional<std:
 	co_return response.get<ToolListResponse>();
 }
 
-MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const Tool& InTool) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
-
-    ToolCallRequest request;
-    request.Name = InToolName;
-    request.Arguments = InArguments;
-
-    auto response = co_await SendRequest("tools/call", JSONData(request));
-    co_return response.get<ToolCallResponse>();
-}
-
-void MCPClient::OnNotified_ToolListChanged() {}
-
-MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams&) {}
-
-MCPTask<ListPromptsResponse>
-MCPClient::Request_ListPrompts(const std::optional<std::string>& InCursor) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
-
-    PromptListRequest request;
-    if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
-
-    auto response = co_await SendRequest("prompts/list", JSONData(request));
-    co_return response.get<PromptListResponse>();
-}
-
-MCPTask<GetPromptResponse> MCPClient::Request_GetPrompt(
-	const std::string& InPromptName, const std::optional<JSONData>& InArguments)
+MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InTool)
 {
-	if (!IsConnected())
-	{
-		HandleRuntimeError("Client not connected");
-		co_return;
-	}
+	RETURN_IF_CLIENT_NOT_CONNECTED
+
+	ToolCallRequest request;
+	request.Name = InToolName;
+	request.Arguments = InArguments;
+
+	auto response = co_await SendRequest("tools/call", JSONData(request));
+	co_return response.get<ToolCallResponse>();
+}
+
+void MCPClient::OnNotified_ToolListChanged(const ToolListChangedNotification& InNotification) {}
+
+MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
+
+	SendRequest(ListPromptRequest{ InParams }) auto response = co_await SendRequest("prompts/list", JSONData(request));
+	co_return response.get<PromptListResponse>();
+}
+
+MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const Prompt& InPrompt)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
 	PromptGetRequest request;
 	request.Name = InPromptName;
@@ -148,113 +155,100 @@ MCPTask<GetPromptResponse> MCPClient::Request_GetPrompt(
 	co_return response.get<PromptGetResponse>();
 }
 
-MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const Prompt& InPrompt) {}
+void MCPClient::OnNotified_PromptListChanged(const PromptListChangedNotification& InNotification) {}
 
-void MCPClient::OnNotified_PromptListChanged() {}
+MCPTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-MCPTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InResource) {}
+	ResourceListRequest request;
+	if (InCursor.has_value())
+	{
+		request.Cursor = InCursor.value();
+	}
 
-
-MCPTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams&) {  if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
-
-    ResourceListRequest request;
-    if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
-
-    auto response = co_await SendRequest("resources/list", JSONData(request));
-    co_return response.get<ResourceListResponse>();
+	auto response = co_await SendRequest("resources/list", JSONData(request));
+	co_return response.get<ResourceListResponse>();
 }
 
-MCPTask<ReadResourceResponse> MCPClient::Request_ReadResource(const std::string& InResourceURI) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    ResourceReadRequest request;
-    request.URI = InResourceURI;
+	ResourceReadRequest request;
+	request.URI = InResourceURI;
 
-    auto response = co_await SendRequest("resources/read", JSONData(request));
-    co_return response.get<ResourceReadResponse>();
+	auto response = co_await SendRequest("resources/read", JSONData(request));
+	co_return response.get<ResourceReadResponse>();
 }
 
-MCPTask_Void MCPClient::Request_Subscribe(const std::string& InResourceURI) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask_Void MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    ResourceSubscribeRequest request;
-    request.URI = InResourceURI;
+	ResourceSubscribeRequest request;
+	request.URI = InResourceURI;
 
-    co_await SendRequest("resources/subscribe", JSONData(request));
+	co_await SendRequest("resources/subscribe", JSONData(request));
 }
 
-MCPTask_Void MCPClient::Request_Unsubscribe(const std::string& InResourceURI) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask_Void MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    ResourceUnsubscribeRequest request;
-    request.URI = InResourceURI;
+	ResourceUnsubscribeRequest request;
+	request.URI = InResourceURI;
 
-    co_await SendRequest("resources/unsubscribe", JSONData(request));
+	co_await SendRequest("resources/unsubscribe", JSONData(request));
 }
 
-void MCPClient::OnNotified_ResourceListChanged() {}
+void MCPClient::OnNotified_ResourceListChanged(const ResourceListChangedNotification& InNotification) {}
 
-void MCPClient::OnNotified_ResourceUpdated() {}
+void MCPClient::OnNotified_ResourceUpdated(const ResourceUpdatedNotification& InNotification) {}
 
-MCPTask<ListRootsResponse> MCPClient::Request_ListRoots() {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask<ListRootsResponse::Result> MCPClient::Request_ListRoots(const PaginatedRequestParams& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    RootListRequest request;
+	RootListRequest request;
 
-    auto response = co_await SendRequest("roots/list", JSONData(request));
-    co_return response.get<RootListResponse>();
+	auto response = co_await SendRequest("roots/list", JSONData(request));
+	co_return response.get<RootListResponse>();
 }
 
-void MCPClient::OnNotified_RootsListChanged() {}
+void MCPClient::OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification) {}
 
-MCPTask_Void MCPClient::Request_SetLoggingLevel(LoggingLevel InLevel) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask_Void MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    LoggingLevelRequest request;
-    request.Level = InLevel;
+	LoggingLevelRequest request;
+	request.Level = InLevel;
 
-    co_await SendRequest("logging/setLevel", JSONData(request));
+	co_await SendRequest("logging/setLevel", JSONData(request));
 }
 
-void MCPClient::OnNotified_LogMessage() {}
+void MCPClient::OnNotified_LogMessage(const LoggingMessageNotification& InNotification) {}
 
-void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest::Params& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    auto response = co_await SendRequest("sampling/createMessage", JSONData(InRequest));
-    co_return response.get<SamplingCreateMessageResponse>();
+	auto response = co_await SendRequest("sampling/createMessage", JSONData(InRequest));
+	co_return response.get<SamplingCreateMessageResponse>();
 }
 
-MCPTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest& InRequest) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask_Void MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
+{
+	RETURN_IF_CLIENT_NOT_CONNECTED
 
-    auto response = co_await SendRequest(InRequest);
-    co_return response.get<CompleteResponse>();
+	auto response = co_await SendRequest(CompleteRequest{ InRequest });
+	co_return response.get<CompleteResponse>();
 }
+MCPTask_Void MCPClient::Notify_Progress(const ProgressNotification::Params& InParams) {}
+MCPTask_Void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams) {}
+void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification) {}
+void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotification) {}
 
 // Old Handler Setters
 // void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
