@@ -82,17 +82,21 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize() {
 
 void MCPClient::OnNotified_Initialized() {}
 
-MCPTask<ListToolsResponse>
-MCPClient::Request_ListTools(const std::optional<std::string>& InCursor) {
-    ToolListRequest request;
-    if (InCursor.has_value()) { request.Cursor = InCursor.value(); }
+MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools() {}
 
-    auto response = co_await SendRequest("tools/list", JSONData(request));
-    co_return response.get<ToolListResponse>();
+MCPTask<ListToolsResponse> MCPClient::Request_ListTools(const std::optional<std::string>& InCursor)
+{
+	ToolListRequest request;
+	if (InCursor.has_value())
+	{
+		request.Cursor = InCursor.value();
+	}
+
+	auto response = co_await SendRequest("tools/list", JSONData(request));
+	co_return response.get<ToolListResponse>();
 }
 
-MCPTask<CallToolResponse> MCPClient::Request_CallTool(const std::string& InToolName,
-                                                      const JSONData& InArguments) {
+MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const Tool& InTool) {
     if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
@@ -108,6 +112,8 @@ MCPTask<CallToolResponse> MCPClient::Request_CallTool(const std::string& InToolN
 
 void MCPClient::OnNotified_ToolListChanged() {}
 
+MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams&) {}
+
 MCPTask<ListPromptsResponse>
 MCPClient::Request_ListPrompts(const std::optional<std::string>& InCursor) {
     if (!IsConnected()) {
@@ -122,27 +128,34 @@ MCPClient::Request_ListPrompts(const std::optional<std::string>& InCursor) {
     co_return response.get<PromptListResponse>();
 }
 
-MCPTask<GetPromptResponse>
-MCPClient::Request_GetPrompt(const std::string& InPromptName,
-                             const std::optional<JSONData>& InArguments) {
-    if (!IsConnected()) {
-        HandleRuntimeError("Client not connected");
-        co_return;
-    }
+MCPTask<GetPromptResponse> MCPClient::Request_GetPrompt(
+	const std::string& InPromptName, const std::optional<JSONData>& InArguments)
+{
+	if (!IsConnected())
+	{
+		HandleRuntimeError("Client not connected");
+		co_return;
+	}
 
-    PromptGetRequest request;
-    request.Name = InPromptName;
-    if (InArguments.has_value()) { request.Arguments = InArguments.value(); }
+	PromptGetRequest request;
+	request.Name = InPromptName;
+	if (InArguments.has_value())
+	{
+		request.Arguments = InArguments.value();
+	}
 
-    auto response = co_await SendRequest("prompts/get", JSONData(request));
-    co_return response.get<PromptGetResponse>();
+	auto response = co_await SendRequest("prompts/get", JSONData(request));
+	co_return response.get<PromptGetResponse>();
 }
+
+MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const Prompt& InPrompt) {}
 
 void MCPClient::OnNotified_PromptListChanged() {}
 
-MCPTask<ListResourcesResponse>
-MCPClient::Request_ListResources(const std::optional<std::string>& InCursor) {
-    if (!IsConnected()) {
+MCPTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InResource) {}
+
+
+MCPTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams&) {  if (!IsConnected()) {
         HandleRuntimeError("Client not connected");
         co_return;
     }

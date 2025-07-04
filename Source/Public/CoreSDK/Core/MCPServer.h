@@ -15,7 +15,7 @@
 MCP_NAMESPACE_BEGIN
 
 // Server protocol handler
-class MCPServer : public MCPProtocol {
+class MCPServer final : public MCPProtocol {
   public:
     MCPServer(TransportType InTransportType,
               std::optional<std::unique_ptr<TransportOptions>> InOptions,

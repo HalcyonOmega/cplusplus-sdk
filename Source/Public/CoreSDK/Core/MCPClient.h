@@ -6,7 +6,7 @@
 MCP_NAMESPACE_BEGIN
 
 // Client protocol handler
-class MCPClient : public MCPProtocol {
+class MCPClient final : public MCPProtocol {
   public:
     MCPClient(TransportType InTransportType,
               std::optional<std::unique_ptr<TransportOptions>> InOptions,
@@ -25,13 +25,13 @@ class MCPClient : public MCPProtocol {
     void OnNotified_ToolListChanged();
 
     // Prompts
-    MCPTask<ListPromptsResponse::Result> Request_ListPrompts();
+    MCPTask<ListPromptsResponse::Result> Request_ListPrompts(const PaginatedRequestParams&);
     MCPTask<GetPromptResponse::Result> Request_GetPrompt(const Prompt& InPrompt);
     void OnNotified_PromptListChanged();
 
     // Resources
-    MCPTask<ListResourcesResponse::Result> Request_ListResources();
-    MCPTask<ReadResourceResponse::Result> Request_ReadResource(const Resource& InResource);
+    MCPTask<ListResourcesResponse::Result> Request_ListResources(const PaginatedRequestParams&);
+    MCPTask<ReadResourceResponse::Result> Request_ReadResource(const ReadResourceRequest::Params& InResource);
     MCPTask_Void Request_Subscribe(const Resource& InResource);
     MCPTask_Void Request_Unsubscribe(const Resource& InResource);
     void OnNotified_ResourceListChanged();
