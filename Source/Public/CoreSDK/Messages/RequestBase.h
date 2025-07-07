@@ -19,93 +19,105 @@ MCP_NAMESPACE_BEGIN
 using RequestHandler = std::function<void(const RequestBase& InRequest)>;
 
 // RequestID {
-//   MSG_DESCRIPTION : "A uniquely identifying ID for a request in JSON-RPC.",
-//                   MSG_TYPE : [ MSG_STRING, MSG_INTEGER ]
+//   MSG_DESCRIPTION: "A uniquely identifying ID for a request in JSON-RPC.",
+//                   MSG_TYPE: [ MSG_STRING, MSG_INTEGER ]
 // };
 
 // A uniquely identifying ID for a request in JSON-RPC.
-struct RequestID {
-    std::variant<std::string, int64_t> Value;
+struct RequestID
+{
+	std::variant<std::string, int64_t> Value;
 
-    RequestID() : Value("") {}
-    RequestID(const std::string& InValue) : Value(InValue) {}
-    RequestID(int64_t InValue) : Value(InValue) {}
-    RequestID(const std::variant<std::string, int64_t>& InValue) : Value(InValue) {}
+	RequestID() : Value("") {}
+	explicit RequestID(const std::string& InValue) : Value(InValue) {}
+	explicit RequestID(int64_t InValue) : Value(InValue) {}
+	explicit RequestID(const std::variant<std::string, int64_t>& InValue) : Value(InValue) {}
 
-    std::string ToString() const {
-        return std::visit(
-            [](const auto& InValue) -> std::string {
-                if constexpr (std::is_same_v<std::decay_t<decltype(InValue)>, std::string>) {
-                    return InValue;
-                } else {
-                    return std::to_string(InValue);
-                }
-            },
-            Value);
-    }
+	[[nodiscard]] std::string ToString() const
+	{
+		return std::visit(
+			[]<typename T>(const T& InValue) -> std::string
+			{
+				if constexpr (std::is_same_v<std::decay_t<T>, std::string>)
+				{
+					return InValue;
+				}
+				else
+				{
+					return std::to_string(InValue);
+				}
+			},
+			Value);
+	}
 
-    friend void to_json(JSONData& InJSON, const RequestID& InRequestID) {
-        InJSON = InRequestID.ToString();
-    }
+	friend void to_json(JSONData& InJSON, const RequestID& InRequestID) { InJSON = InRequestID.ToString(); }
 
-    friend void from_json(const JSONData& InJSON, RequestID& InRequestID) {
-        if (InJSON.is_string()) {
-            InRequestID.Value = InJSON.get<std::string>();
-        } else if (InJSON.is_number_integer()) {
-            InRequestID.Value = InJSON.get<int64_t>();
-        } else {
-            throw std::invalid_argument("RequestID must be string or integer");
-        }
-    }
+	friend void from_json(const JSONData& InJSON, RequestID& InRequestID)
+	{
+		if (InJSON.is_string())
+		{
+			InRequestID.Value = InJSON.get<std::string>();
+		}
+		else if (InJSON.is_number_integer())
+		{
+			InRequestID.Value = InJSON.get<int64_t>();
+		}
+		else
+		{
+			throw std::invalid_argument("RequestID must be string or integer");
+		}
+	}
 };
 
-struct RequestParams {
-    struct RequestParamsMeta {
-        std::optional<ProgressToken>
-            ProgressToken; // If specified, the caller is requesting out-of-band
-                           // progress notifications for this request (as represented by
-                           // notifications/progress). The value of this parameter is an opaque
-                           // token that will be attached to any subsequent notifications. The
-                           // receiver is not obligated to provide these notifications.
+struct RequestParams
+{
+	struct RequestParamsMeta
+	{
+		std::optional<ProgressToken> ProgressToken; // If specified, the caller is requesting out-of-band
+													// progress notifications for this request (as represented by
+													// notifications/progress). The value of this parameter is an opaque
+													// token that will be attached to any subsequent notifications. The
+													// receiver is not obligated to provide these notifications.
 
-        JKEY(PROGRESS_TOKENKEY, ProgressToken, "progressToken")
+		JKEY(PROGRESS_TOKENKEY, ProgressToken, "progressToken")
 
-        DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
-    };
+		DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
+	};
 
-    std::optional<RequestParamsMeta> Meta;
+	std::optional<RequestParamsMeta> Meta;
 
-    JKEY(METAKEY, Meta, "_meta")
+	JKEY(METAKEY, Meta, "_meta")
 
-    DEFINE_TYPE_JSON(RequestParams, METAKEY)
+	DEFINE_TYPE_JSON(RequestParams, METAKEY)
 };
 
 // PaginatedRequest {
-//   MSG_PROPERTIES : {
-//     MSG_METHOD : {MSG_TYPE : MSG_STRING},
-//     MSG_PARAMS : {
-//       MSG_PROPERTIES : {
-//         MSG_CURSOR : {
-//           MSG_DESCRIPTION :
+//   MSG_PROPERTIES: {
+//     MSG_METHOD: {MSG_TYPE: MSG_STRING},
+//     MSG_PARAMS: {
+//       MSG_PROPERTIES: {
+//         MSG_CURSOR: {
+//           MSG_DESCRIPTION:
 //               "An opaque token representing the current pagination position. If provided, the
 //               server should return results starting after this cursor.",
-//           MSG_TYPE : MSG_STRING
+//           MSG_TYPE: MSG_STRING
 //         }
 //       },
-//       MSG_TYPE : MSG_OBJECT
+//       MSG_TYPE: MSG_OBJECT
 //     }
 //   },
-//                  MSG_REQUIRED : [MSG_METHOD],
-//                               MSG_TYPE : MSG_OBJECT
+//                  MSG_REQUIRED: [MSG_METHOD],
+//                               MSG_TYPE: MSG_OBJECT
 // };
 
-struct PaginatedRequestParams : RequestParams {
-    std::optional<std::string> Cursor; // An opaque token representing the current pagination
-                                       // position. If provided, the server should return
-                                       // results starting after this cursor.
-    JKEY(CURSORKEY, Cursor, "cursor")
+struct PaginatedRequestParams : RequestParams
+{
+	std::optional<std::string> Cursor; // An opaque token representing the current pagination
+									   // position. If provided, the server should return
+									   // results starting after this cursor.
+	JKEY(CURSORKEY, Cursor, "cursor")
 
-    DEFINE_TYPE_JSON_DERIVED(PaginatedRequestParams, RequestParams, CURSORKEY)
+	DEFINE_TYPE_JSON_DERIVED(PaginatedRequestParams, RequestParams, CURSORKEY)
 };
 
 // RequestBase {
@@ -121,52 +133,48 @@ struct PaginatedRequestParams : RequestParams {
 //               MSG_PROPERTIES : {
 //                 MSG_PROGRESS_TOKEN : {
 //                   "$ref" : "#/definitions/ProgressToken",
-//                   MSG_DESCRIPTION :
-//                       "If specified, the caller is requesting out-of-band "
-//                       "progress notifications for this request (as represented "
-//                       "by notifications/progress). The value of this parameter "
-//                       "is an opaque token that will be attached to any "
-//                       "subsequent notifications. The receiver is not obligated "
-//                       "to provide these notifications."
+//                   MSG_DESCRIPTION:
+//                       "If specified, the caller is requesting out-of-band progress notifications for this request (as
+//                       represented by notifications/progress). The value of this parameter is an opaque token that
+//                       will be attached to any subsequent notifications. The receiver is not obligated to
+//                       provide these notifications."
 //                 }
 //               },
-//               MSG_TYPE : MSG_OBJECT
+//               MSG_TYPE: MSG_OBJECT
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_ID, MSG_JSON_RPC, MSG_METHOD ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_ID, MSG_JSON_RPC, MSG_METHOD ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 // A request that expects a response. Supports JSON-RPC 2.0.
-struct RequestBase : MessageBase {
-    RequestID ID;
-    std::string Method;
-    std::optional<RequestParams> ParamsData;
+struct RequestBase : MessageBase
+{
+	RequestID ID;
+	std::string Method;
+	std::optional<RequestParams> ParamsData;
 
-    JKEY(IDKEY, ID, "id")
-    JKEY(METHODKEY, Method, "method")
-    JKEY(PARAMSKEY, ParamsData, "params")
+	JKEY(IDKEY, ID, "id")
+	JKEY(METHODKEY, Method, "method")
+	JKEY(PARAMSKEY, ParamsData, "params")
 
-    DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
+	DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
-    RequestBase() = default;
-    RequestBase(std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
-        : MessageBase(), ID(GenerateUUID()), Method(InMethod), ParamsData(std::move(InParams)) {}
+	RequestBase() = default;
+	explicit RequestBase(const std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt) :
+		MessageBase(), ID(GenerateUUID()), Method(InMethod), ParamsData(std::move(InParams))
+	{}
 
-    RequestBase(RequestID InID, std::string_view InMethod,
-                std::optional<RequestParams> InParams = std::nullopt)
-        : MessageBase(), ID(std::move(InID)), Method(InMethod), ParamsData(std::move(InParams)) {}
+	RequestBase(RequestID InID, std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt) :
+		MessageBase(), ID(std::move(InID)), Method(InMethod), ParamsData(std::move(InParams))
+	{}
 
-    [[nodiscard]] RequestID GetRequestID() const {
-        return ID;
-    }
+	[[nodiscard]] RequestID GetRequestID() const { return ID; }
 
-    [[nodiscard]] std::string_view GetRequestMethod() const {
-        return Method;
-    }
+	[[nodiscard]] std::string_view GetRequestMethod() const { return Method; }
 };
 
 template <typename T>
@@ -174,9 +182,13 @@ concept ConcreteRequest = std::is_base_of_v<RequestBase, T>;
 
 // Get typed params - cast the base Params to the derived request's Params type
 template <typename TParamsType, ConcreteRequest T>
-[[nodiscard]] std::optional<TParamsType> GetRequestParams(const T& InRequest) {
-    if (InRequest.ParamsData) { return static_cast<const TParamsType&>(*InRequest.ParamsData); }
-    return std::nullopt;
+[[nodiscard]] std::optional<TParamsType> GetRequestParams(const T& InRequest)
+{
+	if (InRequest.ParamsData)
+	{
+		return static_cast<const TParamsType&>(*InRequest.ParamsData);
+	}
+	return std::nullopt;
 }
 
 MCP_NAMESPACE_END

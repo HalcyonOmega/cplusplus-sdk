@@ -356,7 +356,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 		}
 
 		// Send empty response to indicate success
-		SendResponse(SubscribeResponse(InRequest.GetRequestID(), JSONData::object()));
+		SendResponse(EmptyResponse(InRequest.GetRequestID(), JSONData::object()));
 	}
 	catch (const std::exception& Except)
 	{

@@ -46,7 +46,7 @@ MCPTask_Void MCPClient::Stop()
 
 	try
 	{
-		co_await Stop();
+		co_await m_Transport->Disconnect();
 		IsConnected() = false;
 	}
 	catch (const std::exception& Except)
@@ -84,9 +84,6 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 		m_ClientCapabilities = Response.Result.Capabilities;
 		m_ServerInfo = Response.Result.ServerInfo;
 
-		// Send initialized notification
-		co_await SendNotification(NotificationBase("initialized"));
-
 		m_IsInitialized = true;
 
 		if (m_InitializedHandler)
@@ -118,13 +115,11 @@ MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedR
 	co_return response.get<ToolListResponse>();
 }
 
-MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InTool)
+MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	ToolCallRequest request;
-	request.Name = InToolName;
-	request.Arguments = InArguments;
+	SendRequest(CallToolRequest{ InParams });
 
 	auto response = co_await SendRequest("tools/call", JSONData(request));
 	co_return response.get<ToolCallResponse>();
@@ -136,11 +131,11 @@ MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const Pagina
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	SendRequest(ListPromptRequest{ InParams }) auto response = co_await SendRequest("prompts/list", JSONData(request));
+	SendRequest(ListPromptsRequest{ InParams });
+	response = co_await SendRequest("prompts/list", JSONData(request));
 	co_return response.get<PromptListResponse>();
 }
-
-MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const Prompt& InPrompt)
+MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
@@ -161,13 +156,7 @@ MCPTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const Pa
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	ResourceListRequest request;
-	if (InCursor.has_value())
-	{
-		request.Cursor = InCursor.value();
-	}
-
-	auto response = co_await SendRequest("resources/list", JSONData(request));
+	SendRequest(ListResourcesRequest{ InParams });
 	co_return response.get<ResourceListResponse>();
 }
 
@@ -175,31 +164,21 @@ MCPTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const Read
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	ResourceReadRequest request;
-	request.URI = InResourceURI;
-
-	auto response = co_await SendRequest("resources/read", JSONData(request));
-	co_return response.get<ResourceReadResponse>();
+	co_return co_await SendRequest(ReadResourceRequest{ InParams });
 }
 
 MCPTask_Void MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	ResourceSubscribeRequest request;
-	request.URI = InResourceURI;
-
-	co_await SendRequest("resources/subscribe", JSONData(request));
+	co_return co_await SendRequest(SubscribeRequest{ InParams });
 }
 
 MCPTask_Void MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	ResourceUnsubscribeRequest request;
-	request.URI = InResourceURI;
-
-	co_await SendRequest("resources/unsubscribe", JSONData(request));
+	co_return co_await SendRequest(UnsubscribeRequest{ InParams });
 }
 
 void MCPClient::OnNotified_ResourceListChanged(const ResourceListChangedNotification& InNotification) {}
@@ -210,10 +189,7 @@ MCPTask<ListRootsResponse::Result> MCPClient::Request_ListRoots(const PaginatedR
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	RootListRequest request;
-
-	auto response = co_await SendRequest("roots/list", JSONData(request));
-	co_return response.get<RootListResponse>();
+	co_return co_await SendRequest(ListRootsRequest{ InParams });
 }
 
 void MCPClient::OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification) {}
@@ -222,20 +198,17 @@ MCPTask_Void MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& I
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	LoggingLevelRequest request;
-	request.Level = InLevel;
-
-	co_await SendRequest("logging/setLevel", JSONData(request));
+	co_return co_await SendRequest(SetLevelRequest{ InParams });
 }
 
 void MCPClient::OnNotified_LogMessage(const LoggingMessageNotification& InNotification) {}
 
-void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest::Params& InParams)
+void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	auto response = co_await SendRequest("sampling/createMessage", JSONData(InRequest));
-	co_return response.get<SamplingCreateMessageResponse>();
+	SendResponse(CreateMessageResponse{ InRequest.GetRequestID() });
+	return;
 }
 
 MCPTask_Void MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
@@ -245,8 +218,14 @@ MCPTask_Void MCPClient::Request_Complete(const CompleteRequest::Params& InParams
 	auto response = co_await SendRequest(CompleteRequest{ InRequest });
 	co_return response.get<CompleteResponse>();
 }
-MCPTask_Void MCPClient::Notify_Progress(const ProgressNotification::Params& InParams) {}
-MCPTask_Void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams) {}
+MCPTask_Void MCPClient::Notify_Progress(const ProgressNotification::Params& InParams)
+{
+	return SendNotification(ProgressNotification{ InParams });
+}
+MCPTask_Void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams)
+{
+	return SendNotification(CancelledNotification{ InParams });
+}
 void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification) {}
 void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotification) {}
 

@@ -23,6 +23,11 @@
 
 MCP_NAMESPACE_BEGIN
 
+struct EmptyResponse : ResponseBase
+{
+	explicit EmptyResponse(const RequestID& InRequest) : ResponseBase(InRequest) {};
+};
+
 // InitializeRequest {
 //   MSG_DESCRIPTION : "This request is sent from the client to the server when
 //   it "
@@ -1620,8 +1625,8 @@ struct ProgressNotification : NotificationBase
 			ProgressNotification::Params, NotificationParams, MESSAGEKEY, PROGRESSTOKENKEY, PROGRESSKEY, TOTALKEY)
 
 		Params() = default;
-		Params(const std::optional<std::string>& InMessage, const ProgressToken& InProgressToken, double InProgress,
-			const std::optional<int64_t>& InTotal) :
+		Params(const std::optional<std::string>& InMessage, const MCP::ProgressToken& InProgressToken,
+			double InProgress, const std::optional<int64_t>& InTotal) :
 			Message(InMessage), ProgressToken(InProgressToken), Progress(InProgress), Total(InTotal)
 		{}
 	};
