@@ -45,11 +45,11 @@ public:
 	MCPTask_Void Request_SetLoggingLevel(const SetLevelRequest::Params& InParams);
 	void OnNotified_LogMessage(const LoggingMessageNotification& InNotification);
 
-	// Sampling (for servers that want to sample via the client)
-	void OnRequest_CreateMessage(const CreateMessageRequest::Params& InParams);
+	// Sampling
+	void OnRequest_CreateMessage(const CreateMessageRequest& InParams);
 
 	// Autocomplete
-	MCPTask_Void Request_Complete(const CompleteRequest::Params& InParams);
+	MCPTask<CompleteResponse::Result> Request_Complete(const CompleteRequest::Params& InParams);
 
 	// Progress
 	MCPTask_Void Notify_Progress(const ProgressNotification::Params& InParams);

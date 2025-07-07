@@ -29,30 +29,25 @@ struct EmptyResponse : ResponseBase
 };
 
 // InitializeRequest {
-//   MSG_DESCRIPTION : "This request is sent from the client to the server when
-//   it "
-//                   "first connects, asking it to begin initialization.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_INITIALIZE, MSG_TYPE : MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_CAPABILITIES : {"$ref" : "#/definitions/ClientCapabilities"},
-//             MSG_CLIENT_INFO : {"$ref" : "#/definitions/Implementation"},
-//             MSG_PROTOCOL_VERSION : {
-//               MSG_DESCRIPTION :
-//                   "The latest version of the Model Context Protocol "
-//                   "that the client supports. The client MAY decide to "
-//                   "support older versions as well.",
-//               MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "This request is sent from the client to the server when it first connects, asking it to begin
+//   initialization.",
+//                   MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_INITIALIZE, MSG_TYPE: MSG_STRING},
+//         MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_CAPABILITIES: {"$ref": "#/definitions/ClientCapabilities"},
+//             MSG_CLIENT_INFO: {"$ref": "#/definitions/Implementation"},
+//             MSG_PROTOCOL_VERSION: {
+//               MSG_DESCRIPTION: "The latest version of the Model Context Protocol that the client supports. The client
+//               MAY decide to support older versions as well.",
+//               MSG_TYPE: MSG_STRING
 //             }
 //           },
-//           MSG_REQUIRED : [ MSG_CAPABILITIES, MSG_CLIENT_INFO,
-//           MSG_PROTOCOL_VERSION ], MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [ MSG_CAPABILITIES, MSG_CLIENT_INFO, MSG_PROTOCOL_VERSION ], MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -83,42 +78,38 @@ struct InitializeRequest : RequestBase
 };
 
 // InitializeResult {
-//   MSG_DESCRIPTION : "After receiving an initialize request from the client, "
+//   MSG_DESCRIPTION: "After receiving an initialize request from the client, "
 //                   "the server sends this response.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//     : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_CAPABILITIES : {"$ref" : "#/definitions/ServerCapabilities"},
-//         MSG_INSTRUCTIONS : {
-//           MSG_DESCRIPTION :
+//         MSG_CAPABILITIES: {"$ref": "#/definitions/ServerCapabilities"},
+//         MSG_INSTRUCTIONS: {
+//           MSG_DESCRIPTION:
 //               "Instructions describing how to use the server and its
 //               features.\n\nThis can be used by clients to improve the LLM's
 //               understanding of available tools, resources, etc. It can be
 //               thought of like a \"hint\" to the model. For example, this
 //               information MAY be added to the system prompt.",
-//           MSG_TYPE : MSG_STRING
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_PROTOCOL_VERSION : {
-//           MSG_DESCRIPTION : "The version of the Model Context Protocol that
-//           the "
-//                           "server wants to use. This may not match the
-//                           version " "that the client requested. If the client
-//                           cannot " "support this version, it MUST
-//                           disconnect.",
-//           MSG_TYPE : MSG_STRING
+//         MSG_PROTOCOL_VERSION: {
+//           MSG_DESCRIPTION: "The version of the Model Context Protocol that
+//           the server wants to use. This may not match the version that the client requested. If the client cannot
+//           support this version, it MUST disconnect.",
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_SERVER_INFO : {"$ref" : "#/definitions/Implementation"}
+//         MSG_SERVER_INFO: {"$ref": "#/definitions/Implementation"}
 //       },
-//         MSG_REQUIRED : [ MSG_CAPABILITIES, MSG_PROTOCOL_VERSION,
-//         MSG_SERVER_INFO ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_CAPABILITIES, MSG_PROTOCOL_VERSION, MSG_SERVER_INFO ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -158,27 +149,27 @@ struct InitializeResponse : ResponseBase
 };
 
 // InitializedNotification {
-//   MSG_DESCRIPTION : "This notification is sent from the client to the "
+//   MSG_DESCRIPTION: "This notification is sent from the client to the "
 //                   "server after initialization has finished.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_INITIALIZED, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_PROPERTIES : {
-//             MSG_META : {
-//               MSG_ADDITIONAL_PROPERTIES : {},
-//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to "
+//     : {
+//         MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_INITIALIZED, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_PROPERTIES: {
+//             MSG_META: {
+//               MSG_ADDITIONAL_PROPERTIES: {},
+//               MSG_DESCRIPTION: "This parameter name is reserved by MCP to "
 //                               "allow clients and servers to attach "
 //                               "additional metadata to their notifications.",
-//               MSG_TYPE : MSG_OBJECT
+//               MSG_TYPE: MSG_OBJECT
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -191,42 +182,37 @@ struct InitializedNotification : NotificationBase
 };
 
 // PingRequest {
-//   MSG_DESCRIPTION : "A ping, issued by either the server or the client, to "
-//                   "check that the other party is still alive. The receiver "
-//                   "must promptly respond, or else may be disconnected.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_PING, MSG_TYPE : MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_PROPERTIES : {
-//             MSG_META : {
-//               MSG_PROPERTIES : {
-//                 MSG_PROGRESS_TOKEN : {
-//                   "$ref" : "#/definitions/ProgressToken",
-//                   MSG_DESCRIPTION :
-//                       "If specified, the caller is requesting out-of-band "
-//                       "progress notifications for this request (as
-//                       represented " "by notifications/progress). The value of
-//                       this parameter " "is an opaque token that will be
-//                       attached to any " "subsequent notifications. The
-//                       receiver is not obligated " "to provide these
-//                       notifications."
+//   MSG_DESCRIPTION: "A ping, issued by either the server or the client, to check that the other party is still alive.
+//   The receiver must promptly respond, or else may be disconnected.",
+//         MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_PING, MSG_TYPE: MSG_STRING},
+//         MSG_PARAMS: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_PROPERTIES: {
+//             MSG_META: {
+//               MSG_PROPERTIES: {
+//                 MSG_PROGRESS_TOKEN: {
+//                   "$ref": "#/definitions/ProgressToken",
+//                   MSG_DESCRIPTION:
+//                       "If specified, the caller is requesting out-of-band progress notifications for this request (as
+//                       represented by notifications/progress). The value of this parameter is an opaque token that
+//                       will be attached to any subsequent notifications. The receiver is not obligated to provide
+//                       these notifications."
 //                 }
 //               },
-//               MSG_TYPE : MSG_OBJECT
+//               MSG_TYPE: MSG_OBJECT
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * A ping, issued by either the server or the client, to check that the other
- * party is still alive. The receiver must promptly respond, or else may be
+ * party is still alive. The receiver must promptly respond, or else it may be
  * disconnected.
  */
 struct PingRequest : RequestBase
@@ -240,25 +226,22 @@ struct PingResponse : ResponseBase
 };
 
 // ListToolsRequest {
-//   MSG_DESCRIPTION
-//       : "Sent from the client to request a list of tools the server has.",
-//         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : MTHD_TOOLS_LIST, MSG_TYPE : MSG_STRING},
-//           MSG_PARAMS : {
-//             MSG_PROPERTIES : {
-//               MSG_CURSOR : {
-//                 MSG_DESCRIPTION :
-//                     "An opaque token representing the current pagination "
-//                     "position.\nIf provided, the server should return "
-//                     "results starting after this cursor.",
-//                 MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "Sent from the client to request a list of tools the server has.",
+//         MSG_PROPERTIES: {
+//           MSG_METHOD: {MSG_CONST: MTHD_TOOLS_LIST, MSG_TYPE: MSG_STRING},
+//           MSG_PARAMS: {
+//             MSG_PROPERTIES: {
+//               MSG_CURSOR: {
+//                 MSG_DESCRIPTION: "An opaque token representing the current pagination position.If provided, the
+//                 server should return results starting after this cursor.",
+//                 MSG_TYPE: MSG_STRING
 //               }
 //             },
-//             MSG_TYPE : MSG_OBJECT
+//             MSG_TYPE: MSG_OBJECT
 //           }
 //         },
-//                        MSG_REQUIRED : [MSG_METHOD],
-//                                     MSG_TYPE : MSG_OBJECT
+//                        MSG_REQUIRED: [MSG_METHOD],
+//                                     MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -273,28 +256,28 @@ struct ListToolsRequest : RequestBase
 
 // ListToolsResult {
 //   MSG_DESCRIPTION
-//       : "The server's response to a tools/list request from the client.",
+//     : "The server's response to a tools/list request from the client.",
 //         MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//     : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_NEXT_CURSOR : {
-//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR: {
+//           MSG_DESCRIPTION: "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           MSG_TYPE : MSG_STRING
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_TOOLS : {MSG_ITEMS : {"$ref" : "#/definitions/Tool"}, MSG_TYPE :
+//         MSG_TOOLS: {MSG_ITEMS: {"$ref": "#/definitions/Tool"}, MSG_TYPE:
 //         MSG_ARRAY}
 //       },
-//         MSG_REQUIRED : [MSG_TOOLS],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_TOOLS],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -304,7 +287,7 @@ struct ListToolsResponse : ResponseBase
 {
 	struct Result : PaginatedResultParams
 	{
-		std::vector<Tool> Tools{};
+		std::vector<Tool> Tools;
 
 		JKEY(TOOLSKEY, Tools, "tools")
 
@@ -324,22 +307,21 @@ struct ListToolsResponse : ResponseBase
 };
 
 // CallToolRequest {
-//   MSG_DESCRIPTION : "Used by the client to invoke a tool provided by the
+//   MSG_DESCRIPTION: "Used by the client to invoke a tool provided by the
 //   server.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_TOOLS_CALL, MSG_TYPE : MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_ARGUMENTS : {MSG_ADDITIONAL_PROPERTIES : {}, MSG_TYPE :
-//             MSG_OBJECT}, MSG_NAME : {MSG_TYPE : MSG_STRING}
+//       MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_TOOLS_CALL, MSG_TYPE: MSG_STRING},
+//         MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_ARGUMENTS: {MSG_ADDITIONAL_PROPERTIES: {}, MSG_TYPE:
+//             MSG_OBJECT}, MSG_NAME: {MSG_TYPE: MSG_STRING}
 //           },
-//           MSG_REQUIRED : [MSG_NAME],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_NAME],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -364,44 +346,39 @@ struct CallToolRequest : RequestBase
 };
 
 // CallToolResult {
-//   MSG_DESCRIPTION
-//       : "The server's response to a tool call.\n\nAny errors that originate "
-//         "from the tool SHOULD be reported inside the result\nobject, with "
-//         "`isError` set to true, _not_ as an MCP protocol-level "
-//         "error\nresponse. Otherwise, the LLM would not be able to see that "
-//         "an error occurred\nand self-correct.\n\nHowever, any errors in "
-//         "_finding_ the tool, an error indicating that the\nserver does not "
-//         "support tool calls, or any other exceptional conditions,\nshould be
-//         " "reported as an MCP error response.", MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
-//           to "
-//                           "allow clients and servers to attach additional "
-//                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//   MSG_DESCRIPTION: "The server's response to a tool call.
+//   Any errors that originate from the tool SHOULD be reported inside the result object, with `isError` set to true,
+//   _not_ as an MCP protocol-level error response. Otherwise, the LLM would not be able to see that an error
+//   occurred and self-correct.
+//   However, any errors in _finding_ the tool, an error indicating that the server does not support tool calls, or any
+//   other exceptional conditions,should be reported as an MCP error response.",
+//   MSG_PROPERTIES: {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol to allow clients and servers to attach
+//           additional metadata to their responses.",
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_CONTENT : {
-//           MSG_ITEMS : {
-//             "anyOf" : [
-//               {"$ref" : "#/definitions/TextContent"},
-//               {"$ref" : "#/definitions/ImageContent"},
-//               {"$ref" : "#/definitions/AudioContent"},
-//               {"$ref" : "#/definitions/EmbeddedResource"}
+//         MSG_CONTENT: {
+//           MSG_ITEMS: {
+//             "anyOf": [
+//               {"$ref": "#/definitions/TextContent"},
+//               {"$ref": "#/definitions/ImageContent"},
+//               {"$ref": "#/definitions/AudioContent"},
+//               {"$ref": "#/definitions/EmbeddedResource"}
 //             ]
 //           },
-//           MSG_TYPE : MSG_ARRAY
+//           MSG_TYPE: MSG_ARRAY
 //         },
-//         MSG_IS_ERROR : {
-//           MSG_DESCRIPTION :
+//         MSG_IS_ERROR: {
+//           MSG_DESCRIPTION:
 //               "Whether the tool call ended in an error.\n\nIf not set, this
-//               is " "assumed to be false (the call was successful).",
-//           MSG_TYPE : MSG_BOOLEAN
+//               is assumed to be false (the call was successful).",
+//           MSG_TYPE: MSG_BOOLEAN
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_CONTENT],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_CONTENT],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -433,37 +410,32 @@ struct CallToolResponse : ResponseBase
 };
 
 // ToolListChangedNotification {
-//   MSG_DESCRIPTION
-//       : "An optional notification from the server to the client, informing "
-//         "it that the list of tools it offers has changed. This may be issued
-//         " "by servers without any previous subscription from the client.",
-//         MSG_PROPERTIES
-//       : {
-//         MSG_METHOD :
-//             {MSG_CONST : MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED, MSG_TYPE :
+//   MSG_DESCRIPTION: "An optional notification from the server to the client, informing it that the list of tools it
+//   offers has changed. This may be issued by servers without any previous subscription from the client.",
+//         MSG_PROPERTIES: {
+//         MSG_METHOD:
+//             {MSG_CONST: MTHD_NOTIFICATIONS_TOOLS_LIST_CHANGED, MSG_TYPE:
 //             MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_PROPERTIES : {
-//             MSG_META : {
-//               MSG_ADDITIONAL_PROPERTIES : {},
-//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
-//               allow "
-//                               "clients and servers to attach additional "
-//                               "metadata to their notifications.",
-//               MSG_TYPE : MSG_OBJECT
+//         MSG_PARAMS: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_PROPERTIES: {
+//             MSG_META: {
+//               MSG_ADDITIONAL_PROPERTIES: {},
+//               MSG_DESCRIPTION: "This parameter name is reserved by MCP to allow clients and servers to attach
+//               additional metadata to their notifications.",
+//               MSG_TYPE: MSG_OBJECT
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * An optional notification from the server to the client, informing it that the
- * list of tools it offers has changed. This may be issued by servers without
+ * list of tools it offers has changed. Servers may issue this without
  * any previous subscription from the client.
  */
 struct ToolListChangedNotification : NotificationBase
@@ -472,26 +444,26 @@ struct ToolListChangedNotification : NotificationBase
 };
 
 // ListPromptsRequest {
-//   MSG_DESCRIPTION : "Sent from the client to request a list of prompts and "
+//   MSG_DESCRIPTION: "Sent from the client to request a list of prompts and "
 //                   "prompt templates the server has.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_LIST, MSG_TYPE : MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_CURSOR : {
-//               MSG_DESCRIPTION :
+//     : {
+//         MSG_METHOD: {MSG_CONST: MTHD_PROMPTS_LIST, MSG_TYPE: MSG_STRING},
+//         MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_CURSOR: {
+//               MSG_DESCRIPTION:
 //                   "An opaque token representing the current pagination "
 //                   "position.\nIf provided, the server should return "
 //                   "results starting after this cursor.",
-//               MSG_TYPE : MSG_STRING
+//               MSG_TYPE: MSG_STRING
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -507,29 +479,29 @@ struct ListPromptsRequest : RequestBase
 
 // ListPromptsResult {
 //   MSG_DESCRIPTION
-//       : "The server's response to a prompts/list request from the client.",
+//     : "The server's response to a prompts/list request from the client.",
 //         MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//     : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_NEXT_CURSOR : {
-//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR: {
+//           MSG_DESCRIPTION: "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           MSG_TYPE : MSG_STRING
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_PROMPTS :
-//             {MSG_ITEMS : {"$ref" : "#/definitions/Prompt"}, MSG_TYPE :
+//         MSG_PROMPTS:
+//             {MSG_ITEMS: {"$ref": "#/definitions/Prompt"}, MSG_TYPE:
 //             MSG_ARRAY}
 //       },
-//         MSG_REQUIRED : [MSG_PROMPTS],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_PROMPTS],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -553,29 +525,29 @@ struct ListPromptsResponse : ResponseBase
 };
 
 // GetPromptRequest {
-//   MSG_DESCRIPTION : "Used by the client to get a prompt provided by the
+//   MSG_DESCRIPTION: "Used by the client to get a prompt provided by the
 //   server.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_PROMPTS_GET, MSG_TYPE : MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_ARGUMENTS : {
-//               MSG_ADDITIONAL_PROPERTIES : {MSG_TYPE : MSG_STRING},
-//               MSG_DESCRIPTION : "Arguments to use for templating the
-//               prompt.", MSG_TYPE : MSG_OBJECT
+//     : {
+//         MSG_METHOD: {MSG_CONST: MTHD_PROMPTS_GET, MSG_TYPE: MSG_STRING},
+//         MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_ARGUMENTS: {
+//               MSG_ADDITIONAL_PROPERTIES: {MSG_TYPE: MSG_STRING},
+//               MSG_DESCRIPTION: "Arguments to use for templating the
+//               prompt.", MSG_TYPE: MSG_OBJECT
 //             },
-//             MSG_NAME : {
-//               MSG_DESCRIPTION : "The name of the prompt or prompt template.",
-//               MSG_TYPE : MSG_STRING
+//             MSG_NAME: {
+//               MSG_DESCRIPTION: "The name of the prompt or prompt template.",
+//               MSG_TYPE: MSG_STRING
 //             }
 //           },
-//           MSG_REQUIRED : [MSG_NAME],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_NAME],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -601,28 +573,28 @@ struct GetPromptRequest : RequestBase
 
 // GetPromptResult {
 //   MSG_DESCRIPTION
-//       : "The server's response to a prompts/get request from the client.",
+//     : "The server's response to a prompts/get request from the client.",
 //         MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//     : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_DESCRIPTION : {
-//           MSG_DESCRIPTION : "An optional description for the prompt.",
-//           MSG_TYPE : MSG_STRING
+//         MSG_DESCRIPTION: {
+//           MSG_DESCRIPTION: "An optional description for the prompt.",
+//           MSG_TYPE: MSG_STRING
 //         },
-//         "messages" : {
-//           MSG_ITEMS : {"$ref" : "#/definitions/PromptMessage"},
-//           MSG_TYPE : MSG_ARRAY
+//         "messages": {
+//           MSG_ITEMS: {"$ref": "#/definitions/PromptMessage"},
+//           MSG_TYPE: MSG_ARRAY
 //         }
 //       },
-//         MSG_REQUIRED : ["messages"],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: ["messages"],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -648,38 +620,38 @@ struct GetPromptResponse : ResponseBase
 };
 
 // PromptListChangedNotification {
-//   MSG_DESCRIPTION : "An optional notification from the server to the client,
+//   MSG_DESCRIPTION: "An optional notification from the server to the client,
 //   "
 //                   "informing it that the list of prompts it offers has "
 //                   "changed. This may be issued by servers without any "
 //                   "previous subscription from the client.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD :
-//             {MSG_CONST : MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED, MSG_TYPE :
+//     : {
+//         MSG_METHOD:
+//             {MSG_CONST: MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED, MSG_TYPE:
 //             MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_PROPERTIES : {
-//             MSG_META : {
-//               MSG_ADDITIONAL_PROPERTIES : {},
-//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
+//         MSG_PARAMS: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_PROPERTIES: {
+//             MSG_META: {
+//               MSG_ADDITIONAL_PROPERTIES: {},
+//               MSG_DESCRIPTION: "This parameter name is reserved by MCP to
 //               allow "
 //                               "clients and servers to attach additional "
 //                               "metadata to their notifications.",
-//               MSG_TYPE : MSG_OBJECT
+//               MSG_TYPE: MSG_OBJECT
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * An optional notification from the server to the client, informing it that the
- * list of prompts it offers has changed. This may be issued by servers without
+ * list of prompts it offers has changed. Servers may issue this without
  * any previous subscription from the client.
  */
 struct PromptListChangedNotification : NotificationBase
@@ -688,26 +660,22 @@ struct PromptListChangedNotification : NotificationBase
 };
 
 // ListResourcesRequest {
-//   MSG_DESCRIPTION
-//       : "Sent from the client to request a list of resources the server
-//       has.",
-//         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_LIST, MSG_TYPE :
-//           MSG_STRING}, MSG_PARAMS : {
-//             MSG_PROPERTIES : {
-//               MSG_CURSOR : {
-//                 MSG_DESCRIPTION :
-//                     "An opaque token representing the current pagination "
-//                     "position.\nIf provided, the server should return results
-//                     " "starting after this cursor.",
-//                 MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "Sent from the client to request a list of resources the server has.",
+//         MSG_PROPERTIES: {
+//           MSG_METHOD: {MSG_CONST: MTHD_RESOURCES_LIST, MSG_TYPE:
+//           MSG_STRING}, MSG_PARAMS: {
+//             MSG_PROPERTIES: {
+//               MSG_CURSOR: {
+//                 MSG_DESCRIPTION: "An opaque token representing the current pagination position.If provided, the
+//                 server should return results starting after this cursor.",
+//                 MSG_TYPE: MSG_STRING
 //               }
 //             },
-//             MSG_TYPE : MSG_OBJECT
+//             MSG_TYPE: MSG_OBJECT
 //           }
 //         },
-//                        MSG_REQUIRED : [MSG_METHOD],
-//                                     MSG_TYPE : MSG_OBJECT
+//                        MSG_REQUIRED: [MSG_METHOD],
+//                                     MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -722,29 +690,29 @@ struct ListResourcesRequest : RequestBase
 
 // ListResourcesResult {
 //   MSG_DESCRIPTION
-//       : "The server's response to a resources/list request from the client.",
+//     : "The server's response to a resources/list request from the client.",
 //         MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//     : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_NEXT_CURSOR : {
-//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR: {
+//           MSG_DESCRIPTION: "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           MSG_TYPE : MSG_STRING
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_RESOURCES :
-//             {MSG_ITEMS : {"$ref" : "#/definitions/Resource"}, MSG_TYPE :
+//         MSG_RESOURCES:
+//             {MSG_ITEMS: {"$ref": "#/definitions/Resource"}, MSG_TYPE:
 //             MSG_ARRAY}
 //       },
-//         MSG_REQUIRED : [MSG_RESOURCES],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_RESOURCES],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -768,26 +736,25 @@ struct ListResourcesResponse : ResponseBase
 };
 
 // ListResourceTemplatesRequest {
-//   MSG_DESCRIPTION : "Sent from the client to request a list of resource "
+//   MSG_DESCRIPTION: "Sent from the client to request a list of resource "
 //                   "templates the server has.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_TEMPLATES_LIST, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_CURSOR : {
-//               MSG_DESCRIPTION :
+//                   MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_RESOURCES_TEMPLATES_LIST, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_CURSOR: {
+//               MSG_DESCRIPTION:
 //                   "An opaque token representing the current pagination "
 //                   "position.\nIf provided, the server should return "
 //                   "results starting after this cursor.",
-//               MSG_TYPE : MSG_STRING
+//               MSG_TYPE: MSG_STRING
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -801,31 +768,31 @@ struct ListResourceTemplatesRequest : RequestBase
 };
 
 // ListResourceTemplatesResult {
-//   MSG_DESCRIPTION : "The server's response to a resources/templates/list "
+//   MSG_DESCRIPTION: "The server's response to a resources/templates/list "
 //                   "request from the client.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//      : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_NEXT_CURSOR : {
-//           MSG_DESCRIPTION : "An opaque token representing the pagination "
+//         MSG_NEXT_CURSOR: {
+//           MSG_DESCRIPTION: "An opaque token representing the pagination "
 //                           "position after the last returned result.\nIf "
 //                           "present, there may be more results available.",
-//           MSG_TYPE : MSG_STRING
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_RESOURCE_TEMPLATES : {
-//           MSG_ITEMS : {"$ref" : "#/definitions/ResourceTemplate"},
-//           MSG_TYPE : MSG_ARRAY
+//         MSG_RESOURCE_TEMPLATES: {
+//           MSG_ITEMS: {"$ref": "#/definitions/ResourceTemplate"},
+//           MSG_TYPE: MSG_ARRAY
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_RESOURCE_TEMPLATES],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_RESOURCE_TEMPLATES],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -849,31 +816,27 @@ struct ListResourceTemplatesResponse : ResponseBase
 };
 
 // ResourceUpdatedNotification {
-//   MSG_DESCRIPTION : "A notification from the server to the client, "
-//                   "informing it that a resource has changed and may need "
-//                   "to be read again. This should only be sent if the "
-//                   "client previously sent a resources/subscribe request.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD :
-//             {MSG_CONST : MTHD_NOTIFICATIONS_RESOURCES_UPDATED, MSG_TYPE :
+//   MSG_DESCRIPTION: "A notification from the server to the client, informing it that a resource has changed and may
+//   need to be read again. This should only be sent if the client previously sent a resources/subscribe request.",
+//      MSG_PROPERTIES: {
+//         MSG_METHOD:
+//             {MSG_CONST: MTHD_NOTIFICATIONS_RESOURCES_UPDATED, MSG_TYPE:
 //             MSG_STRING},
-//         MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_URI : {
-//               MSG_DESCRIPTION : "The URI of the resource that has been "
-//                               "updated. This might be a sub-resource of the "
-//                               "one that the client actually subscribed to.",
-//               MSG_FORMAT : MSG_URI,
-//               MSG_TYPE : MSG_STRING
+//         MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_URI: {
+//               MSG_DESCRIPTION: "The URI of the resource that has been updated. This might be a sub-resource of the
+//               one that the client actually subscribed to.",
+//               MSG_FORMAT: MSG_URI,
+//               MSG_TYPE: MSG_STRING
 //             }
 //           },
-//           MSG_REQUIRED : [MSG_URI],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_URI],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -899,34 +862,28 @@ struct ResourceUpdatedNotification : NotificationBase
 };
 
 // ReadResourceRequest {
-//   MSG_DESCRIPTION
-//       : "Sent from the client to the server, to read a specific resource
-//       URI.",
-//         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_READ, MSG_TYPE :
-//           MSG_STRING}, MSG_PARAMS : {
-//             MSG_PROPERTIES : {
-//               MSG_URI : {
-//                 MSG_DESCRIPTION: "The URI of the resource to read. The URI
-//                 can
-//                 "
-//                                 "use any protocol; "
-//                                 "it is up to the server how to interpret
-//                                 it.",
-//                 MSG_FORMAT : MSG_URI,
-//                 MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "Sent from the client to the server, to read a specific resource URI.",
+//         MSG_PROPERTIES: {
+//           MSG_METHOD: {MSG_CONST: MTHD_RESOURCES_READ, MSG_TYPE:
+//           MSG_STRING}, MSG_PARAMS: {
+//             MSG_PROPERTIES: {
+//               MSG_URI: {
+//                 MSG_DESCRIPTION: "The URI of the resource to read. The URI can use any protocol; it is up to the
+//                 server how to interpret it.",
+//                 MSG_FORMAT: MSG_URI,
+//                 MSG_TYPE: MSG_STRING
 //               }
 //             },
 //             MSG_REQUIRED: [MSG_URI],
-//             MSG_TYPE : MSG_OBJECT
+//             MSG_TYPE: MSG_OBJECT
 //           }
 //         },
-//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                                     MSG_TYPE : MSG_OBJECT
+//                        MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE: MSG_OBJECT
 // };
 
 /**
- * Sent from the client to the server, to read a specific resource URI.
+ * Sent from the client to the server to read a specific resource URI.
  */
 struct ReadResourceRequest : RequestBase
 {
@@ -947,29 +904,29 @@ struct ReadResourceRequest : RequestBase
 
 // ReadResourceResult {
 //   MSG_DESCRIPTION
-//       : "The server's response to a resources/read request from the client.",
+//      : "The server's response to a resources/read request from the client.",
 //         MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//      : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_CONTENTS : {
-//           MSG_ITEMS : {
-//             "anyOf" : [
-//               {"$ref" : "#/definitions/TextResourceContents"},
-//               {"$ref" : "#/definitions/BlobResourceContents"}
+//         MSG_CONTENTS: {
+//           MSG_ITEMS: {
+//             "anyOf": [
+//               {"$ref": "#/definitions/TextResourceContents"},
+//               {"$ref": "#/definitions/BlobResourceContents"}
 //             ]
 //           },
-//           MSG_TYPE : MSG_ARRAY
+//           MSG_TYPE: MSG_ARRAY
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_CONTENTS],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_CONTENTS],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -998,24 +955,24 @@ struct ReadResourceResponse : ResponseBase
 //       "
 //         "the server whenever a particular resource changes.",
 //         MSG_PROPERTIES: {
-//           MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_SUBSCRIBE, MSG_TYPE :
-//           MSG_STRING}, MSG_PARAMS : {
-//             MSG_PROPERTIES : {
-//               MSG_URI : {
-//                 MSG_DESCRIPTION :
+//           MSG_METHOD: {MSG_CONST: MTHD_RESOURCES_SUBSCRIBE, MSG_TYPE:
+//           MSG_STRING}, MSG_PARAMS: {
+//             MSG_PROPERTIES: {
+//               MSG_URI: {
+//                 MSG_DESCRIPTION:
 //                     "The URI of the resource to subscribe to. The URI can use
-//                     " "any " "protocol; it is up to the server how to
+//                     any protocol; it is up to the server how to
 //                     interpret it.",
-//                 MSG_FORMAT : MSG_URI,
-//                 MSG_TYPE : MSG_STRING
+//                 MSG_FORMAT: MSG_URI,
+//                 MSG_TYPE: MSG_STRING
 //               }
 //             },
-//             MSG_REQUIRED : [MSG_URI],
-//             MSG_TYPE : MSG_OBJECT
+//             MSG_REQUIRED: [MSG_URI],
+//             MSG_TYPE: MSG_OBJECT
 //           }
 //         },
-//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                                     MSG_TYPE : MSG_OBJECT
+//                        MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1040,25 +997,24 @@ struct SubscribeRequest : RequestBase
 };
 
 // UnsubscribeRequest {
-//   MSG_DESCRIPTION : "Sent from the client to request cancellation of "
+//   MSG_DESCRIPTION: "Sent from the client to request cancellation of "
 //                   "resources/updated notifications from the server. This "
 //                   "should follow a previous resources/subscribe request.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_RESOURCES_UNSUBSCRIBE, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_URI : {
-//               MSG_DESCRIPTION : "The URI of the resource to unsubscribe
-//               from.", MSG_FORMAT : MSG_URI, MSG_TYPE : MSG_STRING
+//         MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_RESOURCES_UNSUBSCRIBE, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_URI: {
+//               MSG_DESCRIPTION: "The URI of the resource to unsubscribe
+//               from.", MSG_FORMAT: MSG_URI, MSG_TYPE: MSG_STRING
 //             }
 //           },
-//           MSG_REQUIRED : [MSG_URI],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_URI],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1083,39 +1039,39 @@ struct UnsubscribeRequest : RequestBase
 };
 
 // ResourceListChangedNotification {
-//   MSG_DESCRIPTION : "An optional notification from the server to the client,
+//   MSG_DESCRIPTION: "An optional notification from the server to the client,
 //   "
 //                   "informing it that the list of resources it can read "
 //                   "from has changed. This may be issued by servers without "
 //                   "any previous subscription from the client.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {
-//           MSG_CONST : MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED,
-//           MSG_TYPE : MSG_STRING
+//      : {
+//         MSG_METHOD: {
+//           MSG_CONST: MTHD_NOTIFICATIONS_RESOURCES_LIST_CHANGED,
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_PARAMS : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_PROPERTIES : {
-//             MSG_META : {
-//               MSG_ADDITIONAL_PROPERTIES : {},
-//               MSG_DESCRIPTION : "This parameter name is reserved by MCP to
+//         MSG_PARAMS: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_PROPERTIES: {
+//             MSG_META: {
+//               MSG_ADDITIONAL_PROPERTIES: {},
+//               MSG_DESCRIPTION: "This parameter name is reserved by MCP to
 //               allow "
 //                               "clients and servers to attach additional "
 //                               "metadata to their notifications.",
-//               MSG_TYPE : MSG_OBJECT
+//               MSG_TYPE: MSG_OBJECT
 //             }
 //           },
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_METHOD],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_METHOD],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * An optional notification from the server to the client, informing it that the
- * list of resources it can read from has changed. This may be issued by servers
+ * list of resources it can read from has changed. Servers may issue this
  * without any previous subscription from the client.
  */
 struct ResourceListChangedNotification : NotificationBase
@@ -1124,73 +1080,61 @@ struct ResourceListChangedNotification : NotificationBase
 };
 
 // CreateMessageRequest {
-//   MSG_DESCRIPTION
-//       : "A request from the server to sample an LLM via the client. The
-//       client "
-//         "has full discretion over which model to select. The client should "
-//         "also "
-//         "inform the user before beginning sampling, to allow them to inspect
-//         " "the " "request (human in the loop) and decide whether to approve
-//         it.", MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_SAMPLING_CREATE_MESSAGE, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             "includeContext" : {
-//               MSG_DESCRIPTION :
-//                   "A request to include context from one or more MCP "
-//                   "servers (including the caller), to be attached to "
-//                   "the prompt. The client MAY ignore this request.",
-//               MSG_ENUM : [ "allServers", "none", "thisServer" ],
-//               MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "A request from the server to sample an LLM via the client. The
+//       client has full discretion over which model to select. The client should also inform the user before beginning
+//       sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.",
+//         MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_SAMPLING_CREATE_MESSAGE, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             "includeContext": {
+//               MSG_DESCRIPTION: "A request to include context from one or more MCP servers (including the caller), to
+//               be attached to the prompt. The client MAY ignore this request.",
+//               MSG_ENUM: [ "allServers", "none", "thisServer" ],
+//               MSG_TYPE: MSG_STRING
 //             },
-//             "maxTokens" : {
-//               MSG_DESCRIPTION :
-//                   "The maximum number of tokens to sample, as "
-//                   "requested by the server. The client MAY choose to "
-//                   "sample fewer tokens than requested.",
-//               MSG_TYPE : MSG_INTEGER
+//             "maxTokens": {
+//               MSG_DESCRIPTION: "The maximum number of tokens to sample, as requested by the server. The client MAY
+//               choose to sample fewer tokens than requested.",
+//               MSG_TYPE: MSG_INTEGER
 //             },
-//             "messages" : {
-//               MSG_ITEMS : {"$ref" : "#/definitions/SamplingMessage"},
-//               MSG_TYPE : MSG_ARRAY
+//             "messages": {
+//               MSG_ITEMS: {"$ref": "#/definitions/SamplingMessage"},
+//               MSG_TYPE: MSG_ARRAY
 //             },
-//             "metadata" : {
-//               MSG_ADDITIONAL_PROPERTIES : true,
-//               MSG_DESCRIPTION :
-//                   "Optional metadata to pass through to the LLM provider. The
-//                   " "format of this metadata is provider-specific.",
-//               MSG_PROPERTIES : {},
-//               MSG_TYPE : MSG_OBJECT
+//             "metadata": {
+//               MSG_ADDITIONAL_PROPERTIES: true,
+//               MSG_DESCRIPTION: "Optional metadata to pass through to the LLM provider. The format of this metadata is
+//               provider-specific.",
+//               MSG_PROPERTIES: {}, MSG_TYPE: MSG_OBJECT
 //             },
-//             "modelPreferences" : {
-//               "$ref" : "#/definitions/ModelPreferences",
-//               MSG_DESCRIPTION :
-//                   "The server's preferences for which model to select. "
-//                   "The client MAY ignore these preferences."
+//             "modelPreferences": {
+//               "$ref": "#/definitions/ModelPreferences",
+//               MSG_DESCRIPTION: "The server's preferences for which model to select. The client MAY ignore these
+//               preferences."
 //             },
-//             "stopSequences" : {MSG_ITEMS : {MSG_TYPE : MSG_STRING}, MSG_TYPE
-//             : MSG_ARRAY}, "systemPrompt" : {
-//               MSG_DESCRIPTION : "An optional system prompt the server wants
-//               to "
-//                               "use for sampling. "
-//                               "The client MAY modify or omit this prompt.",
-//               MSG_TYPE : MSG_STRING
+//             "stopSequences": {MSG_ITEMS: {MSG_TYPE: MSG_STRING},
+//             MSG_TYPE: MSG_ARRAY
 //             },
-//             "temperature" : {MSG_TYPE : MSG_NUMBER}
+//             "systemPrompt": {
+//               MSG_DESCRIPTION: "An optional system prompt the server wants to use for sampling. The client MAY modify
+//               or omit this prompt.",
+//               MSG_TYPE: MSG_STRING
+//             },
+//             "temperature": {MSG_TYPE: MSG_NUMBER}
 //           },
-//           MSG_REQUIRED : [ "maxTokens", "messages" ],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [ "maxTokens", "messages" ],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * A request from the server to sample an LLM via the client. The client has
  * full discretion over which model to select. The client should also inform the
- * user before beginning sampling, to allow them to inspect the request (human
+ * user before beginning sampling to allow them to inspect the request (human
  * in the loop) and decide whether to approve it.
  */
 struct CreateMessageRequest : RequestBase
@@ -1232,46 +1176,40 @@ struct CreateMessageRequest : RequestBase
 };
 
 // CreateMessageResult {
-//   MSG_DESCRIPTION
-//       : "The client's response to a sampling/create_message request from the
-//       "
-//         "server. The client should inform the user before returning the "
-//         "sampled message, to allow them to inspect the response (human in "
-//         "the loop) and decide whether to allow the server to see it.",
-//         MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
-//           to "
-//                           "allow clients and servers to attach additional "
-//                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//   MSG_DESCRIPTION: "The client's response to a sampling/create_message request from the server. The client should
+//   inform the user before returning the sampled message, to allow them to inspect the response (human in the loop) and
+//   decide whether to allow the server to see it.",
+//         MSG_PROPERTIES: {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol to allow clients and servers to attach
+//           additional metadata to their responses.",
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_CONTENT : {
-//           "anyOf" : [
-//             {"$ref" : "#/definitions/TextContent"},
-//             {"$ref" : "#/definitions/ImageContent"},
-//             {"$ref" : "#/definitions/AudioContent"}
+//         MSG_CONTENT: {
+//           "anyOf": [
+//             {"$ref": "#/definitions/TextContent"},
+//             {"$ref": "#/definitions/ImageContent"},
+//             {"$ref": "#/definitions/AudioContent"}
 //           ]
 //         },
-//         MSG_MODEL : {
-//           MSG_DESCRIPTION : "The name of the model that generated the
-//           message.", MSG_TYPE : MSG_STRING
+//         MSG_MODEL: {
+//           MSG_DESCRIPTION: "The name of the model that generated the message.",
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_ROLE : {"$ref" : "#/definitions/Role"},
-//         "stopReason" : {
-//           MSG_DESCRIPTION : "The reason why sampling stopped, if known.",
-//           MSG_TYPE : MSG_STRING
+//         MSG_ROLE: {"$ref": "#/definitions/Role"},
+//         "stopReason": {
+//           MSG_DESCRIPTION: "The reason why sampling stopped, if known.",
+//           MSG_TYPE: MSG_STRING
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_CONTENT, MSG_MODEL, MSG_ROLE ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_CONTENT, MSG_MODEL, MSG_ROLE ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * The client's response to a sampling/create_message request from the server.
- * The client should inform the user before returning the sampled message, to
+ * The client should inform the user before returning the sampled message to
  * allow them to inspect the response (human in the loop) and decide whether to
  * allow the server to see it.
  */
@@ -1301,17 +1239,12 @@ struct CreateMessageResponse : ResponseBase
 };
 
 // ListRootsRequest {
-//     MSG_DESCRIPTION
-//         : "Sent from the server to request a list of root URIs from the
-//         client. Roots "
-//           "allow\nservers "
-//           "to ask for specific directories or files to operate on. A common
-//           example\nfor roots is " "providing a set of repositories or
-//           directories a server should operate\non.\n\nThis " "request is
-//           typically used when the server needs to understand the file "
-//           "system\nstructure "
-//           "or access specific locations that the client has permission to
-//           read from.", MSG_PROPERTIES : {
+//     MSG_DESCRIPTION: "Sent from the server to request a list of root URIs from the
+//         client. Roots allow servers to ask for specific directories or files to operate on. A common
+//           example for roots is providing a set of repositories or directories a server should operate on.
+//           This request is typically used when the server needs to understand the file system structure or access
+//           specific locations that the client has permission to read from.",
+//           MSG_PROPERTIES: {
 //               MSG_METHOD: {MSG_CONST: MTHD_ROOTS_LIST, MSG_TYPE: MSG_STRING},
 //               MSG_PARAMS: {
 //                   MSG_ADDITIONAL_PROPERTIES: {},
@@ -1322,14 +1255,10 @@ struct CreateMessageResponse : ResponseBase
 //                                   "$ref": "#/definitions/ProgressToken",
 //                                   MSG_DESCRIPTION:
 //                                       "If specified, the caller is requesting
-//                                       out-of-band progress " "notifications
-//                                       for this request (as represented by "
-//                                       "notifications/progress). The value of
-//                                       this parameter is an " "opaque " "token
-//                                       that will be attached to any subsequent
-//                                       " "notifications. The " "receiver is
-//                                       not obligated to provide these
-//                                       notifications."
+//                                       out-of-band progress notifications for this request (as represented by
+//                                       notifications/progress). The value of this parameter is an opaque token that
+//                                       will be attached to any subsequent notifications. The receiver is not obligated
+//                                       to provide these notifications."
 //                               }
 //                           },
 //                           MSG_TYPE: MSG_OBJECT
@@ -1338,8 +1267,8 @@ struct CreateMessageResponse : ResponseBase
 //                   MSG_TYPE: MSG_OBJECT
 //               }
 //           },
-//                          MSG_REQUIRED : [MSG_METHOD],
-//                                       MSG_TYPE : MSG_OBJECT
+//                          MSG_REQUIRED: [MSG_METHOD],
+//                                       MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1358,13 +1287,13 @@ struct ListRootsRequest : RequestBase
 };
 
 // ListRootsResult {
-//     MSG_DESCRIPTION : "The client's response to a roots/list request from the
+//     MSG_DESCRIPTION: "The client's response to a roots/list request from the
 //     server.\nThis result
 //     "
 //                     "contains an array of Root objects, each representing a
-//                     root directory\nor " "file that the server can operate
+//                     root directory\nor file that the server can operate
 //                     on.", MSG_PROPERTIES
-//         : {
+//        : {
 //             MSG_META: {
 //                 MSG_ADDITIONAL_PROPERTIES: {},
 //                 MSG_DESCRIPTION: "This result property is reserved by the
@@ -1377,8 +1306,8 @@ struct ListRootsRequest : RequestBase
 //             MSG_ROOTS: {MSG_ITEMS: {"$ref": "#/definitions/Root"}, MSG_TYPE:
 //             MSG_ARRAY}
 //         },
-//           MSG_REQUIRED : [MSG_ROOTS],
-//                        MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_ROOTS],
+//                        MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1404,14 +1333,14 @@ struct ListRootsResponse : ResponseBase
 };
 
 // RootsListChangedNotification {
-//     MSG_DESCRIPTION : "A notification from the client to the server,
+//     MSG_DESCRIPTION: "A notification from the client to the server,
 //     informing it that the "
 //                     "list of roots has changed.\nThis notification should be
-//                     sent whenever " "the client adds, removes, or modifies
-//                     any root.\nThe server should " "then request an updated
+//                     sent whenever the client adds, removes, or modifies
+//                     any root.\nThe server should then request an updated
 //                     list of roots using the ListRootsRequest.",
 //                     MSG_PROPERTIES
-//         : {
+//        : {
 //             MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_ROOTS_LIST_CHANGED,
 //             MSG_TYPE: MSG_STRING}, MSG_PARAMS: {
 //                 MSG_ADDITIONAL_PROPERTIES: {},
@@ -1420,7 +1349,7 @@ struct ListRootsResponse : ResponseBase
 //                         MSG_ADDITIONAL_PROPERTIES: {},
 //                         MSG_DESCRIPTION:
 //                             "This parameter name is reserved by MCP to allow
-//                             clients and " "servers to attach additional
+//                             clients and servers to attach additional
 //                             metadata to their notifications.",
 //                         MSG_TYPE: MSG_OBJECT
 //                     }
@@ -1428,8 +1357,8 @@ struct ListRootsResponse : ResponseBase
 //                 MSG_TYPE: MSG_OBJECT
 //             }
 //         },
-//           MSG_REQUIRED : [MSG_METHOD],
-//                        MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_METHOD],
+//                        MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1444,32 +1373,28 @@ struct RootsListChangedNotification : NotificationBase
 };
 
 // SetLevelRequest {
-//   MSG_DESCRIPTION
-//       : "A request from the client to the server, to enable or adjust
-//       logging.",
-//         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : MTHD_LOGGING_SET_LEVEL, MSG_TYPE :
-//           MSG_STRING}, MSG_PARAMS : {
-//             MSG_PROPERTIES : {
-//               MSG_LEVEL : {
-//                 "$ref" : "#/definitions/LoggingLevel",
-//                 MSG_DESCRIPTION :
-//                     "The level of logging that the client wants to "
-//                     "receive from the server. The server should send all "
-//                     "logs at this level and higher (i.e., more severe) "
-//                     "to the client as notifications/message."
+//   MSG_DESCRIPTION: "A request from the client to the server, to enable or adjust logging.",
+//         MSG_PROPERTIES: {
+//           MSG_METHOD: {MSG_CONST: MTHD_LOGGING_SET_LEVEL, MSG_TYPE:
+//           MSG_STRING}, MSG_PARAMS: {
+//             MSG_PROPERTIES: {
+//               MSG_LEVEL: {
+//                 "$ref": "#/definitions/LoggingLevel",
+//                 MSG_DESCRIPTION: "The level of logging that the client wants to receive from the server. The server
+//                 should send all logs at this level and higher (i.e., more severe) to the client as
+//                 notifications/message."
 //               }
 //             },
-//             MSG_REQUIRED : [MSG_LEVEL],
-//             MSG_TYPE : MSG_OBJECT
+//             MSG_REQUIRED: [MSG_LEVEL],
+//             MSG_TYPE: MSG_OBJECT
 //           }
 //         },
-//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                                     MSG_TYPE : MSG_OBJECT
+//                        MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE: MSG_OBJECT
 // };
 
 /**
- * A request from the client to the server, to enable or adjust logging.
+ * A request from the client to the server to enable or adjust logging.
  */
 struct SetLevelRequest : RequestBase
 {
@@ -1478,7 +1403,7 @@ struct SetLevelRequest : RequestBase
 		LoggingLevel Level{ LoggingLevel::Info }; // The level of logging that the client wants to receive
 												  // from the server. The server should send all logs at
 												  // this level and higher (i.e., more severe) to the
-												  // client as notifications/message.
+												  // client as notifications/messages.
 
 		JKEY(LEVELKEY, Level, "level")
 
@@ -1494,35 +1419,34 @@ struct SetLevelRequest : RequestBase
 };
 
 // LoggingMessageNotification {
-//   MSG_DESCRIPTION
-//       : "Notification of a log message passed from server to client. If no "
-//         "logging/setLevel request has been sent from the client, the server "
-//         "MAY decide which messages to send automatically.",
-//         MSG_PROPERTIES : {
-//           MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_MESSAGE, MSG_TYPE :
-//           MSG_STRING}, MSG_PARAMS : {
-//             MSG_PROPERTIES : {
-//               MSG_DATA : {
-//                 MSG_DESCRIPTION :
-//                     "The data to be logged, such as a string message or an "
-//                     "object. Any JSON serializable type is allowed here."
+//   MSG_DESCRIPTION: "Notification of a log message passed from server to client. If no logging/setLevel request has
+//   been sent from the client, the server MAY decide which messages to send automatically.",
+//         MSG_PROPERTIES: {
+//           MSG_METHOD: {
+//           MSG_CONST: MTHD_NOTIFICATIONS_MESSAGE,
+//           MSG_TYPE: MSG_STRING
+//           },
+//           MSG_PARAMS: {
+//             MSG_PROPERTIES: {
+//               MSG_DATA: {
+//                 MSG_DESCRIPTION: "The data to be logged, such as a string message or an object. Any JSON serializable
+//                 type is allowed here."
 //               },
-//               MSG_LEVEL : {
-//                 "$ref" : "#/definitions/LoggingLevel",
-//                 MSG_DESCRIPTION : "The severity of this log message."
+//               MSG_LEVEL: {
+//                 "$ref": "#/definitions/LoggingLevel",
+//                 MSG_DESCRIPTION: "The severity of this log message."
 //               },
-//               MSG_LOGGER : {
-//                 MSG_DESCRIPTION :
-//                     "An optional name of the logger issuing this message.",
-//                 MSG_TYPE : MSG_STRING
+//               MSG_LOGGER: {
+//                 MSG_DESCRIPTION: "An optional name of the logger issuing this message.",
+//                 MSG_TYPE: MSG_STRING
 //               }
 //             },
-//             MSG_REQUIRED : [ MSG_DATA, MSG_LEVEL ],
-//             MSG_TYPE : MSG_OBJECT
+//             MSG_REQUIRED: [ MSG_DATA, MSG_LEVEL ],
+//             MSG_TYPE: MSG_OBJECT
 //           }
 //         },
-//                        MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                                     MSG_TYPE : MSG_OBJECT
+//                        MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                                     MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1558,44 +1482,41 @@ struct LoggingMessageNotification : NotificationBase
 };
 
 // ProgressNotification {
-//   MSG_DESCRIPTION : "An out-of-band notification used to inform the receiver
-//   "
-//                   "of a progress update for a long-running request.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_PROGRESS, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_MESSAGE : {
-//               MSG_DESCRIPTION :
+//   MSG_DESCRIPTION: "An out-of-band notification used to inform the receiver of a progress update for a long-running
+//   request.",
+//   MSG_PROPERTIES: {
+//         MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_PROGRESS, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_MESSAGE: {
+//               MSG_DESCRIPTION:
 //                   "An optional message describing the current progress.",
-//               MSG_TYPE : MSG_STRING
+//               MSG_TYPE: MSG_STRING
 //             },
-//             MSG_PROGRESS : {
-//               MSG_DESCRIPTION :
+//             MSG_PROGRESS: {
+//               MSG_DESCRIPTION:
 //                   "The progress thus far. This should increase every time "
 //                   "progress is made, even if the total is unknown.",
-//               MSG_TYPE : MSG_NUMBER
+//               MSG_TYPE: MSG_NUMBER
 //             },
-//             MSG_PROGRESS_TOKEN : {
-//               "$ref" : "#/definitions/ProgressToken",
-//               MSG_DESCRIPTION :
+//             MSG_PROGRESS_TOKEN: {
+//               "$ref": "#/definitions/ProgressToken",
+//               MSG_DESCRIPTION:
 //                   "The progress token which was given in the initial request,
-//                   " "used to associate this notification with the request
-//                   that " "is proceeding."
+//                   used to associate this notification with the request
+//                   that is proceeding."
 //             },
-//             "total" : {
-//               MSG_DESCRIPTION : "Total number of items to process (or total "
-//                               "progress required), if known.",
-//               MSG_TYPE : MSG_NUMBER
+//             "total": {
+//               MSG_DESCRIPTION: "Total number of items to process (or total progress required), if known.",
+//               MSG_TYPE: MSG_NUMBER
 //             }
 //           },
-//           MSG_REQUIRED : [ MSG_PROGRESS, MSG_PROGRESS_TOKEN ],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [ MSG_PROGRESS, MSG_PROGRESS_TOKEN ],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
@@ -1610,11 +1531,10 @@ struct ProgressNotification : NotificationBase
 		ProgressToken ProgressToken;		// The progress token which was given in the initial
 											// request, used to associate this notification with the
 											// request that is proceeding.
-		// TODO: @HalcyonOmega - Enforce that the progress is between 0 and 1.
-		double Progress{ 0.0 };		  // Range from 0-1. The progress thus far. This should increase
-									  // every time progress is made, even if the total is unknown.
-		std::optional<int64_t> Total; // Total number of items to process (or total
-									  // progress required), if known.
+		double Progress{ 0.0 };				// Range from 0-1. The progress thus far. This should increase
+											// every time progress is made, even if the total is unknown.
+		std::optional<int64_t> Total;		// Total number of items to process (or total
+											// progress required), if known.
 
 		JKEY(MESSAGEKEY, Message, "message")
 		JKEY(PROGRESSTOKENKEY, ProgressToken, "progressToken")
@@ -1627,7 +1547,10 @@ struct ProgressNotification : NotificationBase
 		Params() = default;
 		Params(const std::optional<std::string>& InMessage, const MCP::ProgressToken& InProgressToken,
 			double InProgress, const std::optional<int64_t>& InTotal) :
-			Message(InMessage), ProgressToken(InProgressToken), Progress(InProgress), Total(InTotal)
+			Message(InMessage),
+			ProgressToken(InProgressToken),
+			Progress(std::clamp(InProgress, 0.0, 1.0)),
+			Total(InTotal)
 		{}
 	};
 
@@ -1638,45 +1561,45 @@ struct ProgressNotification : NotificationBase
 
 // CancelledNotification {
 //   MSG_DESCRIPTION
-//       : "This notification can be sent by either side to indicate that it is
+//      : "This notification can be sent by either side to indicate that it is
 //       "
 //         "cancelling a previously-issued request.\n\nThe request SHOULD still
-//         " "be in-flight, but due to communication latency, it is always "
+//         be in-flight, but due to communication latency, it is always "
 //         "possible that this notification MAY arrive after the request has "
 //         "already finished.\n\nThis notification indicates that the result "
 //         "will be unused, so any associated processing SHOULD cease.\n\nA "
 //         "client MUST NOT attempt to cancel its `initialize` request.",
 //         MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_NOTIFICATIONS_CANCELLED, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             "reason" : {
-//               MSG_DESCRIPTION :
+//      : {
+//         MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_CANCELLED, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             "reason": {
+//               MSG_DESCRIPTION:
 //                   "An optional string describing the reason for the "
 //                   "cancellation. This MAY be logged or presented to the
 //                   user.",
-//               MSG_TYPE : MSG_STRING
+//               MSG_TYPE: MSG_STRING
 //             },
-//             MSG_REQUEST_ID : {
-//               "$ref" : "#/definitions/RequestID",
-//               MSG_DESCRIPTION :
+//             MSG_REQUEST_ID: {
+//               "$ref": "#/definitions/RequestID",
+//               MSG_DESCRIPTION:
 //                   "The ID of the request to cancel.\n\nThis MUST correspond
-//                   to " "the ID of a request previously issued in the same
+//                   to the ID of a request previously issued in the same
 //                   direction."
 //             }
 //           },
-//           MSG_REQUIRED : [MSG_REQUEST_ID],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_REQUEST_ID],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * This notification can be sent by either side to indicate that it is
- * cancelling a previously-issued request. The request SHOULD still be
+ * cancelling a previously issued request. The request SHOULD still be
  * in-flight, but due to communication latency, it is always possible that this
  * notification MAY arrive after the request has already finished. This
  * notification indicates that the result will be unused, so any associated
@@ -1705,46 +1628,46 @@ struct CancelledNotification : NotificationBase
 };
 
 // CompleteRequest {
-//   MSG_DESCRIPTION : "A request from the client to the server, to ask for "
+//   MSG_DESCRIPTION: "A request from the client to the server, to ask for "
 //                   "completion options.",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_METHOD : {MSG_CONST : MTHD_COMPLETION_COMPLETE, MSG_TYPE :
-//         MSG_STRING}, MSG_PARAMS : {
-//           MSG_PROPERTIES : {
-//             MSG_ARGUMENT : {
-//               MSG_DESCRIPTION : "The argument's information",
-//               MSG_PROPERTIES : {
-//                 MSG_NAME : {
-//                   MSG_DESCRIPTION : "The name of the argument",
-//                   MSG_TYPE : MSG_STRING
+//      : {
+//         MSG_METHOD: {MSG_CONST: MTHD_COMPLETION_COMPLETE, MSG_TYPE:
+//         MSG_STRING}, MSG_PARAMS: {
+//           MSG_PROPERTIES: {
+//             MSG_ARGUMENT: {
+//               MSG_DESCRIPTION: "The argument's information",
+//               MSG_PROPERTIES: {
+//                 MSG_NAME: {
+//                   MSG_DESCRIPTION: "The name of the argument",
+//                   MSG_TYPE: MSG_STRING
 //                 },
-//                 MSG_VALUE : {
-//                   MSG_DESCRIPTION : "The value of the argument to use for "
+//                 MSG_VALUE: {
+//                   MSG_DESCRIPTION: "The value of the argument to use for "
 //                                   "completion matching.",
-//                   MSG_TYPE : MSG_STRING
+//                   MSG_TYPE: MSG_STRING
 //                 }
 //               },
-//               MSG_REQUIRED : [ MSG_NAME, MSG_VALUE ],
-//               MSG_TYPE : MSG_OBJECT
+//               MSG_REQUIRED: [ MSG_NAME, MSG_VALUE ],
+//               MSG_TYPE: MSG_OBJECT
 //             },
-//             MSG_REF : {
-//               "anyOf" : [
-//                 {"$ref" : "#/definitions/PromptReference"},
-//                 {"$ref" : "#/definitions/ResourceReference"}
+//             MSG_REF: {
+//               "anyOf": [
+//                 {"$ref": "#/definitions/PromptReference"},
+//                 {"$ref": "#/definitions/ResourceReference"}
 //               ]
 //             }
 //           },
-//           MSG_REQUIRED : [ MSG_ARGUMENT, MSG_REF ],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [ MSG_ARGUMENT, MSG_REF ],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_METHOD, MSG_PARAMS ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_METHOD, MSG_PARAMS ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
- * A request from the client to the server, to ask for completion options.
+ * A request from the client to the server to ask for completion options.
  */
 struct CompleteRequest : RequestBase
 {
@@ -1776,47 +1699,46 @@ struct CompleteRequest : RequestBase
 };
 
 // CompleteResult {
-//   MSG_DESCRIPTION : "The server's response to a completion/complete request",
+//   MSG_DESCRIPTION: "The server's response to a completion/complete request",
 //                   MSG_PROPERTIES
-//       : {
-//         MSG_META : {
-//           MSG_ADDITIONAL_PROPERTIES : {},
-//           MSG_DESCRIPTION : "This result property is reserved by the protocol
+//      : {
+//         MSG_META: {
+//           MSG_ADDITIONAL_PROPERTIES: {},
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol
 //           to "
 //                           "allow clients and servers to attach additional "
 //                           "metadata to their responses.",
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_TYPE: MSG_OBJECT
 //         },
-//         MSG_COMPLETION : {
-//           MSG_PROPERTIES : {
-//             MSG_HAS_MORE : {
-//               MSG_DESCRIPTION :
+//         MSG_COMPLETION: {
+//           MSG_PROPERTIES: {
+//             MSG_HAS_MORE: {
+//               MSG_DESCRIPTION:
 //                   "Indicates whether there are additional completion options
-//                   " "beyond those provided in the current response, even if
-//                   the " "exact total is unknown.",
-//               MSG_TYPE : MSG_BOOLEAN
+//                   beyond those provided in the current response, even if
+//                   the exact total is unknown.",
+//               MSG_TYPE: MSG_BOOLEAN
 //             },
-//             MSG_TOTAL : {
-//               MSG_DESCRIPTION :
-//                   "The total number of completion options available. This can
-//                   " "exceed the number of values actually sent in the
-//                   response.",
-//               MSG_TYPE : MSG_INTEGER
+//             MSG_TOTAL: {
+//               MSG_DESCRIPTION:
+//                   "The total number of completion options available. This can exceed the number of values actually
+//                   sent in the response.",
+//               MSG_TYPE: MSG_INTEGER
 //             },
-//             MSG_VALUES : {
-//               MSG_DESCRIPTION :
+//             MSG_VALUES: {
+//               MSG_DESCRIPTION:
 //                   "An array of completion values. Must not exceed 100
 //                   items.",
-//               MSG_ITEMS : {MSG_TYPE : MSG_STRING},
-//               MSG_TYPE : MSG_ARRAY
+//               MSG_ITEMS: {MSG_TYPE: MSG_STRING},
+//               MSG_TYPE: MSG_ARRAY
 //             }
 //           },
-//           MSG_REQUIRED : [MSG_VALUES],
-//           MSG_TYPE : MSG_OBJECT
+//           MSG_REQUIRED: [MSG_VALUES],
+//           MSG_TYPE: MSG_OBJECT
 //         }
 //       },
-//         MSG_REQUIRED : [MSG_COMPLETION],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [MSG_COMPLETION],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**

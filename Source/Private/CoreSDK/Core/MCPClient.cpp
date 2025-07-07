@@ -105,13 +105,7 @@ MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedR
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	ToolListRequest request;
-	if (InCursor.has_value())
-	{
-		request.Cursor = InCursor.value();
-	}
-
-	auto response = co_await SendRequest("tools/list", JSONData(request));
+	SendRequest(ListToolsRequest{ InParams });
 	co_return response.get<ToolListResponse>();
 }
 
@@ -120,8 +114,6 @@ MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequ
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
 	SendRequest(CallToolRequest{ InParams });
-
-	auto response = co_await SendRequest("tools/call", JSONData(request));
 	co_return response.get<ToolCallResponse>();
 }
 
@@ -135,6 +127,7 @@ MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const Pagina
 	response = co_await SendRequest("prompts/list", JSONData(request));
 	co_return response.get<PromptListResponse>();
 }
+
 MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
@@ -211,92 +204,54 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 	return;
 }
 
-MCPTask_Void MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
+MCPTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	auto response = co_await SendRequest(CompleteRequest{ InRequest });
+	auto response = co_await SendRequest(CompleteRequest{ InParams });
 	co_return response.get<CompleteResponse>();
 }
+
 MCPTask_Void MCPClient::Notify_Progress(const ProgressNotification::Params& InParams)
 {
 	return SendNotification(ProgressNotification{ InParams });
 }
+
 MCPTask_Void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams)
 {
 	return SendNotification(CancelledNotification{ InParams });
 }
-void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification) {}
-void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotification) {}
 
-// Old Handler Setters
-// void MCPClient::SetResourceUpdatedHandler(ResourceUpdatedHandler InHandler) {
-//     m_ResourceUpdatedHandler = InHandler;
+void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification)
+{
+	const std::optional<ProgressNotification::Params> Data
+		= GetNotificationParams<ProgressNotification::Params>(InNotification);
 
-//     // Set up protocol notification handler
-//     SetNotificationHandler("notifications/resources/updated", [this](const JSONData& InParams) {
-//         if (m_ResourceUpdatedHandler) {
-//             auto notification = InParams.get<ResourceUpdatedNotification>();
-//             m_ResourceUpdatedHandler(notification);
-//         }
-//     });
-// }
+	if (Data)
+	{
+		Logger::Notice(std::string("Progress Notification: ") + "\n	Progress Token: "
+			+ Data.value().ProgressToken.ToString() + "\n	Progress: " + std::to_string(Data.value().Progress)
+			+ "\n	Message: " + Data.value().Message.value());
+	}
 
-// void MCPClient::SetResourceListChangedHandler(ResourceListChangedHandler InHandler) {
-//     m_ResourceListChangedHandler = InHandler;
+	Logger::Error("Invalid progress notification");
+}
 
-//     SetNotificationHandler(
-//         "notifications/resources/list_changed", [this](const JSONData& InParams) {
-//             if (m_ResourceListChangedHandler) {
-//                 auto notification = InParams.get<ResourceListChangedNotification>();
-//                 m_ResourceListChangedHandler(notification);
-//             }
-//         });
-// }
+void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotification)
+{
+	const std::optional<CancelledNotification::Params> Data
+		= GetNotificationParams<CancelledNotification::Params>(InNotification).value();
+	if (Data)
+	{
+		if (const bool Success = m_MessageManager->CancelRequest(Data->CancelRequestID); !Success)
+		{
+			Logger::Error("Failed to cancel request: " + Data->CancelRequestID.ToString());
+			return;
+		}
+		Logger::Notice("Cancelled request: " + Data->CancelRequestID.ToString());
+	}
 
-// void MCPClient::SetToolListChangedHandler(ToolListChangedHandler InHandler) {
-//     m_ToolListChangedHandler = InHandler;
-
-//     SetNotificationHandler("notifications/tools/list_changed", [this](const JSONData& InParams) {
-//         if (m_ToolListChangedHandler) {
-//             auto notification = InParams.get<ToolListChangedNotification>();
-//             m_ToolListChangedHandler(notification);
-//         }
-//     });
-// }
-
-// void MCPClient::SetPromptListChangedHandler(PromptListChangedHandler InHandler) {
-//     m_PromptListChangedHandler = InHandler;
-
-//     SetNotificationHandler("notifications/prompts/list_changed", [this](const JSONData& InParams)
-//     {
-//         if (m_PromptListChangedHandler) {
-//             auto notification = InParams.get<PromptListChangedNotification>();
-//             m_PromptListChangedHandler(notification);
-//         }
-//     });
-// }
-
-// void MCPClient::SetProgressHandler(ProgressHandler InHandler) {
-//     m_ProgressHandler = InHandler;
-
-//     SetNotificationHandler("notifications/progress", [this](const JSONData& InParams) {
-//         if (m_ProgressHandler) {
-//             auto notification = InParams.get<ProgressNotification>();
-//             m_ProgressHandler(notification);
-//         }
-//     });
-// }
-
-// void MCPClient::SetLogHandler(LogHandler InHandler) {
-//     m_LogHandler = InHandler;
-
-//     SetNotificationHandler("notifications/message", [this](const JSONData& InParams) {
-//         if (m_LogHandler) {
-//             auto notification = InParams.get<LoggingMessageNotification>();
-//             m_LogHandler(notification);
-//         }
-//     });
-// }
+	Logger::Error("Invalid cancel request");
+}
 
 MCP_NAMESPACE_END
