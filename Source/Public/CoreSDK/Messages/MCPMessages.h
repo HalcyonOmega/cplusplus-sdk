@@ -5,6 +5,7 @@
 #include <utility>
 #include <variant>
 
+#include "CoreSDK/Common/BaseTypes.h"
 #include "CoreSDK/Common/Capabilities.h"
 #include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Implementation.h"
@@ -1527,14 +1528,14 @@ struct ProgressNotification : NotificationBase
 {
 	struct Params : NotificationParams
 	{
-		std::optional<std::string> Message; // An optional message describing the current progress.
-		ProgressToken ProgressToken;		// The progress token which was given in the initial
-											// request, used to associate this notification with the
-											// request that is proceeding.
-		double Progress{ 0.0 };				// Range from 0-1. The progress thus far. This should increase
-											// every time progress is made, even if the total is unknown.
-		std::optional<int64_t> Total;		// Total number of items to process (or total
-											// progress required), if known.
+		std::optional<std::string> Message;			   // An optional message describing the current progress.
+		ProgressToken ProgressToken;				   // The progress token which was given in the initial
+													   // request, used to associate this notification with the
+													   // request that is proceeding.
+		BoundedDouble Progress{ 0.0, 0.0, 1.0, true }; // Range from 0-1. The progress thus far. This should increase
+													   // every time progress is made, even if the total is unknown.
+		std::optional<int64_t> Total;				   // Total number of items to process (or total
+													   // progress required), if known.
 
 		JKEY(MESSAGEKEY, Message, "message")
 		JKEY(PROGRESSTOKENKEY, ProgressToken, "progressToken")
@@ -1546,10 +1547,10 @@ struct ProgressNotification : NotificationBase
 
 		Params() = default;
 		Params(const std::optional<std::string>& InMessage, const MCP::ProgressToken& InProgressToken,
-			double InProgress, const std::optional<int64_t>& InTotal) :
+			const double InProgress, const std::optional<int64_t>& InTotal) :
 			Message(InMessage),
 			ProgressToken(InProgressToken),
-			Progress(std::clamp(InProgress, 0.0, 1.0)),
+			Progress(BoundedDouble{ InProgress, 0.0, 1.0, true }),
 			Total(InTotal)
 		{}
 	};
