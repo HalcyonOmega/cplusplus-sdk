@@ -6,9 +6,9 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPServer::MCPServer(TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
+MCPServer::MCPServer(const TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
 	const Implementation& InServerInfo, const ServerCapabilities& InCapabilities) :
-	MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server, std::move(InOptions)))
+	MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server, std::move(InOptions)), true)
 {
 	SetupDefaultHandlers();
 	SetServerInfo(InServerInfo);
@@ -67,14 +67,13 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 {
 	try
 	{
-		InitializeRequest::Params Request = GetRequestParams<InitializeRequest::Params>(InRequest).value();
+		const InitializeRequest::Params Request = GetRequestParams<InitializeRequest::Params>(InRequest).value();
 
 		// CRITICAL: Validate protocol version first
 		static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS = { "2024-11-05", "2025-03-26" };
 
-		auto Iter = std::ranges::find(SUPPORTED_PROTOCOL_VERSIONS, Request.ProtocolVersion);
-
-		if (Iter == SUPPORTED_PROTOCOL_VERSIONS.end())
+		if (const auto Iter = std::ranges::find(SUPPORTED_PROTOCOL_VERSIONS, Request.ProtocolVersion);
+			Iter == SUPPORTED_PROTOCOL_VERSIONS.end())
 		{
 			std::string SupportedVersions;
 			for (size_t Index = 0; Index < SUPPORTED_PROTOCOL_VERSIONS.size(); ++Index)
@@ -96,11 +95,9 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 		InitializeResponse::Result Result;
 		Result.ProtocolVersion = Request.ProtocolVersion; // Use negotiated version
 		Result.ServerInfo = m_ServerInfo;
-
 		Result.Capabilities = m_ServerCapabilities;
-		InitializeResponse Response(InRequest.GetRequestID(), Result);
 
-		SendResponse(Response);
+		SendResponse(InitializeResponse{ InRequest.GetRequestID(), Result });
 	}
 	catch (const std::exception& Except)
 	{
@@ -135,15 +132,15 @@ bool MCPServer::RemoveTool(const Tool& InTool)
 	return true;
 }
 
-MCPTask_Void MCPServer::Notify_ToolListChanged() { co_await SendNotification(ToolListChangedNotification()); }
+void MCPServer::Notify_ToolListChanged() { SendNotification(ToolListChangedNotification()); }
 
 void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest)
 {
 	try
 	{
-		auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
+		const auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-		ListToolsResponse::Result Result = m_ToolManager->ListTools(RequestParams.value());
+		const ListToolsResponse::Result Result = m_ToolManager->ListTools(RequestParams.value());
 
 		SendResponse(ListToolsResponse(InRequest.GetRequestID(), Result));
 	}
@@ -201,15 +198,15 @@ bool MCPServer::RemovePrompt(const Prompt& InPrompt)
 	return true;
 }
 
-MCPTask_Void MCPServer::Notify_PromptListChanged() { co_await SendNotification(PromptListChangedNotification()); }
+void MCPServer::Notify_PromptListChanged() { SendNotification(PromptListChangedNotification()); }
 
 void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest)
 {
 	try
 	{
-		auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
+		const auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-		ListPromptsResponse::Result Result = m_PromptManager->ListPrompts(RequestParams.value());
+		const ListPromptsResponse::Result Result = m_PromptManager->ListPrompts(RequestParams.value());
 
 		SendResponse(ListPromptsResponse(InRequest.GetRequestID(), Result));
 	}
@@ -224,9 +221,9 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest)
 {
 	try
 	{
-		GetPromptRequest::Params Request = GetRequestParams<GetPromptRequest::Params>(InRequest).value();
+		const GetPromptRequest::Params Request = GetRequestParams<GetPromptRequest::Params>(InRequest).value();
 
-		GetPromptResponse::Result Result = m_PromptManager->GetPrompt(Request);
+		const GetPromptResponse::Result Result = m_PromptManager->GetPrompt(Request);
 
 		SendResponse(GetPromptResponse(InRequest.GetRequestID(), Result));
 	}
@@ -286,20 +283,20 @@ bool MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate)
 	return true;
 }
 
-MCPTask_Void MCPServer::Notify_ResourceListChanged() { co_await SendNotification(ResourceListChangedNotification()); }
+void MCPServer::Notify_ResourceListChanged() { SendNotification(ResourceListChangedNotification()); }
 
-MCPTask_Void MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams)
+void MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams)
 {
-	co_await SendNotification(ResourceUpdatedNotification(InParams));
+	SendNotification(ResourceUpdatedNotification(InParams));
 }
 
 void MCPServer::OnRequest_ListResources(const ListResourcesRequest& InRequest)
 {
 	try
 	{
-		auto Request = GetRequestParams<PaginatedRequestParams>(InRequest);
+		const auto Request = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-		ListResourcesResponse::Result Result = m_ResourceManager->ListResources(Request.value());
+		const ListResourcesResponse::Result Result = m_ResourceManager->ListResources(Request.value());
 
 		SendResponse(ListResourcesResponse(InRequest.GetRequestID(), Result));
 	}
@@ -314,8 +311,9 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest)
 {
 	try
 	{
-		ReadResourceRequest::Params Request = GetRequestParams<ReadResourceRequest::Params>(InRequest).value();
+		const ReadResourceRequest::Params Request = GetRequestParams<ReadResourceRequest::Params>(InRequest).value();
 
+		// TODO: @HalcyonOmega - Relook logic here
 		// Use ResourceManager to read the resource content
 		std::variant<TextResourceContents, BlobResourceContents> ResourceContent
 			= m_ResourceManager->GetResource(Request.URI).value();
@@ -336,7 +334,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 {
 	try
 	{
-		SubscribeRequest::Params Request = GetRequestParams<SubscribeRequest::Params>(InRequest).value();
+		const SubscribeRequest::Params Request = GetRequestParams<SubscribeRequest::Params>(InRequest).value();
 
 		std::string_view ClientID = GetCurrentClientID();
 
@@ -349,14 +347,14 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 			return;
 		}
 
-		// Add subscription with proper client tracking
+		// Add a subscription with proper client tracking
 		{
 			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
 			m_ResourceSubscriptions[Request.URI.toString()].emplace_back(ClientID);
 		}
 
-		// Send empty response to indicate success
-		SendResponse(EmptyResponse(InRequest.GetRequestID(), JSONData::object()));
+		// Send an empty response to indicate success
+		SendResponse(EmptyResponse{ InRequest.GetRequestID() });
 	}
 	catch (const std::exception& Except)
 	{
@@ -369,15 +367,15 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 {
 	try
 	{
-		UnsubscribeRequest::Params Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest).value();
+		const UnsubscribeRequest::Params Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest).value();
 
-		std::string_view ClientID = GetCurrentClientID();
+		const std::string_view ClientID = GetCurrentClientID();
 
 		// Remove from subscriptions
 		{
 			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-			auto Iter = m_ResourceSubscriptions.find(Request.URI.toString());
-			if (Iter != m_ResourceSubscriptions.end())
+			if (const auto Iter = m_ResourceSubscriptions.find(Request.URI.toString());
+				Iter != m_ResourceSubscriptions.end())
 			{
 				auto& Subscribers = Iter->second;
 				std::erase(Subscribers, std::string(ClientID));
@@ -390,7 +388,7 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 		}
 
 		// Send empty response
-		SendResponse(UnsubscribeResponse(InRequest.GetRequestID(), JSONData::object()));
+		SendResponse(EmptyResponse{ InRequest.GetRequestID() });
 	}
 	catch (const std::exception& Except)
 	{
@@ -423,16 +421,16 @@ bool MCPServer::RemoveRoot(const Root& InRoot)
 	return true;
 }
 
-MCPTask_Void MCPServer::Notify_RootsListChanged() { co_await SendNotification(RootsListChangedNotification()); }
+void MCPServer::Notify_RootsListChanged() { SendNotification(RootsListChangedNotification()); }
 
-MCPTask_Void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InParams)
+void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InParams)
 {
-	co_await SendNotification(LoggingMessageNotification(InParams));
+	SendNotification(LoggingMessageNotification(InParams));
 }
 
 MCPTask<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
 {
-	CreateMessageResponse Response = co_await SendRequest(CreateMessageRequest(InParams));
+	CreateMessageResponse Response = SendRequest(CreateMessageRequest(InParams));
 	co_return GetResponseResult<CreateMessageResponse::Result>(Response);
 }
 
@@ -462,14 +460,14 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 	}
 }
 
-MCPTask_Void MCPServer::Notify_Progress(const ProgressNotification::Params& InParams)
+void MCPServer::Notify_Progress(const ProgressNotification::Params& InParams)
 {
-	co_await SendNotification(ProgressNotification(InParams));
+	SendNotification(ProgressNotification(InParams));
 }
 
-MCPTask_Void MCPServer::Notify_CancelRequest(const CancelledNotification::Params& InParams)
+void MCPServer::Notify_CancelRequest(const CancelledNotification::Params& InParams)
 {
-	co_await SendNotification(CancelledNotification(InParams));
+	SendNotification(CancelledNotification(InParams));
 }
 
 void MCPServer::OnNotified_Progress(const ProgressNotification& InNotification)
@@ -480,7 +478,8 @@ void MCPServer::OnNotified_Progress(const ProgressNotification& InNotification)
 		return;
 	}
 
-	ProgressNotification::Params Params = GetNotificationParams<ProgressNotification::Params>(InNotification).value();
+	const ProgressNotification::Params Params
+		= GetNotificationParams<ProgressNotification::Params>(InNotification).value();
 
 	// TODO: Implement progress notification handling
 	(void)Params;
@@ -524,14 +523,14 @@ void MCPServer::SetupDefaultHandlers()
 }
 
 // Enhanced resource change notification
-MCPTask_Void MCPServer::Notify_ResourceSubscribers(const Resource& InResource)
+void MCPServer::Notify_ResourceSubscribers(const Resource& InResource)
 {
 	std::vector<std::string> Subscribers;
 
 	{
 		std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-		auto Iter = m_ResourceSubscriptions.find(InResource.URI.toString());
-		if (Iter != m_ResourceSubscriptions.end())
+		if (const auto Iter = m_ResourceSubscriptions.find(InResource.URI.toString());
+			Iter != m_ResourceSubscriptions.end())
 		{
 			Subscribers = Iter->second;
 		}
@@ -548,7 +547,7 @@ MCPTask_Void MCPServer::Notify_ResourceSubscribers(const Resource& InResource)
 		{
 			try
 			{
-				co_await SendNotificationToClient(ClientID, Notification);
+				SendNotificationToClient(ClientID, Notification);
 			}
 			catch (const std::exception&)
 			{
@@ -557,8 +556,6 @@ MCPTask_Void MCPServer::Notify_ResourceSubscribers(const Resource& InResource)
 			}
 		}
 	}
-
-	co_return;
 }
 
 // Client identification helper (simplified - in production would use transport
@@ -567,20 +564,19 @@ MCPTask_Void MCPServer::Notify_ResourceSubscribers(const Resource& InResource)
 std::string_view MCPServer::GetCurrentClientID() const
 {
 	// For now, return a default client ID
-	// In a real implementation, this would extract the client ID from the current
+	// In a real implementation this would extract the client ID from the current
 	// transport session
 	return "default_client";
 }
 
 // Send notification to specific client (simplified implementation)
 // TODO: @HalcyonOmega - Implement this
-MCPTask_Void MCPServer::SendNotificationToClient(
-	std::string_view InClientID, const ResourceUpdatedNotification& InNotification)
+void MCPServer::SendNotificationToClient(std::string_view InClientID, const ResourceUpdatedNotification& InNotification)
 {
 	(void)InClientID;
 	// For now, send to all clients via the protocol
-	// In a real implementation, this would route to the specific client
-	co_return co_await SendNotification(InNotification);
+	// In a real implementation this would route to the specific client
+	SendNotification(InNotification);
 }
 
 // Enhanced tool execution with progress reporting
@@ -590,8 +586,8 @@ MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(const Tool& InTool,
 	// Update progress at 0%
 	co_await UpdateProgress(0.0);
 
-	// Use ToolManager to execute tool
-	auto Result = co_await m_ToolManager->CallTool(InTool, InArguments);
+	// Use ToolManager to execute a tool
+	const auto Result = m_ToolManager->CallTool(InTool, InArguments);
 
 	// Complete progress
 	co_await UpdateProgress(1.0);
@@ -600,7 +596,7 @@ MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(const Tool& InTool,
 	co_return Response;
 }
 
-MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t> InTotal)
+MCPTask_Void MCPServer::UpdateProgress(const double InProgress, std::optional<int64_t> InTotal)
 {
 	try
 	{
@@ -616,7 +612,7 @@ MCPTask_Void MCPServer::UpdateProgress(double InProgress, std::optional<int64_t>
 	}
 	catch (const std::exception&)
 	{
-		// Ignore progress reporting errors to not break main operation
+		// Ignore progress reporting errors to not break the main operation
 	}
 
 	co_return;

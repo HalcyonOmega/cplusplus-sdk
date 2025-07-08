@@ -1470,7 +1470,7 @@ struct LoggingMessageNotification : NotificationBase
 
 		DEFINE_TYPE_JSON_DERIVED(LoggingMessageNotification::Params, NotificationParams, LEVELKEY, LOGGERKEY, DATAKEY)
 
-		explicit Params(LoggingLevel InLevel = LoggingLevel::Info, JSONData InData = JSONData::object(),
+		explicit Params(const LoggingLevel InLevel = LoggingLevel::Info, JSONData InData = JSONData::object(),
 			const std::optional<std::string>& InLogger = std::nullopt) :
 			Level(InLevel), Data(std::move(InData)), Logger(InLogger)
 		{}

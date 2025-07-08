@@ -70,6 +70,11 @@ public:
 	[[nodiscard]] double GetValue() const { return m_Value; }
 
 	explicit operator double() const { return m_Value; }
+	BoundedDouble& operator=(const double InValue)
+	{
+		SetValue(InValue);
+		return this*;
+	}
 
 	[[nodiscard]] static std::optional<BoundedDouble> CreateOptional(const std::optional<double> InValue,
 		const double InMin = 0.0, const double InMax = 1.0, const bool InLocked = true)

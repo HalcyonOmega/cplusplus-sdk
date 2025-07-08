@@ -32,14 +32,14 @@ public:
 	// Tool management
 	bool AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction);
 	bool RemoveTool(const Tool& InTool);
-	MCPTask_Void Notify_ToolListChanged();
+	void Notify_ToolListChanged();
 	void OnRequest_ListTools(const ListToolsRequest& InRequest);
 	void OnRequest_CallTool(const CallToolRequest& InRequest);
 
 	// Prompt management
 	bool AddPrompt(const Prompt& InPrompt, const PromptManager::PromptFunction& InFunction);
 	bool RemovePrompt(const Prompt& InPrompt);
-	MCPTask_Void Notify_PromptListChanged();
+	void Notify_PromptListChanged();
 	void OnRequest_ListPrompts(const ListPromptsRequest& InRequest);
 	void OnRequest_GetPrompt(const GetPromptRequest& InRequest);
 
@@ -48,8 +48,8 @@ public:
 	bool AddResourceTemplate(const ResourceTemplate& InTemplate, const ResourceManager::ResourceFunction& InFunction);
 	bool RemoveResource(const Resource& InResource);
 	bool RemoveResourceTemplate(const ResourceTemplate& InTemplate);
-	MCPTask_Void Notify_ResourceListChanged();
-	MCPTask_Void Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
+	void Notify_ResourceListChanged();
+	void Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
 	void OnRequest_ListResources(const ListResourcesRequest& InRequest);
 	void OnRequest_ReadResource(const ReadResourceRequest& InRequest);
 	void OnRequest_SubscribeResource(const SubscribeRequest& InRequest);
@@ -58,10 +58,10 @@ public:
 	// Root management
 	bool AddRoot(const Root& InRoot);
 	bool RemoveRoot(const Root& InRoot);
-	MCPTask_Void Notify_RootsListChanged();
+	void Notify_RootsListChanged();
 
 	// Logging
-	MCPTask_Void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
+	void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
 
 	// Sampling requests (servers can request sampling from clients)
 	MCPTask<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
@@ -70,8 +70,8 @@ public:
 	void OnRequest_Complete(const CompleteRequest& InRequest);
 
 	// Progress reporting
-	MCPTask_Void Notify_Progress(const ProgressNotification::Params& InParams);
-	MCPTask_Void Notify_CancelRequest(const CancelledNotification::Params& InParams);
+	void Notify_Progress(const ProgressNotification::Params& InParams);
+	void Notify_CancelRequest(const CancelledNotification::Params& InParams);
 	void OnNotified_Progress(const ProgressNotification& InNotification);
 	void OnNotified_CancelRequest(const CancelledNotification& InNotification);
 
@@ -108,10 +108,9 @@ private:
 		const std::optional<std::unordered_map<std::string, JSONData>>& InArguments, const RequestID& InRequestID);
 
 	// Resource subscription management
-	MCPTask_Void Notify_ResourceSubscribers(const Resource& InResource);
+	void Notify_ResourceSubscribers(const Resource& InResource);
 	std::string_view GetCurrentClientID() const;
-	MCPTask_Void SendNotificationToClient(
-		std::string_view InClientID, const ResourceUpdatedNotification& InNotification);
+	void SendNotificationToClient(std::string_view InClientID, const ResourceUpdatedNotification& InNotification);
 
 	std::unordered_map<std::string /* Resource */, std::vector<std::string> /* Client IDs */> m_ResourceSubscriptions;
 	mutable std::mutex m_ResourceSubscriptionsMutex;

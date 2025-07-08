@@ -11,12 +11,13 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPClient::MCPClient(TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
+MCPClient::MCPClient(const TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
 	const Implementation& InClientInfo, const ClientCapabilities& InCapabilities) :
-	MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, std::move(InOptions))),
-	m_ClientInfo(InClientInfo),
-	m_ClientCapabilities(InCapabilities)
-{}
+	MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, std::move(InOptions)), true)
+{
+	SetClientInfo(InClientInfo);
+	SetClientCapabilities(InCapabilities);
+}
 
 MCPTask_Void MCPClient::Start()
 {
@@ -72,17 +73,19 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 		co_await m_Transport->Connect();
 
 		// Send initialize request
-		InitializeRequest Request{ InitializeRequest::Params{
+		const InitializeRequest Request{ InitializeRequest::Params{
 			.ProtocolVersion = m_ClientInfo.Version,
 			.Capabilities = m_ClientCapabilities,
 			.ClientInfo = m_ClientInfo,
 		} };
 
-		InitializeResponse Response = co_await SendRequest(Request);
+		auto Response = co_await SendRequest(Request);
+
+		const InitializeResponse::Result Result = GetResponseResult<InitializeResponse>(Response);
 
 		// Store negotiated capabilities
-		m_ClientCapabilities = Response.Result.Capabilities;
-		m_ServerInfo = Response.Result.ServerInfo;
+		m_ServerCapabilities = Result.Capabilities;
+		m_ServerInfo = Result.ServerInfo;
 
 		m_IsInitialized = true;
 
@@ -106,7 +109,7 @@ MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedR
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
 	SendRequest(ListToolsRequest{ InParams });
-	co_return response.get<ToolListResponse>();
+	co_return const ListToolsResponse::Result Result = GetResponseResult<ListToolsResponse>();
 }
 
 MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InParams)
@@ -124,22 +127,14 @@ MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const Pagina
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
 	SendRequest(ListPromptsRequest{ InParams });
-	response = co_await SendRequest("prompts/list", JSONData(request));
-	co_return response.get<PromptListResponse>();
+	co_return response.get<ListPromptsResponse>();
 }
 
 MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	PromptGetRequest request;
-	request.Name = InPromptName;
-	if (InArguments.has_value())
-	{
-		request.Arguments = InArguments.value();
-	}
-
-	auto response = co_await SendRequest("prompts/get", JSONData(request));
+	co_await SendRequest(GetPromptRequest{ InParams });
 	co_return response.get<PromptGetResponse>();
 }
 

@@ -82,7 +82,7 @@ struct PaginatedResultParams : ResultParams
 // A successful (non-error) response to a request. Supports JSON-RPC 2.0.
 struct ResponseBase : MessageBase
 {
-	RequestID ID;
+	const RequestID ID;
 	const ResultParams& ResultData{};
 
 	JKEY(IDKEY, ID, "id")

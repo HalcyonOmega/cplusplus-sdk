@@ -10,60 +10,50 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct MCPError {
-    int64_t Code;
-    std::string Message;
-    std::optional<JSONData> Data;
+struct MCPError
+{
+	int64_t Code;
+	std::string Message;
+	std::optional<JSONData> Data;
 
-    JKEY(CODEKEY, Code, "code")
-    JKEY(MESSAGEKEY, Message, "message")
-    JKEY(DATAKEY, Data, "data")
+	JKEY(CODEKEY, Code, "code")
+	JKEY(MESSAGEKEY, Message, "message")
+	JKEY(DATAKEY, Data, "data")
 
-    DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
+	DEFINE_TYPE_JSON(MCPError, CODEKEY, MESSAGEKEY, DATAKEY)
 
-    MCPError() = default;
-    MCPError(int64_t InCode, std::string_view InMessage,
-             std::optional<JSONData> InData = std::nullopt)
-        : Code(InCode), Message(InMessage), Data(std::move(InData)) {}
+	MCPError() = default;
+	MCPError(const int64_t InCode, const std::string_view InMessage, std::optional<JSONData> InData = std::nullopt) :
+		Code(InCode), Message(InMessage), Data(std::move(InData))
+	{}
 };
 
 // Standard JSON-RPC 2.0 error codes
-namespace ErrorCodes {
-static constexpr int64_t PARSE_ERROR = -32700;
-static constexpr int64_t INVALID_REQUEST = -32600;
-static constexpr int64_t METHOD_NOT_FOUND = -32601;
-static constexpr int64_t INVALID_PARAMS = -32602;
-static constexpr int64_t INTERNAL_ERROR = -32603;
+namespace ErrorCodes
+{
+	static constexpr int64_t PARSE_ERROR = -32700;
+	static constexpr int64_t INVALID_REQUEST = -32600;
+	static constexpr int64_t METHOD_NOT_FOUND = -32601;
+	static constexpr int64_t INVALID_PARAMS = -32602;
+	static constexpr int64_t INTERNAL_ERROR = -32603;
 } // namespace ErrorCodes
 
-struct ErrorResponseBase : MessageBase {
-    RequestID ID;
-    MCPError ErrorData;
+struct ErrorResponseBase : ResponseBase
+{
+	MCPError ErrorData;
 
-    JKEY(IDKEY, ID, "id")
-    JKEY(ERRORKEY, ErrorData, "error")
+	JKEY(ERRORKEY, ErrorData, "error")
 
-    DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, MessageBase, IDKEY, ERRORKEY)
+	DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, ResponseBase, IDKEY, ERRORKEY)
 
-    ErrorResponseBase() = default;
-    ErrorResponseBase(RequestID InID, MCPError InError)
-        : MessageBase(), ID(std::move(InID)), ErrorData(std::move(InError)) {}
+	ErrorResponseBase() = default;
+	ErrorResponseBase(const RequestID& InID, MCPError InError) : ResponseBase(InID), ErrorData(std::move(InError)) {}
 
-    [[nodiscard]] RequestID GetRequestID() const {
-        return ID;
-    }
+	[[nodiscard]] int64_t GetErrorCode() const { return ErrorData.Code; }
 
-    [[nodiscard]] int64_t GetErrorCode() const {
-        return ErrorData.Code;
-    }
+	[[nodiscard]] std::string_view GetErrorMessage() const { return ErrorData.Message; }
 
-    [[nodiscard]] std::string_view GetErrorMessage() const {
-        return ErrorData.Message;
-    }
-
-    [[nodiscard]] std::optional<JSONData> GetErrorData() const {
-        return ErrorData.Data;
-    }
+	[[nodiscard]] std::optional<JSONData> GetErrorData() const { return ErrorData.Data; }
 };
 
 using ErrorResponseHandler = std::function<void(const ErrorResponseBase& InError)>;

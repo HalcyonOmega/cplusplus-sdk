@@ -1,5 +1,6 @@
 #pragma once
 
+#include <coroutine>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -28,7 +29,7 @@ public:
 			std::is_invocable_v<Function, const T&>, "Handler must be callable with '(const ConcreteRequestType&)'");
 
 		T TempInstance{};
-		std::string MethodName = std::string(TempInstance.GetRequestMethod());
+		const auto MethodName = std::string(TempInstance.GetRequestMethod());
 
 		std::scoped_lock lock(m_RequestMutex);
 
@@ -48,27 +49,24 @@ public:
 		return true;
 	}
 
-	template <ConcreteResponse T, typename Function> bool RegisterResponseHandler(Function&& InHandler)
+	template <ConcreteResponse T, typename Function>
+	bool RegisterResponseHandler(const RequestID& InRequestID, Function&& InHandler)
 	{
 		static_assert(
 			std::is_invocable_v<Function, const T&>, "Handler must be callable with '(const ConcreteResponseType&)'");
 
-		// Create a temporary instance to get the method name
-		T TempInstance{};
-		std::string ResponseID = std::string(TempInstance.GetRequestID().ToString());
-
+		const std::string& ID = InRequestID.ToString();
 		std::scoped_lock lock(m_ResponseMutex);
 
-		if (m_WarnOnDuplicateHandlers && m_ResponseHandlers.contains(ResponseID))
+		if (m_WarnOnDuplicateHandlers && m_ResponseHandlers.contains(ID))
 		{
-			HandleRuntimeError("Response handler already exists for message: " + ResponseID);
+			HandleRuntimeError("Response handler already exists for message: " + ID);
 			return false;
 		}
 
-		m_ResponseHandlers[ResponseID] = [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage)
+		m_ResponseHandlers[ID] = [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage)
 		{
-			JSONData JSONResponse = InMessage;
-			T Response = JSONResponse.get<T>();
+			T Response = InMessage.get<T>();
 			Handler(Response);
 		};
 
@@ -81,7 +79,7 @@ public:
 			"Handler must be callable with '(const ConcreteNotificationType&)'");
 
 		T TempInstance{};
-		std::string MethodName = std::string(TempInstance.GetNotificationMethod());
+		const auto MethodName = std::string(TempInstance.GetNotificationMethod());
 
 		std::scoped_lock lock(m_NotificationMutex);
 
@@ -101,42 +99,14 @@ public:
 		return true;
 	}
 
-	template <ConcreteErrorResponse T, typename Function> bool RegisterErrorHandler(Function&& InHandler)
-	{
-		static_assert(std::is_invocable_v<Function, const T&>,
-			"Handler must be callable with '(const ConcreteErrorResponseType&)'");
-
-		T TempInstance{};
-		std::string MethodName = std::string(TempInstance.GetRequestMethod());
-
-		std::scoped_lock lock(m_ErrorMutex);
-
-		if (m_WarnOnDuplicateHandlers && m_ErrorHandlers.contains(T::ID.ToString()))
-		{
-			HandleRuntimeError("Error handler already exists for message: " + std::string(T::ID.ToString()));
-			return false;
-		}
-
-		m_ErrorHandlers[T::ID.ToString()] = [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage)
-		{
-			JSONData JSONError = InMessage;
-			T Error = JSONError.get<T>();
-			Handler(Error);
-		};
-
-		return true;
-	}
-
-	// Main routing function - receives JSON string and routes to appropriate handler
+	// Main routing function - receives JSON string and routes to the appropriate handler
 	bool RouteMessage(const std::string& InMessage)
 	{
 		try
 		{
-			JSONData Message = JSONData::parse(InMessage);
+			const JSONData Message = JSONData::parse(InMessage);
 
-			std::optional<MessageType> MessageType = GetValidMessageType(Message);
-
-			if (MessageType)
+			if (std::optional<MessageType> MessageType = GetValidMessageType(Message))
 			{
 				switch (MessageType.value())
 				{
@@ -145,7 +115,7 @@ public:
 					case MessageType::Response:
 						return RouteResponse(Message);
 					case MessageType::Error:
-						return RouteError(Message);
+						return RouteResponse(Message);
 					case MessageType::Notification:
 						return RouteNotification(Message);
 					default:
@@ -165,10 +135,23 @@ public:
 		}
 	}
 
-	bool CancelRequest(const RequestID& InRequestID)
+	bool UnregisterRequestHandler(const std::string& InMethod)
 	{
+
 		std::scoped_lock lock(m_RequestMutex);
-		return m_RequestHandlers.erase(InRequestID.ToString()) > 0;
+		return m_ResponseHandlers.erase(InMethod) > 0;
+	}
+
+	bool UnregisterNotificationHandler(const std::string& InMethod)
+	{
+		std::scoped_lock lock(m_NotificationMutex);
+		return m_ResponseHandlers.erase(InMethod) > 0;
+	}
+
+	bool UnregisterResponseHandler(const RequestID& InRequestID)
+	{
+		std::scoped_lock lock(m_ResponseMutex);
+		return m_ResponseHandlers.erase(InRequestID.ToString()) > 0;
 	}
 
 private:
@@ -177,16 +160,15 @@ private:
 	{
 		try
 		{
-			std::string method = ExtractMethod(InMessage);
+			const std::string Method = ExtractMethod(InMessage);
 
-			std::scoped_lock lock(m_RequestMutex);
-			auto Iter = m_RequestHandlers.find(method);
-			if (Iter != m_RequestHandlers.end())
+			std::scoped_lock Lock(m_RequestMutex);
+			if (const auto Iter = m_RequestHandlers.find(Method); Iter != m_RequestHandlers.end())
 			{
 				Iter->second(InMessage);
 				return true;
 			}
-			HandleRuntimeError("No handler registered for request method: " + method);
+			HandleRuntimeError("No handler registered for request method: " + Method);
 			return false;
 		}
 		catch (const std::exception& e)
@@ -200,7 +182,7 @@ private:
 	{
 		try
 		{
-			std::optional<RequestID> RequestID = ExtractRequestID(InMessage);
+			const std::optional<RequestID> RequestID = ExtractRequestID(InMessage);
 
 			if (!RequestID)
 			{
@@ -208,9 +190,9 @@ private:
 				return false;
 			}
 
-			std::scoped_lock lock(m_ResponseMutex);
-			auto Iter = m_ResponseHandlers.find(RequestID.value().ToString());
-			if (Iter != m_ResponseHandlers.end())
+			std::scoped_lock Lock(m_ResponseMutex);
+			if (const auto Iter = m_ResponseHandlers.find(RequestID.value().ToString());
+				Iter != m_ResponseHandlers.end())
 			{
 				Iter->second(InMessage);
 				return true;
@@ -229,16 +211,15 @@ private:
 	{
 		try
 		{
-			std::string method = ExtractMethod(InMessage);
+			const std::string Method = ExtractMethod(InMessage);
 
 			std::scoped_lock lock(m_NotificationMutex);
-			auto Iter = m_NotificationHandlers.find(method);
-			if (Iter != m_NotificationHandlers.end())
+			if (const auto Iter = m_NotificationHandlers.find(Method); Iter != m_NotificationHandlers.end())
 			{
 				Iter->second(InMessage);
 				return true;
 			}
-			HandleRuntimeError("No handler registered for notification method: " + method);
+			HandleRuntimeError("No handler registered for notification method: " + Method);
 			return false;
 		}
 		catch (const std::exception& e)
@@ -248,47 +229,19 @@ private:
 		}
 	}
 
-	bool RouteError(const JSONData& InMessage)
-	{
-		try
-		{
-			std::optional<RequestID> errorID = ExtractRequestID(InMessage);
-
-			if (!errorID)
-			{
-				HandleRuntimeError("No request ID found in error");
-				return false;
-			}
-
-			std::scoped_lock lock(m_ErrorMutex);
-			auto Iter = m_ErrorHandlers.find(errorID.value().ToString());
-			if (Iter != m_ErrorHandlers.end())
-			{
-				Iter->second(InMessage);
-				return true;
-			}
-			HandleRuntimeError("No handler registered for error ID: " + errorID.value().ToString());
-			return false;
-		}
-		catch (const std::exception& e)
-		{
-			HandleRuntimeError("Error routing error: " + std::string(e.what()));
-			return false;
-		}
-	}
-
 	std::unordered_map<std::string, MessageHandler> m_RequestHandlers;
 	std::unordered_map<std::string, MessageHandler> m_ResponseHandlers;
 	std::unordered_map<std::string, MessageHandler> m_NotificationHandlers;
-	std::unordered_map<std::string, MessageHandler> m_ErrorHandlers;
 
 	// Mutexes for thread safety
 	std::mutex m_RequestMutex;
 	std::mutex m_ResponseMutex;
 	std::mutex m_NotificationMutex;
-	std::mutex m_ErrorMutex;
 
-	bool m_WarnOnDuplicateHandlers = true;
+	bool m_WarnOnDuplicateHandlers{ true };
+
+	explicit MessageManager(const bool InWarnOnDuplicateHandlers) : m_WarnOnDuplicateHandlers(InWarnOnDuplicateHandlers)
+	{}
 };
 
 MCP_NAMESPACE_END
