@@ -20,24 +20,24 @@ void MCPProtocol::SetState(const MCPProtocolState InNewState) { m_State = InNewS
 
 bool MCPProtocol::IsConnected() const { return m_Transport->IsConnected(); }
 
-MCPTask<PingResponse> MCPProtocol::Ping(const PingRequest& InRequest)
+Task<PingResponse> MCPProtocol::Ping(const PingRequest& InRequest)
 {
 	co_return PingResponse{ InRequest.GetRequestID() };
 }
 
 void MCPProtocol::ValidateProtocolVersion(const std::string& InVersion) {}
 
-MCPTask_Void MCPProtocol::SendResponse(const ResponseBase& InResponse) const
+VoidTask MCPProtocol::SendResponse(const ResponseBase& InResponse) const
 {
 	co_await m_Transport->TransmitMessage(InResponse);
 }
 
-MCPTask_Void MCPProtocol::SendNotification(const NotificationBase& InNotification) const
+VoidTask MCPProtocol::SendNotification(const NotificationBase& InNotification) const
 {
 	co_await m_Transport->TransmitMessage(InNotification);
 }
 
-MCPTask_Void MCPProtocol::SendErrorResponse(const ErrorResponseBase& InError) const
+VoidTask MCPProtocol::SendErrorResponse(const ErrorResponseBase& InError) const
 {
 	co_await m_Transport->TransmitMessage(InError);
 }

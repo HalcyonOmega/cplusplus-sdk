@@ -26,7 +26,7 @@ StdioClientTransport::~StdioClientTransport() {
     }
 }
 
-MCPTask_Void StdioClientTransport::Connect() {
+VoidTask StdioClientTransport::Connect() {
     if (m_CurrentState != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started or in progress");
         co_return;
@@ -73,7 +73,7 @@ MCPTask_Void StdioClientTransport::Connect() {
     co_return;
 }
 
-MCPTask_Void StdioClientTransport::Disconnect() {
+VoidTask StdioClientTransport::Disconnect() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -128,7 +128,7 @@ void StdioClientTransport::ProcessLine(const std::string& InLine) {
     CallMessageRouter(JSONData::parse(InLine));
 }
 
-MCPTask_Void StdioClientTransport::TransmitMessage(
+VoidTask StdioClientTransport::TransmitMessage(
     const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
     (void)InConnectionIDs;
 
@@ -197,7 +197,7 @@ StdioServerTransport::~StdioServerTransport() {
     }
 }
 
-MCPTask_Void StdioServerTransport::Connect() {
+VoidTask StdioServerTransport::Connect() {
     if (m_CurrentState != TransportState::Disconnected) {
         HandleRuntimeError("Transport already started");
         co_return;
@@ -223,7 +223,7 @@ MCPTask_Void StdioServerTransport::Connect() {
     co_return;
 }
 
-MCPTask_Void StdioServerTransport::Disconnect() {
+VoidTask StdioServerTransport::Disconnect() {
     if (m_CurrentState == TransportState::Disconnected) { co_return; }
 
     try {
@@ -282,7 +282,7 @@ void StdioServerTransport::ProcessLine(const std::string& InLine) {
     CallMessageRouter(JSONData::parse(InLine));
 }
 
-MCPTask_Void StdioServerTransport::TransmitMessage(
+VoidTask StdioServerTransport::TransmitMessage(
     const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
     (void)InConnectionIDs;
 

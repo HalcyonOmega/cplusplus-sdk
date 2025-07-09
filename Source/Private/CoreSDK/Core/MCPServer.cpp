@@ -15,7 +15,7 @@ MCPServer::MCPServer(const TransportType InTransportType, std::optional<std::uni
 	SetServerCapabilities(InCapabilities);
 }
 
-MCPTask_Void MCPServer::Start()
+VoidTask MCPServer::Start()
 {
 	if (m_IsRunning)
 	{
@@ -41,7 +41,7 @@ MCPTask_Void MCPServer::Start()
 	co_return;
 }
 
-MCPTask_Void MCPServer::Stop()
+VoidTask MCPServer::Stop()
 {
 	if (!m_IsRunning)
 	{
@@ -428,7 +428,7 @@ void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InPa
 	SendNotification(LoggingMessageNotification(InParams));
 }
 
-MCPTask<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
+Task<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
 {
 	CreateMessageResponse Response = SendRequest(CreateMessageRequest(InParams));
 	co_return GetResponseResult<CreateMessageResponse::Result>(Response);
@@ -580,7 +580,7 @@ void MCPServer::SendNotificationToClient(std::string_view InClientID, const Reso
 }
 
 // Enhanced tool execution with progress reporting
-MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(const Tool& InTool,
+Task<CallToolResponse> MCPServer::ExecuteToolWithProgress(const Tool& InTool,
 	const std::optional<std::unordered_map<std::string, JSONData>>& InArguments, const RequestID& InRequestID)
 {
 	// Update progress at 0%
@@ -596,7 +596,7 @@ MCPTask<CallToolResponse> MCPServer::ExecuteToolWithProgress(const Tool& InTool,
 	co_return Response;
 }
 
-MCPTask_Void MCPServer::UpdateProgress(const double InProgress, std::optional<int64_t> InTotal)
+VoidTask MCPServer::UpdateProgress(const double InProgress, std::optional<int64_t> InTotal)
 {
 	try
 	{
@@ -618,7 +618,7 @@ MCPTask_Void MCPServer::UpdateProgress(const double InProgress, std::optional<in
 	co_return;
 }
 
-MCPTask_Void MCPServer::CompleteProgress()
+VoidTask MCPServer::CompleteProgress()
 {
 	co_await UpdateProgress(1.0);
 	co_return;

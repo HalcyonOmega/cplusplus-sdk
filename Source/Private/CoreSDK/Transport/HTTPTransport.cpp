@@ -28,7 +28,7 @@ HTTPTransportClient::~HTTPTransportClient() noexcept
 	}
 }
 
-MCPTask_Void HTTPTransportClient::Connect()
+VoidTask HTTPTransportClient::Connect()
 {
 	if (GetState() != TransportState::Disconnected)
 	{
@@ -54,7 +54,7 @@ MCPTask_Void HTTPTransportClient::Connect()
 	co_return;
 }
 
-MCPTask_Void HTTPTransportClient::Disconnect()
+VoidTask HTTPTransportClient::Disconnect()
 {
 	if (m_CurrentState == TransportState::Disconnected)
 	{
@@ -91,7 +91,7 @@ std::string HTTPTransportClient::GetConnectionInfo() const
 
 void HTTPTransportClient::run() { StartSSEConnection(); }
 
-MCPTask_Void HTTPTransportClient::ConnectToServer()
+VoidTask HTTPTransportClient::ConnectToServer()
 {
 	try
 	{
@@ -138,7 +138,7 @@ MCPTask_Void HTTPTransportClient::ConnectToServer()
 	co_return;
 }
 
-MCPTask_Void HTTPTransportClient::TransmitMessage(
+VoidTask HTTPTransportClient::TransmitMessage(
 	const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 {
 	(void)InConnectionIDs;
@@ -309,7 +309,7 @@ HTTPTransportServer::~HTTPTransportServer()
 	}
 }
 
-MCPTask_Void HTTPTransportServer::Connect()
+VoidTask HTTPTransportServer::Connect()
 {
 	if (GetState() != TransportState::Disconnected)
 	{
@@ -343,7 +343,7 @@ MCPTask_Void HTTPTransportServer::Connect()
 	co_return;
 }
 
-MCPTask_Void HTTPTransportServer::Disconnect()
+VoidTask HTTPTransportServer::Disconnect()
 {
 	if (GetState() == TransportState::Disconnected)
 	{
@@ -544,7 +544,7 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID)
 	}
 }
 
-MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
+VoidTask HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 {
 	std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
@@ -578,7 +578,7 @@ MCPTask_Void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) { CallMessageRouter(InMessage); }
 
-MCPTask_Void HTTPTransportServer::HandleGetMessageEndpoint(
+VoidTask HTTPTransportServer::HandleGetMessageEndpoint(
 	Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
 {
 	(void)InRequest;
@@ -600,7 +600,7 @@ MCPTask_Void HTTPTransportServer::HandleGetMessageEndpoint(
 	co_await StreamMessagesToClient(clientID);
 }
 
-MCPTask_Void HTTPTransportServer::StreamMessagesToClient(const std::string& InClientID)
+VoidTask HTTPTransportServer::StreamMessagesToClient(const std::string& InClientID)
 {
 	try
 	{

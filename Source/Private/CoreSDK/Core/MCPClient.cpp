@@ -9,6 +9,14 @@
 		co_return;                                  \
 	}
 
+#define SEND_REQUEST_RETURN_RESULT(ResponseType, Request)                                      \
+	RETURN_IF_CLIENT_NOT_CONNECTED                                                             \
+	if (const auto& Response = co_await SendRequest<ResponseType>(Request); Response.Result()) \
+	{                                                                                          \
+		co_return Response.Result().value();                                                   \
+	}                                                                                          \
+	co_return std::nullopt;
+
 MCP_NAMESPACE_BEGIN
 
 MCPClient::MCPClient(const TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
@@ -19,13 +27,18 @@ MCPClient::MCPClient(const TransportType InTransportType, std::optional<std::uni
 	SetClientCapabilities(InCapabilities);
 }
 
-MCPTask_Void MCPClient::Start()
+VoidTask MCPClient::Start()
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
 	try
 	{
-		InitializeResponse::Result Result = co_await Request_Initialize();
+		std::optional<InitializeResponse::Result> Result = co_await Request_Initialize(InitializeRequest::Params{
+			.ProtocolVersion = m_ClientInfo.Version,
+			.Capabilities = m_ClientCapabilities,
+			.ClientInfo = m_ClientInfo,
+		});
+
 		IsConnected() = true;
 		m_ClientInfo = InClientInfo;
 	}
@@ -38,7 +51,7 @@ MCPTask_Void MCPClient::Start()
 	co_return;
 }
 
-MCPTask_Void MCPClient::Stop()
+VoidTask MCPClient::Stop()
 {
 	if (!IsConnected())
 	{
@@ -58,144 +71,126 @@ MCPTask_Void MCPClient::Stop()
 
 	co_return;
 }
-
-MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize(const InitializeRequest::Params& InParams)
+OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const InitializeRequest::Params& InParams)
 {
 	if (IsInitialized())
 	{
 		HandleRuntimeError("Protocol already initialized");
-		co_return;
+		co_return std::nullopt;
 	}
 
 	try
 	{
 		SetState(MCPProtocolState::Initializing);
-
 		// Start transport
 		co_await m_Transport->Connect();
 
-		// Send initialize request
-		const InitializeRequest Request{ InitializeRequest::Params{
-			.ProtocolVersion = m_ClientInfo.Version,
-			.Capabilities = m_ClientCapabilities,
-			.ClientInfo = m_ClientInfo,
-		} };
-
-		const auto& Response = co_await SendRequest<InitializeResponse>(Request);
-
-		Response.HandleResponse(
-			[this](const auto& Expected)
-			{
-				const auto& Result = GetResponseResult<InitializeResponse::Result>(Expected);
-
-				// Store negotiated capabilities
-				SetServerCapabilities(Result.Capabilities);
-				SetServerInfo(Result.ServerInfo);
-
-				SetState(MCPProtocolState::Initialized);
-			},
-			[]() {});
-		if (const auto& Success = Response.Expected())
+		const auto& Response = co_await SendRequest<InitializeResponse>(InitializeRequest{ InParams });
+		if (Response.Result())
 		{
+			const auto& Result = Response.Result().value();
+			// Store negotiated capabilities
+			SetServerCapabilities(Result.Capabilities);
+			SetServerInfo(Result.ServerInfo);
+			SetState(MCPProtocolState::Initialized);
+			co_return Result;
 		}
-		else if (const auto& Error = Response.Unexpected())
+		if (Response.Raw())
 		{
-			HandleRuntimeError(Error.value().dump());
-		}
+			const auto& UnexpectedType = Response.Raw().value();
+			HandleRuntimeError(UnexpectedType.dump());
+		};
 	}
 	catch (const std::exception& e)
 	{
 		HandleRuntimeError("Failed to initialize protocol: " + std::string(e.what()));
 	}
-
-	co_return;
+	co_return std::nullopt;
 }
 
 void MCPClient::OnNotified_Initialized(const InitializedNotification& InNotification) {}
 
-MCPTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams)
-{
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	SendRequest(ListToolsRequest{ InParams });
-	co_return const ListToolsResponse::Result Result = GetResponseResult<ListToolsResponse>();
+OptTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams){
+	SEND_REQUEST_RETURN_RESULT(ListToolsResponse, ListToolsRequest{ InParams })
 }
 
-MCPTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InParams)
+OptTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InParams)
 {
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	SendRequest(CallToolRequest{ InParams });
-	co_return response.get<ToolCallResponse>();
+	SEND_REQUEST_RETURN_RESULT(CallToolResponse, CallToolRequest{ InParams })
 }
 
 void MCPClient::OnNotified_ToolListChanged(const ToolListChangedNotification& InNotification) {}
 
-MCPTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams& InParams)
-{
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	SendRequest(ListPromptsRequest{ InParams });
-	co_return response.get<ListPromptsResponse>();
+OptTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams& InParams){
+	SEND_REQUEST_RETURN_RESULT(ListPromptsResponse, ListPromptsRequest{ InParams })
 }
 
-MCPTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
+OptTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
 {
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	co_await SendRequest(GetPromptRequest{ InParams });
-	co_return response.get<PromptGetResponse>();
+	SEND_REQUEST_RETURN_RESULT(GetPromptResponse, GetPromptRequest{ InParams })
 }
 
 void MCPClient::OnNotified_PromptListChanged(const PromptListChangedNotification& InNotification) {}
 
-MCPTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams& InParams)
-{
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	SendRequest(ListResourcesRequest{ InParams });
-	co_return response.get<ResourceListResponse>();
+OptTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams& InParams){
+	SEND_REQUEST_RETURN_RESULT(ListResourcesResponse, ListResourcesRequest{ InParams })
 }
 
-MCPTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InParams)
-{
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	co_return co_await SendRequest(ReadResourceRequest{ InParams });
+OptTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InParams){
+	SEND_REQUEST_RETURN_RESULT(ReadResourceResponse, ReadResourceRequest{ InParams })
 }
 
-MCPTask_Void MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
+VoidTask MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	co_return co_await SendRequest(SubscribeRequest{ InParams });
+	if (const auto& Response = co_await SendRequest<EmptyResponse>(SubscribeRequest{ InParams }); Response.Get())
+	{
+		std::cout << "Subscribe Successful" << std::endl;
+		co_return;
+	}
+
+	std::cout << "Subscribe Failed" << std::endl;
+	co_return;
 }
 
-MCPTask_Void MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InParams)
+VoidTask MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	co_return co_await SendRequest(UnsubscribeRequest{ InParams });
+	if (const auto& Response = co_await SendRequest<EmptyResponse>(UnsubscribeRequest{ InParams }); Response.Get())
+	{
+		std::cout << "Unsubscribe Successful" << std::endl;
+		co_return;
+	}
+
+	std::cout << "Unsubscribe Failed" << std::endl;
+	co_return;
 }
 
 void MCPClient::OnNotified_ResourceListChanged(const ResourceListChangedNotification& InNotification) {}
 
 void MCPClient::OnNotified_ResourceUpdated(const ResourceUpdatedNotification& InNotification) {}
 
-MCPTask<ListRootsResponse::Result> MCPClient::Request_ListRoots(const PaginatedRequestParams& InParams)
+OptTask<ListRootsResponse::Result> MCPClient::Request_ListRoots(const PaginatedRequestParams& InParams)
 {
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	co_return co_await SendRequest(ListRootsRequest{ InParams });
+	SEND_REQUEST_RETURN_RESULT(ListRootsResponse, ListRootsRequest{ InParams })
 }
 
 void MCPClient::OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification) {}
 
-MCPTask_Void MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InParams)
+VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InParams)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	co_return co_await SendRequest(SetLevelRequest{ InParams });
+	if (const auto& Response = co_await SendRequest<EmptyResponse>(SetLevelRequest{ InParams }); Response.Get())
+	{
+		std::cout << "Set Logging Level Successful" << std::endl;
+		co_return;
+	}
+
+	std::cout << "Set Logging Level Failed" << std::endl;
+	co_return;
 }
 
 void MCPClient::OnNotified_LogMessage(const LoggingMessageNotification& InNotification) {}
@@ -208,20 +203,16 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 	return;
 }
 
-MCPTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
-{
-	RETURN_IF_CLIENT_NOT_CONNECTED
-
-	auto response = co_await SendRequest(CompleteRequest{ InParams });
-	co_return response.get<CompleteResponse>();
+OptTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams){
+	SEND_REQUEST_RETURN_RESULT(CompleteResponse, CompleteRequest{ InParams })
 }
 
-MCPTask_Void MCPClient::Notify_Progress(const ProgressNotification::Params& InParams)
+VoidTask MCPClient::Notify_Progress(const ProgressNotification::Params& InParams)
 {
 	return SendNotification(ProgressNotification{ InParams });
 }
 
-MCPTask_Void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams)
+VoidTask MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams)
 {
 	return SendNotification(CancelledNotification{ InParams });
 }

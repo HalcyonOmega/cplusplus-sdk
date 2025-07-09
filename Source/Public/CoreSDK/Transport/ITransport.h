@@ -10,7 +10,7 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
-#include "Utilities/Async/MCPTask.h"
+#include "Utilities/Async/Task.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -71,12 +71,12 @@ public:
 	ITransport& operator=(const ITransport&) noexcept = default;
 	ITransport& operator=(ITransport&&) noexcept = default;
 
-	virtual MCPTask_Void Connect() = 0;
-	virtual MCPTask_Void Disconnect() = 0;
-	virtual MCPTask_Void TransmitMessage(
+	virtual VoidTask Connect() = 0;
+	virtual VoidTask Disconnect() = 0;
+	virtual VoidTask TransmitMessage(
 		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt)
 		= 0;
-	virtual MCPTask<JSONData> TransmitRequest(
+	virtual Task<JSONData> TransmitRequest(
 		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt)
 		= 0;
 	[[nodiscard]] virtual std::string GetConnectionInfo() const = 0;

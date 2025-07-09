@@ -69,11 +69,13 @@ public:
 	[[nodiscard]] double GetMax() const { return m_Max; }
 	[[nodiscard]] double GetValue() const { return m_Value; }
 
-	explicit operator double() const { return m_Value; }
+	// ReSharper disable once CppNonExplicitConversionOperator
+	operator double() const { return m_Value; }
+
 	BoundedDouble& operator=(const double InValue)
 	{
 		SetValue(InValue);
-		return this*;
+		return *this;
 	}
 
 	[[nodiscard]] static std::optional<BoundedDouble> CreateOptional(const std::optional<double> InValue,

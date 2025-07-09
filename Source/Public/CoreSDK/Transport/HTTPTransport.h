@@ -41,12 +41,12 @@ public:
 	HTTPTransportClient& operator=(HTTPTransportClient&&) noexcept = delete;
 
 	// ITransport interface
-	MCPTask_Void Connect() override;
-	MCPTask_Void Disconnect() override;
+	VoidTask Connect() override;
+	VoidTask Disconnect() override;
 
-	MCPTask_Void TransmitMessage(const JSONData& InMessage,
+	VoidTask TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
-	MCPTask<JSONData> TransmitRequest(const JSONData& InRequest,
+	Task<JSONData> TransmitRequest(const JSONData& InRequest,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
@@ -56,7 +56,7 @@ protected:
 	void run() override;
 
 private:
-	MCPTask_Void ConnectToServer();
+	VoidTask ConnectToServer();
 	void StartSSEConnection();
 	void ProcessSSELine(const std::string& InLine);
 	void Cleanup();
@@ -115,21 +115,21 @@ public:
 	~HTTPTransportServer() noexcept override;
 
 	// ITransport interface
-	MCPTask_Void Connect() override;
-	MCPTask_Void Disconnect() override;
+	VoidTask Connect() override;
+	VoidTask Disconnect() override;
 
-	MCPTask_Void TransmitMessage(const JSONData& InMessage,
+	VoidTask TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
 
 	// Server-specific methods
 	void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
-	MCPTask_Void HandleGetMessageEndpoint(
+	VoidTask HandleGetMessageEndpoint(
 		Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
 	void RegisterSSEClient(const std::string& InClientID, Poco::Net::HTTPServerResponse& InResponse);
 	void UnregisterSSEClient(const std::string& InClientID);
-	MCPTask_Void StreamMessagesToClient(const std::string& InClientID);
+	VoidTask StreamMessagesToClient(const std::string& InClientID);
 
 private:
 	void ProcessReceivedMessage(const std::string& InMessage);

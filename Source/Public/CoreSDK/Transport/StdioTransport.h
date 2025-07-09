@@ -20,10 +20,10 @@ class StdioClientTransport : public ITransport {
     ~StdioClientTransport() noexcept override;
 
     // ITransport interface
-    MCPTask_Void Connect() override;
-    MCPTask_Void Disconnect() override;
+    VoidTask Connect() override;
+    VoidTask Disconnect() override;
 
-    MCPTask_Void TransmitMessage(
+    VoidTask TransmitMessage(
         const JSONData& InMessage,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 
@@ -68,13 +68,13 @@ class StdioServerTransport : public ITransport {
     ~StdioServerTransport() noexcept override;
 
     // ITransport interface
-    MCPTask_Void Connect() override;
-    MCPTask_Void Disconnect() override;
+    VoidTask Connect() override;
+    VoidTask Disconnect() override;
 
-    MCPTask_Void TransmitMessage(
+    VoidTask TransmitMessage(
         const JSONData& InMessage,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
-    MCPTask<JSONData> TransmitRequest(
+    Task<JSONData> TransmitRequest(
         const JSONData& InRequest,
         const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
 

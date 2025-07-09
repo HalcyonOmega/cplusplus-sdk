@@ -10,7 +10,7 @@
 MCP_NAMESPACE_BEGIN
 
 // Primary template for coroutine tasks that return a value
-template <typename T> struct MCPTask
+template <typename T> struct Task
 {
 	struct promise_type
 	{
@@ -18,9 +18,9 @@ template <typename T> struct MCPTask
 		std::exception_ptr m_Exception;
 		std::coroutine_handle<> m_Awaiter;
 
-		[[nodiscard]] MCPTask get_return_object()
+		[[nodiscard]] Task get_return_object()
 		{
-			return MCPTask{ std::coroutine_handle<promise_type>::from_promise(*this) };
+			return Task{ std::coroutine_handle<promise_type>::from_promise(*this) };
 		}
 
 		std::suspend_always initial_suspend() noexcept
@@ -46,9 +46,9 @@ template <typename T> struct MCPTask
 
 	std::coroutine_handle<promise_type> m_Handle;
 
-	explicit MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle{ Handle } {}
+	explicit Task(std::coroutine_handle<promise_type> Handle) : m_Handle{ Handle } {}
 
-	~MCPTask()
+	~Task()
 	{
 		if (m_Handle)
 		{
@@ -57,10 +57,10 @@ template <typename T> struct MCPTask
 	}
 
 	// Non-copyable, movable
-	MCPTask(const MCPTask&) = delete;
-	MCPTask& operator=(const MCPTask&) = delete;
-	MCPTask(MCPTask&& Other) noexcept : m_Handle{ std::exchange(Other.m_Handle, {}) } {}
-	MCPTask& operator=(MCPTask&& Other) noexcept
+	Task(const Task&) = delete;
+	Task& operator=(const Task&) = delete;
+	Task(Task&& Other) noexcept : m_Handle{ std::exchange(Other.m_Handle, {}) } {}
+	Task& operator=(Task&& Other) noexcept
 	{
 		if (this != &Other)
 		{
@@ -98,16 +98,16 @@ template <typename T> struct MCPTask
 };
 
 // Specialization for void return type
-template <> struct MCPTask<void>
+template <> struct Task<void>
 {
 	struct promise_type
 	{
 		std::exception_ptr m_Exception;
 		std::coroutine_handle<> m_Awaiter;
 
-		[[nodiscard]] MCPTask<void> get_return_object()
+		[[nodiscard]] Task<void> get_return_object()
 		{
-			return MCPTask<void>{ std::coroutine_handle<promise_type>::from_promise(*this) };
+			return Task<void>{ std::coroutine_handle<promise_type>::from_promise(*this) };
 		}
 
 		std::suspend_always initial_suspend() noexcept
@@ -133,9 +133,9 @@ template <> struct MCPTask<void>
 
 	std::coroutine_handle<promise_type> m_Handle;
 
-	explicit MCPTask(std::coroutine_handle<promise_type> Handle) : m_Handle{ Handle } {}
+	explicit Task(std::coroutine_handle<promise_type> Handle) : m_Handle{ Handle } {}
 
-	~MCPTask()
+	~Task()
 	{
 		if (m_Handle)
 		{
@@ -144,10 +144,10 @@ template <> struct MCPTask<void>
 	}
 
 	// Non-copyable, movable
-	MCPTask(const MCPTask&) = delete;
-	MCPTask& operator=(const MCPTask&) = delete;
-	MCPTask(MCPTask&& Other) noexcept : m_Handle{ std::exchange(Other.m_Handle, {}) } {}
-	MCPTask& operator=(MCPTask&& Other) noexcept
+	Task(const Task&) = delete;
+	Task& operator=(const Task&) = delete;
+	Task(Task&& Other) noexcept : m_Handle{ std::exchange(Other.m_Handle, {}) } {}
+	Task& operator=(Task&& Other) noexcept
 	{
 		if (this != &Other)
 		{
@@ -183,7 +183,9 @@ template <> struct MCPTask<void>
 	}
 };
 
-// Specialized void task
-using MCPTask_Void = MCPTask<void>;
+// Specialized
+using VoidTask = Task<void>;
+
+template <typename T> using OptTask = Task<std::optional<T>>;
 
 MCP_NAMESPACE_END

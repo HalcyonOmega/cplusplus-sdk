@@ -22,8 +22,8 @@ public:
 		const Implementation& InServerInfo, const ServerCapabilities& InCapabilities);
 
 	// Lifecycle methods
-	MCPTask_Void Start() override;
-	MCPTask_Void Stop() override;
+	VoidTask Start() override;
+	VoidTask Stop() override;
 
 	// Initialization
 	void OnRequest_Initialize(const InitializeRequest& InRequest);
@@ -64,7 +64,7 @@ public:
 	void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
 
 	// Sampling requests (servers can request sampling from clients)
-	MCPTask<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
+	Task<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
 
 	// Autocomplete
 	void OnRequest_Complete(const CompleteRequest& InRequest);
@@ -104,7 +104,7 @@ private:
 	void SetupDefaultHandlers();
 
 	// Progress tracking and tool execution
-	MCPTask<CallToolResponse> ExecuteToolWithProgress(const Tool& InTool,
+	Task<CallToolResponse> ExecuteToolWithProgress(const Tool& InTool,
 		const std::optional<std::unordered_map<std::string, JSONData>>& InArguments, const RequestID& InRequestID);
 
 	// Resource subscription management
@@ -115,8 +115,8 @@ private:
 	std::unordered_map<std::string /* Resource */, std::vector<std::string> /* Client IDs */> m_ResourceSubscriptions;
 	mutable std::mutex m_ResourceSubscriptionsMutex;
 
-	MCPTask_Void UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
-	MCPTask_Void CompleteProgress();
+	VoidTask UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
+	VoidTask CompleteProgress();
 };
 
 MCP_NAMESPACE_END

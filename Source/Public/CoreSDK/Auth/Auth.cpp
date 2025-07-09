@@ -29,7 +29,7 @@ OAuth2AuthProvider::OAuth2AuthProvider(const OAuth2Config& InConfig) : m_Config{
 
 OAuth2AuthProvider::~OAuth2AuthProvider() noexcept = default;
 
-MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
+Task<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
     try {
         // Check cache first
         {
@@ -75,7 +75,7 @@ MCPTask<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken) {
     } catch (const std::exception& e) { co_return false; }
 }
 
-MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMethod,
+Task<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMethod,
                                                          const std::string& InToken) {
     AuthResult result{};
 
@@ -129,7 +129,7 @@ MCPTask<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMe
     }
 }
 
-MCPTask<JSONData> OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
+Task<JSONData> OAuth2AuthProvider::ValidateTokenWithAuthServer(const std::string& InToken) {
     try {
         Poco::URI authURI{m_Config.AuthServerURL + "/oauth/introspect"};
 
@@ -184,11 +184,11 @@ BearerTokenAuthProvider::BearerTokenAuthProvider(
     const std::unordered_map<std::string, std::vector<std::string>>& InValidTokens)
     : m_ValidTokens{InValidTokens} {}
 
-MCPTask<bool> BearerTokenAuthProvider::ValidateToken(const std::string& InToken) {
+Task<bool> BearerTokenAuthProvider::ValidateToken(const std::string& InToken) {
     co_return m_ValidTokens.find(InToken) != m_ValidTokens.end();
 }
 
-MCPTask<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string& InMethod,
+Task<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string& InMethod,
                                                               const std::string& InToken) {
     AuthResult result{};
 

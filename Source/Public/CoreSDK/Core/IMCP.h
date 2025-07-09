@@ -11,9 +11,17 @@
 #include "CoreSDK/Messages/MessageManager.h"
 #include "CoreSDK/Transport/ITransport.h"
 #include "IMCP.h"
-#include "Utilities/Async/MCPTask.h"
+#include "Utilities/Async/Task.h"
 
 MCP_NAMESPACE_BEGIN
+
+template <typename F, typename T>
+concept ExpectedResponseFunction
+	= ConcreteResponse<T> && std::invocable<F, const T&> && std::same_as<std::invoke_result_t<F, const T&>, void>;
+
+template <typename F>
+concept UnexpectedResponseFunction
+	= std::invocable<F, const JSONData&> && std::same_as<std::invoke_result_t<F, const JSONData&>, void>;
 
 static constexpr double DEFAULT_TEMPERATURE{ 0.7 };
 
@@ -40,15 +48,15 @@ public:
 	virtual ~MCPProtocol() = default;
 
 	// Lifecycle
-	virtual MCPTask_Void Start() = 0;
-	virtual MCPTask_Void Stop() = 0;
+	virtual VoidTask Start() = 0;
+	virtual VoidTask Stop() = 0;
 	bool IsInitialized() const;
 	MCPProtocolState GetState() const;
 	void SetState(MCPProtocolState InNewState);
 	bool IsConnected() const;
 
 	// Core protocol operations
-	MCPTask<PingResponse> Ping(const PingRequest& InRequest);
+	Task<PingResponse> Ping(const PingRequest& InRequest);
 
 	// Protocol version validation
 	static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS;
@@ -56,9 +64,9 @@ public:
 
 	// Message sending utilities
 	// MCPTask_Void SendRequest(const RequestBase& InRequest);
-	MCPTask_Void SendResponse(const ResponseBase& InResponse) const;
-	MCPTask_Void SendNotification(const NotificationBase& InNotification) const;
-	MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError) const;
+	VoidTask SendResponse(const ResponseBase& InResponse) const;
+	VoidTask SendNotification(const NotificationBase& InNotification) const;
+	VoidTask SendErrorResponse(const ErrorResponseBase& InError) const;
 
 private:
 	void SetupTransportRouter() const;
@@ -113,7 +121,7 @@ private:
 
 			void SetRawResponse(const JSONData& RawResponse) { m_RawResponse = RawResponse; }
 
-			[[nodiscard]] std::optional<T> Expected() const
+			[[nodiscard]] std::optional<T> Get() const
 			{
 				// If we already have a successfully parsed response, return it.
 				if (m_Response)
@@ -131,12 +139,12 @@ private:
 				}
 				catch (const nlohmann::json::type_error& Exception)
 				{
-					// Parsing failed.
+					(void)Exception;
 					return std::nullopt;
 				}
 			}
 
-			[[nodiscard]] std::optional<JSONData> Unexpected() const
+			[[nodiscard]] std::optional<JSONData> Raw() const
 			{
 				if (!m_RawResponse.is_null())
 				{
@@ -145,8 +153,8 @@ private:
 				return std::nullopt;
 			}
 
-			template <typename OnExpectedFn, typename OnUnexpectedFn>
-			void HandleResponse(const OnExpectedFn&& OnExpected, const OnUnexpectedFn&& OnUnexpected) const
+			template <ExpectedResponseFunction<T> Expected, UnexpectedResponseFunction Unexpected>
+			void Handle(Expected&& OnExpected, Unexpected&& OnUnexpected) const
 			{
 				if (const auto& ExpectedResponse = Expected())
 				{
@@ -156,6 +164,15 @@ private:
 				{
 					OnUnexpected(UnexpectedResponse.value());
 				}
+			}
+
+			[[nodiscard]] std::optional<typename T::Result> Result() const
+			{
+				if (const auto& ExpectedResponse = Get())
+				{
+					return GetResponseResult<T::Result>(ExpectedResponse.value());
+				}
+				return std::nullopt;
 			}
 		};
 
@@ -274,7 +291,7 @@ public:
 	[[nodiscard]] std::optional<T> SendRequest_ExpectedResponse(const RequestBase& InRequest)
 	{
 		const auto& Response = co_await SendRequest<T>(InRequest);
-		if (const auto& ExpectedResponse = Response.Expected())
+		if (const auto& ExpectedResponse = Response.Get())
 		{
 			co_return ExpectedResponse;
 		}
