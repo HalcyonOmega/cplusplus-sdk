@@ -103,7 +103,8 @@ template <typename T>
 concept ConcreteResponse = std::is_base_of_v<ResponseBase, T>;
 
 // Get typed result - cast the base Result to the derived response's Result type
-template <typename TResultType, ConcreteResponse T> [[nodiscard]] TResultType GetResponseResult(T& InResponse)
+template <typename TResultType, ConcreteResponse T>
+[[nodiscard]] const TResultType& GetResponseResult(const T& InResponse)
 {
 	return static_cast<const TResultType&>(InResponse.ResultData);
 }

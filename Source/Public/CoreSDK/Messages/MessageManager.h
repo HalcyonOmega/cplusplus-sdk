@@ -64,11 +64,7 @@ public:
 			return false;
 		}
 
-		m_ResponseHandlers[ID] = [Handler = std::forward<Function>(InHandler)](const JSONData& InMessage)
-		{
-			T Response = InMessage.get<T>();
-			Handler(Response);
-		};
+		m_ResponseHandlers[ID] = InHandler;
 
 		return true;
 	}

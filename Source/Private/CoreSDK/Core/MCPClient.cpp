@@ -69,6 +69,8 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 
 	try
 	{
+		SetState(MCPProtocolState::Initializing);
+
 		// Start transport
 		co_await m_Transport->Connect();
 
@@ -79,19 +81,26 @@ MCPTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 			.ClientInfo = m_ClientInfo,
 		} };
 
-		auto Response = co_await SendRequest(Request);
+		const auto& Response = co_await SendRequest<InitializeResponse>(Request);
 
-		const InitializeResponse::Result Result = GetResponseResult<InitializeResponse>(Response);
+		Response.HandleResponse(
+			[this](const auto& Expected)
+			{
+				const auto& Result = GetResponseResult<InitializeResponse::Result>(Expected);
 
-		// Store negotiated capabilities
-		m_ServerCapabilities = Result.Capabilities;
-		m_ServerInfo = Result.ServerInfo;
+				// Store negotiated capabilities
+				SetServerCapabilities(Result.Capabilities);
+				SetServerInfo(Result.ServerInfo);
 
-		m_IsInitialized = true;
-
-		if (m_InitializedHandler)
+				SetState(MCPProtocolState::Initialized);
+			},
+			[]() {});
+		if (const auto& Success = Response.Expected())
 		{
-			m_InitializedHandler(response);
+		}
+		else if (const auto& Error = Response.Unexpected())
+		{
+			HandleRuntimeError(Error.value().dump());
 		}
 	}
 	catch (const std::exception& e)

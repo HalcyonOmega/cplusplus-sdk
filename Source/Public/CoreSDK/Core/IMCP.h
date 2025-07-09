@@ -45,7 +45,6 @@ public:
 	bool IsInitialized() const;
 	MCPProtocolState GetState() const;
 	void SetState(MCPProtocolState InNewState);
-	ITransport* GetTransport() const; // TODO: @HalcyonOmega Consider converting to reference
 	bool IsConnected() const;
 
 	// Core protocol operations
@@ -56,7 +55,7 @@ public:
 	static void ValidateProtocolVersion(const std::string& InVersion);
 
 	// Message sending utilities
-	MCPTask_Void SendRequest(const RequestBase& InRequest);
+	// MCPTask_Void SendRequest(const RequestBase& InRequest);
 	MCPTask_Void SendResponse(const ResponseBase& InResponse) const;
 	MCPTask_Void SendNotification(const NotificationBase& InNotification) const;
 	MCPTask_Void SendErrorResponse(const ErrorResponseBase& InError) const;
@@ -91,14 +90,16 @@ public:
 	ServerCapabilities GetServerCapabilities() const { return m_ServerCapabilities; }
 	ClientCapabilities GetClientCapabilities() const { return m_ClientCapabilities; }
 
-	template <typename T> struct ResponseTask
+private:
+	template <ConcreteResponse T> struct ResponseTask
 	{
 		struct promise_type
 		{
-			std::optional<T> m_Response;
+			JSONData m_RawResponse;
+			mutable std::unique_ptr<T> m_Response;
 			std::exception_ptr m_Exception;
 
-			[[nodiscard]] ResponseTask get_return_object() noexcept
+			ResponseTask get_return_object() noexcept
 			{
 				return ResponseTask{ std::coroutine_handle<promise_type>::from_promise(*this) };
 			}
@@ -107,59 +108,106 @@ public:
 			std::suspend_always initial_suspend() noexcept { return {}; }
 			// On Task Complete
 			std::suspend_always final_suspend() noexcept { return {}; }
-			void return_value(T Value) { m_Response.emplace(std::move(Value)); }
 			void unhandled_exception() { m_Exception = std::current_exception(); }
+			void return_void() {}
+
+			void SetRawResponse(const JSONData& RawResponse) { m_RawResponse = RawResponse; }
+
+			[[nodiscard]] std::optional<T> Expected() const
+			{
+				// If we already have a successfully parsed response, return it.
+				if (m_Response)
+				{
+					return *m_Response;
+				}
+
+				// Otherwise, try to parse the raw JSON.
+				try
+				{
+					T Response = m_RawResponse.get<T>();
+					// Cache the successful conversion.
+					m_Response = std::make_unique<T>(Response);
+					return Response;
+				}
+				catch (const nlohmann::json::type_error& Exception)
+				{
+					// Parsing failed.
+					return std::nullopt;
+				}
+			}
+
+			[[nodiscard]] std::optional<JSONData> Unexpected() const
+			{
+				if (!m_RawResponse.is_null())
+				{
+					return m_RawResponse;
+				}
+				return std::nullopt;
+			}
+
+			template <typename OnExpectedFn, typename OnUnexpectedFn>
+			void HandleResponse(const OnExpectedFn&& OnExpected, const OnUnexpectedFn&& OnUnexpected) const
+			{
+				if (const auto& ExpectedResponse = Expected())
+				{
+					OnExpected(ExpectedResponse.value());
+				}
+				else if (const auto& UnexpectedResponse = Unexpected())
+				{
+					OnUnexpected(UnexpectedResponse.value());
+				}
+			}
 		};
 
-		struct ResponseTaskState
-		{
-			std::coroutine_handle<promise_type> Handle;
-			std::shared_ptr<ITransport> Transport;
-			std::shared_ptr<MessageManager> MessageManager;
-			RequestBase Request;
-		};
-
-		std::shared_ptr<ResponseTaskState> m_State;
-
-		// Awaitable Interface
-
+		// ====================================================================
+		// AWAITABLE INTERFACE
+		// ====================================================================
 		// Should the coroutine continue or suspend? If "false", suspend
-		[[nodiscard]] bool await_ready() const noexcept { return m_State || m_State->m_Handle.done(); }
+		[[nodiscard]] bool await_ready() const noexcept { return !m_Handle || m_Handle.done(); }
 
-		// On Coroutine Await
+		// On Coroutine Suspend
 		void await_suspend(std::coroutine_handle<> InAwaiter)
 		{
-			m_State->m_MessageManager->template RegisterResponseHandler<T>(m_State->Request.GetRequestID(),
-				[State = this->m_State, InAwaiter](const T& InResponse) mutable
-				{
-					if (State->Handle && !State->Handle.done())
-					{
-						State->Handle.promise().return_value(InResponse);
+			if (!m_Transport->IsConnected())
+			{
+				HandleRuntimeError("Transport not connected");
+				return;
+			}
 
+			m_MessageManager->RegisterResponseHandler(m_Request->GetRequestID(),
+				[Handle = this->m_Handle, InAwaiter](const JSONData& InRawResponse) mutable
+				{
+					if (Handle && !Handle.done())
+					{
+						Handle.promise().SetRawResponse(InRawResponse);
 						InAwaiter.resume();
 					}
 				});
 
-			m_State->Transport->TransmitMessage(m_State->Request);
+			m_Transport->TransmitMessage(*m_Request);
 		}
 
 		// On Coroutine Resume
-		[[nodiscard]] T await_resume() const
+		[[nodiscard]] promise_type& await_resume() const
 		{
-			m_State->MessageManager->UnregisterResponseHandler(m_State->Request.GetRequestID());
+			m_MessageManager->UnregisterResponseHandler(m_Request->GetRequestID());
 
-			if (m_State->Handle.promise().m_Exception)
+			if (m_Handle.promise().m_Exception)
 			{
-				std::rethrow_exception(m_State->Handle.promise().m_Exception);
+				std::rethrow_exception(m_Handle.promise().m_Exception);
 			}
 
-			return std::move(*m_State->Handle.promise().m_Response);
+			return m_Handle.promise();
 		}
 
-		explicit ResponseTask(const std::coroutine_handle<promise_type> Handle, const RequestBase& InRequest) :
-			m_Handle{ Handle }, m_Request(InRequest)
-		{}
-		ResponseTask() = default;
+		void SetDependencies(std::unique_ptr<RequestBase> InRequest, std::shared_ptr<ITransport> InTransport,
+			std::shared_ptr<MessageManager> InMessageManager)
+		{
+			m_Request = std::move(InRequest);
+			m_Transport = std::move(InTransport);
+			m_MessageManager = std::move(InMessageManager);
+		}
+
 		~ResponseTask()
 		{
 			if (m_Handle)
@@ -171,7 +219,10 @@ public:
 		// Non-copyable, movable
 		ResponseTask(const ResponseTask&) = delete;
 		ResponseTask(ResponseTask&& Other) noexcept :
-			m_Handle{ std::exchange(Other.m_Handle, {}) }, m_Request(std::exchange(Other.m_Request, {}))
+			m_Handle{ std::exchange(Other.m_Handle, {}) },
+			m_Transport{ std::move(Other.m_Transport) },
+			m_MessageManager{ std::move(Other.m_MessageManager) },
+			m_Request{ std::move(Other.m_Request) }
 		{}
 		ResponseTask& operator=(const ResponseTask&) = delete;
 		ResponseTask& operator=(ResponseTask&& Other) noexcept
@@ -179,15 +230,57 @@ public:
 			if (this != &Other)
 			{
 				if (m_Handle)
-				{
 					m_Handle.destroy();
-				}
 				m_Handle = std::exchange(Other.m_Handle, {});
-				m_Request = std::exchange(Other.m_Request, {});
+				m_Request = std::move(Other.m_Request);
+				m_Transport = std::move(Other.m_Transport);
+				m_MessageManager = std::move(Other.m_MessageManager);
 			}
 			return *this;
 		}
+
+	private:
+		// ====================================================================
+		// RESPONSE TASK MEMBERS
+		// ====================================================================
+		std::coroutine_handle<promise_type> m_Handle;
+		std::shared_ptr<ITransport> m_Transport;
+		std::shared_ptr<MessageManager> m_MessageManager;
+		std::unique_ptr<RequestBase> m_Request;
+
+		explicit ResponseTask(const std::coroutine_handle<promise_type> Handle) : m_Handle{ Handle } {}
+
+		friend class MCPProtocol;
 	};
+
+public:
+	template <ConcreteResponse T> [[nodiscard]] ResponseTask<T> SendRequest(const RequestBase& InRequest)
+	{
+		// Create promise & handle for coroutine
+		auto InternalCoro = []() -> ResponseTask<T> { co_return; };
+
+		// Create a task object with a valid handle
+		ResponseTask<T> Task = InternalCoro();
+
+		// Populate dependencies for coroutine to execute message sending
+		Task.SetDependencies(std::make_unique<RequestBase>(InRequest), m_Transport, m_MessageManager);
+
+		// Return a task which is fully prepped for co_await
+		return Task;
+	}
+
+	// Request Utilities
+	template <ConcreteResponse T>
+	[[nodiscard]] std::optional<T> SendRequest_ExpectedResponse(const RequestBase& InRequest)
+	{
+		const auto& Response = co_await SendRequest<T>(InRequest);
+		if (const auto& ExpectedResponse = Response.Expected())
+		{
+			co_return ExpectedResponse;
+		}
+
+		co_return std::nullopt;
+	}
 };
 
 MCP_NAMESPACE_END
