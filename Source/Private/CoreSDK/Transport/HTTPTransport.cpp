@@ -6,12 +6,17 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/URI.h>
 
+#include <utility>
+
 #include "CoreSDK/Common/RuntimeError.h"
+#include "Poco/Net/HTTPServerRequest.h"
+#include "Poco/Net/HTTPServerResponse.h"
 #include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN
 
-HTTPTransportClient::HTTPTransportClient(const HTTPTransportOptions& InOptions) : m_Options(InOptions) {}
+HTTPTransportClient::HTTPTransportClient(HTTPTransportOptions InOptions) : ITransport(), m_Options(std::move(InOptions))
+{}
 
 HTTPTransportClient::~HTTPTransportClient() noexcept
 {
@@ -19,7 +24,7 @@ HTTPTransportClient::~HTTPTransportClient() noexcept
 	{
 		try
 		{
-			Disconnect().await_resume();
+			HTTPTransportClient::Disconnect().await_resume();
 		}
 		catch (...)
 		{
@@ -56,7 +61,7 @@ VoidTask HTTPTransportClient::Connect()
 
 VoidTask HTTPTransportClient::Disconnect()
 {
-	if (m_CurrentState == TransportState::Disconnected)
+	if (GetState() == TransportState::Disconnected)
 	{
 		co_return;
 	}
@@ -97,7 +102,7 @@ VoidTask HTTPTransportClient::ConnectToServer()
 	{
 		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
 
-		// Create HTTP session
+		// Create an HTTP session
 		m_HTTPSession = std::make_unique<Poco::Net::HTTPClientSession>(m_Options.Host, m_Options.Port);
 		m_HTTPSession->setTimeout(m_Options.ConnectTimeout);
 
@@ -119,6 +124,8 @@ VoidTask HTTPTransportClient::ConnectToServer()
 		Poco::Net::HTTPResponse Response;
 		std::istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
 
+		(void)ResponseStream;
+
 		if (Response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
 		{
 			HandleRuntimeError("Server connection failed: " + Response.getReason());
@@ -138,7 +145,7 @@ VoidTask HTTPTransportClient::ConnectToServer()
 	co_return;
 }
 
-VoidTask HTTPTransportClient::TransmitMessage(
+void HTTPTransportClient::TransmitMessage(
 	const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 {
 	(void)InConnectionIDs;
@@ -146,7 +153,7 @@ VoidTask HTTPTransportClient::TransmitMessage(
 	if (!m_HTTPSession)
 	{
 		HandleRuntimeError("HTTP session not initialized");
-		co_return;
+		return;
 	}
 
 	try
@@ -157,44 +164,42 @@ VoidTask HTTPTransportClient::TransmitMessage(
 			Poco::Net::HTTPRequest::HTTP_POST, m_Options.Path, Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.setContentType("application/json");
 
-		std::string Body = InMessage.dump();
+		const std::string Body = InMessage.dump();
 		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
 
 		std::ostream& RequestStream = m_HTTPSession->sendRequest(Request);
 		RequestStream << Body;
 
 		Poco::Net::HTTPResponse Response;
-		std::istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
+		const std::istream& ResponseStream = m_HTTPSession->receiveResponse(Response);
 		(void)ResponseStream;
 
 		if (Response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
 		{
 			HandleRuntimeError("HTTP request failed: " + Response.getReason());
-			co_return;
+			return;
 		}
 	}
 	catch (const std::exception& Except)
 	{
 		HandleRuntimeError("Error sending HTTP message: " + std::string(Except.what()));
-		co_return;
+		return;
 	}
-
-	co_return;
 }
 
 void HTTPTransportClient::StartSSEConnection()
 {
 	try
 	{
-		// Create separate session for SSE
-		auto SSESession = std::make_unique<Poco::Net::HTTPClientSession>(m_Options.Host, m_Options.Port);
+		// Create a separate session for SSE
+		const auto SSESession = std::make_unique<Poco::Net::HTTPClientSession>(m_Options.Host, m_Options.Port);
 
 		Poco::Net::HTTPRequest Request(
 			Poco::Net::HTTPRequest::HTTP_GET, m_Options.Path + "/events", Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.set("Accept", "text/event-stream");
 		Request.set("Cache-Control", "no-cache");
 
-		std::ostream& RequestStream = SSESession->sendRequest(Request);
+		const std::ostream& RequestStream = SSESession->sendRequest(Request);
 		(void)RequestStream;
 
 		Poco::Net::HTTPResponse Response;
@@ -233,7 +238,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine)
 		if (InLine.substr(0, 6) == "data: ")
 		{
 			std::string JSONData = InLine.substr(6);
-			auto Message = JSONData::parse(JSONData);
+			const auto Message = JSONData::parse(JSONData);
 
 			if (!IsValidJSONRPC(Message))
 			{
@@ -260,7 +265,7 @@ void HTTPTransportClient::Cleanup()
 	// Clear pending requests
 	{
 		std::lock_guard<std::mutex> Lock(m_RequestsMutex);
-		for (auto& [id, request] : m_PendingRequests)
+		for (const auto& request : m_PendingRequests | std::views::values)
 		{
 			request->Promise.set_exception(std::make_exception_ptr(std::runtime_error("Transport closed")));
 		}
@@ -272,9 +277,9 @@ void HTTPTransportClient::Cleanup()
 MCPHTTPRequestHandler::MCPHTTPRequestHandler(HTTPTransportServer* InServer) : m_Server(InServer) {}
 
 void MCPHTTPRequestHandler::handleRequest(
-	Poco::Net::HTTPServerRequest& Request, Poco::Net::HTTPServerResponse& Response)
+	Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
 {
-	m_Server->HandleHTTPRequest(Request, Response);
+	m_Server->HandleHTTPRequest(InRequest, InResponse);
 }
 
 // MCPHTTPRequestHandlerFactory Implementation
@@ -289,18 +294,18 @@ Poco::Net::HTTPRequestHandler* MCPHTTPRequestHandlerFactory::createRequestHandle
 }
 
 // HTTPTransportServer Implementation
-HTTPTransportServer::HTTPTransportServer(const HTTPTransportOptions& InOptions) : m_Options(InOptions)
+HTTPTransportServer::HTTPTransportServer(HTTPTransportOptions InOptions) : m_Options(std::move(InOptions))
 {
 	SetState(TransportState::Disconnected);
 }
 
 HTTPTransportServer::~HTTPTransportServer()
 {
-	if (m_CurrentState != TransportState::Disconnected)
+	if (GetState() != TransportState::Disconnected)
 	{
 		try
 		{
-			Disconnect().await_resume();
+			HTTPTransportServer::Disconnect().await_resume();
 		}
 		catch (...)
 		{
@@ -323,11 +328,13 @@ VoidTask HTTPTransportServer::Connect()
 		// Create server socket
 		m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
 
-		// Create request handler factory
+		// Create a request handler factory
 		m_HandlerFactory = std::make_unique<MCPHTTPRequestHandlerFactory>(this);
 
-		// Create HTTP server
-		m_HTTPServer = std::make_unique<Poco::Net::HTTPServer>(m_HandlerFactory.get(), *m_ServerSocket);
+		const auto& Params = new Poco::Net::HTTPServerParams();
+
+		// Create an HTTP server
+		m_HTTPServer = std::make_unique<Poco::Net::HTTPServer>(m_HandlerFactory.get(), *m_ServerSocket, Params);
 
 		// Start the server
 		m_HTTPServer->start();
@@ -361,7 +368,7 @@ VoidTask HTTPTransportServer::Disconnect()
 		// Close all SSE clients
 		{
 			std::lock_guard<std::mutex> Lock(m_ClientsMutex);
-			for (auto& [id, client] : m_SSEClients)
+			for (const auto& client : m_SSEClients | std::views::values)
 			{
 				client->IsActive = false;
 			}
@@ -371,7 +378,7 @@ VoidTask HTTPTransportServer::Disconnect()
 		// Clear pending requests
 		{
 			std::lock_guard<std::mutex> Lock(m_RequestsMutex);
-			for (auto& [id, request] : m_PendingRequests)
+			for (const auto& request : m_PendingRequests | std::views::values)
 			{
 				request->Promise.set_exception(std::make_exception_ptr(std::runtime_error("Server stopped")));
 			}
@@ -392,6 +399,9 @@ VoidTask HTTPTransportServer::Disconnect()
 
 	co_return;
 }
+void HTTPTransportServer::TransmitMessage(
+	const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+{}
 
 std::string HTTPTransportServer::GetConnectionInfo() const
 {
@@ -406,10 +416,9 @@ void HTTPTransportServer::HandleHTTPRequest(
 {
 	try
 	{
-		std::string Path = InRequest.getURI();
-		std::string Method = InRequest.getMethod();
+		const std::string Path = InRequest.getURI();
 
-		if (Path == "/message" && Method == "GET")
+		if (const std::string Method = InRequest.getMethod(); Path == "/message" && Method == "GET")
 		{
 			// MCP StreamableHTTP GET endpoint implementation
 			InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
@@ -425,10 +434,10 @@ void HTTPTransportServer::HandleHTTPRequest(
 
 			// Send initial connection event
 			std::ostream& ResponseStream = InResponse.send();
-			ResponseStream << "data: {\"type\":\"connection_established\",\"clientId\":\"" << ClientID << "\"}\n\n";
+			ResponseStream << R"(data: {"type":"connection_established","clientId":")" << ClientID << "\"}\n\n";
 			ResponseStream.flush();
 
-			// Keep connection alive until client disconnects
+			// Keep the connection alive until the client disconnects
 			while (true)
 			{
 				{
@@ -459,7 +468,7 @@ void HTTPTransportServer::HandleHTTPRequest(
 			ResponseStream << "data: {\"type\":\"connection_established\"}\n\n";
 			ResponseStream.flush();
 
-			// Wait until client disconnects
+			// Wait until the client disconnects
 			while (true)
 			{
 				std::lock_guard<std::mutex> Lock(m_ClientsMutex);
@@ -544,11 +553,11 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID)
 	}
 }
 
-VoidTask HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
+void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 {
 	std::lock_guard<std::mutex> Lock(m_ClientsMutex);
 
-	std::string MessageStr = "data: " + InMessage.dump() + "\n\n";
+	const std::string MessageStr = "data: " + InMessage.dump() + "\n\n";
 
 	auto It = m_SSEClients.begin();
 	while (It != m_SSEClients.end())
@@ -579,7 +588,7 @@ VoidTask HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) { CallMessageRouter(InMessage); }
 
 VoidTask HTTPTransportServer::HandleGetMessageEndpoint(
-	Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
+	const Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
 {
 	(void)InRequest;
 	// Set SSE headers
@@ -593,7 +602,7 @@ VoidTask HTTPTransportServer::HandleGetMessageEndpoint(
 	// Generate unique client ID
 	std::string clientID = GenerateUUID();
 
-	// Register SSE client for message streaming
+	// Register an SSE client for message streaming
 	RegisterSSEClient(clientID, InResponse);
 
 	// Keep connection alive and stream messages
@@ -621,6 +630,7 @@ VoidTask HTTPTransportServer::StreamMessagesToClient(const std::string& InClient
 	}
 	catch (const std::exception& Except)
 	{
+		(void)Except;
 		// Client disconnected or error occurred
 		UnregisterSSEClient(InClientID);
 	}

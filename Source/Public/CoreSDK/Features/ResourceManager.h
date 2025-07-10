@@ -16,7 +16,7 @@
 MCP_NAMESPACE_BEGIN
 
 /**
- * Manages FastMCP resources.
+ * Manages MCP resources.
  * Provides functionality for registering, retrieving, and listing resources and templates.
  */
 class ResourceManager
@@ -48,7 +48,6 @@ public:
 	/**
 	 * Add a template from a function.
 	 * @param InFunction The function to handle template-based resource creation
-	 * @param InURITemplate The URI template string
 	 * @param InTemplate The resource template configuration
 	 * @return The added resource template
 	 */
@@ -91,6 +90,9 @@ private:
 	std::unordered_map<std::string, std::pair<ResourceTemplate, ResourceFunction>> m_Templates;
 	bool m_WarnOnDuplicateResources;
 	mutable std::mutex m_Mutex;
+
+	std::unordered_map<std::string /* Resource */, std::vector<std::string> /* Connections */> m_ResourceSubscriptions;
+	mutable std::mutex m_ResourceSubscriptionsMutex;
 
 	/**
 	 * Check if a URI matches a template and extract parameters.

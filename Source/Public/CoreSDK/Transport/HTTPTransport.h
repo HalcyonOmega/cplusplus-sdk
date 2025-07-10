@@ -1,19 +1,12 @@
 #pragma once
 
-#include <Poco/Event.h>
-#include <Poco/Mutex.h>
 #include <Poco/Net/HTTPClientSession.h>
-#include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPRequestHandler.h>
 #include <Poco/Net/HTTPRequestHandlerFactory.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPServer.h>
-#include <Poco/Net/HTTPServerRequest.h>
-#include <Poco/Net/HTTPServerResponse.h>
 #include <Poco/Net/ServerSocket.h>
 #include <Poco/Runnable.h>
-#include <Poco/Thread.h>
-#include <Poco/ThreadPool.h>
 
 #include <chrono>
 #include <future>
@@ -29,11 +22,11 @@ class HTTPTransportServer;
 MCP_NAMESPACE_BEGIN
 
 // HTTP Client Transport
-class HTTPTransportClient : public ITransport,
-							public Poco::Runnable
+class HTTPTransportClient final : public ITransport,
+								  public Poco::Runnable
 {
 public:
-	explicit HTTPTransportClient(const HTTPTransportOptions& InOptions);
+	explicit HTTPTransportClient(HTTPTransportOptions InOptions);
 	~HTTPTransportClient() noexcept override;
 	HTTPTransportClient(const HTTPTransportClient&) noexcept = delete;
 	HTTPTransportClient(HTTPTransportClient&&) noexcept = delete;
@@ -44,10 +37,10 @@ public:
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
-	VoidTask TransmitMessage(const JSONData& InMessage,
-		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
-	Task<JSONData> TransmitRequest(const JSONData& InRequest,
-		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	void TransmitMessage(
+		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	Task<JSONData> TransmitRequest(
+		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
 
@@ -69,16 +62,6 @@ private:
 	std::atomic<bool> m_ShouldStop{ false };
 	std::string m_SSEBuffer;
 
-	// Response tracking
-	struct PendingRequest
-	{
-		std::string RequestID;
-		std::promise<std::string> Promise;
-		std::chrono::steady_clock::time_point StartTime;
-	};
-
-	std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-	mutable std::mutex m_RequestsMutex;
 	mutable std::mutex m_ConnectionMutex;
 };
 
@@ -111,22 +94,22 @@ private:
 class HTTPTransportServer : public ITransport
 {
 public:
-	explicit HTTPTransportServer(const HTTPTransportOptions& InOptions);
+	explicit HTTPTransportServer(HTTPTransportOptions InOptions);
 	~HTTPTransportServer() noexcept override;
 
 	// ITransport interface
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
-	VoidTask TransmitMessage(const JSONData& InMessage,
-		const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	void TransmitMessage(
+		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
 
 	// Server-specific methods
 	void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
 	VoidTask HandleGetMessageEndpoint(
-		Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
+		const Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
 	void RegisterSSEClient(const std::string& InClientID, Poco::Net::HTTPServerResponse& InResponse);
 	void UnregisterSSEClient(const std::string& InClientID);
 	VoidTask StreamMessagesToClient(const std::string& InClientID);
@@ -151,17 +134,6 @@ private:
 
 	std::unordered_map<std::string, std::unique_ptr<SSEClient>> m_SSEClients;
 	mutable std::mutex m_ClientsMutex;
-
-	// Response tracking
-	struct PendingRequest
-	{
-		std::string RequestID;
-		std::promise<std::string> Promise;
-		std::chrono::steady_clock::time_point StartTime;
-	};
-
-	std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-	mutable std::mutex m_RequestsMutex;
 };
 
 MCP_NAMESPACE_END

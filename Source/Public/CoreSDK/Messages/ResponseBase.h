@@ -102,6 +102,14 @@ struct ResponseBase : MessageBase
 template <typename T>
 concept ConcreteResponse = std::is_base_of_v<ResponseBase, T>;
 
+template <typename F, typename T>
+concept ExpectedResponseFunction
+	= ConcreteResponse<T> && std::invocable<F, const T&> && std::same_as<std::invoke_result_t<F, const T&>, void>;
+
+template <typename F>
+concept UnexpectedResponseFunction
+	= std::invocable<F, const JSONData&> && std::same_as<std::invoke_result_t<F, const JSONData&>, void>;
+
 // Get typed result - cast the base Result to the derived response's Result type
 template <typename TResultType, ConcreteResponse T>
 [[nodiscard]] const TResultType& GetResponseResult(const T& InResponse)

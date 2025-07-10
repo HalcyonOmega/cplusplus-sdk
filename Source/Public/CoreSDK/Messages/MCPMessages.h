@@ -114,8 +114,7 @@ struct InitializeRequest : RequestBase
 // };
 
 /**
- * After receiving an initialize request from the client, the server sends this
- * response.
+ * After receiving an initialize request from the client, the server sends this response.
  */
 struct InitializeResponse : ResponseBase
 {
@@ -152,8 +151,7 @@ struct InitializeResponse : ResponseBase
 // InitializedNotification {
 //   MSG_DESCRIPTION: "This notification is sent from the client to the "
 //                   "server after initialization has finished.",
-//                   MSG_PROPERTIES
-//     : {
+//     MSG_PROPERTIES: {
 //         MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_INITIALIZED, MSG_TYPE:
 //         MSG_STRING}, MSG_PARAMS: {
 //           MSG_ADDITIONAL_PROPERTIES: {},
@@ -174,8 +172,7 @@ struct InitializeResponse : ResponseBase
 // };
 
 /**
- * This notification is sent from the client to the server after initialization
- * has finished.
+ * This notification is sent from the client to the server after initialization has finished.
  */
 struct InitializedNotification : NotificationBase
 {
@@ -526,10 +523,8 @@ struct ListPromptsResponse : ResponseBase
 };
 
 // GetPromptRequest {
-//   MSG_DESCRIPTION: "Used by the client to get a prompt provided by the
-//   server.",
-//                   MSG_PROPERTIES
-//     : {
+//   MSG_DESCRIPTION: "Used by the client to get a prompt provided by the server.",
+//                   MSG_PROPERTIES: {
 //         MSG_METHOD: {MSG_CONST: MTHD_PROMPTS_GET, MSG_TYPE: MSG_STRING},
 //         MSG_PARAMS: {
 //           MSG_PROPERTIES: {
@@ -573,17 +568,12 @@ struct GetPromptRequest : RequestBase
 };
 
 // GetPromptResult {
-//   MSG_DESCRIPTION
-//     : "The server's response to a prompts/get request from the client.",
-//         MSG_PROPERTIES
-//     : {
+//   MSG_DESCRIPTION: "The server's response to a prompts/get request from the client.",
+//         MSG_PROPERTIES: {
 //         MSG_META: {
 //           MSG_ADDITIONAL_PROPERTIES: {},
-//           MSG_DESCRIPTION: "This result property is reserved by the protocol
-//           to "
-//                           "allow clients and servers to attach additional "
-//                           "metadata to their responses.",
-//           MSG_TYPE: MSG_OBJECT
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol to allow clients and servers to attach
+//           additional metadata to their responses.", MSG_TYPE: MSG_OBJECT
 //         },
 //         MSG_DESCRIPTION: {
 //           MSG_DESCRIPTION: "An optional description for the prompt.",
@@ -621,13 +611,9 @@ struct GetPromptResponse : ResponseBase
 };
 
 // PromptListChangedNotification {
-//   MSG_DESCRIPTION: "An optional notification from the server to the client,
-//   "
-//                   "informing it that the list of prompts it offers has "
-//                   "changed. This may be issued by servers without any "
-//                   "previous subscription from the client.",
-//                   MSG_PROPERTIES
-//     : {
+//   MSG_DESCRIPTION: "An optional notification from the server to the client, informing it that the list of prompts it
+//   offers has changed. This may be issued by servers without any previous subscription from the client.",
+//     MSG_PROPERTIES: {
 //         MSG_METHOD:
 //             {MSG_CONST: MTHD_NOTIFICATIONS_PROMPTS_LIST_CHANGED, MSG_TYPE:
 //             MSG_STRING},
@@ -636,11 +622,8 @@ struct GetPromptResponse : ResponseBase
 //           MSG_PROPERTIES: {
 //             MSG_META: {
 //               MSG_ADDITIONAL_PROPERTIES: {},
-//               MSG_DESCRIPTION: "This parameter name is reserved by MCP to
-//               allow "
-//                               "clients and servers to attach additional "
-//                               "metadata to their notifications.",
-//               MSG_TYPE: MSG_OBJECT
+//               MSG_DESCRIPTION: "This parameter name is reserved by MCP to allow clients and servers to attach
+//               additional metadata to their notifications.", MSG_TYPE: MSG_OBJECT
 //             }
 //           },
 //           MSG_TYPE: MSG_OBJECT
@@ -690,10 +673,8 @@ struct ListResourcesRequest : RequestBase
 };
 
 // ListResourcesResult {
-//   MSG_DESCRIPTION
-//     : "The server's response to a resources/list request from the client.",
-//         MSG_PROPERTIES
-//     : {
+//   MSG_DESCRIPTION: "The server's response to a resources/list request from the client.",
+//         MSG_PROPERTIES: {
 //         MSG_META: {
 //           MSG_ADDITIONAL_PROPERTIES: {},
 //           MSG_DESCRIPTION: "This result property is reserved by the protocol
@@ -1546,10 +1527,10 @@ struct ProgressNotification : NotificationBase
 			ProgressNotification::Params, NotificationParams, MESSAGEKEY, PROGRESSTOKENKEY, PROGRESSKEY, TOTALKEY)
 
 		Params() = default;
-		Params(const std::optional<std::string>& InMessage, const MCP::ProgressToken& InProgressToken,
-			const double InProgress, const std::optional<int64_t>& InTotal) :
+		Params(const std::optional<std::string>& InMessage, MCP::ProgressToken InProgressToken, const double InProgress,
+			const std::optional<int64_t>& InTotal) :
 			Message(InMessage),
-			ProgressToken(InProgressToken),
+			ProgressToken(std::move(InProgressToken)),
 			Progress(BoundedDouble{ InProgress, 0.0, 1.0, true }),
 			Total(InTotal)
 		{}

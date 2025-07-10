@@ -27,19 +27,10 @@ Task<PingResponse> MCPProtocol::Ping(const PingRequest& InRequest)
 
 void MCPProtocol::ValidateProtocolVersion(const std::string& InVersion) {}
 
-VoidTask MCPProtocol::SendResponse(const ResponseBase& InResponse) const
+void MCPProtocol::SendMessage(
+	const MessageBase& InMessage, const std::optional<std::vector<ConnectionID>>& InConnections) const
 {
-	co_await m_Transport->TransmitMessage(InResponse);
-}
-
-VoidTask MCPProtocol::SendNotification(const NotificationBase& InNotification) const
-{
-	co_await m_Transport->TransmitMessage(InNotification);
-}
-
-VoidTask MCPProtocol::SendErrorResponse(const ErrorResponseBase& InError) const
-{
-	co_await m_Transport->TransmitMessage(InError);
+	m_Transport->TransmitMessage(InMessage, InConnections);
 }
 
 void MCPProtocol::SetupTransportRouter() const

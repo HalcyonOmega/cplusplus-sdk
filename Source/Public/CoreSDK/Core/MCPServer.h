@@ -108,12 +108,8 @@ private:
 		const std::optional<std::unordered_map<std::string, JSONData>>& InArguments, const RequestID& InRequestID);
 
 	// Resource subscription management
-	void Notify_ResourceSubscribers(const Resource& InResource);
+	void Notify_ResourceSubscribers(const ResourceUpdatedNotification::Params& InParams);
 	std::string_view GetCurrentClientID() const;
-	void SendNotificationToClient(std::string_view InClientID, const ResourceUpdatedNotification& InNotification);
-
-	std::unordered_map<std::string /* Resource */, std::vector<std::string> /* Client IDs */> m_ResourceSubscriptions;
-	mutable std::mutex m_ResourceSubscriptionsMutex;
 
 	VoidTask UpdateProgress(double InProgress, std::optional<int64_t> InTotal = {});
 	VoidTask CompleteProgress();

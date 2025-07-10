@@ -6,7 +6,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-PromptManager::PromptManager(bool InWarnOnDuplicatePrompts) : m_WarnOnDuplicatePrompts(InWarnOnDuplicatePrompts) {}
+PromptManager::PromptManager(const bool InWarnOnDuplicatePrompts) : m_WarnOnDuplicatePrompts(InWarnOnDuplicatePrompts) {}
 
 bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction)
 {
@@ -14,8 +14,7 @@ bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFu
 	Logger::Debug("Adding prompt: " + InPrompt.Name);
 	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-	const auto ExistingIt = m_Prompts.find(InPrompt);
-	if (ExistingIt != m_Prompts.end())
+	if (const auto ExistingIt = m_Prompts.find(InPrompt); ExistingIt != m_Prompts.end())
 	{
 		if (m_WarnOnDuplicatePrompts)
 		{
@@ -47,7 +46,7 @@ GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Param
 {
 	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-	std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
+	const std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
 	if (!FoundPrompt)
 	{
 		Logger::Warning("Prompt does not exist: " + InRequest.Name);
@@ -67,11 +66,12 @@ ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestPar
 	std::vector<Prompt> Result;
 	Result.reserve(m_Prompts.size());
 
-	for (const auto& [Prompt, Function] : m_Prompts)
+	for (const auto& Prompt : m_Prompts | std::views::keys)
 	{
 		Result.emplace_back(Prompt);
 	}
 
+	// TODO: @HalcyonOmega - Add Cursor support
 	return ListPromptsResponse::Result{
 		.Prompts = Result,
 		.NextCursor = InRequest.NextCursor,
@@ -82,9 +82,8 @@ std::optional<Prompt> PromptManager::FindPrompt(const std::string& InName) const
 {
 	std::lock_guard<std::mutex> Lock(m_Mutex);
 
-	auto Iterator = std::ranges::find_if(m_Prompts, [&](const auto& Pair) { return Pair.first.Name == InName; });
-
-	if (Iterator != m_Prompts.end())
+	if (const auto Iterator = std::ranges::find_if(m_Prompts, [&](const auto& Pair) { return Pair.first.Name == InName; });
+		Iterator != m_Prompts.end())
 	{
 		return Iterator->first;
 	}

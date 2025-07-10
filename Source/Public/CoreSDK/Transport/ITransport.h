@@ -38,14 +38,14 @@ struct TransportOptions
 	TransportOptions& operator=(TransportOptions&&) noexcept = default;
 };
 
-struct StdioClientTransportOptions : TransportOptions
+struct StdioClientTransportOptions final : TransportOptions
 {
 	bool UseStderr{ false };
 	std::string Command;
 	std::vector<std::string> Arguments;
 };
 
-struct HTTPTransportOptions : TransportOptions
+struct HTTPTransportOptions final : TransportOptions
 {
 	static constexpr std::chrono::milliseconds DEFAULT_CONNECT_TIMEOUT{ 5000 };
 	static constexpr std::chrono::milliseconds DEFAULT_REQUEST_TIMEOUT{ 30000 };
@@ -65,6 +65,7 @@ struct HTTPTransportOptions : TransportOptions
 class ITransport
 {
 public:
+	ITransport() noexcept = default;
 	virtual ~ITransport() noexcept = default;
 	ITransport(const ITransport&) noexcept = default;
 	ITransport(ITransport&&) noexcept = default;
@@ -73,11 +74,11 @@ public:
 
 	virtual VoidTask Connect() = 0;
 	virtual VoidTask Disconnect() = 0;
-	virtual VoidTask TransmitMessage(
-		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt)
+	virtual void TransmitMessage(
+		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 		= 0;
 	virtual Task<JSONData> TransmitRequest(
-		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt)
+		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 		= 0;
 	[[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
@@ -98,11 +99,7 @@ public:
 
 private:
 	TransportState m_CurrentState{ TransportState::Disconnected };
-
-	// Event handlers
 	std::function<void(const JSONData&)> m_MessageRouter;
-
-	// Connection tracking
 	std::unordered_set<ConnectionID> m_ActiveConnections;
 };
 

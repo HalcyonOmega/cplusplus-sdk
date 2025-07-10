@@ -15,14 +15,6 @@
 
 MCP_NAMESPACE_BEGIN
 
-template <typename F, typename T>
-concept ExpectedResponseFunction
-	= ConcreteResponse<T> && std::invocable<F, const T&> && std::same_as<std::invoke_result_t<F, const T&>, void>;
-
-template <typename F>
-concept UnexpectedResponseFunction
-	= std::invocable<F, const JSONData&> && std::same_as<std::invoke_result_t<F, const JSONData&>, void>;
-
 static constexpr double DEFAULT_TEMPERATURE{ 0.7 };
 
 // Protocol state
@@ -50,10 +42,10 @@ public:
 	// Lifecycle
 	virtual VoidTask Start() = 0;
 	virtual VoidTask Stop() = 0;
-	bool IsInitialized() const;
-	MCPProtocolState GetState() const;
+	[[nodiscard]] bool IsInitialized() const;
+	[[nodiscard]] MCPProtocolState GetState() const;
 	void SetState(MCPProtocolState InNewState);
-	bool IsConnected() const;
+	[[nodiscard]] bool IsConnected() const;
 
 	// Core protocol operations
 	Task<PingResponse> Ping(const PingRequest& InRequest);
@@ -62,26 +54,9 @@ public:
 	static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS;
 	static void ValidateProtocolVersion(const std::string& InVersion);
 
-	// Message sending utilities
-	// MCPTask_Void SendRequest(const RequestBase& InRequest);
-	VoidTask SendResponse(const ResponseBase& InResponse) const;
-	VoidTask SendNotification(const NotificationBase& InNotification) const;
-	VoidTask SendErrorResponse(const ErrorResponseBase& InError) const;
+	void SendMessage(const MessageBase& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnections = std::nullopt) const;
 
-private:
-	void SetupTransportRouter() const;
-
-protected:
-	MCPProtocolState m_State;
-	std::shared_ptr<ITransport> m_Transport;
-	std::shared_ptr<MessageManager> m_MessageManager;
-
-	Implementation m_ServerInfo;
-	Implementation m_ClientInfo;
-	ServerCapabilities m_ServerCapabilities;
-	ClientCapabilities m_ClientCapabilities;
-
-public:
 	void SetServerInfo(const Implementation& InServerInfo) { m_ServerInfo = InServerInfo; }
 	void SetClientInfo(const Implementation& InClientInfo) { m_ClientInfo = InClientInfo; }
 	void SetServerCapabilities(const ServerCapabilities& InServerCapabilities)
@@ -93,12 +68,11 @@ public:
 		m_ClientCapabilities = InClientCapabilities;
 	}
 
-	Implementation GetServerInfo() const { return m_ServerInfo; }
-	Implementation GetClientInfo() const { return m_ClientInfo; }
-	ServerCapabilities GetServerCapabilities() const { return m_ServerCapabilities; }
-	ClientCapabilities GetClientCapabilities() const { return m_ClientCapabilities; }
+	[[nodiscard]] const Implementation& GetServerInfo() const { return m_ServerInfo; }
+	[[nodiscard]] const Implementation& GetClientInfo() const { return m_ClientInfo; }
+	[[nodiscard]] const ServerCapabilities& GetServerCapabilities() const { return m_ServerCapabilities; }
+	[[nodiscard]] const ClientCapabilities& GetClientCapabilities() const { return m_ClientCapabilities; }
 
-private:
 	template <ConcreteResponse T> struct ResponseTask
 	{
 		struct promise_type
@@ -201,7 +175,8 @@ private:
 					}
 				});
 
-			m_Transport->TransmitMessage(*m_Request);
+			// TODO: @HalcyonOmega - Update with support for sending to specific connections
+			m_Transport->TransmitMessage(*m_Request, std::nullopt);
 		}
 
 		// On Coroutine Resume
@@ -270,7 +245,6 @@ private:
 		friend class MCPProtocol;
 	};
 
-public:
 	template <ConcreteResponse T> [[nodiscard]] ResponseTask<T> SendRequest(const RequestBase& InRequest)
 	{
 		// Create promise & handle for coroutine
@@ -286,18 +260,18 @@ public:
 		return Task;
 	}
 
-	// Request Utilities
-	template <ConcreteResponse T>
-	[[nodiscard]] std::optional<T> SendRequest_ExpectedResponse(const RequestBase& InRequest)
-	{
-		const auto& Response = co_await SendRequest<T>(InRequest);
-		if (const auto& ExpectedResponse = Response.Get())
-		{
-			co_return ExpectedResponse;
-		}
+protected:
+	MCPProtocolState m_State;
+	std::shared_ptr<ITransport> m_Transport;
+	std::shared_ptr<MessageManager> m_MessageManager;
 
-		co_return std::nullopt;
-	}
+	Implementation m_ServerInfo;
+	Implementation m_ClientInfo;
+	ServerCapabilities m_ServerCapabilities;
+	ClientCapabilities m_ClientCapabilities;
+
+private:
+	void SetupTransportRouter() const;
 };
 
 MCP_NAMESPACE_END

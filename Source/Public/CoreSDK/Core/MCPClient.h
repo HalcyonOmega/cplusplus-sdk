@@ -52,8 +52,8 @@ public:
 	OptTask<CompleteResponse::Result> Request_Complete(const CompleteRequest::Params& InParams);
 
 	// Progress
-	VoidTask Notify_Progress(const ProgressNotification::Params& InParams);
-	VoidTask Notify_CancelRequest(const CancelledNotification::Params& InParams);
+	void Notify_Progress(const ProgressNotification::Params& InParams);
+	void Notify_CancelRequest(const CancelledNotification::Params& InParams);
 	void OnNotified_Progress(const ProgressNotification& InNotification);
 	void OnNotified_CancelRequest(const CancelledNotification& InNotification);
 };

@@ -14,14 +14,14 @@ MCP_NAMESPACE_BEGIN
 /**
  * Exception thrown when root operations fail.
  */
-class RootError : public std::runtime_error
+class RootError final : public std::runtime_error
 {
 public:
 	explicit RootError(const std::string& InMessage) : std::runtime_error(InMessage) {}
 };
 
 /**
- * Manages FastMCP roots.
+ * Manages MCP roots.
  * Provides functionality for registering, retrieving, and listing root directories and files.
  */
 class RootManager
