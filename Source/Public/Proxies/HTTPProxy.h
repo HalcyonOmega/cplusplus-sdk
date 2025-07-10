@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "Poco/Net/NameValueCollection.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -100,7 +101,7 @@ class Headers {
 
     // Internal access for HTTP_Client to the underlying Poco collection
     // These are not meant for general public use.
-    const Poco::Net::NameValueCollection& _GetInternalPocoCollection() const;
+    [[nodiscard]] const Poco::Net::NameValueCollection& _GetInternalPocoCollection() const;
     Poco::Net::NameValueCollection& _GetInternalPocoCollection();
 };
 

@@ -17,13 +17,18 @@ ReferenceAlignment: Left
 
 # Breaking
 AlwaysBreakBeforeMultilineStrings: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 BreakInheritanceList: AfterComma
 BreakBeforeTernaryOperators: true
-BreakConstructorInitializers: AfterColon
+BreakConstructorInitializers: BeforeColon
 BreakStringLiterals: false
 BreakAfterReturnType: Automatic
 BreakBeforeBinaryOperators: All
 BreakBeforeBraces: Custom
+BinPackParameters: OnePerLine
+PackConstructorInitializers: CurrentLine
+BinPackArguments: false
 BraceWrapping:
   AfterNamespace: true
   AfterClass: true

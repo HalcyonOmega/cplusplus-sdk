@@ -120,7 +120,7 @@ class TransportFactory
 {
 public:
 	[[nodiscard]] static std::unique_ptr<ITransport> CreateTransport(
-		TransportType InType, TransportSide InSide, std::optional<std::unique_ptr<TransportOptions>> InOptions);
+		TransportType InType, TransportSide InSide, const std::optional<std::unique_ptr<TransportOptions>>& InOptions);
 
 	// Convenience factory methods
 	[[nodiscard]] static std::unique_ptr<ITransport> CreateStdioClientTransport(

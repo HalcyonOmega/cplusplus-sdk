@@ -28,12 +28,15 @@ using ResponseHandler = std::function<void(const ResponseBase& InResponse)>;
 
 struct ResultParams
 {
-	std::optional<JSONData> Meta; // The protocol reserves this result property to allow clients and
-								  // servers to attach additional metadata to their responses.
+	std::optional<JSONData> Meta{ std::nullopt }; // The protocol reserves this result property to allow clients and
+												  // servers to attach additional metadata to their responses.
 
 	JKEY(METAKEY, Meta, "_meta")
 
 	DEFINE_TYPE_JSON(ResultParams, METAKEY)
+
+	ResultParams() = default;
+	explicit ResultParams(const std::optional<JSONData>& InMeta = std::nullopt) : Meta(InMeta) {}
 };
 
 // PaginatedResult {
@@ -55,16 +58,18 @@ struct ResultParams
 
 struct PaginatedResultParams : ResultParams
 {
-	std::optional<std::string> NextCursor; // An opaque token representing the next pagination
-										   // position. If provided, the client should use this
-										   // cursor to fetch the next page of results.
+	std::optional<std::string> NextCursor{ std::nullopt }; // An opaque token representing the next pagination
+														   // position. If provided, the client should use this
+														   // cursor to fetch the next page of results.
 
 	JKEY(NEXT_CURSORKEY, NextCursor, "nextCursor")
 
 	DEFINE_TYPE_JSON_DERIVED(PaginatedResultParams, ResultParams, NEXT_CURSORKEY)
 
-	explicit PaginatedResultParams(std::optional<std::string> InNextCursor = std::nullopt) :
-		NextCursor(std::move(InNextCursor))
+	PaginatedResultParams() = default;
+	explicit PaginatedResultParams(const std::optional<std::string>& InNextCursor = std::nullopt,
+		const std::optional<JSONData>& InMeta = std::nullopt) :
+		ResultParams(InMeta), NextCursor(InNextCursor)
 	{}
 };
 
@@ -83,7 +88,7 @@ struct PaginatedResultParams : ResultParams
 struct ResponseBase : MessageBase
 {
 	const RequestID ID;
-	const ResultParams& ResultData{};
+	const ResultParams& ResultData{ std::nullopt };
 
 	JKEY(IDKEY, ID, "id")
 	JKEY(RESULTKEY, ResultData, "result")
@@ -92,7 +97,7 @@ struct ResponseBase : MessageBase
 
 	ResponseBase() = default;
 	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
-	ResponseBase(RequestID InID, const ResultParams& InResult) :
+	explicit ResponseBase(RequestID InID, const ResultParams& InResult) :
 		MessageBase(), ID(std::move(InID)), ResultData(InResult)
 	{}
 

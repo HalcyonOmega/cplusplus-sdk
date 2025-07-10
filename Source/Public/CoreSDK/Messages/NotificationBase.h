@@ -13,26 +13,33 @@ MCP_NAMESPACE_BEGIN
 
 using NotificationHandler = std::function<void(const NotificationBase& InNotification)>;
 
-struct NotificationParams {
-    struct NotificationParamsMeta {
-        friend void to_json(JSONData& InJSON,
-                            const NotificationParamsMeta& InNotificationParamsMeta) {
-            InJSON = JSONData::object();
-            (void)InNotificationParamsMeta;
-        }
+struct NotificationParams
+{
+	struct NotificationParamsMeta
+	{
+		friend void to_json(JSONData& InJSON, const NotificationParamsMeta& InNotificationParamsMeta)
+		{
+			InJSON = JSONData::object();
+			(void)InNotificationParamsMeta;
+		}
 
-        friend void from_json(const JSONData& InJSON,
-                              NotificationParamsMeta& InNotificationParamsMeta) {
-            (void)InJSON;
-            InNotificationParamsMeta = NotificationParamsMeta{};
-        }
-    };
+		friend void from_json(const JSONData& InJSON, NotificationParamsMeta& InNotificationParamsMeta)
+		{
+			(void)InJSON;
+			InNotificationParamsMeta = NotificationParamsMeta{};
+		}
 
-    std::optional<NotificationParamsMeta> Meta;
+		NotificationParamsMeta() = default;
+	};
 
-    JKEY(METAKEY, Meta, "_meta")
+	const std::optional<NotificationParamsMeta>& Meta{ std::nullopt };
 
-    DEFINE_TYPE_JSON(NotificationParams, METAKEY)
+	JKEY(METAKEY, Meta, "_meta")
+
+	DEFINE_TYPE_JSON(NotificationParams, METAKEY)
+
+	NotificationParams() = default;
+	explicit NotificationParams(const std::optional<NotificationParamsMeta>& InMeta = std::nullopt) : Meta(InMeta) {}
 };
 
 // NotificationBase {
@@ -60,23 +67,23 @@ struct NotificationParams {
 // };
 
 // A notification which does not expect a response. Supports JSON-RPC 2.0.
-struct NotificationBase : MessageBase {
-    std::string Method;
-    std::optional<NotificationParams> ParamsData;
+struct NotificationBase : MessageBase
+{
+	std::string Method{};
+	const std::optional<NotificationParams>& ParamsData{ std::nullopt };
 
-    JKEY(METHODKEY, Method, "method")
-    JKEY(PARAMSKEY, ParamsData, "params")
+	JKEY(METHODKEY, Method, "method")
+	JKEY(PARAMSKEY, ParamsData, "params")
 
-    DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
+	DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
-    NotificationBase() = default;
-    NotificationBase(std::string_view InMethod,
-                     std::optional<NotificationParams> InParams = std::nullopt)
-        : MessageBase(), Method(InMethod), ParamsData(std::move(InParams)) {}
+	NotificationBase() = default;
+	explicit NotificationBase(
+		const std::string_view InMethod, const std::optional<NotificationParams>& InParams = std::nullopt) :
+		MessageBase(), Method(InMethod), ParamsData(InParams)
+	{}
 
-    [[nodiscard]] std::string_view GetNotificationMethod() const {
-        return Method;
-    }
+	[[nodiscard]] std::string_view GetNotificationMethod() const { return Method; }
 };
 
 template <typename T>
@@ -84,11 +91,13 @@ concept ConcreteNotification = std::is_base_of_v<NotificationBase, T>;
 
 // Get typed params - cast the base Params to the derived notification's Params type
 template <typename TParamsType, ConcreteNotification T>
-[[nodiscard]] std::optional<TParamsType> GetNotificationParams(T& InNotification) {
-    if (InNotification.ParamsData) {
-        return static_cast<const TParamsType&>(*InNotification.ParamsData);
-    }
-    return std::nullopt;
+[[nodiscard]] std::optional<TParamsType> GetNotificationParams(T& InNotification)
+{
+	if (InNotification.ParamsData)
+	{
+		return static_cast<const TParamsType&>(*InNotification.ParamsData);
+	}
+	return std::nullopt;
 }
 
 MCP_NAMESPACE_END

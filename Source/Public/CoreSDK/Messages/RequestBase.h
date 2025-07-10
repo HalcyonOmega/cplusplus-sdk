@@ -73,22 +73,32 @@ struct RequestParams
 {
 	struct RequestParamsMeta
 	{
-		std::optional<ProgressToken> ProgressToken; // If specified, the caller is requesting out-of-band
-													// progress notifications for this request (as represented by
-													// notifications/progress). The value of this parameter is an opaque
-													// token that will be attached to any subsequent notifications. The
-													// receiver is not obligated to provide these notifications.
+		std::optional<MCP::ProgressToken> ProgressToken{
+			std::nullopt
+		}; // If specified, the caller is requesting out-of-band
+		   // progress notifications for this request (as represented by
+		   // notifications/progress). The value of this parameter is an opaque
+		   // token that will be attached to any subsequent notifications. The
+		   // receiver is not obligated to provide these notifications.
 
 		JKEY(PROGRESS_TOKENKEY, ProgressToken, "progressToken")
 
 		DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
+
+		RequestParamsMeta() = default;
+		explicit RequestParamsMeta(const std::optional<MCP::ProgressToken>& InProgressToken = std::nullopt) :
+			ProgressToken(InProgressToken)
+		{}
 	};
 
-	std::optional<RequestParamsMeta> Meta;
+	std::optional<RequestParamsMeta> Meta{ std::nullopt };
 
 	JKEY(METAKEY, Meta, "_meta")
 
 	DEFINE_TYPE_JSON(RequestParams, METAKEY)
+
+	RequestParams() = default;
+	explicit RequestParams(const std::optional<RequestParamsMeta>& InMeta = std::nullopt) : Meta(InMeta) {}
 };
 
 // PaginatedRequest {
@@ -112,12 +122,18 @@ struct RequestParams
 
 struct PaginatedRequestParams : RequestParams
 {
-	std::optional<std::string> Cursor; // An opaque token representing the current pagination
-									   // position. If provided, the server should return
-									   // results starting after this cursor.
+	std::optional<std::string> Cursor{ std::nullopt }; // An opaque token representing the current pagination
+													   // position. If provided, the server should return
+													   // results starting after this cursor.
 	JKEY(CURSORKEY, Cursor, "cursor")
 
 	DEFINE_TYPE_JSON_DERIVED(PaginatedRequestParams, RequestParams, CURSORKEY)
+
+	PaginatedRequestParams() = default;
+	explicit PaginatedRequestParams(const std::optional<std::string>& InCursor = std::nullopt,
+		const std::optional<RequestParamsMeta>& InMeta = std::nullopt) :
+		RequestParams(InMeta), Cursor(InCursor)
+	{}
 };
 
 // RequestBase {

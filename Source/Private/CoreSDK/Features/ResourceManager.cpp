@@ -160,14 +160,14 @@ ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const Pagin
 	std::lock_guard<std::mutex> Lock(m_Mutex);
 	Result.reserve(m_Templates.size());
 
-	for (const auto& [URI, TemplatePair] : m_Templates)
+	for (const auto& [Template, Function] : m_Templates | std::views::values)
 	{
-		Result.push_back(TemplatePair.first);
+		Result.push_back(Template);
 	}
 
 	return ListResourceTemplatesResponse::Result{
-		.Templates = Result,
-		.NextCursor = InRequest.NextCursor,
+		.ResourceTemplates = Result,
+		= InRequest.NextCursor,
 	};
 }
 

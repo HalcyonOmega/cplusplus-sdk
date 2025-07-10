@@ -14,92 +14,73 @@
 
 MCP_NAMESPACE_BEGIN
 
-class StdioClientTransport : public ITransport {
-  public:
-    explicit StdioClientTransport(const StdioClientTransportOptions& InOptions);
-    ~StdioClientTransport() noexcept override;
+class StdioClientTransport final: public ITransport
+{
+public:
+	explicit StdioClientTransport(const StdioClientTransportOptions& InOptions);
+	~StdioClientTransport() noexcept override;
 
-    // ITransport interface
-    VoidTask Connect() override;
-    VoidTask Disconnect() override;
+	// ITransport interface
+	VoidTask Connect() override;
+	VoidTask Disconnect() override;
 
-    VoidTask TransmitMessage(
-        const JSONData& InMessage,
-        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	void TransmitMessage(
+		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
-    std::string GetConnectionInfo() const override;
+	std::string GetConnectionInfo() const override;
 
-  protected:
-    void ReaderThread(std::stop_token InStopToken);
+protected:
+	void ReaderThread(std::stop_token InStopToken);
 
-  private:
-    void ProcessIncomingData();
-    void ProcessLine(const std::string& InLine);
-    void Cleanup();
+private:
+	void ProcessIncomingData();
+	void ProcessLine(const std::string& InLine);
+	void Cleanup();
 
-    StdioClientTransportOptions m_Options;
-    std::unique_ptr<Poco::ProcessHandle> m_ProcessHandle;
-    std::unique_ptr<Poco::Pipe> m_StdinPipe;
-    std::unique_ptr<Poco::Pipe> m_StdoutPipe;
-    std::unique_ptr<Poco::Pipe> m_StderrPipe;
-    std::unique_ptr<Poco::PipeOutputStream> m_StdinStream;
-    std::unique_ptr<Poco::PipeInputStream> m_StdoutStream;
-    std::unique_ptr<Poco::PipeInputStream> m_StderrStream;
+	StdioClientTransportOptions m_Options;
+	std::unique_ptr<Poco::ProcessHandle> m_ProcessHandle;
+	std::unique_ptr<Poco::Pipe> m_StdinPipe;
+	std::unique_ptr<Poco::Pipe> m_StdoutPipe;
+	std::unique_ptr<Poco::Pipe> m_StderrPipe;
+	std::unique_ptr<Poco::PipeOutputStream> m_StdinStream;
+	std::unique_ptr<Poco::PipeInputStream> m_StdoutStream;
+	std::unique_ptr<Poco::PipeInputStream> m_StderrStream;
 
-    bool m_ShouldStop{false};
-    std::jthread m_ReadThread;
-    std::string m_Buffer;
+	bool m_ShouldStop{ false };
+	std::jthread m_ReadThread;
+	std::string m_Buffer;
 
-    // Response tracking
-    struct PendingRequest {
-        std::string RequestID;
-        std::promise<std::string> Promise;
-        std::chrono::steady_clock::time_point StartTime;
-    };
-
-    std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable std::mutex m_RequestsMutex;
-    mutable std::mutex m_WriteMutex;
+	mutable std::mutex m_WriteMutex;
 };
 
-class StdioServerTransport : public ITransport {
-  public:
-    StdioServerTransport();
-    ~StdioServerTransport() noexcept override;
+class StdioServerTransport final : public ITransport
+{
+public:
+	StdioServerTransport();
+	~StdioServerTransport() noexcept override;
 
-    // ITransport interface
-    VoidTask Connect() override;
-    VoidTask Disconnect() override;
+	// ITransport interface
+	VoidTask Connect() override;
+	VoidTask Disconnect() override;
 
-    VoidTask TransmitMessage(
-        const JSONData& InMessage,
-        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
-    Task<JSONData> TransmitRequest(
-        const JSONData& InRequest,
-        const std::optional<std::vector<ConnectionID>>& InConnectionIDs = std::nullopt) override;
+	void TransmitMessage(
+		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	Task<JSONData> TransmitRequest(
+		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
-    std::string GetConnectionInfo() const override;
+	std::string GetConnectionInfo() const override;
 
-  protected:
-    void ReaderThread(std::stop_token InStopToken);
+protected:
+	void ReaderThread(std::stop_token InStopToken);
 
-  private:
-    void ProcessIncomingData();
-    void ProcessLine(const std::string& InLine);
+private:
+	void ProcessIncomingData();
+	void ProcessLine(const std::string& InLine);
 
-    std::jthread m_ReadThread;
-    std::string m_Buffer;
+	std::jthread m_ReadThread;
+	std::string m_Buffer;
 
-    // Response tracking
-    struct PendingRequest {
-        std::string RequestID;
-        std::promise<std::string> Promise;
-        std::chrono::steady_clock::time_point StartTime;
-    };
-
-    std::unordered_map<std::string, std::unique_ptr<PendingRequest>> m_PendingRequests;
-    mutable std::mutex m_RequestsMutex;
-    mutable std::mutex m_WriteMutex;
+	mutable std::mutex m_WriteMutex;
 };
 
 MCP_NAMESPACE_END

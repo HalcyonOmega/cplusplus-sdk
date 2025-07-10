@@ -46,8 +46,7 @@ VoidTask MCPClient::Start()
 			.ClientInfo = m_ClientInfo,
 		});
 
-		IsConnected() = true;
-		m_ClientInfo = InClientInfo;
+		m_Transport->SetState(TransportState::Connected);
 	}
 	catch (const std::exception& e)
 	{
@@ -65,7 +64,7 @@ VoidTask MCPClient::Stop()
 	try
 	{
 		co_await m_Transport->Disconnect();
-		IsConnected() = false;
+		m_Transport->SetState(TransportState::Disconnected);
 	}
 	catch (const std::exception& Except)
 	{
