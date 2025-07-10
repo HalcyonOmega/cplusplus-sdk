@@ -2,6 +2,7 @@
 
 #include "CoreSDK/Common/Macros.h"
 #include "CoreSDK/Core/IMCP.h"
+#include "CoreSDK/Features/SamplingManager.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -9,13 +10,15 @@ MCP_NAMESPACE_BEGIN
 class MCPClient final : public MCPProtocol
 {
 public:
-	MCPClient(TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
-		const Implementation& InClientInfo, const ClientCapabilities& InCapabilities);
+	MCPClient(TransportType InTransportType,
+		std::optional<std::unique_ptr<TransportOptions>> InOptions,
+		const Implementation& InClientInfo,
+		const ClientCapabilities& InCapabilities);
 
 	VoidTask Start() override;
 	VoidTask Stop() override;
 
-	// Requests
+	// Initialization
 	OptTask<InitializeResponse::Result> Request_Initialize(const InitializeRequest::Params& InParams);
 	void OnNotified_Initialized(const InitializedNotification& InNotification);
 
@@ -56,6 +59,11 @@ public:
 	void Notify_CancelRequest(const CancelledNotification::Params& InParams);
 	void OnNotified_Progress(const ProgressNotification& InNotification);
 	void OnNotified_CancelRequest(const CancelledNotification& InNotification);
+
+	std::weak_ptr<SamplingManager> GetSamplingManager() { return m_SamplingManager; }
+
+private:
+	std::shared_ptr<SamplingManager> m_SamplingManager;
 };
 
 MCP_NAMESPACE_END

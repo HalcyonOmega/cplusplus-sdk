@@ -26,9 +26,11 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPClient::MCPClient(const TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
-	const Implementation& InClientInfo, const ClientCapabilities& InCapabilities) :
-	MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, std::move(InOptions)), true)
+MCPClient::MCPClient(const TransportType InTransportType,
+	std::optional<std::unique_ptr<TransportOptions>> InOptions,
+	const Implementation& InClientInfo,
+	const ClientCapabilities& InCapabilities)
+	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, std::move(InOptions)), true)
 {
 	SetClientInfo(InClientInfo);
 	SetClientCapabilities(InCapabilities);
@@ -40,11 +42,13 @@ VoidTask MCPClient::Start()
 
 	try
 	{
-		std::optional<InitializeResponse::Result> Result = co_await Request_Initialize(InitializeRequest::Params{
-			.ProtocolVersion = m_ClientInfo.Version,
-			.Capabilities = m_ClientCapabilities,
-			.ClientInfo = m_ClientInfo,
-		});
+		const InitializeRequest::Params InitParams{
+			m_ClientInfo.Version,
+			m_ClientCapabilities,
+			m_ClientInfo,
+		};
+
+		const auto Result = co_await Request_Initialize(InitParams);
 
 		m_Transport->SetState(TransportState::Connected);
 	}
@@ -92,7 +96,7 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 		const auto& Response = co_await SendRequest<InitializeResponse>(InitializeRequest{ InParams });
 		if (Response.Result())
 		{
-			const auto& Result = Response.Result().value();
+			const auto Result = Response.Result().value();
 			// Store negotiated capabilities
 			SetServerCapabilities(Result.Capabilities);
 			SetServerInfo(Result.ServerInfo);
@@ -101,7 +105,7 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 		}
 		if (Response.Raw())
 		{
-			const auto& UnexpectedType = Response.Raw().value();
+			const auto UnexpectedType = Response.Raw().value();
 			HandleRuntimeError(UnexpectedType.dump());
 		};
 	}
@@ -203,7 +207,13 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	SendMessage(CreateMessageResponse{ InRequest.GetRequestID() });
+	if (const auto& RequestParams = GetRequestParams<CreateMessageRequest::Params>(InRequest))
+	{
+		CreateMessageResponse::Result Result = m_SamplingManager->CreateMessage(RequestParams.value());
+		SendMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
+		return;
+	}
+	SendMessage(ErrorInvalidParams(InRequest.GetRequestID(), "Create Message Request params could not be retrieved"));
 }
 
 OptTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)

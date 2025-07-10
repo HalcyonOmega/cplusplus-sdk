@@ -28,8 +28,6 @@ struct NotificationParams
 			(void)InJSON;
 			InNotificationParamsMeta = NotificationParamsMeta{};
 		}
-
-		NotificationParamsMeta() = default;
 	};
 
 	const std::optional<NotificationParamsMeta>& Meta{ std::nullopt };
@@ -38,7 +36,6 @@ struct NotificationParams
 
 	DEFINE_TYPE_JSON(NotificationParams, METAKEY)
 
-	NotificationParams() = default;
 	explicit NotificationParams(const std::optional<NotificationParamsMeta>& InMeta = std::nullopt) : Meta(InMeta) {}
 };
 
@@ -78,9 +75,11 @@ struct NotificationBase : MessageBase
 	DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
 	NotificationBase() = default;
-	explicit NotificationBase(
-		const std::string_view InMethod, const std::optional<NotificationParams>& InParams = std::nullopt) :
-		MessageBase(), Method(InMethod), ParamsData(InParams)
+	explicit NotificationBase(const std::string_view InMethod,
+		const std::optional<NotificationParams>& InParams = std::nullopt)
+		: MessageBase(),
+		  Method(InMethod),
+		  ParamsData(InParams)
 	{}
 
 	[[nodiscard]] std::string_view GetNotificationMethod() const { return Method; }

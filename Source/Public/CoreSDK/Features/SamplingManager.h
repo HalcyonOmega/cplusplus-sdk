@@ -10,13 +10,11 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 #include "SamplingBase.h"
 #include "Utilities/Async/Task.h"
 
 MCP_NAMESPACE_BEGIN
-
-// Forward declarations
-class MCPContext;
 
 /**
  * Exception thrown when sampling operations fail.
@@ -34,8 +32,8 @@ public:
 class SamplingManager
 {
 public:
-	using SamplingFunction = std::function<Task<SamplingResult>(
-		const std::vector<SamplingMessage>&, const std::optional<ModelPreferences>&, MCPContext*)>;
+	using SamplingFunction = std::function<Task<SamplingResult>(const std::vector<SamplingMessage>&,
+		const std::optional<ModelPreferences>&)>;
 
 	/**
 	 * Constructor
@@ -71,6 +69,8 @@ public:
 	 * @return True if sampling function is set, false otherwise
 	 */
 	bool HasSamplingFunction() const;
+
+	CreateMessageResponse::Result CreateMessage(const CreateMessageRequest::Params& InParams) const;
 
 private:
 	std::optional<ModelPreferences> m_DefaultModelPreferences;

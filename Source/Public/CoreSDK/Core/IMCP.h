@@ -28,8 +28,10 @@ enum class MCPProtocolState
 };
 
 DEFINE_ENUM_JSON(MCPProtocolState,
-	{ { MCPProtocolState::Uninitialized, "uninitialized" }, { MCPProtocolState::Initializing, "initializing" },
-		{ MCPProtocolState::Initialized, "initialized" }, { MCPProtocolState::Error, "error" },
+	{ { MCPProtocolState::Uninitialized, "uninitialized" },
+		{ MCPProtocolState::Initializing, "initializing" },
+		{ MCPProtocolState::Initialized, "initialized" },
+		{ MCPProtocolState::Error, "error" },
 		{ MCPProtocolState::Shutdown, "shutdown" } });
 
 // Base protocol handler
@@ -192,7 +194,8 @@ public:
 			return m_Handle.promise();
 		}
 
-		void SetDependencies(std::unique_ptr<RequestBase> InRequest, std::shared_ptr<ITransport> InTransport,
+		void SetDependencies(std::unique_ptr<RequestBase> InRequest,
+			std::shared_ptr<ITransport> InTransport,
 			std::shared_ptr<MessageManager> InMessageManager)
 		{
 			m_Request = std::move(InRequest);
@@ -210,11 +213,11 @@ public:
 
 		// Non-copyable, movable
 		ResponseTask(const ResponseTask&) = delete;
-		ResponseTask(ResponseTask&& Other) noexcept :
-			m_Handle{ std::exchange(Other.m_Handle, {}) },
-			m_Transport{ std::move(Other.m_Transport) },
-			m_MessageManager{ std::move(Other.m_MessageManager) },
-			m_Request{ std::move(Other.m_Request) }
+		ResponseTask(ResponseTask&& Other) noexcept
+			: m_Handle{ std::exchange(Other.m_Handle, {}) },
+			  m_Transport{ std::move(Other.m_Transport) },
+			  m_MessageManager{ std::move(Other.m_MessageManager) },
+			  m_Request{ std::move(Other.m_Request) }
 		{}
 		ResponseTask& operator=(const ResponseTask&) = delete;
 		ResponseTask& operator=(ResponseTask&& Other) noexcept

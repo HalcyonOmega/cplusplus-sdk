@@ -6,8 +6,8 @@
 
 MCP_NAMESPACE_BEGIN
 
-SamplingManager::SamplingManager(const std::optional<ModelPreferences>& InDefaultModelPreferences) :
-	m_DefaultModelPreferences(InDefaultModelPreferences)
+SamplingManager::SamplingManager(const std::optional<ModelPreferences>& InDefaultModelPreferences)
+	: m_DefaultModelPreferences(InDefaultModelPreferences)
 {}
 
 void SamplingManager::SetSamplingFunction(SamplingFunction InSamplingFunction)
@@ -48,16 +48,17 @@ bool SamplingManager::HasSamplingFunction() const
 	return m_SamplingFunction.has_value();
 }
 
+CreateMessageResponse::Result SamplingManager::CreateMessage(const CreateMessageRequest::Params& InParams) const
+{
+	(void)InParams;
+
+	return std::nullopt;
+}
+
 std::optional<ModelPreferences> SamplingManager::GetEffectiveModelPreferences(
 	const std::optional<ModelPreferences>& InModelPreferences) const
 {
-	// Request-specific preferences take precedence over defaults
-	if (InModelPreferences.has_value())
-	{
-		return InModelPreferences;
-	}
-
-	return m_DefaultModelPreferences;
+	return InModelPreferences.value_or(m_DefaultModelPreferences);
 }
 
 MCP_NAMESPACE_END

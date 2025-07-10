@@ -86,7 +86,7 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 			}
 
 			SendMessage(ErrorResponseBase(InRequest.GetRequestID(),
-				MCPError(ErrorCodes::INVALID_REQUEST,
+				FErrorData(ErrorCodes::INVALID_REQUEST,
 					"Unsupported protocol version: " + Request.ProtocolVersion
 						+ ". Supported versions: " + SupportedVersions)));
 			return;
@@ -101,7 +101,7 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -145,7 +145,7 @@ void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -167,7 +167,7 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -209,7 +209,7 @@ void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -225,7 +225,7 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -297,7 +297,7 @@ void MCPServer::OnRequest_ListResources(const ListResourcesRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -319,7 +319,7 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -335,7 +335,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 		if (!m_ResourceManager->HasResource(Request.URI))
 		{
 			SendMessage(ErrorResponseBase(InRequest.GetRequestID(),
-				MCPError(ErrorCodes::INVALID_REQUEST, "Resource not found",
+				FErrorData(ErrorCodes::INVALID_REQUEST, "Resource not found",
 					JSONData::object({ { "uri", Request.URI.toString() } }))));
 			return;
 		}
@@ -351,7 +351,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -384,7 +384,7 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 
@@ -434,7 +434,7 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 		if (!m_CompletionHandler)
 		{
 			SendMessage(ErrorResponseBase(
-				InRequest.GetRequestID(), MCPError(ErrorCodes::METHOD_NOT_FOUND, "Completion not supported")));
+				InRequest.GetRequestID(), FErrorData(ErrorCodes::METHOD_NOT_FOUND, "Completion not supported")));
 			return;
 		}
 
@@ -446,7 +446,7 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), MCPError(ErrorCodes::INTERNAL_ERROR, Except.what())));
+		SendMessage(ErrorResponseBase(InRequest.GetRequestID(), FErrorData(ErrorCodes::INTERNAL_ERROR, Except.what())));
 	}
 }
 

@@ -18,8 +18,10 @@ MCP_NAMESPACE_BEGIN
 class MCPServer final : public MCPProtocol
 {
 public:
-	MCPServer(TransportType InTransportType, std::optional<std::unique_ptr<TransportOptions>> InOptions,
-		const Implementation& InServerInfo, const ServerCapabilities& InCapabilities);
+	MCPServer(TransportType InTransportType,
+		std::optional<std::unique_ptr<TransportOptions>> InOptions,
+		const Implementation& InServerInfo,
+		const ServerCapabilities& InCapabilities);
 
 	// Lifecycle methods
 	VoidTask Start() override;
@@ -80,7 +82,6 @@ public:
 	std::weak_ptr<ResourceManager> GetResourceManager() { return m_ResourceManager; }
 	std::weak_ptr<PromptManager> GetPromptManager() { return m_PromptManager; }
 	std::weak_ptr<RootManager> GetRootManager() { return m_RootManager; }
-	std::weak_ptr<SamplingManager> GetSamplingManager() { return m_SamplingManager; }
 
 private:
 	// Server state
@@ -91,7 +92,6 @@ private:
 	std::shared_ptr<PromptManager> m_PromptManager;
 	std::shared_ptr<ResourceManager> m_ResourceManager;
 	std::shared_ptr<RootManager> m_RootManager;
-	std::shared_ptr<SamplingManager> m_SamplingManager;
 
 	// Feature handlers
 	// TODO: @HalcyonOmega Cleanup, fix, or remove these handlers
@@ -105,7 +105,8 @@ private:
 
 	// Progress tracking and tool execution
 	Task<CallToolResponse> ExecuteToolWithProgress(const Tool& InTool,
-		const std::optional<std::unordered_map<std::string, JSONData>>& InArguments, const RequestID& InRequestID);
+		const std::optional<std::unordered_map<std::string, JSONData>>& InArguments,
+		const RequestID& InRequestID);
 
 	// Resource subscription management
 	void Notify_ResourceSubscribers(const ResourceUpdatedNotification::Params& InParams);
