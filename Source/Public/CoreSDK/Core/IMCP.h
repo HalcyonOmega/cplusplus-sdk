@@ -75,6 +75,13 @@ public:
 	[[nodiscard]] const ServerCapabilities& GetServerCapabilities() const { return m_ServerCapabilities; }
 	[[nodiscard]] const ClientCapabilities& GetClientCapabilities() const { return m_ClientCapabilities; }
 
+	// Utilities
+	inline void InvalidCursor(RequestID InRequestID, const std::string_view InCursor)
+	{
+		SendMessage(ErrorInvalidParams(std::move(InRequestID), "Invalid cursor: " + std::string(InCursor)));
+	}
+
+	// Response Task
 	template <ConcreteResponse T> struct ResponseTask
 	{
 		struct promise_type

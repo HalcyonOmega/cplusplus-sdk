@@ -4,10 +4,10 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport, const bool InWarnOnDuplicateMessageHandlers) :
-	m_State{ MCPProtocolState::Uninitialized },
-	m_Transport{ std::move(InTransport) },
-	m_MessageManager{ std::make_unique<MessageManager>(InWarnOnDuplicateMessageHandlers) }
+MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport, const bool InWarnOnDuplicateMessageHandlers)
+	: m_State{ MCPProtocolState::Uninitialized },
+	  m_Transport{ std::move(InTransport) },
+	  m_MessageManager{ std::make_unique<MessageManager>(InWarnOnDuplicateMessageHandlers) }
 {
 	SetupTransportRouter();
 }
@@ -27,11 +27,12 @@ Task<PingResponse> MCPProtocol::Ping(const PingRequest& InRequest)
 
 void MCPProtocol::ValidateProtocolVersion(const std::string& InVersion) {}
 
-void MCPProtocol::SendMessage(
-	const MessageBase& InMessage, const std::optional<std::vector<ConnectionID>>& InConnections) const
+void MCPProtocol::SendMessage(const MessageBase& InMessage,
+	const std::optional<std::vector<ConnectionID>>& InConnections) const
 {
 	m_Transport->TransmitMessage(InMessage, InConnections);
 }
+void MCPProtocol::InvalidCursor(RequestID InRequestID, const std::string_view InCursor) {}
 
 void MCPProtocol::SetupTransportRouter() const
 {

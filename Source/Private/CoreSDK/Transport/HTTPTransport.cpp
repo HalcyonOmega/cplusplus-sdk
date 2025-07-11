@@ -107,8 +107,9 @@ VoidTask HTTPTransportClient::ConnectToServer()
 		m_HTTPSession->setTimeout(m_Options.ConnectTimeout);
 
 		// Test connection with a ping
-		Poco::Net::HTTPRequest Request(
-			Poco::Net::HTTPRequest::HTTP_POST, m_Options.Path, Poco::Net::HTTPMessage::HTTP_1_1);
+		Poco::Net::HTTPRequest Request(Poco::Net::HTTPRequest::HTTP_POST,
+			m_Options.Path,
+			Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.setContentType("application/json");
 		Request.set("Accept", "text/event-stream");
 
@@ -145,8 +146,8 @@ VoidTask HTTPTransportClient::ConnectToServer()
 	co_return;
 }
 
-void HTTPTransportClient::TransmitMessage(
-	const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+void HTTPTransportClient::TransmitMessage(const JSONData& InMessage,
+	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 {
 	(void)InConnectionIDs;
 
@@ -160,9 +161,11 @@ void HTTPTransportClient::TransmitMessage(
 	{
 		std::lock_guard<std::mutex> Lock(m_ConnectionMutex);
 
-		Poco::Net::HTTPRequest Request(
-			Poco::Net::HTTPRequest::HTTP_POST, m_Options.Path, Poco::Net::HTTPMessage::HTTP_1_1);
+		Poco::Net::HTTPRequest Request(Poco::Net::HTTPRequest::HTTP_POST,
+			m_Options.Path,
+			Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.setContentType("application/json");
+		Request.set("MCP-Protocol-Version", m_ClientInfo.ProtocolVersion);
 
 		const std::string Body = InMessage.dump();
 		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
@@ -194,8 +197,9 @@ void HTTPTransportClient::StartSSEConnection()
 		// Create a separate session for SSE
 		const auto SSESession = std::make_unique<Poco::Net::HTTPClientSession>(m_Options.Host, m_Options.Port);
 
-		Poco::Net::HTTPRequest Request(
-			Poco::Net::HTTPRequest::HTTP_GET, m_Options.Path + "/events", Poco::Net::HTTPMessage::HTTP_1_1);
+		Poco::Net::HTTPRequest Request(Poco::Net::HTTPRequest::HTTP_GET,
+			m_Options.Path + "/events",
+			Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.set("Accept", "text/event-stream");
 		Request.set("Cache-Control", "no-cache");
 
@@ -263,21 +267,14 @@ void HTTPTransportClient::Cleanup()
 	m_HTTPSession.reset();
 
 	// Clear pending requests
-	{
-		std::lock_guard<std::mutex> Lock(m_RequestsMutex);
-		for (const auto& request : m_PendingRequests | std::views::values)
-		{
-			request->Promise.set_exception(std::make_exception_ptr(std::runtime_error("Transport closed")));
-		}
-		m_PendingRequests.clear();
-	}
+	m_Client->m_MessageManager->ClearPendingRequests;
 }
 
 // MCPHTTPRequestHandler Implementation
 MCPHTTPRequestHandler::MCPHTTPRequestHandler(HTTPTransportServer* InServer) : m_Server(InServer) {}
 
-void MCPHTTPRequestHandler::handleRequest(
-	Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
+void MCPHTTPRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& InRequest,
+	Poco::Net::HTTPServerResponse& InResponse)
 {
 	m_Server->HandleHTTPRequest(InRequest, InResponse);
 }
@@ -399,8 +396,8 @@ VoidTask HTTPTransportServer::Disconnect()
 
 	co_return;
 }
-void HTTPTransportServer::TransmitMessage(
-	const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+void HTTPTransportServer::TransmitMessage(const JSONData& InMessage,
+	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 {}
 
 std::string HTTPTransportServer::GetConnectionInfo() const
@@ -408,11 +405,11 @@ std::string HTTPTransportServer::GetConnectionInfo() const
 	std::string Protocol = m_Options.UseHTTPS ? "https" : "http";
 	// TODO: @HalcyonOmega - Pretty sure spec says you should use 127.0.0.1
 	// instead of 0.0.0.0
-	return Protocol + "://0.0.0.0:" + std::to_string(m_Options.Port) + m_Options.Path;
+	return Protocol + "://127.0.0.1:" + std::to_string(m_Options.Port) + m_Options.Path;
 }
 
-void HTTPTransportServer::HandleHTTPRequest(
-	Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
+void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest,
+	Poco::Net::HTTPServerResponse& InResponse)
 {
 	try
 	{
@@ -587,8 +584,8 @@ void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) { CallMessageRouter(InMessage); }
 
-VoidTask HTTPTransportServer::HandleGetMessageEndpoint(
-	const Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse)
+VoidTask HTTPTransportServer::HandleGetMessageEndpoint(const Poco::Net::HTTPServerRequest& InRequest,
+	Poco::Net::HTTPServerResponse& InResponse)
 {
 	(void)InRequest;
 	// Set SSE headers

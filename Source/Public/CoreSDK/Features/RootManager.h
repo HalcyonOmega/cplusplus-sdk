@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 #include "RootBase.h"
 
 MCP_NAMESPACE_BEGIN
@@ -79,7 +80,7 @@ public:
 	 * List all registered roots.
 	 * @return Vector containing all registered roots
 	 */
-	std::vector<Root> ListRoots() const;
+	ListRootsResponse::Result ListRoots() const;
 
 	/**
 	 * Check if a root with the given URI exists.

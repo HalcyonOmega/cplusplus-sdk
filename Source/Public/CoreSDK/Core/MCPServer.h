@@ -7,7 +7,6 @@
 #include "CoreSDK/Core/IMCP.h"
 #include "CoreSDK/Features/PromptManager.h"
 #include "CoreSDK/Features/ResourceManager.h"
-#include "CoreSDK/Features/RootManager.h"
 #include "CoreSDK/Features/SamplingManager.h"
 #include "CoreSDK/Features/ToolManager.h"
 #include "CoreSDK/Messages/MCPMessages.h"
@@ -15,7 +14,7 @@
 MCP_NAMESPACE_BEGIN
 
 // Server protocol handler
-class MCPServer final : public MCPProtocol
+class MCPServer : public MCPProtocol
 {
 public:
 	MCPServer(TransportType InTransportType,
@@ -28,22 +27,17 @@ public:
 	VoidTask Stop() override;
 
 	// Initialization
-	void OnRequest_Initialize(const InitializeRequest& InRequest);
 	void Notify_Initialized();
 
 	// Tool management
 	bool AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction);
 	bool RemoveTool(const Tool& InTool);
 	void Notify_ToolListChanged();
-	void OnRequest_ListTools(const ListToolsRequest& InRequest);
-	void OnRequest_CallTool(const CallToolRequest& InRequest);
 
 	// Prompt management
 	bool AddPrompt(const Prompt& InPrompt, const PromptManager::PromptFunction& InFunction);
 	bool RemovePrompt(const Prompt& InPrompt);
 	void Notify_PromptListChanged();
-	void OnRequest_ListPrompts(const ListPromptsRequest& InRequest);
-	void OnRequest_GetPrompt(const GetPromptRequest& InRequest);
 
 	// Resource management
 	bool AddResource(const Resource& InResource);
@@ -52,36 +46,58 @@ public:
 	bool RemoveResourceTemplate(const ResourceTemplate& InTemplate);
 	void Notify_ResourceListChanged();
 	void Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
+
+	// Roots
+	OptTask<ListRootsResponse::Result> Request_ListRoots(const PaginatedRequestParams& InParams);
+
+	// Logging
+	void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
+
+	// Sampling
+	Task<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
+
+	// Progress reporting
+	void Notify_Progress(const ProgressNotification::Params& InParams);
+	void Notify_CancelRequest(const CancelledNotification::Params& InParams);
+
+	// ===============================
+	// Handlers
+	// ===============================
+
+	// Setup Default Handlers
+	virtual void SetHandlers();
+
+	// Initialization
+	void OnRequest_Initialize(const InitializeRequest& InRequest);
+
+	// Tool
+	void OnRequest_ListTools(const ListToolsRequest& InRequest);
+	void OnRequest_CallTool(const CallToolRequest& InRequest);
+
+	// Prompt
+	void OnRequest_ListPrompts(const ListPromptsRequest& InRequest);
+	void OnRequest_GetPrompt(const GetPromptRequest& InRequest);
+
+	// Resource
 	void OnRequest_ListResources(const ListResourcesRequest& InRequest);
 	void OnRequest_ReadResource(const ReadResourceRequest& InRequest);
 	void OnRequest_SubscribeResource(const SubscribeRequest& InRequest);
 	void OnRequest_UnsubscribeResource(const UnsubscribeRequest& InRequest);
 
-	// Root management
-	bool AddRoot(const Root& InRoot);
-	bool RemoveRoot(const Root& InRoot);
-	void Notify_RootsListChanged();
-
-	// Logging
-	void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
-
-	// Sampling requests (servers can request sampling from clients)
-	Task<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
+	// Roots
+	void OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification);
 
 	// Autocomplete
 	void OnRequest_Complete(const CompleteRequest& InRequest);
 
-	// Progress reporting
-	void Notify_Progress(const ProgressNotification::Params& InParams);
-	void Notify_CancelRequest(const CancelledNotification::Params& InParams);
+	// Progress Reporting
 	void OnNotified_Progress(const ProgressNotification& InNotification);
 	void OnNotified_CancelRequest(const CancelledNotification& InNotification);
 
-	// Access to managers for MCPContext
+	// Feature Managers
 	std::weak_ptr<ToolManager> GetToolManager() { return m_ToolManager; }
 	std::weak_ptr<ResourceManager> GetResourceManager() { return m_ResourceManager; }
 	std::weak_ptr<PromptManager> GetPromptManager() { return m_PromptManager; }
-	std::weak_ptr<RootManager> GetRootManager() { return m_RootManager; }
 
 private:
 	// Server state
@@ -91,7 +107,6 @@ private:
 	std::shared_ptr<ToolManager> m_ToolManager;
 	std::shared_ptr<PromptManager> m_PromptManager;
 	std::shared_ptr<ResourceManager> m_ResourceManager;
-	std::shared_ptr<RootManager> m_RootManager;
 
 	// Feature handlers
 	// TODO: @HalcyonOmega Cleanup, fix, or remove these handlers
@@ -99,9 +114,6 @@ private:
 
 	// Handler management
 	mutable std::mutex m_HandlersMutex;
-
-	// Setup methods
-	void SetupDefaultHandlers();
 
 	// Progress tracking and tool execution
 	Task<CallToolResponse> ExecuteToolWithProgress(const Tool& InTool,

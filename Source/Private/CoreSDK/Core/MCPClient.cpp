@@ -180,12 +180,31 @@ void MCPClient::OnNotified_ResourceListChanged(const ResourceListChangedNotifica
 
 void MCPClient::OnNotified_ResourceUpdated(const ResourceUpdatedNotification& InNotification) {}
 
-OptTask<ListRootsResponse::Result> MCPClient::Request_ListRoots(const PaginatedRequestParams& InParams)
+bool MCPClient::AddRoot(const Root& InRoot)
 {
-	SEND_REQUEST_RETURN_RESULT(ListRootsResponse, ListRootsRequest{ InParams })
+	if (!m_RootManager->AddRoot(InRoot))
+	{
+		HandleRuntimeError("Failed to add root: " + InRoot.Name.value());
+		return false;
+	}
+
+	Notify_RootsListChanged();
+	return true;
 }
 
-void MCPClient::OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification) {}
+bool MCPClient::RemoveRoot(const Root& InRoot)
+{
+	if (!m_RootManager->RemoveRoot(InRoot))
+	{
+		HandleRuntimeError("Failed to remove root: " + InRoot.Name.value());
+		return false;
+	}
+
+	Notify_RootsListChanged();
+	return true;
+}
+
+void MCPClient::Notify_RootsListChanged() { SendMessage(RootsListChangedNotification()); }
 
 VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InParams)
 {
@@ -202,6 +221,14 @@ VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InPar
 }
 
 void MCPClient::OnNotified_LogMessage(const LoggingMessageNotification& InNotification) {}
+
+void MCPClient::OnRequest_ListRoots(const ListRootsRequest& InRequest)
+{
+	if (m_RootManager)
+	{
+		SendMessage(ListRootsResponse(InRequest.GetRequestID(), m_RootManager->ListRoots()));
+	}
+}
 
 void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 {
