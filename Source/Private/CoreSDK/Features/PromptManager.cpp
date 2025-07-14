@@ -13,7 +13,7 @@ bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFu
 {
 	// Log the addition attempt
 	Logger::Debug("Adding prompt: " + InPrompt.Name);
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	if (const auto ExistingIt = m_Prompts.find(InPrompt); ExistingIt != m_Prompts.end())
 	{
@@ -30,7 +30,7 @@ bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFu
 
 bool PromptManager::RemovePrompt(const Prompt& InPrompt)
 {
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	const auto ExistingIt = m_Prompts.find(InPrompt);
 	if (ExistingIt == m_Prompts.end())
@@ -45,7 +45,7 @@ bool PromptManager::RemovePrompt(const Prompt& InPrompt)
 
 GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Params& InRequest) const
 {
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	const std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
 	if (!FoundPrompt)
@@ -62,7 +62,7 @@ GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Param
 
 ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestParams& InRequest) const
 {
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	std::vector<Prompt> Prompts;
 	Prompts.reserve(m_Prompts.size());
@@ -82,7 +82,7 @@ ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestPar
 
 std::optional<Prompt> PromptManager::FindPrompt(const std::string& InName) const
 {
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	if (const auto Iterator
 		= std::ranges::find_if(m_Prompts, [&](const auto& Pair) { return Pair.first.Name == InName; });

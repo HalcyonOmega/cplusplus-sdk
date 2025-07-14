@@ -10,9 +10,9 @@ MCPServer::MCPServer(const TransportType InTransportType,
 	std::optional<std::unique_ptr<TransportOptions>> InOptions,
 	const Implementation& InServerInfo,
 	const ServerCapabilities& InCapabilities)
-	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server, std::move(InOptions)), true)
+	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server, InOptions), true)
 {
-	SetHandlers();
+	MCPServer::SetHandlers();
 	SetServerInfo(InServerInfo);
 	SetServerCapabilities(InCapabilities);
 }
@@ -417,7 +417,6 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 		if (!m_CompletionHandler)
 		{
 			SendMessage(ErrorMethodNotFound(InRequest.GetRequestID(), "Completion not supported"));
-			return;
 		}
 
 		// Call handler

@@ -4,15 +4,13 @@
 
 class BoundedDouble
 {
-private:
-	double m_Value{ 0.0 };
-	double m_Min{ 0.0 };
-	double m_Max{ 0.0 };
-	bool m_BoundsLocked{ true };
 
 public:
-	explicit BoundedDouble(const double InValue = 0.0, const double InMin, const double InMax, const bool InLocked) :
-		m_Value(std::clamp(InValue, InMin, InMax)), m_Min(InMin), m_Max(InMax), m_BoundsLocked(InLocked) {};
+	explicit BoundedDouble(const double InValue = 0.0, const double InMin, const double InMax, const bool InLocked)
+		: m_Value(std::clamp(InValue, InMin, InMax)),
+		  m_Min(InMin),
+		  m_Max(InMax),
+		  m_BoundsLocked(InLocked) {};
 
 	/*
 	 * Set the value of the bounded double, including the ability to set new min & max.
@@ -79,7 +77,9 @@ public:
 	}
 
 	[[nodiscard]] static std::optional<BoundedDouble> CreateOptional(const std::optional<double> InValue,
-		const double InMin = 0.0, const double InMax = 1.0, const bool InLocked = true)
+		const double InMin = 0.0,
+		const double InMax = 1.0,
+		const bool InLocked = true)
 	{
 		if (InValue.has_value())
 		{
@@ -88,4 +88,10 @@ public:
 
 		return std::nullopt;
 	}
+
+private:
+	double m_Value{ 0.0 };
+	double m_Min{ 0.0 };
+	double m_Max{ 0.0 };
+	bool m_BoundsLocked{ true };
 };

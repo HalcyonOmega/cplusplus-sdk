@@ -17,7 +17,7 @@ void ITransport::SetMessageRouter(std::function<void(const JSONData&)> InRouter)
 	m_MessageRouter = std::move(InRouter);
 }
 
-void ITransport::CallMessageRouter(const JSONData& InMessage)
+void ITransport::CallMessageRouter(const JSONData& InMessage) const
 {
 	if (m_MessageRouter)
 	{

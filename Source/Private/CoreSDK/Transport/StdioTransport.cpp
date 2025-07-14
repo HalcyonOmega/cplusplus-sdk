@@ -7,14 +7,15 @@
 #include <iostream>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 
 #include "CoreSDK/Common/RuntimeError.h"
 
 MCP_NAMESPACE_BEGIN
 
 // StdioClientTransport Implementation
-StdioClientTransport::StdioClientTransport(const StdioClientTransportOptions& InOptions)
-    : m_Options(InOptions) {}
+StdioClientTransport::StdioClientTransport(StdioClientTransportOptions  InOptions)
+    : m_Options(std::move(InOptions)) {}
 
 StdioClientTransport::~StdioClientTransport() {
     if (m_CurrentState != TransportState::Disconnected) {
@@ -138,10 +139,10 @@ VoidTask StdioClientTransport::TransmitMessage(
     }
 
     try {
-        std::lock_guard<std::mutex> lock(m_WriteMutex);
+        std::lock_guard lock(m_WriteMutex);
 
-        std::string messageStr = InMessage.dump() + "\n";
-        m_StdinStream->write(messageStr.c_str(), messageStr.length());
+		const std::string MessageStr = InMessage.dump() + "\n";
+        m_StdinStream->write(MessageStr.c_str(), MessageStr.length());
         m_StdinStream->flush();
     } catch (const std::exception& e) {
         HandleRuntimeError("Error writing message: " + std::string(e.what()));
@@ -152,7 +153,7 @@ VoidTask StdioClientTransport::TransmitMessage(
 }
 
 void StdioClientTransport::Cleanup() {
-    // Terminate process if still running
+    // Terminate the process if still running
     if (m_ProcessHandle) {
         try {
             Poco::Process::kill(*m_ProcessHandle);
@@ -287,10 +288,10 @@ VoidTask StdioServerTransport::TransmitMessage(
     (void)InConnectionIDs;
 
     try {
-        std::lock_guard<std::mutex> lock(m_WriteMutex);
+        std::lock_guard lock(m_WriteMutex);
 
-        std::string messageStr = InMessage.dump() + "\n";
-        std::cout << messageStr;
+		const std::string MessageStr = InMessage.dump() + "\n";
+        std::cout << MessageStr;
         std::cout.flush();
     } catch (const std::exception& e) {
         HandleRuntimeError("Error writing message: " + std::string(e.what()));

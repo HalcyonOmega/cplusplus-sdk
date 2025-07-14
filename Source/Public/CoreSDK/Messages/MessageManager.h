@@ -25,8 +25,8 @@ public:
 	// Register handlers for specific concrete message types
 	template <ConcreteRequest T, typename Function> bool RegisterRequestHandler(Function&& InHandler)
 	{
-		static_assert(
-			std::is_invocable_v<Function, const T&>, "Handler must be callable with '(const ConcreteRequestType&)'");
+		static_assert(std::is_invocable_v<Function, const T&>,
+			"Handler must be callable with '(const ConcreteRequestType&)'");
 
 		T TempInstance{};
 		const auto MethodName = std::string(TempInstance.GetRequestMethod());
@@ -52,8 +52,8 @@ public:
 	template <ConcreteResponse T, typename Function>
 	bool RegisterResponseHandler(const RequestID& InRequestID, Function&& InHandler)
 	{
-		static_assert(
-			std::is_invocable_v<Function, const T&>, "Handler must be callable with '(const ConcreteResponseType&)'");
+		static_assert(std::is_invocable_v<Function, const T&>,
+			"Handler must be callable with '(const ConcreteResponseType&)'");
 
 		const std::string& ID = InRequestID.ToString();
 		std::scoped_lock lock(m_ResponseMutex);
@@ -110,10 +110,10 @@ public:
 						return RouteRequest(Message);
 					case MessageType::Response:
 						return RouteResponse(Message);
-					case MessageType::Error:
-						return RouteResponse(Message);
 					case MessageType::Notification:
 						return RouteNotification(Message);
+					case MessageType::Error:
+						return RouteResponse(Message);
 					default:
 						HandleRuntimeError(
 							"Invalid message type: " + std::to_string(static_cast<int>(MessageType.value())));

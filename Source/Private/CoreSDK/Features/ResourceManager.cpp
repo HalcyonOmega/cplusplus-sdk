@@ -9,8 +9,8 @@
 
 MCP_NAMESPACE_BEGIN
 
-ResourceManager::ResourceManager(bool InWarnOnDuplicateResources) :
-	m_WarnOnDuplicateResources(InWarnOnDuplicateResources)
+ResourceManager::ResourceManager(const bool InWarnOnDuplicateResources)
+	: m_WarnOnDuplicateResources(InWarnOnDuplicateResources)
 {}
 
 bool ResourceManager::AddResource(const Resource& InResource)
@@ -18,10 +18,9 @@ bool ResourceManager::AddResource(const Resource& InResource)
 	const MCP::URI& URI = InResource.URI;
 	// Log the addition attempt
 	Logger::Debug("Adding resource - URI: " + URI.toString() + ", Name: " + InResource.Name);
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
-	const auto ExistingIt = m_Resources.find(URI);
-	if (ExistingIt != m_Resources.end())
+	if (const auto ExistingIt = m_Resources.find(URI); ExistingIt != m_Resources.end())
 	{
 		if (m_WarnOnDuplicateResources)
 		{
@@ -36,7 +35,7 @@ bool ResourceManager::AddResource(const Resource& InResource)
 
 bool ResourceManager::RemoveResource(const Resource& InResource)
 {
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	const auto ExistingIt = m_Resources.find(InResource.URI);
 	if (ExistingIt == m_Resources.end())
@@ -57,11 +56,10 @@ bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, const Reso
 		throw std::invalid_argument("URI template cannot be empty");
 	}
 
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	// Check for existing template
-	const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString());
-	if (ExistingIt != m_Templates.end())
+	if (const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString()); ExistingIt != m_Templates.end())
 	{
 		if (m_WarnOnDuplicateResources)
 		{
@@ -97,11 +95,10 @@ std::optional<std::variant<TextResourceContents, BlobResourceContents>> Resource
 	const MCP::URI& InURI)
 {
 	Logger::Debug("Getting resource: " + InURI.toString());
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	// First check concrete resources
-	const auto ResourceIt = m_Resources.find(InURI);
-	if (ResourceIt != m_Resources.end())
+	if (const auto ResourceIt = m_Resources.find(InURI); ResourceIt != m_Resources.end())
 	{
 		// Note: The current design stores Resource metadata, not content.
 		// Returning nullopt because we can't provide content for concrete resources yet.
@@ -109,11 +106,11 @@ std::optional<std::variant<TextResourceContents, BlobResourceContents>> Resource
 	}
 
 	// Then check templates
-	for (const auto& [TemplateURI, TemplatePair] : m_Templates)
+	for (const auto& TemplatePair : m_Templates | std::views::values)
 	{
 		const auto& [Template, Function] = TemplatePair;
 
-		if (auto Parameters = MatchTemplate(Template, InURI))
+		if (const auto Parameters = MatchTemplate(Template, InURI))
 		{
 			try
 			{
@@ -138,10 +135,10 @@ ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequ
 	Logger::Debug("Listing resources - Count: " + std::to_string(m_Resources.size()));
 
 	std::vector<Resource> Result;
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 	Result.reserve(m_Resources.size());
 
-	for (const auto& [URI, ResourceData] : m_Resources)
+	for (const auto& ResourceData : m_Resources | std::views::values)
 	{
 		Result.push_back(ResourceData);
 	}
@@ -157,7 +154,7 @@ ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const Pagin
 	Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
 
 	std::vector<ResourceTemplate> Result;
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 	Result.reserve(m_Templates.size());
 
 	for (const auto& [Template, Function] : m_Templates | std::views::values)
@@ -173,13 +170,13 @@ ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const Pagin
 
 bool ResourceManager::HasResource(const MCP::URI& InURI) const
 {
-	std::lock_guard<std::mutex> Lock(m_Mutex);
+	std::lock_guard Lock(m_Mutex);
 
 	return std::ranges::any_of(m_Resources, [InURI](const auto& Pair) { return Pair.first == InURI; });
 }
 
-std::optional<std::unordered_map<std::string, std::string>> ResourceManager::MatchTemplate(
-	const ResourceTemplate& InTemplate, const MCP::URI& InURI)
+std::optional<std::unordered_map<std::string, std::string>>
+ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI)
 {
 	// Basic URI template matching - this is a simplified implementation
 	// A full implementation would use RFC 6570 URI template matching
@@ -187,14 +184,13 @@ std::optional<std::unordered_map<std::string, std::string>> ResourceManager::Mat
 	const std::string TemplateString = InTemplate.URITemplate.ToString();
 	const std::string URIString = InURI.toString();
 
-	// Convert URI template to regex pattern
+	// Convert URI template to a regex pattern
 	const std::string& Pattern = TemplateString;
-	std::regex VariableRegex(R"(\{([^}]+)\})");
+	const std::regex VariableRegex(R"(\{([^}]+)\})");
 	std::smatch Match;
-	std::unordered_map<std::string, std::string> Parameters;
 
 	// Replace template variables with capturing groups
-	std::string::const_iterator SearchStart(Pattern.cbegin());
+	auto SearchStart(Pattern.cbegin());
 	std::string ResultPattern;
 
 	while (std::regex_search(SearchStart, Pattern.cend(), Match, VariableRegex))
@@ -208,13 +204,13 @@ std::optional<std::unordered_map<std::string, std::string>> ResourceManager::Mat
 	// Try to match the URI against the pattern
 	try
 	{
-		std::regex URIRegex(ResultPattern);
-		std::smatch URIMatch;
+		const std::regex URIRegex(ResultPattern);
 
-		if (std::regex_match(URIString, URIMatch, URIRegex))
+		if (std::smatch URIMatch; std::regex_match(URIString, URIMatch, URIRegex))
 		{
+			std::unordered_map<std::string, std::string> Parameters;
 			// Extract variable names and values
-			std::string::const_iterator VarSearchStart(TemplateString.cbegin());
+			auto VarSearchStart(TemplateString.cbegin());
 			std::smatch VarMatch;
 			int GroupIndex = 1;
 

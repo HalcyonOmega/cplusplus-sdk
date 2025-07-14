@@ -22,7 +22,7 @@ inline std::string GenerateUUID() {
     Poco::UUIDGenerator& Generator = Poco::UUIDGenerator::defaultGenerator();
 
     // Create a cryptographically secure random UUID (Version 4).
-    Poco::UUID UUID = Generator.createRandom();
+	const Poco::UUID UUID = Generator.createRandom();
 
     // Return the UUID as a string.
     return UUID.toString();

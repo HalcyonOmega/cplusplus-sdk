@@ -10,7 +10,7 @@ RootManager::RootManager(const bool InWarnOnDuplicateRoots) : m_WarnOnDuplicateR
 
 bool RootManager::AddRoot(const Root& InRoot)
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	const std::string Key = GetRootKey(InRoot.URI);
 	if (const auto ExistingIt = m_Roots.find(Key); ExistingIt != m_Roots.end())
@@ -41,7 +41,7 @@ bool RootManager::RemoveRoot(const Root& InRoot) { RemoveRoot(InRoot.URI); }
 
 bool RootManager::RemoveRoot(const MCP::URIFile& InURI)
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	const std::string Key = GetRootKey(InURI);
 	if (const auto Iter = m_Roots.find(Key); Iter != m_Roots.end())
@@ -52,7 +52,7 @@ bool RootManager::RemoveRoot(const MCP::URIFile& InURI)
 
 std::optional<Root> RootManager::GetRoot(const MCP::URIFile& InURI) const
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	const std::string Key = GetRootKey(InURI);
 	if (const auto Iter = m_Roots.find(Key); Iter != m_Roots.end())
@@ -64,7 +64,7 @@ std::optional<Root> RootManager::GetRoot(const MCP::URIFile& InURI) const
 
 std::optional<Root> RootManager::GetRootByName(const std::string& InName) const
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	const auto Iter = std::ranges::find_if(m_Roots,
 		[&InName](const auto& Pair) { return Pair.second.Name.has_value() && Pair.second.Name.value() == InName; });
@@ -78,7 +78,7 @@ std::optional<Root> RootManager::GetRootByName(const std::string& InName) const
 
 std::vector<Root> RootManager::ListRoots() const
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	std::vector<Root> Result;
 	Result.reserve(m_Roots.size());
@@ -93,7 +93,7 @@ std::vector<Root> RootManager::ListRoots() const
 
 bool RootManager::HasRoot(const MCP::URIFile& InURI) const
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	const std::string Key = GetRootKey(InURI);
 	return m_Roots.contains(Key);
@@ -101,7 +101,7 @@ bool RootManager::HasRoot(const MCP::URIFile& InURI) const
 
 bool RootManager::HasRootWithName(const std::string& InName) const
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 
 	return std::ranges::any_of(m_Roots,
 		[&InName](const auto& Pair) { return Pair.second.Name.has_value() && Pair.second.Name.value() == InName; });
@@ -109,13 +109,13 @@ bool RootManager::HasRootWithName(const std::string& InName) const
 
 void RootManager::ClearRoots()
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 	m_Roots.clear();
 }
 
 size_t RootManager::GetRootCount() const
 {
-	std::lock_guard<std::mutex> Lock(m_RootsMutex);
+	std::lock_guard Lock(m_RootsMutex);
 	return m_Roots.size();
 }
 

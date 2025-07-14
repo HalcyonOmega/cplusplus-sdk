@@ -17,7 +17,7 @@ MCP_NAMESPACE_BEGIN
 class StdioClientTransport final: public ITransport
 {
 public:
-	explicit StdioClientTransport(const StdioClientTransportOptions& InOptions);
+	explicit StdioClientTransport(StdioClientTransportOptions  InOptions);
 	~StdioClientTransport() noexcept override;
 
 	// ITransport interface

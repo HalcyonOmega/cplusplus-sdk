@@ -60,7 +60,7 @@ public:
 class OAuth2AuthProvider final : public MCPAuthProvider
 {
 public:
-	explicit OAuth2AuthProvider(const OAuth2Config& InConfig);
+	explicit OAuth2AuthProvider(OAuth2Config  InConfig);
 	~OAuth2AuthProvider() noexcept override;
 
 	[[nodiscard]] Task<bool> ValidateToken(const std::string& InToken) override;
@@ -100,7 +100,7 @@ private:
 class AuthUtils
 {
 public:
-	[[nodiscard]] static std::optional<std::string> ExtractBearerToken(Poco::Net::HTTPServerRequest& InRequest);
+	[[nodiscard]] static std::optional<std::string> ExtractBearerToken(const Poco::Net::HTTPServerRequest& InRequest);
 	[[nodiscard]] static bool IsPublicMethod(const std::string& InMethod);
 	[[nodiscard]] static std::vector<std::string> GetRequiredScopes(const std::string& InMethod);
 };

@@ -89,7 +89,7 @@ public:
 
 	void SetMessageRouter(std::function<void(const JSONData&)> InRouter);
 
-	void CallMessageRouter(const JSONData& InMessage);
+	void CallMessageRouter(const JSONData& InMessage) const;
 
 	// Connection management
 	void RegisterConnection(const ConnectionID& InConnectionID);

@@ -9,70 +9,71 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct AutocompleteReference {
-    std::string Type;
+struct AutocompleteReference
+{
+	std::string Type;
 
-    JKEY(TYPEKEY, Type, "type")
+	JKEY(TYPEKEY, Type, "type")
 
-    DEFINE_TYPE_JSON(AutocompleteReference, TYPEKEY)
+	DEFINE_TYPE_JSON(AutocompleteReference, TYPEKEY)
 
-    AutocompleteReference() = default;
-    AutocompleteReference(std::string_view InType) : Type(InType) {}
+	AutocompleteReference() = default;
+	explicit AutocompleteReference(const std::string_view InType) : Type(InType) {}
 };
 
 // ResourceReference {
-//   MSG_DESCRIPTION : "A reference to a resource or resource template definition.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_TYPE : {MSG_CONST : MSG_REF_RESOURCE, MSG_TYPE : MSG_STRING},
-//         MSG_URI : {
-//           MSG_DESCRIPTION : "The URI or URI template of the resource.",
-//           MSG_FORMAT : MSG_URITEMPLATE,
-//           MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "A reference to a resource or resource template definition.",
+//    MSG_PROPERTIES: {
+//         MSG_TYPE: {MSG_CONST: MSG_REF_RESOURCE, MSG_TYPE: MSG_STRING},
+//         MSG_URI: {
+//           MSG_DESCRIPTION: "The URI or URI template of the resource.",
+//           MSG_FORMAT: MSG_URITEMPLATE,
+//           MSG_TYPE: MSG_STRING
 //         }
 //       },
-//         MSG_REQUIRED : [ MSG_TYPE, MSG_URI ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_TYPE, MSG_URI ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * A reference to a resource or resource template definition.
  */
-struct ResourceReference : AutocompleteReference {
-    std::variant<MCP::URI, MCP::URITemplate> URI; // The URI or URI template of the resource.
+struct ResourceReference : AutocompleteReference
+{
+	std::variant<MCP::URI, MCP::URITemplate> URI; // The URI or URI template of the resource.
 
-    ResourceReference() : AutocompleteReference("ref/resource") {}
+	ResourceReference() : AutocompleteReference("ref/resource") {}
 
-    JKEY(URIKEY, URI, "uri")
+	JKEY(URIKEY, URI, "uri")
 
-    DEFINE_TYPE_JSON_DERIVED(ResourceReference, AutocompleteReference, URIKEY)
+	DEFINE_TYPE_JSON_DERIVED(ResourceReference, AutocompleteReference, URIKEY)
 };
 
 // PromptReference {
-//   MSG_DESCRIPTION : "Identifies a prompt.",
-//                   MSG_PROPERTIES
-//       : {
-//         MSG_NAME : {
-//           MSG_DESCRIPTION : "The name of the prompt or prompt template",
-//           MSG_TYPE : MSG_STRING
+//   MSG_DESCRIPTION: "Identifies a prompt.",
+//    MSG_PROPERTIES: {
+//         MSG_NAME: {
+//           MSG_DESCRIPTION: "The name of the prompt or prompt template",
+//           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_TYPE : {MSG_CONST : MSG_REF_PROMPT, MSG_TYPE : MSG_STRING}
+//         MSG_TYPE: {MSG_CONST: MSG_REF_PROMPT, MSG_TYPE: MSG_STRING}
 //       },
-//         MSG_REQUIRED : [ MSG_NAME, MSG_TYPE ],
-//                      MSG_TYPE : MSG_OBJECT
+//         MSG_REQUIRED: [ MSG_NAME, MSG_TYPE ],
+//                      MSG_TYPE: MSG_OBJECT
 // };
 
 /**
  * Identifies a prompt.
  */
-struct PromptReference : AutocompleteReference {
-    std::string Name; // The name of the prompt or prompt template
+struct PromptReference : AutocompleteReference
+{
+	std::string Name; // The name of the prompt or prompt template
 
-    PromptReference() : AutocompleteReference("ref/prompt") {}
+	PromptReference() : AutocompleteReference("ref/prompt") {}
 
-    JKEY(NAMEKEY, Name, "name")
+	JKEY(NAMEKEY, Name, "name")
 
-    DEFINE_TYPE_JSON_DERIVED(PromptReference, AutocompleteReference, NAMEKEY)
+	DEFINE_TYPE_JSON_DERIVED(PromptReference, AutocompleteReference, NAMEKEY)
 };
 
 MCP_NAMESPACE_END

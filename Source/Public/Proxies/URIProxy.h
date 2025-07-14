@@ -17,7 +17,7 @@ class URL {
     std::string Href;
     std::string Origin;
 
-    URL(const std::string& InURLString) : Href(InURLString) {
+	explicit URL(const std::string& InURLString) : Href(InURLString) {
         // TODO: Proper URL parsing
         Origin = InURLString; // Simplified
     }

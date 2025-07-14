@@ -12,7 +12,7 @@ SamplingManager::SamplingManager(const std::optional<ModelPreferences>& InDefaul
 
 void SamplingManager::SetSamplingFunction(SamplingFunction InSamplingFunction)
 {
-	std::lock_guard<std::mutex> Lock(m_SamplingMutex);
+	std::lock_guard Lock(m_SamplingMutex);
 
 	m_SamplingFunction = std::move(InSamplingFunction);
 	Logger::Debug("Sampling function has been configured");
@@ -20,7 +20,7 @@ void SamplingManager::SetSamplingFunction(SamplingFunction InSamplingFunction)
 
 void SamplingManager::SetDefaultModelPreferences(const ModelPreferences& InModelPreferences)
 {
-	std::lock_guard<std::mutex> Lock(m_SamplingMutex);
+	std::lock_guard Lock(m_SamplingMutex);
 
 	m_DefaultModelPreferences = InModelPreferences;
 	Logger::Debug("Default model preferences updated");
@@ -28,14 +28,14 @@ void SamplingManager::SetDefaultModelPreferences(const ModelPreferences& InModel
 
 std::optional<ModelPreferences> SamplingManager::GetDefaultModelPreferences() const
 {
-	std::lock_guard<std::mutex> Lock(m_SamplingMutex);
+	std::lock_guard Lock(m_SamplingMutex);
 
 	return m_DefaultModelPreferences;
 }
 
 void SamplingManager::ClearDefaultModelPreferences()
 {
-	std::lock_guard<std::mutex> Lock(m_SamplingMutex);
+	std::lock_guard Lock(m_SamplingMutex);
 
 	m_DefaultModelPreferences.reset();
 	Logger::Debug("Default model preferences cleared");
@@ -43,7 +43,7 @@ void SamplingManager::ClearDefaultModelPreferences()
 
 bool SamplingManager::HasSamplingFunction() const
 {
-	std::lock_guard<std::mutex> Lock(m_SamplingMutex);
+	std::lock_guard Lock(m_SamplingMutex);
 
 	return m_SamplingFunction.has_value();
 }

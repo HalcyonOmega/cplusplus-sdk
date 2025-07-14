@@ -32,7 +32,11 @@ void MCPProtocol::SendMessage(const MessageBase& InMessage,
 {
 	m_Transport->TransmitMessage(InMessage, InConnections);
 }
-void MCPProtocol::InvalidCursor(RequestID InRequestID, const std::string_view InCursor) {}
+
+void MCPProtocol::InvalidCursor(RequestID InRequestID, const std::string_view InCursor) const
+{
+	SendMessage(ErrorInvalidParams(std::move(InRequestID), "Invalid cursor: " + std::string(InCursor)));
+}
 
 void MCPProtocol::SetupTransportRouter() const
 {

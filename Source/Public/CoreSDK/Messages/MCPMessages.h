@@ -75,14 +75,14 @@ struct InitializeRequest : RequestBase
 			CAPABILITIESKEY,
 			CLIENTINFOKEY)
 
-		explicit Params(const std::string& InProtocolVersion,
-			const ClientCapabilities& InCapabilities,
-			const Implementation& InClientInfo,
+		explicit Params(std::string InProtocolVersion,
+			ClientCapabilities InCapabilities,
+			Implementation InClientInfo,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  ProtocolVersion(InProtocolVersion),
-			  Capabilities(InCapabilities),
-			  ClientInfo(InClientInfo)
+			  ProtocolVersion(std::move(InProtocolVersion)),
+			  Capabilities(std::move(InCapabilities)),
+			  ClientInfo(std::move(InClientInfo))
 		{}
 	};
 
@@ -92,8 +92,7 @@ struct InitializeRequest : RequestBase
 // InitializeResult {
 //   MSG_DESCRIPTION: "After receiving an initialize request from the client, "
 //                   "the server sends this response.",
-//                   MSG_PROPERTIES
-//     : {
+//    MSG_PROPERTIES: {
 //         MSG_META: {
 //           MSG_ADDITIONAL_PROPERTIES: {},
 //           MSG_DESCRIPTION: "This result property is reserved by the protocol
@@ -156,15 +155,15 @@ struct InitializeResponse : ResponseBase
 			SERVERINFOKEY,
 			INSTRUCTIONSKEY)
 
-		explicit Result(const std::string& InProtocolVersion,
-			const ServerCapabilities& InCapabilities,
-			const Implementation& InServerInfo,
+		explicit Result(std::string InProtocolVersion,
+			ServerCapabilities InCapabilities,
+			Implementation InServerInfo,
 			const std::optional<std::string>& InInstructions = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),
-			  ProtocolVersion(InProtocolVersion),
-			  Capabilities(InCapabilities),
-			  ServerInfo(InServerInfo),
+			  ProtocolVersion(std::move(InProtocolVersion)),
+			  Capabilities(std::move(InCapabilities)),
+			  ServerInfo(std::move(InServerInfo)),
 			  Instructions(InInstructions)
 		{}
 	};
@@ -1353,13 +1352,13 @@ struct CreateMessageResponse : ResponseBase
 			RESPONSEROLEKEY,
 			RESPONSECONTENTKEY)
 
-		explicit Result(const std::string& InModel,
+		explicit Result(std::string  InModel,
 			const Role& InResponseRole,
 			const std::variant<TextContent, ImageContent, AudioContent>& InResponseContent,
 			const std::optional<std::variant<MCP::StopReason, std::string>>& InStopReason = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),
-			  Model(InModel),
+			  Model(std::move(InModel)),
 			  ResponseRole(InResponseRole),
 			  ResponseContent(InResponseContent),
 			  StopReason(InStopReason)
@@ -1624,7 +1623,8 @@ struct LoggingMessageNotification : NotificationBase
 
 // ProgressNotification {
 //   MSG_DESCRIPTION: "An out-of-band notification used to inform the receiver of a progress update for a
-//   long-running request.", MSG_PROPERTIES: {
+//   long-running request.",
+//   MSG_PROPERTIES: {
 //         MSG_METHOD: {MSG_CONST: MTHD_NOTIFICATIONS_PROGRESS, MSG_TYPE:
 //         MSG_STRING}, MSG_PARAMS: {
 //           MSG_PROPERTIES: {

@@ -37,10 +37,10 @@ public:
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
-	void TransmitMessage(
-		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
-	Task<JSONData> TransmitRequest(
-		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	Task<JSONData> TransmitRequest(const JSONData& InRequest,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
 
@@ -101,15 +101,15 @@ public:
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
-	void TransmitMessage(
-		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
 
 	// Server-specific methods
 	void HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
-	VoidTask HandleGetMessageEndpoint(
-		const Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse);
+	VoidTask HandleGetMessageEndpoint(const Poco::Net::HTTPServerRequest& InRequest,
+		Poco::Net::HTTPServerResponse& InResponse);
 	void RegisterSSEClient(const std::string& InClientID, Poco::Net::HTTPServerResponse& InResponse);
 	void UnregisterSSEClient(const std::string& InClientID);
 	VoidTask StreamMessagesToClient(const std::string& InClientID);
@@ -126,10 +126,10 @@ private:
 	struct SSEClient
 	{
 		std::string ClientID;
-		Poco::Net::HTTPServerResponse* Response;
-		std::ostream* Stream;
+		Poco::Net::HTTPServerResponse* Response{};
+		std::ostream* Stream{};
 		std::chrono::steady_clock::time_point ConnectedTime;
-		bool IsActive;
+		bool IsActive{ false };
 	};
 
 	std::unordered_map<std::string, std::unique_ptr<SSEClient>> m_SSEClients;

@@ -105,9 +105,9 @@ template <> struct Task<void>
 		std::exception_ptr m_Exception;
 		std::coroutine_handle<> m_Awaiter;
 
-		[[nodiscard]] Task<void> get_return_object()
+		[[nodiscard]] Task get_return_object()
 		{
-			return Task<void>{ std::coroutine_handle<promise_type>::from_promise(*this) };
+			return Task{ std::coroutine_handle<promise_type>::from_promise(*this) };
 		}
 
 		std::suspend_always initial_suspend() noexcept

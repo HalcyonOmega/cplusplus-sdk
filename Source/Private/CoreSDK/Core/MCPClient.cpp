@@ -30,7 +30,7 @@ MCPClient::MCPClient(const TransportType InTransportType,
 	std::optional<std::unique_ptr<TransportOptions>> InOptions,
 	const Implementation& InClientInfo,
 	const ClientCapabilities& InCapabilities)
-	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, std::move(InOptions)), true)
+	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, InOptions), true)
 {
 	SetClientInfo(InClientInfo);
 	SetClientCapabilities(InCapabilities);
@@ -107,7 +107,7 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 		{
 			const auto UnexpectedType = Response.Raw().value();
 			HandleRuntimeError(UnexpectedType.dump());
-		};
+		}
 	}
 	catch (const std::exception& e)
 	{
@@ -236,7 +236,7 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 
 	if (const auto& RequestParams = GetRequestParams<CreateMessageRequest::Params>(InRequest))
 	{
-		CreateMessageResponse::Result Result = m_SamplingManager->CreateMessage(RequestParams.value());
+		const CreateMessageResponse::Result Result = m_SamplingManager->CreateMessage(RequestParams.value());
 		SendMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
 		return;
 	}
