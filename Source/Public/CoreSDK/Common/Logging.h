@@ -5,7 +5,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// LoggingLevel {
+// ELoggingLevel {
 //   MSG_DESCRIPTION:"The severity of a log message.\n\nThese map to syslog message severities, as specified in
 //       RFC-5424:\nhttps://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1",
 //   MSG_ENUM: [
@@ -20,7 +20,7 @@ MCP_NAMESPACE_BEGIN
  * These map to syslog message severities, as specified in RFC-5424:
  * https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1
  */
-enum class LoggingLevel
+enum class ELoggingLevel
 {
 	Debug,
 	Info,
@@ -32,9 +32,15 @@ enum class LoggingLevel
 	Emergency
 };
 
-DEFINE_ENUM_JSON(LoggingLevel, { LoggingLevel::Debug, "debug" }, { LoggingLevel::Info, "info" },
-	{ LoggingLevel::Notice, "notice" }, { LoggingLevel::Warning, "warning" }, { LoggingLevel::Error, "error" },
-	{ LoggingLevel::Critical, "critical" }, { LoggingLevel::Alert, "alert" }, { LoggingLevel::Emergency, "emergency" })
+DEFINE_ENUM_JSON(ELoggingLevel,
+	{ ELoggingLevel::Debug, "debug" },
+	{ ELoggingLevel::Info, "info" },
+	{ ELoggingLevel::Notice, "notice" },
+	{ ELoggingLevel::Warning, "warning" },
+	{ ELoggingLevel::Error, "error" },
+	{ ELoggingLevel::Critical, "critical" },
+	{ ELoggingLevel::Alert, "alert" },
+	{ ELoggingLevel::Emergency, "emergency" })
 
 class Logger
 {
@@ -42,7 +48,7 @@ public:
 	Logger();
 	~Logger();
 
-	static void Log(const std::string& InMessage, LoggingLevel InLevel = LoggingLevel::Info);
+	static void Log(const std::string& InMessage, ELoggingLevel InLevel = ELoggingLevel::Info);
 
 	static void Debug(const std::string& InMessage);
 	static void Info(const std::string& InMessage);

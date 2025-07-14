@@ -88,23 +88,23 @@ bool IsValidJSONRPC(const JSONData& InMessage)
 	return false;
 }
 
-std::optional<MessageType> GetValidMessageType(const JSONData& InMessage)
+std::optional<EMessageType> GetValidMessageType(const JSONData& InMessage)
 {
 	if (InMessage.contains("id") && InMessage.contains("method"))
 	{
-		return MessageType::Request;
+		return EMessageType::Request;
 	}
 	if (InMessage.contains("id") && InMessage.contains("result") && !InMessage.contains("error"))
 	{
-		return MessageType::Response;
+		return EMessageType::Response;
 	}
 	if (InMessage.contains("id") && InMessage.contains("error"))
 	{
-		return MessageType::Error;
+		return EMessageType::Error;
 	}
 	if (InMessage.contains("method") && !InMessage.contains("id"))
 	{
-		return MessageType::Notification;
+		return EMessageType::Notification;
 	}
 	return std::nullopt;
 }

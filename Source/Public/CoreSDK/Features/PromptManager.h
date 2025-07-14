@@ -30,6 +30,7 @@ public:
 	/**
 	 * Add a prompt to the manager.
 	 * @param InPrompt The prompt to add
+	 * @param InFunction
 	 * @return True if the prompt was added, false if a prompt with the same name already exists
 	 */
 	bool AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction);
@@ -43,8 +44,7 @@ public:
 
 	/**
 	 * Get prompt by name.
-	 * @param InName The name of the prompt to retrieve
-	 * @param InArguments The arguments to use for templating the prompt
+	 * @param InRequest
 	 * @return The prompt if found, nullopt if the prompt does not exist or the arguments are
 	 * invalid
 	 */

@@ -17,8 +17,8 @@ MCP_NAMESPACE_BEGIN
 class MCPServer : public MCPProtocol
 {
 public:
-	MCPServer(TransportType InTransportType,
-		std::optional<std::unique_ptr<TransportOptions>> InOptions,
+	MCPServer(ETransportType InTransportType,
+		const std::optional<std::unique_ptr<TransportOptions>>& InOptions,
 		const Implementation& InServerInfo,
 		const ServerCapabilities& InCapabilities);
 

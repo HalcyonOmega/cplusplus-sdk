@@ -3,11 +3,11 @@
 MCP_NAMESPACE_BEGIN
 
 // ITransport implementation
-[[nodiscard]] bool ITransport::IsConnected() const { return m_CurrentState == TransportState::Connected; }
+[[nodiscard]] bool ITransport::IsConnected() const { return m_CurrentState == ETransportState::Connected; }
 
-[[nodiscard]] TransportState ITransport::GetState() const { return m_CurrentState; }
+[[nodiscard]] ETransportState ITransport::GetState() const { return m_CurrentState; }
 
-void ITransport::SetState(const TransportState InNewState)
+void ITransport::SetState(const ETransportState InNewState)
 {
 	m_CurrentState = InNewState;
 	// TODO: Implement state change handler
@@ -56,8 +56,8 @@ void ITransport::UnregisterConnection(const ConnectionID& InConnectionID) { m_Ac
 // }
 
 // TransportFactory implementation
-std::unique_ptr<ITransport> TransportFactory::CreateTransport(
-	const TransportType InType, const TransportSide InSide,
+std::unique_ptr<ITransport> TransportFactory::CreateTransport(const ETransportType InType,
+	const ETransportSide InSide,
 	const std::optional<std::unique_ptr<TransportOptions>>& InOptions)
 {
 	(void)InSide; // TODO: Use transport side parameter
@@ -68,7 +68,7 @@ std::unique_ptr<ITransport> TransportFactory::CreateTransport(
 
 	switch (InType)
 	{
-		case TransportType::Stdio:
+		case ETransportType::Stdio:
 		{
 			const auto* StdioOptions = dynamic_cast<StdioClientTransportOptions*>(InOptions->get());
 			if (StdioOptions == nullptr)
@@ -77,7 +77,7 @@ std::unique_ptr<ITransport> TransportFactory::CreateTransport(
 			}
 			return CreateStdioClientTransport(*StdioOptions);
 		}
-		case TransportType::StreamableHTTP:
+		case ETransportType::StreamableHTTP:
 		{
 			const auto* HTTPOptions = dynamic_cast<HTTPTransportOptions*>(InOptions->get());
 			if (HTTPOptions == nullptr)
@@ -94,14 +94,14 @@ std::unique_ptr<ITransport> TransportFactory::CreateTransport(
 std::unique_ptr<ITransport> TransportFactory::CreateStdioClientTransport(const StdioClientTransportOptions& InOptions)
 {
 	// Forward declaration will be implemented in StdioClientTransport.cpp
-	extern std::unique_ptr<ITransport> CreateStdioClientTransportImpl(const StdioClientTransportOptions& InOptions);
+	extern std::unique_ptr<ITransport> CreateStdioClientTransportImpl(const StdioClientTransportOptions& InImplOpts);
 	return CreateStdioClientTransportImpl(InOptions);
 }
 
 std::unique_ptr<ITransport> TransportFactory::CreateHTTPTransport(const HTTPTransportOptions& InOptions)
 {
 	// Forward declaration - will be implemented in HTTPTransport.cpp
-	extern std::unique_ptr<ITransport> CreateHTTPTransportImpl(const HTTPTransportOptions& InOptions);
+	extern std::unique_ptr<ITransport> CreateHTTPTransportImpl(const HTTPTransportOptions& InImplOpts);
 	return CreateHTTPTransportImpl(InOptions);
 }
 

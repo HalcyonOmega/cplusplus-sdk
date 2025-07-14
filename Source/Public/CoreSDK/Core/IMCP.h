@@ -18,7 +18,7 @@ MCP_NAMESPACE_BEGIN
 static constexpr double DEFAULT_TEMPERATURE{ 0.7 };
 
 // Protocol state
-enum class MCPProtocolState
+enum class EProtocolState
 {
 	Uninitialized,
 	Initializing,
@@ -27,12 +27,12 @@ enum class MCPProtocolState
 	Shutdown
 };
 
-DEFINE_ENUM_JSON(MCPProtocolState,
-	{ { MCPProtocolState::Uninitialized, "uninitialized" },
-		{ MCPProtocolState::Initializing, "initializing" },
-		{ MCPProtocolState::Initialized, "initialized" },
-		{ MCPProtocolState::Error, "error" },
-		{ MCPProtocolState::Shutdown, "shutdown" } });
+DEFINE_ENUM_JSON(EProtocolState,
+	{ { EProtocolState::Uninitialized, "uninitialized" },
+		{ EProtocolState::Initializing, "initializing" },
+		{ EProtocolState::Initialized, "initialized" },
+		{ EProtocolState::Error, "error" },
+		{ EProtocolState::Shutdown, "shutdown" } });
 
 // Base protocol handler
 class MCPProtocol
@@ -45,8 +45,8 @@ public:
 	virtual VoidTask Start() = 0;
 	virtual VoidTask Stop() = 0;
 	[[nodiscard]] bool IsInitialized() const;
-	[[nodiscard]] MCPProtocolState GetState() const;
-	void SetState(MCPProtocolState InNewState);
+	[[nodiscard]] EProtocolState GetState() const;
+	void SetState(EProtocolState InNewState);
 	[[nodiscard]] bool IsConnected() const;
 
 	// Core protocol operations
@@ -76,7 +76,7 @@ public:
 	[[nodiscard]] const ClientCapabilities& GetClientCapabilities() const { return m_ClientCapabilities; }
 
 	// Utilities
-	void InvalidCursor(RequestID InRequestID, const std::string_view InCursor) const;
+	void InvalidCursor(RequestID InRequestID, std::string_view InCursor) const;
 
 	// Response Task
 	template <ConcreteResponse T> struct ResponseTask
@@ -268,7 +268,7 @@ public:
 	}
 
 protected:
-	MCPProtocolState m_State;
+	EProtocolState m_State;
 	std::shared_ptr<ITransport> m_Transport;
 	std::shared_ptr<MessageManager> m_MessageManager;
 

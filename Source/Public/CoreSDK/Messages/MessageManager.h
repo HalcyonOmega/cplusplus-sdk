@@ -102,17 +102,17 @@ public:
 		{
 			const JSONData Message = JSONData::parse(InMessage);
 
-			if (std::optional<MessageType> MessageType = GetValidMessageType(Message))
+			if (std::optional<EMessageType> MessageType = GetValidMessageType(Message))
 			{
 				switch (MessageType.value())
 				{
-					case MessageType::Request:
+					case EMessageType::Request:
 						return RouteRequest(Message);
-					case MessageType::Response:
+					case EMessageType::Response:
 						return RouteResponse(Message);
-					case MessageType::Notification:
+					case EMessageType::Notification:
 						return RouteNotification(Message);
-					case MessageType::Error:
+					case EMessageType::Error:
 						return RouteResponse(Message);
 					default:
 						HandleRuntimeError(

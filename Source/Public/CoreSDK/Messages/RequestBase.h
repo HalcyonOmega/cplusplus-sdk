@@ -75,19 +75,17 @@ struct RequestParams
 	{
 		std::optional<MCP::ProgressToken> ProgressToken{
 			std::nullopt
-		}; // If specified, the caller is requesting out-of-band
-		   // progress notifications for this request (as represented by
-		   // notifications/progress). The value of this parameter is an opaque
-		   // token that will be attached to any subsequent notifications. The
-		   // receiver is not obligated to provide these notifications.
+		}; // If specified, the caller is requesting out-of-band progress notifications for this request (as represented
+		   // by notifications/progress). The value of this parameter is an opaque token that will be attached to any
+		   // subsequent notifications. The receiver is not obligated to provide these notifications.
 
 		JKEY(PROGRESS_TOKENKEY, ProgressToken, "progressToken")
 
 		DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
 
 		RequestParamsMeta() = default;
-		explicit RequestParamsMeta(const std::optional<MCP::ProgressToken>& InProgressToken = std::nullopt) :
-			ProgressToken(InProgressToken)
+		explicit RequestParamsMeta(const std::optional<MCP::ProgressToken>& InProgressToken = std::nullopt)
+			: ProgressToken(InProgressToken)
 		{}
 	};
 
@@ -131,8 +129,9 @@ struct PaginatedRequestParams : RequestParams
 
 	PaginatedRequestParams() = default;
 	explicit PaginatedRequestParams(const std::optional<std::string>& InCursor = std::nullopt,
-		const std::optional<RequestParamsMeta>& InMeta = std::nullopt) :
-		RequestParams(InMeta), Cursor(InCursor)
+		const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
+		: RequestParams(InMeta),
+		  Cursor(InCursor)
 	{}
 };
 
@@ -180,12 +179,18 @@ struct RequestBase : MessageBase
 	DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
 	RequestBase() = default;
-	explicit RequestBase(const std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt) :
-		MessageBase(), ID(GenerateUUID()), Method(InMethod), ParamsData(std::move(InParams))
+	explicit RequestBase(const std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
+		: MessageBase(),
+		  ID(GenerateUUID()),
+		  Method(InMethod),
+		  ParamsData(std::move(InParams))
 	{}
 
-	RequestBase(RequestID InID, std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt) :
-		MessageBase(), ID(std::move(InID)), Method(InMethod), ParamsData(std::move(InParams))
+	RequestBase(RequestID InID, std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
+		: MessageBase(),
+		  ID(std::move(InID)),
+		  Method(InMethod),
+		  ParamsData(std::move(InParams))
 	{}
 
 	[[nodiscard]] RequestID GetRequestID() const { return ID; }

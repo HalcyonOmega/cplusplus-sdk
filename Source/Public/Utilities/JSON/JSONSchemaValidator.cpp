@@ -1,7 +1,5 @@
 #include "JSONSchemaValidator.h"
 
-#include <algorithm>
-#include <ranges>
 #include <string>
 
 MCP_NAMESPACE_BEGIN
@@ -114,10 +112,9 @@ JSONSchemaValidator::ValidationResult JSONSchemaValidator::ValidateObjectType(co
 			{
 				// For simplicity, we'll do basic validation here
 				// In a full implementation, we'd recursively validate nested schemas
-				const auto& propSchema = InSchema.Properties->at(key);
 
 				// Basic type checking for property values
-				if (propSchema.contains("type"))
+				if (const auto& propSchema = InSchema.Properties->at(key); propSchema.contains("type"))
 				{
 					const std::string expectedType = propSchema.at("type").get<std::string>();
 					if (!IsValidType(value, expectedType))

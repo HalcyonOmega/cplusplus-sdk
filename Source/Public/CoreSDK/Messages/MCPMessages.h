@@ -10,6 +10,7 @@
 #include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Implementation.h"
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/ProtocolInfo.h"
 #include "CoreSDK/Common/Roles.h"
 #include "CoreSDK/Features/CompletionBase.h"
 #include "CoreSDK/Features/PromptBase.h"
@@ -59,11 +60,11 @@ struct InitializeRequest : RequestBase
 {
 	struct Params : RequestParams
 	{
-		std::string ProtocolVersion;	 // The latest version of the Model Context Protocol
-										 // that the client supports. The client MAY decide to
-										 // support older versions as well.
-		ClientCapabilities Capabilities; // The capabilities of the client.
-		Implementation ClientInfo;		 // The implementation of the client.
+		EProtocolVersion ProtocolVersion; // The latest version of the Model Context Protocol
+										  // that the client supports. The client MAY decide to
+										  // support older versions as well.
+		ClientCapabilities Capabilities;  // The capabilities of the client.
+		Implementation ClientInfo;		  // The implementation of the client.
 
 		JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
 		JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
@@ -75,7 +76,7 @@ struct InitializeRequest : RequestBase
 			CAPABILITIESKEY,
 			CLIENTINFOKEY)
 
-		explicit Params(std::string InProtocolVersion,
+		explicit Params(EProtocolVersion InProtocolVersion,
 			ClientCapabilities InCapabilities,
 			Implementation InClientInfo,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
@@ -130,7 +131,7 @@ struct InitializeResponse : ResponseBase
 {
 	struct Result : ResultParams
 	{
-		std::string ProtocolVersion;							 // The version of the Model Context Protocol that the
+		EProtocolVersion ProtocolVersion;						 // The version of the Model Context Protocol that the
 																 // server wants to use. This may not match the version
 																 // that the client requested. If the client cannot
 																 // support this version, it MUST disconnect.
@@ -155,7 +156,7 @@ struct InitializeResponse : ResponseBase
 			SERVERINFOKEY,
 			INSTRUCTIONSKEY)
 
-		explicit Result(std::string InProtocolVersion,
+		explicit Result(EProtocolVersion InProtocolVersion,
 			ServerCapabilities InCapabilities,
 			Implementation InServerInfo,
 			const std::optional<std::string>& InInstructions = std::nullopt,
@@ -1220,7 +1221,7 @@ struct CreateMessageRequest : RequestBase
 			std::nullopt
 		}; // An optional system prompt the server wants to use for
 		   // sampling. The client MAY modify or omit this prompt.
-		std::optional<IncludeContext> IncludeContext{
+		std::optional<EIncludeContext> IncludeContext{
 			std::nullopt
 		}; // A request to include context from one or more
 		   // MCP servers (including the caller), to be attached to
@@ -1259,7 +1260,7 @@ struct CreateMessageRequest : RequestBase
 		explicit Params(const std::vector<SamplingMessage>& InMessages,
 			const int64_t& InMaxTokens,
 			const std::optional<std::string>& InSystemPrompt = std::nullopt,
-			const std::optional<MCP::IncludeContext>& InIncludeContext = std::nullopt,
+			const std::optional<MCP::EIncludeContext>& InIncludeContext = std::nullopt,
 			const std::optional<double>& InTemperature = std::nullopt,
 			const std::optional<std::vector<std::string>>& InStopSequences = std::nullopt,
 			const std::optional<MCP::ModelPreferences>& InModelPreferences = std::nullopt,
@@ -1313,7 +1314,7 @@ struct CreateMessageRequest : RequestBase
 //           MSG_DESCRIPTION: "The name of the model that generated the message.",
 //           MSG_TYPE: MSG_STRING
 //         },
-//         MSG_ROLE: {"$ref": "#/definitions/Role"},
+//         MSG_ROLE: {"$ref": "#/definitions/ERole"},
 //         "stopReason": {
 //           MSG_DESCRIPTION: "The reason why sampling stopped, if known.",
 //           MSG_TYPE: MSG_STRING
@@ -1335,10 +1336,10 @@ struct CreateMessageResponse : ResponseBase
 {
 	struct Result : ResultParams
 	{
-		std::string Model;		// The name of the model that generated the message.
-		MCP::Role ResponseRole; // The role of the response.
+		std::string Model;		 // The name of the model that generated the message.
+		MCP::ERole ResponseRole; // The role of the response.
 		std::variant<TextContent, ImageContent, AudioContent> ResponseContent; // The content of the response.
-		std::optional<std::variant<MCP::StopReason, std::string>> StopReason{
+		std::optional<std::variant<MCP::EStopReason, std::string>> StopReason{
 			std::nullopt
 		}; // The reason why sampling stopped, if known.
 
@@ -1352,10 +1353,10 @@ struct CreateMessageResponse : ResponseBase
 			RESPONSEROLEKEY,
 			RESPONSECONTENTKEY)
 
-		explicit Result(std::string  InModel,
-			const Role& InResponseRole,
+		explicit Result(std::string InModel,
+			const ERole& InResponseRole,
 			const std::variant<TextContent, ImageContent, AudioContent>& InResponseContent,
-			const std::optional<std::variant<MCP::StopReason, std::string>>& InStopReason = std::nullopt,
+			const std::optional<std::variant<MCP::EStopReason, std::string>>& InStopReason = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),
 			  Model(std::move(InModel)),
@@ -1515,7 +1516,7 @@ struct RootsListChangedNotification : NotificationBase
 //           MSG_STRING}, MSG_PARAMS: {
 //             MSG_PROPERTIES: {
 //               MSG_LEVEL: {
-//                 "$ref": "#/definitions/LoggingLevel",
+//                 "$ref": "#/definitions/ELoggingLevel",
 //                 MSG_DESCRIPTION: "The level of logging that the client wants to receive from the server. The
 //                 server should send all logs at this level and higher (i.e., more severe) to the client as
 //                 notifications/message."
@@ -1536,16 +1537,16 @@ struct SetLevelRequest : RequestBase
 {
 	struct Params : RequestParams
 	{
-		LoggingLevel Level; // The level of logging that the client wants to receive
-							// from the server. The server should send all logs at
-							// this level and higher (i.e., more severe) to the
-							// client as notifications/messages.
+		ELoggingLevel Level; // The level of logging that the client wants to receive
+							 // from the server. The server should send all logs at
+							 // this level and higher (i.e., more severe) to the
+							 // client as notifications/messages.
 
 		JKEY(LEVELKEY, Level, "level")
 
 		DEFINE_TYPE_JSON_DERIVED(SetLevelRequest::Params, RequestParams, LEVELKEY)
 
-		explicit Params(const LoggingLevel& InLevel, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
+		explicit Params(const ELoggingLevel& InLevel, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
 			  Level(InLevel)
 		{}
@@ -1569,7 +1570,7 @@ struct SetLevelRequest : RequestBase
 //                 serializable type is allowed here."
 //               },
 //               MSG_LEVEL: {
-//                 "$ref": "#/definitions/LoggingLevel",
+//                 "$ref": "#/definitions/ELoggingLevel",
 //                 MSG_DESCRIPTION: "The severity of this log message."
 //               },
 //               MSG_LOGGER: {
@@ -1594,7 +1595,7 @@ struct LoggingMessageNotification : NotificationBase
 {
 	struct Params : NotificationParams
 	{
-		LoggingLevel Level;								   // The severity of this log message.
+		ELoggingLevel Level;							   // The severity of this log message.
 		JSONData Data;									   // The data to be logged, such as a string message or an
 														   // object. Any JSON serializable type is allowed here.
 		std::optional<std::string> Logger{ std::nullopt }; // An optional name of the logger issuing this message.
@@ -1605,7 +1606,7 @@ struct LoggingMessageNotification : NotificationBase
 
 		DEFINE_TYPE_JSON_DERIVED(LoggingMessageNotification::Params, NotificationParams, LEVELKEY, LOGGERKEY, DATAKEY)
 
-		explicit Params(const LoggingLevel& InLevel,
+		explicit Params(const ELoggingLevel& InLevel,
 			const JSONData& InData,
 			const std::optional<std::string>& InLogger = std::nullopt,
 			const std::optional<NotificationParamsMeta>& InMeta = std::nullopt)

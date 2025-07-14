@@ -15,7 +15,7 @@
 MCP_NAMESPACE_BEGIN
 
 // Transport events
-enum class TransportState : uint8_t
+enum class ETransportState : uint8_t
 {
 	Disconnected,
 	Connecting,
@@ -74,18 +74,18 @@ public:
 
 	virtual VoidTask Connect() = 0;
 	virtual VoidTask Disconnect() = 0;
-	virtual void TransmitMessage(
-		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+	virtual void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 		= 0;
-	virtual Task<JSONData> TransmitRequest(
-		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+	virtual Task<JSONData> TransmitRequest(const JSONData& InRequest,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 		= 0;
 	[[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
 	// Default Implementations
 	[[nodiscard]] bool IsConnected() const;
-	[[nodiscard]] TransportState GetState() const;
-	void SetState(TransportState InNewState);
+	[[nodiscard]] ETransportState GetState() const;
+	void SetState(ETransportState InNewState);
 
 	void SetMessageRouter(std::function<void(const JSONData&)> InRouter);
 
@@ -98,19 +98,19 @@ public:
 	[[nodiscard]] std::vector<ConnectionID> GetActiveConnections() const;
 
 private:
-	TransportState m_CurrentState{ TransportState::Disconnected };
+	ETransportState m_CurrentState{ ETransportState::Disconnected };
 	std::function<void(const JSONData&)> m_MessageRouter;
 	std::unordered_set<ConnectionID> m_ActiveConnections;
 };
 
 // Transport factory
-enum class TransportType : uint8_t
+enum class ETransportType : uint8_t
 {
 	Stdio,
 	StreamableHTTP
 };
 
-enum class TransportSide : uint8_t
+enum class ETransportSide : uint8_t
 {
 	Client,
 	Server
@@ -119,8 +119,9 @@ enum class TransportSide : uint8_t
 class TransportFactory
 {
 public:
-	[[nodiscard]] static std::unique_ptr<ITransport> CreateTransport(
-		TransportType InType, TransportSide InSide, const std::optional<std::unique_ptr<TransportOptions>>& InOptions);
+	[[nodiscard]] static std::unique_ptr<ITransport> CreateTransport(ETransportType InType,
+		ETransportSide InSide,
+		const std::optional<std::unique_ptr<TransportOptions>>& InOptions);
 
 	// Convenience factory methods
 	[[nodiscard]] static std::unique_ptr<ITransport> CreateStdioClientTransport(

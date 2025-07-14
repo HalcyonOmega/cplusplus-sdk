@@ -37,7 +37,7 @@ bool RootManager::AddRoot(const MCP::URIFile& InURI, const std::optional<std::st
 	return AddRoot(CreateRoot(InURI, InName));
 }
 
-bool RootManager::RemoveRoot(const Root& InRoot) { RemoveRoot(InRoot.URI); }
+bool RootManager::RemoveRoot(const Root& InRoot) { return RemoveRoot(InRoot.URI); }
 
 bool RootManager::RemoveRoot(const MCP::URIFile& InURI)
 {
@@ -47,7 +47,9 @@ bool RootManager::RemoveRoot(const MCP::URIFile& InURI)
 	if (const auto Iter = m_Roots.find(Key); Iter != m_Roots.end())
 	{
 		m_Roots.erase(Iter);
+		return true;
 	}
+	return false;
 }
 
 std::optional<Root> RootManager::GetRoot(const MCP::URIFile& InURI) const

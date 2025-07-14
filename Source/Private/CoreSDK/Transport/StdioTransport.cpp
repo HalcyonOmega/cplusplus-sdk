@@ -18,7 +18,7 @@ StdioClientTransport::StdioClientTransport(StdioClientTransportOptions  InOption
     : m_Options(std::move(InOptions)) {}
 
 StdioClientTransport::~StdioClientTransport() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (m_CurrentState != ETransportState::Disconnected) {
         try {
             Disconnect().GetResult();
         } catch (...) {
@@ -28,13 +28,13 @@ StdioClientTransport::~StdioClientTransport() {
 }
 
 VoidTask StdioClientTransport::Connect() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (m_CurrentState != ETransportState::Disconnected) {
         HandleRuntimeError("Transport already started or in progress");
         co_return;
     }
 
     try {
-        SetState(TransportState::Connecting);
+        SetState(ETransportState::Connecting);
 
         // Create pipes for communication
         m_StdinPipe = std::make_unique<Poco::Pipe>();
@@ -64,9 +64,9 @@ VoidTask StdioClientTransport::Connect() {
         m_ShouldStop = false;
         m_ReadThread.start(*this);
 
-        SetState(TransportState::Connected);
+        SetState(ETransportState::Connected);
     } catch (const std::exception& e) {
-        SetState(TransportState::Error);
+        SetState(ETransportState::Error);
         HandleRuntimeError("Failed to start stdio transport: " + std::string(e.what()));
         co_return;
     }
@@ -75,7 +75,7 @@ VoidTask StdioClientTransport::Connect() {
 }
 
 VoidTask StdioClientTransport::Disconnect() {
-    if (m_CurrentState == TransportState::Disconnected) { co_return; }
+    if (m_CurrentState == ETransportState::Disconnected) { co_return; }
 
     try {
         m_ShouldStop = true;
@@ -87,9 +87,9 @@ VoidTask StdioClientTransport::Disconnect() {
         if (m_ReadThread.isRunning()) { m_ReadThread.join(); }
 
         Cleanup();
-        SetState(TransportState::Disconnected);
+        SetState(ETransportState::Disconnected);
     } catch (const std::exception& e) {
-        SetState(TransportState::Error);
+        SetState(ETransportState::Error);
         HandleRuntimeError("Error stopping stdio transport: " + std::string(e.what()));
     }
 
@@ -189,7 +189,7 @@ void StdioClientTransport::Cleanup() {
 StdioServerTransport::StdioServerTransport() {}
 
 StdioServerTransport::~StdioServerTransport() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (m_CurrentState != ETransportState::Disconnected) {
         try {
             Disconnect().await_resume();
         } catch (...) {
@@ -199,21 +199,21 @@ StdioServerTransport::~StdioServerTransport() {
 }
 
 VoidTask StdioServerTransport::Connect() {
-    if (m_CurrentState != TransportState::Disconnected) {
+    if (m_CurrentState != ETransportState::Disconnected) {
         HandleRuntimeError("Transport already started");
         co_return;
     }
 
     try {
-        SetState(TransportState::Connecting);
+        SetState(ETransportState::Connecting);
 
         // Server uses stdin/stdout directly
         m_ShouldStop = false;
         m_ReadThread.start(*this);
 
-        SetState(TransportState::Connected);
+        SetState(ETransportState::Connected);
     } catch (const std::exception& e) {
-        SetState(TransportState::Error);
+        SetState(ETransportState::Error);
         if (m_ErrorResponseHandler) {
             m_ErrorResponseHandler("Failed to start stdio server transport: "
                                    + std::string(e.what()));
@@ -225,7 +225,7 @@ VoidTask StdioServerTransport::Connect() {
 }
 
 VoidTask StdioServerTransport::Disconnect() {
-    if (m_CurrentState == TransportState::Disconnected) { co_return; }
+    if (m_CurrentState == ETransportState::Disconnected) { co_return; }
 
     try {
         m_ShouldStop = true;
@@ -243,9 +243,9 @@ VoidTask StdioServerTransport::Disconnect() {
             m_PendingRequests.clear();
         }
 
-        SetState(TransportState::Disconnected);
+        SetState(ETransportState::Disconnected);
     } catch (const std::exception& e) {
-        SetState(TransportState::Error);
+        SetState(ETransportState::Error);
         HandleRuntimeError("Error stopping stdio server transport: " + std::string(e.what()));
     }
 

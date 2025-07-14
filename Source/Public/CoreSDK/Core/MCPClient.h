@@ -11,8 +11,8 @@ MCP_NAMESPACE_BEGIN
 class MCPClient : public MCPProtocol
 {
 public:
-	MCPClient(TransportType InTransportType,
-		std::optional<std::unique_ptr<TransportOptions>> InOptions,
+	MCPClient(ETransportType InTransportType,
+		const std::optional<std::unique_ptr<TransportOptions>>& InOptions,
 		const Implementation& InClientInfo,
 		const ClientCapabilities& InCapabilities);
 

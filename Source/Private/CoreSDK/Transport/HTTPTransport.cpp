@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "CoreSDK/Common/RuntimeError.h"
+#include "CoreSDK/Messages/MCPMessages.h"
 #include "Poco/Net/HTTPServerRequest.h"
 #include "Poco/Net/HTTPServerResponse.h"
 #include "Utilities/JSON/JSONMessages.h"
@@ -20,7 +21,7 @@ HTTPTransportClient::HTTPTransportClient(HTTPTransportOptions InOptions) : ITran
 
 HTTPTransportClient::~HTTPTransportClient() noexcept
 {
-	if (GetState() != TransportState::Disconnected)
+	if (GetState() != ETransportState::Disconnected)
 	{
 		try
 		{
@@ -35,7 +36,7 @@ HTTPTransportClient::~HTTPTransportClient() noexcept
 
 VoidTask HTTPTransportClient::Connect()
 {
-	if (GetState() != TransportState::Disconnected)
+	if (GetState() != ETransportState::Disconnected)
 	{
 		HandleRuntimeError("Transport already started or in progress");
 		co_return;
@@ -43,15 +44,15 @@ VoidTask HTTPTransportClient::Connect()
 
 	try
 	{
-		SetState(TransportState::Connecting);
+		SetState(ETransportState::Connecting);
 
 		co_await ConnectToServer();
 
-		SetState(TransportState::Connected);
+		SetState(ETransportState::Connected);
 	}
 	catch (const std::exception& e)
 	{
-		SetState(TransportState::Error);
+		SetState(ETransportState::Error);
 		HandleRuntimeError("Failed to start HTTP transport: " + std::string(e.what()));
 		co_return;
 	}
@@ -61,7 +62,7 @@ VoidTask HTTPTransportClient::Connect()
 
 VoidTask HTTPTransportClient::Disconnect()
 {
-	if (GetState() == TransportState::Disconnected)
+	if (GetState() == ETransportState::Disconnected)
 	{
 		co_return;
 	}
@@ -77,11 +78,11 @@ VoidTask HTTPTransportClient::Disconnect()
 		}
 
 		Cleanup();
-		SetState(TransportState::Disconnected);
+		SetState(ETransportState::Disconnected);
 	}
 	catch (const std::exception& Except)
 	{
-		SetState(TransportState::Error);
+		SetState(ETransportState::Error);
 		HandleRuntimeError("Error stopping HTTP transport: " + std::string(Except.what()));
 	}
 
@@ -113,8 +114,7 @@ VoidTask HTTPTransportClient::ConnectToServer()
 		Request.setContentType("application/json");
 		Request.set("Accept", "text/event-stream");
 
-		// TODO: @HalcyonOmega Update this to use the actual ping type
-		const JSONData PingMessage = { { "jsonrpc", "2.0" }, { "method", "ping" }, { "id", "connection_test" } };
+		const JSONData PingMessage = PingRequest{};
 
 		const std::string Body = PingMessage.dump();
 		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
@@ -291,12 +291,12 @@ Poco::Net::HTTPRequestHandler* MCPHTTPRequestHandlerFactory::createRequestHandle
 // HTTPTransportServer Implementation
 HTTPTransportServer::HTTPTransportServer(HTTPTransportOptions InOptions) : m_Options(std::move(InOptions))
 {
-	SetState(TransportState::Disconnected);
+	SetState(ETransportState::Disconnected);
 }
 
 HTTPTransportServer::~HTTPTransportServer()
 {
-	if (GetState() != TransportState::Disconnected)
+	if (GetState() != ETransportState::Disconnected)
 	{
 		try
 		{
@@ -311,14 +311,14 @@ HTTPTransportServer::~HTTPTransportServer()
 
 VoidTask HTTPTransportServer::Connect()
 {
-	if (GetState() != TransportState::Disconnected)
+	if (GetState() != ETransportState::Disconnected)
 	{
 		HandleRuntimeError("Transport already started");
 	}
 
 	try
 	{
-		SetState(TransportState::Connecting);
+		SetState(ETransportState::Connecting);
 
 		// Create server socket
 		m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
@@ -334,11 +334,11 @@ VoidTask HTTPTransportServer::Connect()
 		// Start the server
 		m_HTTPServer->start();
 
-		SetState(TransportState::Connected);
+		SetState(ETransportState::Connected);
 	}
 	catch (const std::exception& e)
 	{
-		SetState(TransportState::Error);
+		SetState(ETransportState::Error);
 		HandleRuntimeError("Failed to start HTTP server transport: " + std::string(e.what()));
 	}
 
@@ -347,7 +347,7 @@ VoidTask HTTPTransportServer::Connect()
 
 VoidTask HTTPTransportServer::Disconnect()
 {
-	if (GetState() == TransportState::Disconnected)
+	if (GetState() == ETransportState::Disconnected)
 	{
 		co_return;
 	}
@@ -372,23 +372,18 @@ VoidTask HTTPTransportServer::Disconnect()
 
 		// Clear pending requests
 		{
-			std::lock_guard Lock(m_RequestsMutex);
-			for (const auto& request : m_PendingRequests | std::views::values)
-			{
-				request->Promise.set_exception(std::make_exception_ptr(std::runtime_error("Server stopped")));
-			}
-			m_PendingRequests.clear();
+			m_MessageManager->ClearPendingRequests();
 		}
 
 		m_HTTPServer.reset();
 		m_HandlerFactory.reset();
 		m_ServerSocket.reset();
 
-		SetState(TransportState::Disconnected);
+		SetState(ETransportState::Disconnected);
 	}
 	catch (const std::exception& Except)
 	{
-		SetState(TransportState::Error);
+		SetState(ETransportState::Error);
 		HandleRuntimeError("Error stopping HTTP server transport: " + std::string(Except.what()));
 	}
 
@@ -454,7 +449,7 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 			InResponse.set("Connection", "keep-alive");
 			InResponse.set("Access-Control-Allow-Origin", "*");
 
-			std::string ClientID = GenerateUUID();
+			const std::string ClientID = GenerateUUID();
 			RegisterSSEClient(ClientID, InResponse);
 
 			// Keep connection alive
@@ -559,7 +554,7 @@ void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 		{
 			if (Iterator->second->IsActive && Iterator->second->Stream != nullptr)
 			{
-				*(Iterator->second->Stream) << MessageStr;
+				*Iterator->second->Stream << MessageStr;
 				Iterator->second->Stream->flush();
 				++Iterator;
 			}

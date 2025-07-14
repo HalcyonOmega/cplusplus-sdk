@@ -82,8 +82,9 @@ Task<bool> OAuth2AuthProvider::ValidateToken(const std::string& InToken)
 
 		co_return isValid;
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& Except)
 	{
+		(void)Except;
 		co_return false;
 	}
 }
@@ -102,8 +103,7 @@ Task<AuthResult> OAuth2AuthProvider::AuthorizeRequest(const std::string& InMetho
 		}
 
 		// Validate token
-		bool isValid = co_await ValidateToken(InToken);
-		if (!isValid)
+		if (const bool isValid = co_await ValidateToken(InToken); !isValid)
 		{
 			result.ErrorMessage = "Invalid or expired token";
 			co_return result;
@@ -212,7 +212,7 @@ BearerTokenAuthProvider::BearerTokenAuthProvider(
 
 Task<bool> BearerTokenAuthProvider::ValidateToken(const std::string& InToken)
 {
-	co_return m_ValidTokens.find(InToken) != m_ValidTokens.end();
+	co_return m_ValidTokens.contains(InToken);
 }
 
 Task<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string& InMethod, const std::string& InToken)
@@ -241,8 +241,7 @@ Task<AuthResult> BearerTokenAuthProvider::AuthorizeRequest(const std::string& In
 		result.Scopes = iter->second;
 
 		// Check scopes
-		auto requiredScopes = AuthUtils::GetRequiredScopes(InMethod);
-		if (!requiredScopes.empty())
+		if (const auto requiredScopes = AuthUtils::GetRequiredScopes(InMethod); !requiredScopes.empty())
 		{
 			const std::unordered_set<std::string> clientScopes(result.Scopes.begin(), result.Scopes.end());
 			bool hasRequiredScope = false;

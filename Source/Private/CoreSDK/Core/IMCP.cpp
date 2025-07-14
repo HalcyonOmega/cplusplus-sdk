@@ -1,22 +1,20 @@
 #include "CoreSDK/Core/IMCP.h"
 
-#include "CoreSDK/Messages/NotificationBase.h"
-
 MCP_NAMESPACE_BEGIN
 
 MCPProtocol::MCPProtocol(std::unique_ptr<ITransport> InTransport, const bool InWarnOnDuplicateMessageHandlers)
-	: m_State{ MCPProtocolState::Uninitialized },
+	: m_State{ EProtocolState::Uninitialized },
 	  m_Transport{ std::move(InTransport) },
 	  m_MessageManager{ std::make_unique<MessageManager>(InWarnOnDuplicateMessageHandlers) }
 {
 	SetupTransportRouter();
 }
 
-bool MCPProtocol::IsInitialized() const { return m_State == MCPProtocolState::Initialized; }
+bool MCPProtocol::IsInitialized() const { return m_State == EProtocolState::Initialized; }
 
-MCPProtocolState MCPProtocol::GetState() const { return m_State; }
+EProtocolState MCPProtocol::GetState() const { return m_State; }
 
-void MCPProtocol::SetState(const MCPProtocolState InNewState) { m_State = InNewState; }
+void MCPProtocol::SetState(const EProtocolState InNewState) { m_State = InNewState; }
 
 bool MCPProtocol::IsConnected() const { return m_Transport->IsConnected(); }
 
@@ -25,7 +23,11 @@ Task<PingResponse> MCPProtocol::Ping(const PingRequest& InRequest)
 	co_return PingResponse{ InRequest.GetRequestID() };
 }
 
-void MCPProtocol::ValidateProtocolVersion(const std::string& InVersion) {}
+void MCPProtocol::ValidateProtocolVersion(const std::string& InVersion)
+{
+	// TODO: @HalcyonOmega
+	(void)InVersion;
+}
 
 void MCPProtocol::SendMessage(const MessageBase& InMessage,
 	const std::optional<std::vector<ConnectionID>>& InConnections) const

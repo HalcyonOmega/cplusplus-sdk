@@ -55,7 +55,7 @@ struct PromptArgument {
 //               {"$ref" : "#/definitions/EmbeddedResource"}
 //             ]
 //           },
-//           MSG_ROLE : {"$ref" : "#/definitions/Role"}
+//           MSG_ROLE : {"$ref" : "#/definitions/ERole"}
 //         },
 //                        MSG_REQUIRED : [ MSG_CONTENT, MSG_ROLE ],
 //                                     MSG_TYPE : MSG_OBJECT
@@ -65,7 +65,7 @@ struct PromptArgument {
  * Describes a message returned as part of a prompt.
  */
 struct PromptMessage {
-    MCP::Role Role;
+    MCP::ERole Role;
     std::variant<TextContent, ImageContent, AudioContent, EmbeddedResource> Content;
 
     JKEY(ROLEKEY, Role, "role")

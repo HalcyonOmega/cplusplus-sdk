@@ -6,11 +6,11 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPServer::MCPServer(const TransportType InTransportType,
-	std::optional<std::unique_ptr<TransportOptions>> InOptions,
+MCPServer::MCPServer(const ETransportType InTransportType,
+	const std::optional<std::unique_ptr<TransportOptions>>& InOptions,
 	const Implementation& InServerInfo,
 	const ServerCapabilities& InCapabilities)
-	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Server, InOptions), true)
+	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, ETransportSide::Server, InOptions), true)
 {
 	MCPServer::SetHandlers();
 	SetServerInfo(InServerInfo);
@@ -90,10 +90,7 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 			return;
 		}
 
-		InitializeResponse::Result Result;
-		Result.ProtocolVersion = Request.ProtocolVersion; // Use negotiated version
-		Result.ServerInfo = m_ServerInfo;
-		Result.Capabilities = m_ServerCapabilities;
+		const InitializeResponse::Result Result{ Request.ProtocolVersion, m_ServerInfo, m_ServerCapabilities };
 
 		SendMessage(InitializeResponse{ InRequest.GetRequestID(), Result });
 	}
@@ -157,9 +154,7 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest)
 		// Use ToolManager to call the tool
 		auto Result = m_ToolManager->CallTool(Request);
 
-		CallToolResponse::Result ResponseResult;
-		ResponseResult.Content = Result.Content;
-		ResponseResult.IsError = Result.IsError;
+		CallToolResponse::Result ResponseResult{ Result.Content, Result.IsError };
 
 		SendMessage(CallToolResponse(InRequest.GetRequestID(), ResponseResult));
 	}
@@ -395,7 +390,11 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 	}
 }
 
-void MCPServer::OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification) {}
+void MCPServer::OnNotified_RootsListChanged(const RootsListChangedNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
 void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InParams)
 {

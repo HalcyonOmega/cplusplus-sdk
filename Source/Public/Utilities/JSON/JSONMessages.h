@@ -6,7 +6,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-enum class MessageType { Request, Response, Error, Notification };
+enum class EMessageType { Request, Response, Error, Notification };
 
 [[nodiscard]] std::optional<JSONData> ParseJSONMessage(const std::string& InRawMessage);
 [[nodiscard]] std::string ExtractMethod(const JSONData& InMessage);
@@ -15,6 +15,6 @@ enum class MessageType { Request, Response, Error, Notification };
 [[nodiscard]] JSONData ExtractResult(const JSONData& InMessage);
 [[nodiscard]] JSONData ExtractError(const JSONData& InMessage);
 [[nodiscard]] bool IsValidJSONRPC(const JSONData& InMessage);
-[[nodiscard]] std::optional<MessageType> GetValidMessageType(const JSONData& InMessage);
+[[nodiscard]] std::optional<EMessageType> GetValidMessageType(const JSONData& InMessage);
 
 MCP_NAMESPACE_END

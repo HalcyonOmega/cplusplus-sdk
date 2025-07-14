@@ -5,16 +5,19 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Role {
-//   MSG_DESCRIPTION
-//       : "The sender or recipient of messages and data in a conversation.",
-//         MSG_ENUM : [ "assistant", "user" ],
-//                  MSG_TYPE : MSG_STRING
+// ERole {
+//   MSG_DESCRIPTION: "The sender or recipient of messages and data in a conversation.",
+//         MSG_ENUM: [ "assistant", "user" ],
+//                  MSG_TYPE: MSG_STRING
 // };
 
 // The sender or recipient of messages and data in a conversation.
-enum class Role { User, Assistant };
+enum class ERole
+{
+	User,
+	Assistant
+};
 
-DEFINE_ENUM_JSON(Role, {Role::User, "user"}, {Role::Assistant, "assistant"})
+DEFINE_ENUM_JSON(ERole, { ERole::User, "user" }, { ERole::Assistant, "assistant" })
 
 MCP_NAMESPACE_END

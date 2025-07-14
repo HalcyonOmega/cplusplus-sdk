@@ -11,25 +11,29 @@
 
 MCP_NAMESPACE_BEGIN
 
-enum class IncludeContext
+enum class EIncludeContext
 {
 	None,
 	ThisServer,
 	AllServers
 };
 
-DEFINE_ENUM_JSON(IncludeContext, { IncludeContext::None, "none" }, { IncludeContext::ThisServer, "thisServer" },
-	{ IncludeContext::AllServers, "allServers" })
+DEFINE_ENUM_JSON(EIncludeContext,
+	{ EIncludeContext::None, "none" },
+	{ EIncludeContext::ThisServer, "thisServer" },
+	{ EIncludeContext::AllServers, "allServers" })
 
-enum class StopReason
+enum class EStopReason
 {
 	EndTurn,
 	MaxTokens,
 	StopSequences
 };
 
-DEFINE_ENUM_JSON(StopReason, { StopReason::EndTurn, "endTurn" }, { StopReason::MaxTokens, "maxTokens" },
-	{ StopReason::StopSequences, "stopSequences" })
+DEFINE_ENUM_JSON(EStopReason,
+	{ EStopReason::EndTurn, "endTurn" },
+	{ EStopReason::MaxTokens, "maxTokens" },
+	{ EStopReason::StopSequences, "stopSequences" })
 
 // ModelHint {
 //   MSG_DESCRIPTION: "Hints to use for model selection.\n\nKeys not declared here are "
@@ -158,12 +162,13 @@ struct ModelPreferences
 	DEFINE_TYPE_JSON(ModelPreferences, HINTSKEY, COSTPRIORITYKEY, SPEEDPRIORITYKEY, INTELLIGENCEPRIORITYKEY)
 
 	explicit ModelPreferences(const std::optional<std::vector<ModelHint>>& InHints,
-		const std::optional<double> InCostPriority, const std::optional<double> InSpeedPriority,
-		const std::optional<double> InIntelligencePriority) :
-		Hints(InHints),
-		CostPriority(BoundedDouble::CreateOptional(InCostPriority, 0.0, 1.0, true)),
-		SpeedPriority(BoundedDouble::CreateOptional(InSpeedPriority, 0.0, 1.0, true)),
-		IntelligencePriority(BoundedDouble::CreateOptional(InIntelligencePriority, 0.0, 1.0, true))
+		const std::optional<double> InCostPriority,
+		const std::optional<double> InSpeedPriority,
+		const std::optional<double> InIntelligencePriority)
+		: Hints(InHints),
+		  CostPriority(BoundedDouble::CreateOptional(InCostPriority, 0.0, 1.0, true)),
+		  SpeedPriority(BoundedDouble::CreateOptional(InSpeedPriority, 0.0, 1.0, true)),
+		  IntelligencePriority(BoundedDouble::CreateOptional(InIntelligencePriority, 0.0, 1.0, true))
 	{}
 };
 
@@ -177,7 +182,7 @@ struct ModelPreferences
 //                         {"$ref": "#/definitions/AudioContent"}
 //                       ]
 //                     },
-//                     MSG_ROLE: {"$ref": "#/definitions/Role"}
+//                     MSG_ROLE: {"$ref": "#/definitions/ERole"}
 //                   },
 //                                  MSG_REQUIRED: [ MSG_CONTENT, MSG_ROLE ],
 //                                               MSG_TYPE: MSG_OBJECT
@@ -186,7 +191,7 @@ struct ModelPreferences
 // Describes a message issued to or received from an LLM API.
 struct SamplingMessage
 {
-	MCP::Role Role;
+	MCP::ERole Role;
 	std::variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
 
 	JKEY(ROLEKEY, Role, "role")
@@ -212,7 +217,7 @@ struct SamplingResult
 
 template <typename T>
 concept SamplingType = requires(T Type) {
-	{ Type.Role } -> std::same_as<MCP::Role>;
+	{ Type.Role } -> std::same_as<MCP::ERole>;
 	{ Type.Content } -> std::same_as<std::variant<TextContent, ImageContent, AudioContent>>;
 };
 

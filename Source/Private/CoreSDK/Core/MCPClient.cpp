@@ -26,11 +26,11 @@
 
 MCP_NAMESPACE_BEGIN
 
-MCPClient::MCPClient(const TransportType InTransportType,
-	std::optional<std::unique_ptr<TransportOptions>> InOptions,
+MCPClient::MCPClient(const ETransportType InTransportType,
+	const std::optional<std::unique_ptr<TransportOptions>>& InOptions,
 	const Implementation& InClientInfo,
 	const ClientCapabilities& InCapabilities)
-	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, TransportSide::Client, InOptions), true)
+	: MCPProtocol(TransportFactory::CreateTransport(InTransportType, ETransportSide::Client, InOptions), true)
 {
 	SetClientInfo(InClientInfo);
 	SetClientCapabilities(InCapabilities);
@@ -50,7 +50,7 @@ VoidTask MCPClient::Start()
 
 		const auto Result = co_await Request_Initialize(InitParams);
 
-		m_Transport->SetState(TransportState::Connected);
+		m_Transport->SetState(ETransportState::Connected);
 	}
 	catch (const std::exception& e)
 	{
@@ -68,7 +68,7 @@ VoidTask MCPClient::Stop()
 	try
 	{
 		co_await m_Transport->Disconnect();
-		m_Transport->SetState(TransportState::Disconnected);
+		m_Transport->SetState(ETransportState::Disconnected);
 	}
 	catch (const std::exception& Except)
 	{
@@ -89,7 +89,7 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 
 	try
 	{
-		SetState(MCPProtocolState::Initializing);
+		SetState(EProtocolState::Initializing);
 		// Start transport
 		co_await m_Transport->Connect();
 
@@ -100,7 +100,7 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 			// Store negotiated capabilities
 			SetServerCapabilities(Result.Capabilities);
 			SetServerInfo(Result.ServerInfo);
-			SetState(MCPProtocolState::Initialized);
+			SetState(EProtocolState::Initialized);
 			co_return Result;
 		}
 		if (Response.Raw())
@@ -116,7 +116,11 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 	co_return std::nullopt;
 }
 
-void MCPClient::OnNotified_Initialized(const InitializedNotification& InNotification) {}
+void MCPClient::OnNotified_Initialized(const InitializedNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
 OptTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams){
 	SEND_REQUEST_RETURN_RESULT(ListToolsResponse, ListToolsRequest{ InParams })
@@ -127,7 +131,11 @@ OptTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequ
 	SEND_REQUEST_RETURN_RESULT(CallToolResponse, CallToolRequest{ InParams })
 }
 
-void MCPClient::OnNotified_ToolListChanged(const ToolListChangedNotification& InNotification) {}
+void MCPClient::OnNotified_ToolListChanged(const ToolListChangedNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
 OptTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams& InParams){
 	SEND_REQUEST_RETURN_RESULT(ListPromptsResponse, ListPromptsRequest{ InParams })
@@ -138,7 +146,11 @@ OptTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptR
 	SEND_REQUEST_RETURN_RESULT(GetPromptResponse, GetPromptRequest{ InParams })
 }
 
-void MCPClient::OnNotified_PromptListChanged(const PromptListChangedNotification& InNotification) {}
+void MCPClient::OnNotified_PromptListChanged(const PromptListChangedNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
 OptTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams& InParams){
 	SEND_REQUEST_RETURN_RESULT(ListResourcesResponse, ListResourcesRequest{ InParams })
@@ -176,9 +188,17 @@ VoidTask MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InPara
 	co_return;
 }
 
-void MCPClient::OnNotified_ResourceListChanged(const ResourceListChangedNotification& InNotification) {}
+void MCPClient::OnNotified_ResourceListChanged(const ResourceListChangedNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
-void MCPClient::OnNotified_ResourceUpdated(const ResourceUpdatedNotification& InNotification) {}
+void MCPClient::OnNotified_ResourceUpdated(const ResourceUpdatedNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
 bool MCPClient::AddRoot(const Root& InRoot)
 {
@@ -220,7 +240,11 @@ VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InPar
 	co_return;
 }
 
-void MCPClient::OnNotified_LogMessage(const LoggingMessageNotification& InNotification) {}
+void MCPClient::OnNotified_LogMessage(const LoggingMessageNotification& InNotification)
+{
+	// TODO: @HalcyonOmega
+	(void)InNotification;
+}
 
 void MCPClient::OnRequest_ListRoots(const ListRootsRequest& InRequest)
 {

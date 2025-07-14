@@ -19,7 +19,7 @@ MCP_NAMESPACE_BEGIN
 //                     "Describes who the intended customer of this object or data is.
 //                     It can include multiple entries to indicate content useful for multiple audiences (e.g.,
 //                     `[\"user\", \"assistant\"]`).",
-//                 MSG_ITEMS: {"$ref": "#/definitions/Role"},
+//                 MSG_ITEMS: {"$ref": "#/definitions/ERole"},
 //                 MSG_TYPE: MSG_ARRAY
 //             },
 //             MSG_PRIORITY: {
@@ -40,7 +40,7 @@ MCP_NAMESPACE_BEGIN
  */
 struct Annotations
 {
-	std::optional<std::vector<Role>> Audience{
+	std::optional<std::vector<ERole>> Audience{
 		std::nullopt
 	}; // Describes who the intended customer of this object or data is. It can include
 	   // multiple entries to indicate content useful for multiple audiences (e.g.,
@@ -57,7 +57,7 @@ struct Annotations
 
 	DEFINE_TYPE_JSON(Annotations, AUDIENCEKEY, PRIORITYKEY)
 
-	explicit Annotations(const std::optional<std::vector<Role>>& InAudience, const std::optional<double> InPriority) :
+	explicit Annotations(const std::optional<std::vector<ERole>>& InAudience, const std::optional<double> InPriority) :
 		Audience(InAudience), Priority(BoundedDouble::CreateOptional(InPriority, 0.0, 1.0, true))
 	{}
 };
