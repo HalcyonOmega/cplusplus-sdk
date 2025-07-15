@@ -6,7 +6,10 @@ class BoundedDouble
 {
 
 public:
-	explicit BoundedDouble(const double InValue = 0.0, const double InMin, const double InMax, const bool InLocked)
+	explicit BoundedDouble(const double InValue = 0.0,
+		const double InMin = 0.0,
+		const double InMax = 1.0,
+		const bool InLocked = true)
 		: m_Value(std::clamp(InValue, InMin, InMax)),
 		  m_Min(InMin),
 		  m_Max(InMax),
@@ -19,7 +22,9 @@ public:
 	 * @param InMin - Optional value to set for minimum
 	 * @param InMax - Optional value to set for maximum
 	 */
-	void Set(const double InValue = 0.0, const std::optional<double> InMin, const std::optional<double> InMax)
+	void Set(const double InValue = 0.0,
+		const std::optional<double> InMin = std::nullopt,
+		const std::optional<double> InMax = std::nullopt)
 	{
 		if (InMin && !m_BoundsLocked)
 		{
@@ -76,7 +81,7 @@ public:
 		return *this;
 	}
 
-	[[nodiscard]] static std::optional<BoundedDouble> CreateOptional(const std::optional<double> InValue,
+	[[nodiscard]] static std::optional<BoundedDouble> CreateOptional(const std::optional<double> InValue = std::nullopt,
 		const double InMin = 0.0,
 		const double InMax = 1.0,
 		const bool InLocked = true)

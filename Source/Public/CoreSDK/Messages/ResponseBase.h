@@ -68,8 +68,9 @@ struct PaginatedResultParams : ResultParams
 
 	PaginatedResultParams() = default;
 	explicit PaginatedResultParams(const std::optional<std::string>& InNextCursor = std::nullopt,
-		const std::optional<JSONData>& InMeta = std::nullopt) :
-		ResultParams(InMeta), NextCursor(InNextCursor)
+		const std::optional<JSONData>& InMeta = std::nullopt)
+		: ResultParams(InMeta),
+		  NextCursor(InNextCursor)
 	{}
 };
 
@@ -88,17 +89,19 @@ struct PaginatedResultParams : ResultParams
 struct ResponseBase : MessageBase
 {
 	const RequestID ID;
-	const ResultParams& ResultData{ std::nullopt };
+	const ResultParams& ResultData;
 
 	JKEY(IDKEY, ID, "id")
 	JKEY(RESULTKEY, ResultData, "result")
 
 	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
-	ResponseBase() = default;
-	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
-	explicit ResponseBase(RequestID InID, const ResultParams& InResult) :
-		MessageBase(), ID(std::move(InID)), ResultData(InResult)
+	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)), ResultData(ResultParams{ std::nullopt })
+	{}
+	explicit ResponseBase(RequestID InID, const ResultParams& InResult)
+		: MessageBase(),
+		  ID(std::move(InID)),
+		  ResultData(InResult)
 	{}
 
 	[[nodiscard]] RequestID GetRequestID() const { return ID; }

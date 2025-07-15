@@ -12,8 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Build options
-option(BUILD_TESTING "Build tests" ON)
-option(BUILD_EXAMPLES "Build examples" ON)
+option(BUILD_TESTING "Build tests" OFF)
+option(BUILD_EXAMPLES "Build examples" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # Set default build type
@@ -60,6 +60,7 @@ if (BUILD_EXAMPLES AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Examples/CMakeLists.tx
     add_subdirectory(Examples)
 endif ()
 
+
 # Gather all source and header files for the library
 file(GLOB_RECURSE SDK_SOURCES
         "Source/Private/*.cpp"
@@ -71,8 +72,7 @@ file(GLOB_RECURSE SDK_HEADERS
 )
 
 # Create the SDK library
-add_library(${PROJECT_NAME} STATIC ${SDK_SOURCES} ${SDK_HEADERS}
-        Source/Public/CoreSDK/Common/Annotations.h)
+add_library(${PROJECT_NAME} STATIC ${SDK_SOURCES} ${SDK_HEADERS})
 
 # Set C++ standard for the library
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -92,15 +92,15 @@ target_include_directories(${PROJECT_NAME}
 # Link external dependencies
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
-# Fetch and link Poco
-include(FetchContent)
-FetchContent_Declare(
-        poco
-        GIT_REPOSITORY https://github.com/pocoproject/poco.git
-        GIT_TAG poco-1.14.2-release
-)
-FetchContent_MakeAvailable(poco)
-target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Net Poco::Foundation)
+
+find_package(Poco REQUIRED COMPONENTS Foundation Net)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Poco::Foundation Poco::Net)
+
+# On Windows, Poco::Net requires the system networking library.
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32.lib iphlpapi.lib)
+endif ()
 
 # Installation rules
 include(GNUInstallDirs)

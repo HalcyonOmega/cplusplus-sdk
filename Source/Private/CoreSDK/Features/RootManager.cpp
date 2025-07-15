@@ -78,19 +78,19 @@ std::optional<Root> RootManager::GetRootByName(const std::string& InName) const
 	return std::nullopt;
 }
 
-std::vector<Root> RootManager::ListRoots() const
+ListRootsResponse::Result RootManager::ListRoots() const
 {
 	std::lock_guard Lock(m_RootsMutex);
 
-	std::vector<Root> Result;
-	Result.reserve(m_Roots.size());
+	std::vector<Root> Roots;
+	Roots.reserve(m_Roots.size());
 
 	for (const auto& RootData : m_Roots | std::views::values)
 	{
-		Result.push_back(RootData);
+		Roots.push_back(RootData);
 	}
 
-	return Result;
+	return ListRootsResponse::Result{ Roots };
 }
 
 bool RootManager::HasRoot(const MCP::URIFile& InURI) const
