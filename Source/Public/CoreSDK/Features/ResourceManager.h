@@ -86,7 +86,7 @@ public:
 	bool HasResource(const MCP::URI& InURI) const;
 
 private:
-	std::map<MCP::URI, Resource> m_Resources;
+	std::unordered_map<MCP::URI, Resource> m_Resources;
 	std::unordered_map<std::string, std::pair<ResourceTemplate, ResourceFunction>> m_Templates;
 	bool m_WarnOnDuplicateResources;
 	mutable std::mutex m_Mutex;

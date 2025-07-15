@@ -96,17 +96,18 @@ struct ResponseBase : MessageBase
 
 	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
-	ResponseBase() = default;
-	~ResponseBase() override = default;
-
 	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
 	explicit ResponseBase(RequestID InID, std::unique_ptr<ResultParams> InResult)
 		: MessageBase(),
 		  ID(std::move(InID)),
 		  ResultData(std::move(InResult))
 	{}
-
 	[[nodiscard]] RequestID GetRequestID() const { return ID; }
+
+	ResponseBase() = default;
+	~ResponseBase() override = default;
+	ResponseBase(ResponseBase&&) = default;
+	ResponseBase& operator=(ResponseBase&&) = default;
 };
 
 template <typename T>

@@ -39,7 +39,6 @@ struct NotificationParams
 
 	DEFINE_TYPE_JSON(NotificationParams, METAKEY)
 
-	NotificationParams() = default;
 	virtual ~NotificationParams() = default;
 	explicit NotificationParams(const std::optional<NotificationParamsMeta>& InMeta = std::nullopt) : Meta(InMeta) {}
 };
@@ -78,9 +77,6 @@ struct NotificationBase : MessageBase
 
 	DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 
-	NotificationBase() = default;
-	~NotificationBase() override = default;
-
 	explicit NotificationBase(const std::string_view InMethod,
 		std::optional<std::unique_ptr<NotificationParams>> InParams = std::nullopt)
 		: MessageBase(),
@@ -89,6 +85,11 @@ struct NotificationBase : MessageBase
 	{}
 
 	[[nodiscard]] std::string_view GetNotificationMethod() const { return Method; }
+
+	NotificationBase() = default;
+	~NotificationBase() override = default;
+	NotificationBase(NotificationBase&&) = default;
+	NotificationBase& operator=(NotificationBase&&) = default;
 };
 
 template <typename T>

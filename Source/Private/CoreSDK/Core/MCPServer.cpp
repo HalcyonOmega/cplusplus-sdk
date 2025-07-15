@@ -66,12 +66,14 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 {
 	try
 	{
-		const InitializeRequest::Params Request = GetRequestParams<InitializeRequest::Params>(InRequest).value();
+		auto Request = GetRequestParams<InitializeRequest::Params>(InRequest).value();
 
 		// CRITICAL: Validate protocol version first
-		static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS = { "2024-11-05", "2025-03-26" };
+		// TODO: @HalcyonOmega - Replace with map, Enum to bool, check bool for supported
+		static const std::vector<EProtocolVersion> SUPPORTED_PROTOCOL_VERSIONS
+			= { EProtocolVersion::V2025_06_18, EProtocolVersion::V2025_03_26 };
 
-		if (const auto Iter = std::ranges::find(SUPPORTED_PROTOCOL_VERSIONS, Request.ProtocolVersion);
+		if (const auto Iter = std::ranges::find(SUPPORTED_PROTOCOL_VERSIONS, Request->ProtocolVersion);
 			Iter == SUPPORTED_PROTOCOL_VERSIONS.end())
 		{
 			std::string SupportedVersions;
@@ -85,12 +87,13 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 			}
 
 			SendMessage(ErrorInvalidRequest(InRequest.GetRequestID(),
-				"Unsupported protocol version: " + Request.ProtocolVersion
-					+ ". Supported versions: " + SupportedVersions));
+				"Supported versions: "
+					+ ("Unsupported protocol version: " + static_cast<long long>(Request->ProtocolVersion))
+					+ SupportedVersions));
 			return;
 		}
 
-		const InitializeResponse::Result Result{ Request.ProtocolVersion, m_ServerInfo, m_ServerCapabilities };
+		const InitializeResponse::Result Result{ Request->ProtocolVersion, m_ServerInfo, m_ServerCapabilities };
 
 		SendMessage(InitializeResponse{ InRequest.GetRequestID(), Result });
 	}

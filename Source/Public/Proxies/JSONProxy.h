@@ -1,10 +1,40 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <type_traits>
 
 #include "../CoreSDK/Common/Macros.h"
 #include "../Utilities/ThirdParty/json.hpp"
+
+// Define a template for serializing/deserializing any std::unique_ptr
+template <typename T> struct nlohmann::adl_serializer<std::unique_ptr<T>>
+{
+	static void to_json(json& j, const std::unique_ptr<T>& ptr)
+	{
+		if (ptr)
+		{
+			j = *ptr; // If the pointer is not null, serialize the object it points to
+		}
+		else
+		{
+			j = nullptr; // If the pointer is null, serialize it as a JSON null
+		}
+	}
+
+	static void from_json(const json& j, std::unique_ptr<T>& ptr)
+	{
+		if (j.is_null())
+		{
+			ptr = nullptr; // If the JSON is null, make the pointer null
+		}
+		else
+		{
+			ptr = std::make_unique<T>(
+				j.get<T>()); // If the JSON is not null, create a new object and deserialize into it
+		}
+	}
+};
 
 MCP_NAMESPACE_BEGIN
 
@@ -95,9 +125,16 @@ concept IsOptional = requires { typename T::value_type; }
 #define FOR_EACH_JKEY_7(Macro, x, ...) Macro(x) FOR_EACH_JKEY_6(Macro, __VA_ARGS__)
 #define FOR_EACH_JKEY_8(Macro, x, ...) Macro(x) FOR_EACH_JKEY_7(Macro, __VA_ARGS__)
 
-#define FOR_EACH_JKEY(Macro, ...)                                                                            \
-	FOR_EACH_JKEY_GET_MACRO(__VA_ARGS__, FOR_EACH_JKEY_8, FOR_EACH_JKEY_7, FOR_EACH_JKEY_6, FOR_EACH_JKEY_5, \
-		FOR_EACH_JKEY_4, FOR_EACH_JKEY_3, FOR_EACH_JKEY_2, FOR_EACH_JKEY_1)(Macro, __VA_ARGS__)
+#define FOR_EACH_JKEY(Macro, ...)        \
+	FOR_EACH_JKEY_GET_MACRO(__VA_ARGS__, \
+		FOR_EACH_JKEY_8,                 \
+		FOR_EACH_JKEY_7,                 \
+		FOR_EACH_JKEY_6,                 \
+		FOR_EACH_JKEY_5,                 \
+		FOR_EACH_JKEY_4,                 \
+		FOR_EACH_JKEY_3,                 \
+		FOR_EACH_JKEY_2,                 \
+		FOR_EACH_JKEY_1)(Macro, __VA_ARGS__)
 
 #define FOR_EACH_JKEY_GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, NAME, ...) NAME
 

@@ -171,7 +171,7 @@ public:
 				return;
 			}
 
-			m_MessageManager->RegisterResponseHandler(m_Request->GetRequestID(),
+			m_MessageManager->RegisterResponseHandler<T>(m_Request->GetRequestID(),
 				[Handle = this->m_Handle, InAwaiter](const JSONData& InRawResponse) mutable
 				{
 					if (Handle && !Handle.done())

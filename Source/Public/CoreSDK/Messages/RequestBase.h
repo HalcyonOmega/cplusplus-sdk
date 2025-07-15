@@ -184,9 +184,6 @@ struct RequestBase : MessageBase
 
 	DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
-	RequestBase() = default;
-	~RequestBase() override = default;
-
 	explicit RequestBase(const std::string_view InMethod,
 		std::optional<std::unique_ptr<RequestParams>> InParams = std::nullopt)
 		: MessageBase(),
@@ -205,8 +202,12 @@ struct RequestBase : MessageBase
 	{}
 
 	[[nodiscard]] RequestID GetRequestID() const { return ID; }
-
 	[[nodiscard]] std::string_view GetRequestMethod() const { return Method; }
+
+	RequestBase() = default;
+	~RequestBase() override = default;
+	RequestBase(RequestBase&&) = default;
+	RequestBase& operator=(RequestBase&&) = default;
 };
 
 template <typename T>
