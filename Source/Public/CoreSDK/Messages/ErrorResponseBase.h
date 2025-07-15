@@ -10,11 +10,22 @@
 
 MCP_NAMESPACE_BEGIN
 
+// Standard JSON-RPC 2.0 error codes
+enum class Errors : int64_t
+{
+	ParseError = -32700,
+	InvalidRequest = -32600,
+	MethodNotFound = -32601,
+	InvalidParams = -32602,
+	InternalError = -32603,
+	UnknownError = -32000
+};
+
 struct FErrorData
 {
-	int64_t Code;
-	std::string Message;
-	std::optional<JSONData> Data;
+	Errors Code{ Errors::UnknownError };
+	std::string Message{ "Unknown Error" };
+	std::optional<JSONData> Data{ std::nullopt };
 
 	JKEY(CODEKEY, Code, "code")
 	JKEY(MESSAGEKEY, Message, "message")
@@ -22,7 +33,9 @@ struct FErrorData
 
 	DEFINE_TYPE_JSON(FErrorData, CODEKEY, MESSAGEKEY, DATAKEY)
 
-	FErrorData(const int64_t InCode,
+	FErrorData() = default;
+
+	FErrorData(const Errors InCode,
 		const std::string_view InMessage,
 		const std::optional<JSONData>& InData = std::nullopt)
 		: Code(InCode),
@@ -31,31 +44,22 @@ struct FErrorData
 	{}
 };
 
-// Standard JSON-RPC 2.0 error codes
-namespace ErrorCodes
-{
-	static constexpr int64_t PARSE_ERROR = -32700;
-	static constexpr int64_t INVALID_REQUEST = -32600;
-	static constexpr int64_t METHOD_NOT_FOUND = -32601;
-	static constexpr int64_t INVALID_PARAMS = -32602;
-	static constexpr int64_t INTERNAL_ERROR = -32603;
-} // namespace ErrorCodes
-
 struct ErrorResponseBase : ResponseBase
 {
-	FErrorData ErrorData;
+	FErrorData ErrorData{};
 
 	JKEY(ERRORKEY, ErrorData, "error")
 
 	DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, ResponseBase, IDKEY, ERRORKEY)
 
+	ErrorResponseBase() = default;
+	~ErrorResponseBase() override = default;
+
 	ErrorResponseBase(RequestID InID, FErrorData InError) : ResponseBase(std::move(InID)), ErrorData(std::move(InError))
 	{}
 
-	[[nodiscard]] int64_t GetErrorCode() const { return ErrorData.Code; }
-
+	[[nodiscard]] Errors GetErrorCode() const { return ErrorData.Code; }
 	[[nodiscard]] std::string_view GetErrorMessage() const { return ErrorData.Message; }
-
 	[[nodiscard]] std::optional<JSONData> GetErrorData() const { return ErrorData.Data; }
 };
 
@@ -65,36 +69,37 @@ template <typename T>
 concept ConcreteErrorResponse = std::is_base_of_v<ErrorResponseBase, T>;
 
 inline ErrorResponseBase
-ErrorParseError(RequestID InID, std::string_view InMessage, std::optional<JSONData> InData = std::nullopt)
+ErrorParseError(RequestID InID, const std::string_view InMessage, const std::optional<JSONData>& InData = std::nullopt)
 {
-	return ErrorResponseBase{ std::move(InID),
-		FErrorData(ErrorCodes::PARSE_ERROR, std::move(InMessage), std::move(InData)) };
-}
-inline ErrorResponseBase
-ErrorInvalidRequest(RequestID InID, std::string_view InMessage, std::optional<JSONData> InData = std::nullopt)
-{
-	return ErrorResponseBase{ std::move(InID),
-		FErrorData(ErrorCodes::INVALID_REQUEST, std::move(InMessage), std::move(InData)) };
+	return ErrorResponseBase{ std::move(InID), FErrorData(Errors::ParseError, InMessage, InData) };
 }
 
-inline ErrorResponseBase
-ErrorMethodNotFound(RequestID InID, std::string_view InMessage, std::optional<JSONData> InData = std::nullopt)
+inline ErrorResponseBase ErrorInvalidRequest(RequestID InID,
+	const std::string_view InMessage,
+	const std::optional<JSONData>& InData = std::nullopt)
 {
-	return ErrorResponseBase{ std::move(InID),
-		FErrorData(ErrorCodes::METHOD_NOT_FOUND, std::move(InMessage), std::move(InData)) };
-}
-inline ErrorResponseBase
-ErrorInvalidParams(RequestID InID, std::string_view InMessage, std::optional<JSONData> InData = std::nullopt)
-{
-	return ErrorResponseBase{ std::move(InID),
-		FErrorData(ErrorCodes::INVALID_PARAMS, std::move(InMessage), std::move(InData)) };
+	return ErrorResponseBase{ std::move(InID), FErrorData(Errors::InvalidRequest, InMessage, InData) };
 }
 
-inline ErrorResponseBase
-ErrorInternalError(RequestID InID, std::string_view InMessage, std::optional<JSONData> InData = std::nullopt)
+inline ErrorResponseBase ErrorMethodNotFound(RequestID InID,
+	const std::string_view InMessage,
+	const std::optional<JSONData>& InData = std::nullopt)
 {
-	return ErrorResponseBase{ std::move(InID),
-		FErrorData(ErrorCodes::INTERNAL_ERROR, std::move(InMessage), std::move(InData)) };
+	return ErrorResponseBase{ std::move(InID), FErrorData(Errors::MethodNotFound, InMessage, InData) };
+}
+
+inline ErrorResponseBase ErrorInvalidParams(RequestID InID,
+	const std::string_view InMessage,
+	const std::optional<JSONData>& InData = std::nullopt)
+{
+	return ErrorResponseBase{ std::move(InID), FErrorData(Errors::InvalidParams, InMessage, InData) };
+}
+
+inline ErrorResponseBase ErrorInternalError(RequestID InID,
+	const std::string_view InMessage,
+	const std::optional<JSONData>& InData = std::nullopt)
+{
+	return ErrorResponseBase{ std::move(InID), FErrorData(Errors::InternalError, InMessage, InData) };
 }
 
 MCP_NAMESPACE_END

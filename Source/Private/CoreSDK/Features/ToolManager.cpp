@@ -17,7 +17,7 @@ ToolManager::ToolManager(const bool InWarnOnDuplicateTools, const std::map<Tool,
 	}
 }
 
-ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams& InRequest) const
+ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams* InRequest) const
 {
 	std::lock_guard Lock(m_Mutex);
 	(void)InRequest; // TODO: @HalcyonOmega - Implement pagination
@@ -83,7 +83,8 @@ std::optional<Tool> ToolManager::FindTool(const std::string& InName) const
 {
 	std::lock_guard Lock(m_Mutex);
 
-	if (const auto Iterator = std::ranges::find_if(m_Tools, [&](const auto& Pair) { return Pair.first.Name == InName; });
+	if (const auto Iterator
+		= std::ranges::find_if(m_Tools, [&](const auto& Pair) { return Pair.first.Name == InName; });
 		Iterator != m_Tools.end())
 	{
 		return Iterator->first;

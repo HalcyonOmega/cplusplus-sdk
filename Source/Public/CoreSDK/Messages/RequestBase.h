@@ -84,6 +84,8 @@ struct RequestParams
 		DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
 
 		RequestParamsMeta() = default;
+		virtual ~RequestParamsMeta() = default;
+
 		explicit RequestParamsMeta(const std::optional<MCP::ProgressToken>& InProgressToken = std::nullopt)
 			: ProgressToken(InProgressToken)
 		{}
@@ -96,6 +98,8 @@ struct RequestParams
 	DEFINE_TYPE_JSON(RequestParams, METAKEY)
 
 	RequestParams() = default;
+	virtual ~RequestParams() = default;
+
 	explicit RequestParams(const std::optional<RequestParamsMeta>& InMeta = std::nullopt) : Meta(InMeta) {}
 };
 
@@ -128,6 +132,8 @@ struct PaginatedRequestParams : RequestParams
 	DEFINE_TYPE_JSON_DERIVED(PaginatedRequestParams, RequestParams, CURSORKEY)
 
 	PaginatedRequestParams() = default;
+	~PaginatedRequestParams() override = default;
+
 	explicit PaginatedRequestParams(const std::optional<std::string>& InCursor = std::nullopt,
 		const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 		: RequestParams(InMeta),
@@ -168,9 +174,9 @@ struct PaginatedRequestParams : RequestParams
 // A request that expects a response. Supports JSON-RPC 2.0.
 struct RequestBase : MessageBase
 {
-	RequestID ID;
-	std::string Method;
-	std::optional<RequestParams> ParamsData;
+	RequestID ID{};
+	std::string Method{ "DefaultRequest" };
+	std::optional<std::unique_ptr<RequestParams>> ParamsData{ std::nullopt };
 
 	JKEY(IDKEY, ID, "id")
 	JKEY(METHODKEY, Method, "method")
@@ -179,14 +185,19 @@ struct RequestBase : MessageBase
 	DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 
 	RequestBase() = default;
-	explicit RequestBase(const std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
+	~RequestBase() override = default;
+
+	explicit RequestBase(const std::string_view InMethod,
+		std::optional<std::unique_ptr<RequestParams>> InParams = std::nullopt)
 		: MessageBase(),
 		  ID(GenerateUUID()),
 		  Method(InMethod),
 		  ParamsData(std::move(InParams))
 	{}
 
-	RequestBase(RequestID InID, std::string_view InMethod, std::optional<RequestParams> InParams = std::nullopt)
+	RequestBase(RequestID InID,
+		const std::string_view InMethod,
+		std::optional<std::unique_ptr<RequestParams>> InParams = std::nullopt)
 		: MessageBase(),
 		  ID(std::move(InID)),
 		  Method(InMethod),
@@ -203,11 +214,11 @@ concept ConcreteRequest = std::is_base_of_v<RequestBase, T>;
 
 // Get typed params - cast the base Params to the derived request's Params type
 template <typename TParamsType, ConcreteRequest T>
-[[nodiscard]] std::optional<TParamsType> GetRequestParams(const T& InRequest)
+[[nodiscard]] std::optional<TParamsType*> GetRequestParams(const T& InRequest)
 {
 	if (InRequest.ParamsData)
 	{
-		return static_cast<const TParamsType&>(*InRequest.ParamsData);
+		return static_cast<const TParamsType*>(InRequest.ParamsData.value().get());
 	}
 	return std::nullopt;
 }

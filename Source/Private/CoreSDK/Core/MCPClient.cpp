@@ -6,7 +6,7 @@
 	if (!IsConnected())                             \
 	{                                               \
 		HandleRuntimeError("Client not connected"); \
-		co_return;                                  \
+		co_return std::nullopt;                     \
 	}
 
 #define RETURN_IF_CLIENT_NOT_CONNECTED              \

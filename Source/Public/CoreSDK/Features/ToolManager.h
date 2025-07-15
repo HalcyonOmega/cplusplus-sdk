@@ -79,7 +79,7 @@ public:
 	 * List all registered tools.
 	 * @return Vector containing all registered tools
 	 */
-	ListToolsResponse::Result ListTools(const PaginatedRequestParams& InRequest) const;
+	ListToolsResponse::Result ListTools(const PaginatedRequestParams* InRequest) const;
 
 private:
 	std::map<Tool, ToolFunction> m_Tools;

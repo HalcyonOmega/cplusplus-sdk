@@ -148,8 +148,8 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest)
 {
 	try
 	{
-		CallToolRequest::Params Request = GetRequestParams<CallToolRequest::Params>(InRequest).value();
-		Tool Tool = m_ToolManager->FindTool(Request.Name).value();
+		const auto Request = GetRequestParams<CallToolRequest::Params>(InRequest).value();
+		Tool Tool = m_ToolManager->FindTool(Request->Name).value();
 
 		// Use ToolManager to call the tool
 		auto Result = m_ToolManager->CallTool(Request);
@@ -307,12 +307,12 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest)
 {
 	try
 	{
-		const ReadResourceRequest::Params Request = GetRequestParams<ReadResourceRequest::Params>(InRequest).value();
+		const auto Request = GetRequestParams<ReadResourceRequest::Params>(InRequest).value();
 
 		// TODO: @HalcyonOmega - Relook logic here
 		// Use ResourceManager to read the resource content
 		std::variant<TextResourceContents, BlobResourceContents> ResourceContent
-			= m_ResourceManager->GetResource(Request.URI).value();
+			= m_ResourceManager->GetResource(Request->URI).value();
 
 		ReadResourceResponse::Result ResponseResult;
 		ResponseResult.Contents.emplace_back(ResourceContent);
@@ -329,16 +329,16 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 {
 	try
 	{
-		const SubscribeRequest::Params Request = GetRequestParams<SubscribeRequest::Params>(InRequest).value();
+		const auto Request = GetRequestParams<SubscribeRequest::Params>(InRequest).value();
 
 		std::string_view ClientID = GetCurrentClientID();
 
 		// Validate resource exists
-		if (!m_ResourceManager->HasResource(Request.URI))
+		if (!m_ResourceManager->HasResource(Request->URI))
 		{
 			SendMessage(ErrorInvalidRequest(InRequest.GetRequestID(),
 				"Resource not found",
-				JSONData::object({ { "uri", Request.URI.toString() } })));
+				JSONData::object({ { "uri", Request->URI.toString() } })));
 			return;
 		}
 

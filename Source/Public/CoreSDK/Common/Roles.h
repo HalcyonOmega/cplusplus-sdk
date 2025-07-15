@@ -14,10 +14,11 @@ MCP_NAMESPACE_BEGIN
 // The sender or recipient of messages and data in a conversation.
 enum class ERole
 {
+	Unknown,
 	User,
 	Assistant
 };
 
-DEFINE_ENUM_JSON(ERole, { ERole::User, "user" }, { ERole::Assistant, "assistant" })
+DEFINE_ENUM_JSON(ERole, { ERole::Unknown, "unknown" }, { ERole::User, "user" }, { ERole::Assistant, "assistant" })
 
 MCP_NAMESPACE_END

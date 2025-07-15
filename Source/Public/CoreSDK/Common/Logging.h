@@ -22,6 +22,7 @@ MCP_NAMESPACE_BEGIN
  */
 enum class ELoggingLevel
 {
+	Unknown,
 	Debug,
 	Info,
 	Notice,
@@ -33,6 +34,7 @@ enum class ELoggingLevel
 };
 
 DEFINE_ENUM_JSON(ELoggingLevel,
+	{ ELoggingLevel::Unknown, "unknown" },
 	{ ELoggingLevel::Debug, "debug" },
 	{ ELoggingLevel::Info, "info" },
 	{ ELoggingLevel::Notice, "notice" },

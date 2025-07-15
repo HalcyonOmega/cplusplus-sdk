@@ -27,6 +27,7 @@ MCP_NAMESPACE_BEGIN
 
 struct EmptyResponse : ResponseBase
 {
+	EmptyResponse() = default;
 	explicit EmptyResponse(const RequestID& InRequest) : ResponseBase(InRequest) {};
 };
 
@@ -60,11 +61,13 @@ struct InitializeRequest : RequestBase
 {
 	struct Params : RequestParams
 	{
-		EProtocolVersion ProtocolVersion; // The latest version of the Model Context Protocol
-										  // that the client supports. The client MAY decide to
-										  // support older versions as well.
-		ClientCapabilities Capabilities;  // The capabilities of the client.
-		Implementation ClientInfo;		  // The implementation of the client.
+		EProtocolVersion ProtocolVersion{
+			EProtocolVersion::Unspecified
+		}; // The latest version of the Model Context Protocol
+		   // that the client supports. The client MAY decide to
+		   // support older versions as well.
+		ClientCapabilities Capabilities{}; // The capabilities of the client.
+		Implementation ClientInfo{};	   // The implementation of the client.
 
 		JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
 		JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
@@ -76,46 +79,45 @@ struct InitializeRequest : RequestBase
 			CAPABILITIESKEY,
 			CLIENTINFOKEY)
 
+		Params() = default;
 		explicit Params(EProtocolVersion InProtocolVersion,
 			ClientCapabilities InCapabilities,
 			Implementation InClientInfo,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  ProtocolVersion(std::move(InProtocolVersion)),
+			  ProtocolVersion(InProtocolVersion),
 			  Capabilities(std::move(InCapabilities)),
 			  ClientInfo(std::move(InClientInfo))
 		{}
 	};
 
-	explicit InitializeRequest(const InitializeRequest::Params& InParams) : RequestBase("initialize", InParams) {}
+	InitializeRequest() : RequestBase("initialize") {}
+	explicit InitializeRequest(const InitializeRequest::Params& InParams)
+		: RequestBase("initialize", std::make_unique<InitializeRequest::Params>(InParams))
+	{}
 };
 
 // InitializeResult {
-//   MSG_DESCRIPTION: "After receiving an initialize request from the client, "
-//                   "the server sends this response.",
+//   MSG_DESCRIPTION: "After receiving an initialized request from the client, the server sends this response.",
 //    MSG_PROPERTIES: {
 //         MSG_META: {
 //           MSG_ADDITIONAL_PROPERTIES: {},
-//           MSG_DESCRIPTION: "This result property is reserved by the protocol
-//           to "
-//                           "allow clients and servers to attach additional "
-//                           "metadata to their responses.",
+//           MSG_DESCRIPTION: "This result property is reserved by the protocol to allow clients and servers to attach
+//           additional metadata to their responses.",
 //           MSG_TYPE: MSG_OBJECT
 //         },
 //         MSG_CAPABILITIES: {"$ref": "#/definitions/ServerCapabilities"},
 //         MSG_INSTRUCTIONS: {
-//           MSG_DESCRIPTION:
-//               "Instructions describing how to use the server and its
-//               features.\n\nThis can be used by clients to improve the LLM's
-//               understanding of available tools, resources, etc. It can be
-//               thought of like a \"hint\" to the model. For example, this
-//               information MAY be added to the system prompt.",
+//           MSG_DESCRIPTION: "Instructions describing how to use the server and its features.
+//           This can be used by clients to improve the LLM's understanding of available tools, resources, etc. It can
+//           be thought of like a \"hint\" to the model. For example, this information MAY be added to the system
+//           prompt.",
 //           MSG_TYPE: MSG_STRING
 //         },
 //         MSG_PROTOCOL_VERSION: {
-//           MSG_DESCRIPTION: "The version of the Model Context Protocol that
-//           the server wants to use. This may not match the version that the client requested. If the client cannot
-//           support this version, it MUST disconnect.",
+//           MSG_DESCRIPTION: "The version of the Model Context Protocol that the server wants to use. This may not
+//           match the version that the client requested. If the client cannot support this version, it MUST
+//           disconnect.",
 //           MSG_TYPE: MSG_STRING
 //         },
 //         MSG_SERVER_INFO: {"$ref": "#/definitions/Implementation"}
@@ -125,18 +127,20 @@ struct InitializeRequest : RequestBase
 // };
 
 /**
- * After receiving an initialize request from the client, the server sends this response.
+ * After receiving an initialized request from the client, the server sends this response.
  */
 struct InitializeResponse : ResponseBase
 {
 	struct Result : ResultParams
 	{
-		EProtocolVersion ProtocolVersion;						 // The version of the Model Context Protocol that the
-																 // server wants to use. This may not match the version
-																 // that the client requested. If the client cannot
-																 // support this version, it MUST disconnect.
-		ServerCapabilities Capabilities;						 // The capabilities of the server.
-		Implementation ServerInfo;								 // The implementation of the server.
+		EProtocolVersion ProtocolVersion{
+			EProtocolVersion::Unspecified
+		}; // The version of the Model Context Protocol that the
+		   // server wants to use. This may not match the version
+		   // that the client requested. If the client cannot
+		   // support this version, it MUST disconnect.
+		ServerCapabilities Capabilities{};						 // The capabilities of the server.
+		Implementation ServerInfo{};							 // The implementation of the server.
 		std::optional<std::string> Instructions{ std::nullopt }; // Instructions describing how to use the server
 																 // and its features. This can be used by clients to
 																 // improve the LLM's understanding of available
@@ -156,21 +160,23 @@ struct InitializeResponse : ResponseBase
 			SERVERINFOKEY,
 			INSTRUCTIONSKEY)
 
+		Result() = default;
 		explicit Result(EProtocolVersion InProtocolVersion,
 			ServerCapabilities InCapabilities,
 			Implementation InServerInfo,
 			const std::optional<std::string>& InInstructions = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),
-			  ProtocolVersion(std::move(InProtocolVersion)),
+			  ProtocolVersion(InProtocolVersion),
 			  Capabilities(std::move(InCapabilities)),
 			  ServerInfo(std::move(InServerInfo)),
 			  Instructions(InInstructions)
 		{}
 	};
 
+	InitializeResponse() = default;
 	explicit InitializeResponse(const RequestID& InRequestID, const InitializeResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<InitializeResponse::Result>(InResult))
 	{}
 };
 
@@ -246,6 +252,7 @@ struct PingRequest : RequestBase
 
 struct PingResponse : ResponseBase
 {
+	PingResponse() = default;
 	explicit PingResponse(const RequestID& InRequestID) : ResponseBase(InRequestID) {}
 };
 
@@ -273,7 +280,10 @@ struct PingResponse : ResponseBase
  */
 struct ListToolsRequest : RequestBase
 {
-	explicit ListToolsRequest(const PaginatedRequestParams& InParams) : RequestBase("tools/list", InParams) {}
+	ListToolsRequest() : RequestBase("tools/list") {}
+	explicit ListToolsRequest(const PaginatedRequestParams& InParams)
+		: RequestBase("tools/list", std::make_unique<PaginatedRequestParams>(InParams))
+	{}
 };
 
 // ListToolsResult {
@@ -315,6 +325,7 @@ struct ListToolsResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(ListToolsResponse::Result, PaginatedResultParams, TOOLSKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<Tool>& InTools,
 			const std::optional<std::string>& InNextCursor = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
@@ -323,8 +334,9 @@ struct ListToolsResponse : ResponseBase
 		{}
 	};
 
+	ListToolsResponse() = default;
 	explicit ListToolsResponse(const RequestID& InRequestID, const ListToolsResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<ListToolsResponse::Result>(InResult))
 	{}
 };
 
@@ -361,16 +373,20 @@ struct CallToolRequest : RequestBase
 
 		DEFINE_TYPE_JSON_DERIVED(CallToolRequest::Params, RequestParams, NAMEKEY, ARGUMENTSKEY)
 
-		explicit Params(const std::string& InName,
+		Params() = default;
+		explicit Params(std::string InName,
 			const std::optional<std::unordered_map<std::string, JSONData>>& InArguments = std::nullopt,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  Name(InName),
+			  Name(std::move(InName)),
 			  Arguments(InArguments)
 		{}
 	};
 
-	explicit CallToolRequest(const CallToolRequest::Params& InParams) : RequestBase("tools/call", InParams) {}
+	CallToolRequest() : RequestBase("tools/call") {}
+	explicit CallToolRequest(const CallToolRequest::Params& InParams)
+		: RequestBase("tools/call", std::make_unique<CallToolRequest::Params>(InParams))
+	{}
 };
 
 // CallToolResult {
@@ -430,6 +446,7 @@ struct CallToolResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(CallToolResponse::Result, ResultParams, CONTENTKEY, ISERRORKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<MCP::Content>& InContent,
 			const std::optional<bool>& InIsError = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
@@ -439,8 +456,9 @@ struct CallToolResponse : ResponseBase
 		{}
 	};
 
+	CallToolResponse() = default;
 	explicit CallToolResponse(const RequestID& InRequestID, const CallToolResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<CallToolResponse::Result>(InResult))
 	{}
 };
 
@@ -507,7 +525,10 @@ struct ToolListChangedNotification : NotificationBase
  */
 struct ListPromptsRequest : RequestBase
 {
-	explicit ListPromptsRequest(const PaginatedRequestParams& InParams) : RequestBase("prompts/list", InParams) {}
+	ListPromptsRequest() : RequestBase("prompts/list") {}
+	explicit ListPromptsRequest(const PaginatedRequestParams& InParams)
+		: RequestBase("prompts/list", std::make_unique<PaginatedRequestParams>(InParams))
+	{}
 };
 
 // ListPromptsResult {
@@ -550,6 +571,7 @@ struct ListPromptsResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(ListPromptsResponse::Result, PaginatedResultParams, PROMPTSKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<Prompt>& InPrompts,
 			const std::optional<std::string>& InNextCursor = std::nullopt,
 			const std::optional<std::string>& InMeta = std::nullopt)
@@ -558,8 +580,9 @@ struct ListPromptsResponse : ResponseBase
 		{}
 	};
 
+	ListPromptsResponse() = default;
 	explicit ListPromptsResponse(const RequestID& InRequestID, const ListPromptsResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<ListPromptsResponse::Result>(InResult))
 	{}
 };
 
@@ -604,16 +627,20 @@ struct GetPromptRequest : RequestBase
 
 		DEFINE_TYPE_JSON_DERIVED(GetPromptRequest::Params, RequestParams, NAMEKEY, ARGUMENTSKEY)
 
-		explicit Params(const std::string& InName,
+		Params() = default;
+		explicit Params(std::string InName,
 			const std::optional<std::vector<PromptArgument>>& InArguments = std::nullopt,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  Name(InName),
+			  Name(std::move(InName)),
 			  Arguments(InArguments)
 		{}
 	};
 
-	explicit GetPromptRequest(const GetPromptRequest::Params& InParams) : RequestBase("prompts/get", InParams) {}
+	GetPromptRequest() : RequestBase("prompts/get") {}
+	explicit GetPromptRequest(const GetPromptRequest::Params& InParams)
+		: RequestBase("prompts/get", std::make_unique<GetPromptRequest::Params>(InParams))
+	{}
 };
 
 // GetPromptResult {
@@ -652,6 +679,7 @@ struct GetPromptResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(GetPromptResponse::Result, ResultParams, DESCRIPTIONKEY, MESSAGESKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<PromptMessage>& InMessages,
 			const std::optional<std::string>& InDescription = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
@@ -661,8 +689,9 @@ struct GetPromptResponse : ResponseBase
 		{}
 	};
 
+	GetPromptResponse() = default;
 	explicit GetPromptResponse(const RequestID& InRequestID, const GetPromptResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<GetPromptResponse::Result>(InResult))
 	{}
 };
 
@@ -723,7 +752,10 @@ struct PromptListChangedNotification : NotificationBase
  */
 struct ListResourcesRequest : RequestBase
 {
-	explicit ListResourcesRequest(const PaginatedRequestParams& InParams) : RequestBase("resources/list", InParams) {}
+	ListResourcesRequest() : RequestBase("resources/list") {}
+	explicit ListResourcesRequest(const PaginatedRequestParams& InParams)
+		: RequestBase("resources/list", std::make_unique<PaginatedRequestParams>(InParams))
+	{}
 };
 
 // ListResourcesResult {
@@ -764,6 +796,7 @@ struct ListResourcesResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(ListResourcesResponse::Result, PaginatedResultParams, RESOURCESKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<Resource>& InResources,
 			const std::optional<std::string>& InNextCursor = std::nullopt,
 			const std::optional<std::string>& InMeta = std::nullopt)
@@ -772,8 +805,9 @@ struct ListResourcesResponse : ResponseBase
 		{}
 	};
 
+	ListResourcesResponse() = default;
 	explicit ListResourcesResponse(const RequestID& InRequestID, const ListResourcesResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<ListResourcesResponse::Result>(InResult))
 	{}
 };
 
@@ -804,8 +838,9 @@ struct ListResourcesResponse : ResponseBase
  */
 struct ListResourceTemplatesRequest : RequestBase
 {
+	ListResourceTemplatesRequest() : RequestBase("resources/templates/list") {}
 	explicit ListResourceTemplatesRequest(const PaginatedRequestParams& InParams)
-		: RequestBase("resources/templates/list", InParams)
+		: RequestBase("resources/templates/list", std::make_unique<PaginatedRequestParams>(InParams))
 	{}
 };
 
@@ -850,6 +885,7 @@ struct ListResourceTemplatesResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(ListResourceTemplatesResponse::Result, PaginatedResultParams, RESOURCE_TEMPLATESKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<ResourceTemplate>& InResourceTemplates,
 			const std::optional<std::string>& InNextCursor = std::nullopt,
 			const std::optional<std::string>& InMeta = std::nullopt)
@@ -858,9 +894,10 @@ struct ListResourceTemplatesResponse : ResponseBase
 		{}
 	};
 
+	ListResourceTemplatesResponse() = default;
 	explicit ListResourceTemplatesResponse(const RequestID& InRequestID,
 		const ListResourceTemplatesResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<ListResourceTemplatesResponse::Result>(InResult))
 	{}
 };
 
@@ -904,14 +941,17 @@ struct ResourceUpdatedNotification : NotificationBase
 
 		DEFINE_TYPE_JSON_DERIVED(ResourceUpdatedNotification::Params, NotificationParams, URIKEY)
 
-		explicit Params(const MCP::URI& InURI, const std::optional<NotificationParamsMeta>& InMeta = std::nullopt)
+		Params() = default;
+		explicit Params(MCP::URI InURI, const std::optional<NotificationParamsMeta>& InMeta = std::nullopt)
 			: NotificationParams(InMeta),
-			  URI(InURI)
+			  URI(std::move(InURI))
 		{}
 	};
 
-	explicit ResourceUpdatedNotification(const Params& InParams)
-		: NotificationBase("notifications/resources/updated", InParams)
+	ResourceUpdatedNotification() : NotificationBase("notifications/resources/updated") {}
+	explicit ResourceUpdatedNotification(const ResourceUpdatedNotification::Params& InParams)
+		: NotificationBase("notifications/resources/updated",
+			  std::make_unique<ResourceUpdatedNotification::Params>(InParams))
 	{}
 };
 
@@ -950,13 +990,16 @@ struct ReadResourceRequest : RequestBase
 
 		DEFINE_TYPE_JSON_DERIVED(ReadResourceRequest::Params, RequestParams, URIKEY)
 
-		explicit Params(const MCP::URI& InURI, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
+		Params() = default;
+		explicit Params(MCP::URI InURI, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  URI(InURI)
+			  URI(std::move(InURI))
 		{}
 	};
 
-	explicit ReadResourceRequest(const ReadResourceRequest::Params& InParams) : RequestBase("resources/read", InParams)
+	ReadResourceRequest() : RequestBase("resources/read") {}
+	explicit ReadResourceRequest(const ReadResourceRequest::Params& InParams)
+		: RequestBase("resources/read", std::make_unique<ReadResourceRequest::Params>(InParams))
 	{}
 };
 
@@ -1000,6 +1043,7 @@ struct ReadResourceResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(ReadResourceResponse::Result, ResultParams, CONTENTSKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<std::variant<TextResourceContents, BlobResourceContents>>& InContents,
 			const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),
@@ -1007,8 +1051,9 @@ struct ReadResourceResponse : ResponseBase
 		{}
 	};
 
+	ReadResourceResponse() = default;
 	explicit ReadResourceResponse(const RequestID& InRequestID, const ReadResourceResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<ReadResourceResponse::Result>(InResult))
 	{}
 };
 
@@ -1046,20 +1091,23 @@ struct SubscribeRequest : RequestBase
 {
 	struct Params : RequestParams
 	{
-		MCP::URI URI; // The URI of the resource to subscribe to. The URI can use
-					  // any protocol; it is up to the server how to interpret it.
+		MCP::URI URI{}; // The URI of the resource to subscribe to. The URI can use
+						// any protocol; it is up to the server how to interpret it.
 
 		JKEY(URIKEY, URI, "uri")
 
 		DEFINE_TYPE_JSON_DERIVED(SubscribeRequest::Params, RequestParams, URIKEY)
 
-		explicit Params(const MCP::URI& InURI, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
+		Params() = default;
+		explicit Params(MCP::URI InURI, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  URI(InURI)
+			  URI(std::move(InURI))
 		{}
 	};
 
-	explicit SubscribeRequest(const SubscribeRequest::Params& InParams) : RequestBase("resources/subscribe", InParams)
+	SubscribeRequest() : RequestBase("resources/subscribe") {}
+	explicit SubscribeRequest(const SubscribeRequest::Params& InParams)
+		: RequestBase("resources/subscribe", std::make_unique<SubscribeRequest::Params>(InParams))
 	{}
 };
 
@@ -1093,20 +1141,22 @@ struct UnsubscribeRequest : RequestBase
 {
 	struct Params : RequestParams
 	{
-		MCP::URI URI; // The URI of the resource to unsubscribe from.
+		MCP::URI URI{}; // The URI of the resource to unsubscribe from.
 
 		JKEY(URIKEY, URI, "uri")
 
 		DEFINE_TYPE_JSON_DERIVED(UnsubscribeRequest::Params, RequestParams, URIKEY)
 
-		explicit Params(const MCP::URI& InURI, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
+		Params() = default;
+		explicit Params(MCP::URI InURI, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
-			  URI(InURI)
+			  URI(std::move(InURI))
 		{}
 	};
 
+	UnsubscribeRequest() : RequestBase("resources/unsubscribe") {}
 	explicit UnsubscribeRequest(const UnsubscribeRequest::Params& InParams)
-		: RequestBase("resources/unsubscribe", InParams)
+		: RequestBase("resources/unsubscribe", std::make_unique<UnsubscribeRequest::Params>(InParams))
 	{}
 };
 
@@ -1214,17 +1264,16 @@ struct CreateMessageRequest : RequestBase
 	struct Params : RequestParams
 	{
 		std::vector<SamplingMessage> Messages;
-		int64_t MaxTokens; // The maximum number of tokens to sample, as requested
-						   // by the server. The client MAY choose to sample fewer
-						   // tokens than requested.
+		int64_t MaxTokens{ -1 }; // The maximum number of tokens to sample, as requested
+								 // by the server. The client MAY choose to sample fewer
+								 // tokens than requested.
 		std::optional<std::string> SystemPrompt{
 			std::nullopt
 		}; // An optional system prompt the server wants to use for
 		   // sampling. The client MAY modify or omit this prompt.
 		std::optional<EIncludeContext> IncludeContext{
 			std::nullopt
-		}; // A request to include context from one or more
-		   // MCP servers (including the caller), to be attached to
+		}; // A request to include context from one or more MCP servers (including the caller), to be attached to
 		   // the prompt. The client MAY ignore this request.
 		std::optional<BoundedDouble> Temperature{ std::nullopt }; // The temperature to use for sampling.
 		std::optional<std::vector<std::string>> StopSequences{
@@ -1257,6 +1306,7 @@ struct CreateMessageRequest : RequestBase
 			MODELPREFSKEY,
 			METADATAKEY)
 
+		Params() = default;
 		explicit Params(const std::vector<SamplingMessage>& InMessages,
 			const int64_t& InMaxTokens,
 			const std::optional<std::string>& InSystemPrompt = std::nullopt,
@@ -1288,8 +1338,9 @@ struct CreateMessageRequest : RequestBase
 		}
 	};
 
+	CreateMessageRequest() : RequestBase("sampling/create_message") {}
 	explicit CreateMessageRequest(const CreateMessageRequest::Params& InParams)
-		: RequestBase("sampling/createMessage", InParams)
+		: RequestBase("sampling/createMessage", std::make_unique<CreateMessageRequest::Params>(InParams))
 	{}
 };
 
@@ -1336,10 +1387,10 @@ struct CreateMessageResponse : ResponseBase
 {
 	struct Result : ResultParams
 	{
-		std::string Model;		 // The name of the model that generated the message.
-		MCP::ERole ResponseRole; // The role of the response.
+		std::string Model;					  // The name of the model that generated the message.
+		ERole ResponseRole{ ERole::Unknown }; // The role of the response.
 		std::variant<TextContent, ImageContent, AudioContent> ResponseContent; // The content of the response.
-		std::optional<std::variant<MCP::EStopReason, std::string>> StopReason{
+		std::optional<std::variant<EStopReason, std::string>> StopReason{
 			std::nullopt
 		}; // The reason why sampling stopped, if known.
 
@@ -1353,6 +1404,7 @@ struct CreateMessageResponse : ResponseBase
 			RESPONSEROLEKEY,
 			RESPONSECONTENTKEY)
 
+		Result() = default;
 		explicit Result(std::string InModel,
 			const ERole& InResponseRole,
 			const std::variant<TextContent, ImageContent, AudioContent>& InResponseContent,
@@ -1366,8 +1418,9 @@ struct CreateMessageResponse : ResponseBase
 		{}
 	};
 
+	CreateMessageResponse() = default;
 	explicit CreateMessageResponse(const RequestID& InRequestID, const CreateMessageResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<CreateMessageResponse::Result>(InResult))
 	{}
 };
 
@@ -1414,7 +1467,10 @@ struct CreateMessageResponse : ResponseBase
  */
 struct ListRootsRequest : RequestBase
 {
-	explicit ListRootsRequest(const PaginatedRequestParams& InParams) : RequestBase("roots/list", InParams) {}
+	ListRootsRequest() : RequestBase("roots/list") {}
+	explicit ListRootsRequest(const PaginatedRequestParams& InParams)
+		: RequestBase("roots/list", std::make_unique<PaginatedRequestParams>(InParams))
+	{}
 };
 
 // ListRootsResult {
@@ -1456,6 +1512,7 @@ struct ListRootsResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(ListRootsResponse::Result, PaginatedResultParams, ROOTSKEY)
 
+		Result() = default;
 		explicit Result(const std::vector<Root>& InRoots,
 			const std::optional<std::string>& InNextCursor = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
@@ -1464,8 +1521,9 @@ struct ListRootsResponse : ResponseBase
 		{}
 	};
 
+	ListRootsResponse() = default;
 	explicit ListRootsResponse(const RequestID& InRequestID, const ListRootsResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<ListRootsResponse::Result>(InResult))
 	{}
 };
 
@@ -1537,22 +1595,26 @@ struct SetLevelRequest : RequestBase
 {
 	struct Params : RequestParams
 	{
-		ELoggingLevel Level; // The level of logging that the client wants to receive
-							 // from the server. The server should send all logs at
-							 // this level and higher (i.e., more severe) to the
-							 // client as notifications/messages.
+		ELoggingLevel Level{ ELoggingLevel::Unknown }; // The level of logging that the client wants to receive
+													   // from the server. The server should send all logs at
+													   // this level and higher (i.e., more severe) to the
+													   // client as notifications/messages.
 
 		JKEY(LEVELKEY, Level, "level")
 
 		DEFINE_TYPE_JSON_DERIVED(SetLevelRequest::Params, RequestParams, LEVELKEY)
 
+		Params() = default;
 		explicit Params(const ELoggingLevel& InLevel, const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
 			  Level(InLevel)
 		{}
 	};
 
-	explicit SetLevelRequest(const SetLevelRequest::Params& InParams) : RequestBase("logging/setLevel", InParams) {}
+	SetLevelRequest() : RequestBase("logging/setLevel") {}
+	explicit SetLevelRequest(const SetLevelRequest::Params& InParams)
+		: RequestBase("logging/setLevel", std::make_unique<SetLevelRequest::Params>(InParams))
+	{}
 };
 
 // LoggingMessageNotification {
@@ -1595,7 +1657,7 @@ struct LoggingMessageNotification : NotificationBase
 {
 	struct Params : NotificationParams
 	{
-		ELoggingLevel Level;							   // The severity of this log message.
+		ELoggingLevel Level{ ELoggingLevel::Unknown };	   // The severity of this log message.
 		JSONData Data;									   // The data to be logged, such as a string message or an
 														   // object. Any JSON serializable type is allowed here.
 		std::optional<std::string> Logger{ std::nullopt }; // An optional name of the logger issuing this message.
@@ -1606,8 +1668,9 @@ struct LoggingMessageNotification : NotificationBase
 
 		DEFINE_TYPE_JSON_DERIVED(LoggingMessageNotification::Params, NotificationParams, LEVELKEY, LOGGERKEY, DATAKEY)
 
+		Params() = default;
 		explicit Params(const ELoggingLevel& InLevel,
-			const JSONData& InData,
+			JSONData InData,
 			const std::optional<std::string>& InLogger = std::nullopt,
 			const std::optional<NotificationParamsMeta>& InMeta = std::nullopt)
 			: NotificationParams(InMeta),
@@ -1617,8 +1680,9 @@ struct LoggingMessageNotification : NotificationBase
 		{}
 	};
 
+	LoggingMessageNotification() : NotificationBase("notifications/message") {}
 	explicit LoggingMessageNotification(const LoggingMessageNotification::Params& InParams)
-		: NotificationBase("notifications/message", InParams)
+		: NotificationBase("notifications/message", std::make_unique<LoggingMessageNotification::Params>(InParams))
 	{}
 };
 
@@ -1689,21 +1753,23 @@ struct ProgressNotification : NotificationBase
 			PROGRESSKEY,
 			TOTALKEY)
 
+		Params() = default;
 		Params(const std::optional<std::string>& InMessage,
-			const MCP::ProgressToken& InProgressToken,
+			MCP::ProgressToken InProgressToken,
 			const double InProgress,
 			const std::optional<int64_t>& InTotal,
 			const std::optional<NotificationParamsMeta>& InMeta = std::nullopt)
 			: NotificationParams(InMeta),
 			  Message(InMessage),
-			  ProgressToken(InProgressToken),
+			  ProgressToken(std::move(InProgressToken)),
 			  Progress(BoundedDouble{ InProgress, 0.0, 1.0, true }),
 			  Total(InTotal)
 		{}
 	};
 
+	ProgressNotification() : NotificationBase("notifications/progress") {}
 	explicit ProgressNotification(const ProgressNotification::Params& InParams)
-		: NotificationBase("notifications/progress", InParams)
+		: NotificationBase("notifications/progress", std::make_unique<ProgressNotification::Params>(InParams))
 	{}
 };
 
@@ -1762,17 +1828,19 @@ struct CancelledNotification : NotificationBase
 
 		DEFINE_TYPE_JSON_DERIVED(CancelledNotification::Params, NotificationParams, CANCELREQUESTIDKEY, REASONKEY)
 
-		explicit Params(const RequestID& InCancelRequestID,
+		Params() = default;
+		explicit Params(RequestID InCancelRequestID,
 			const std::optional<std::string>& InReason = std::nullopt,
 			const std::optional<NotificationParamsMeta>& InMeta = std::nullopt)
 			: NotificationParams(InMeta),
-			  CancelRequestID(InCancelRequestID),
+			  CancelRequestID(std::move(InCancelRequestID)),
 			  Reason(InReason)
 		{}
 	};
 
+	CancelledNotification() : NotificationBase("notifications/cancelled") {}
 	explicit CancelledNotification(const CancelledNotification::Params& InParams)
-		: NotificationBase("notifications/cancelled", InParams)
+		: NotificationBase("notifications/cancelled", std::make_unique<CancelledNotification::Params>(InParams))
 	{}
 };
 
@@ -1832,9 +1900,10 @@ struct CompleteRequest : RequestBase
 
 			DEFINE_TYPE_JSON(CompleteRequest::Params::CompleteArgument, NAMEKEY, VALUEKEY)
 
-			explicit CompleteArgument(const std::string& InName, const std::string& InValue)
-				: Name(InName),
-				  Value(InValue)
+			CompleteArgument() = default;
+			explicit CompleteArgument(std::string InName, std::string InValue)
+				: Name(std::move(InName)),
+				  Value(std::move(InValue))
 			{}
 		} Argument;
 
@@ -1843,16 +1912,20 @@ struct CompleteRequest : RequestBase
 
 		DEFINE_TYPE_JSON_DERIVED(CompleteRequest::Params, RequestParams, REFERENCEKEY, ARGUMENTKEY)
 
+		Params() = default;
 		explicit Params(const std::variant<PromptReference, ResourceReference>& InReference,
-			const CompleteArgument& InArgument,
+			CompleteArgument InArgument,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
 			: RequestParams(InMeta),
 			  Reference(InReference),
-			  Argument(InArgument)
+			  Argument(std::move(InArgument))
 		{}
 	};
 
-	explicit CompleteRequest(const CompleteRequest::Params& InParams) : RequestBase("completion/complete", InParams) {}
+	CompleteRequest() : RequestBase("completion/complete") {}
+	explicit CompleteRequest(const CompleteRequest::Params& InParams)
+		: RequestBase("completion/complete", std::make_unique<CompleteRequest::Params>(InParams))
+	{}
 };
 
 // CompleteResult {
@@ -1921,6 +1994,7 @@ struct CompleteResponse : ResponseBase
 
 			DEFINE_TYPE_JSON(CompleteResponse::Result::Completion, VALUESKEY, TOTALKEY, HASMOREKEY)
 
+			Completion() = default;
 			explicit Completion(const std::array<std::string, MAX_VALUES>& InValues,
 				const std::optional<int64_t>& InTotal = std::nullopt,
 				const std::optional<bool>& InHasMore = std::nullopt)
@@ -1934,14 +2008,16 @@ struct CompleteResponse : ResponseBase
 
 		DEFINE_TYPE_JSON_DERIVED(CompleteResponse::Result, ResultParams, COMPLETIONDATAKEY)
 
-		explicit Result(const Completion& InCompletionData, const std::optional<JSONData>& InMeta = std::nullopt)
+		Result() = default;
+		explicit Result(Completion InCompletionData, const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),
-			  CompletionData(InCompletionData)
+			  CompletionData(std::move(InCompletionData))
 		{}
 	};
 
+	CompleteResponse() = default;
 	explicit CompleteResponse(const RequestID& InRequestID, const CompleteResponse::Result& InResult)
-		: ResponseBase(InRequestID, InResult)
+		: ResponseBase(InRequestID, std::make_unique<CompleteResponse::Result>(InResult))
 	{}
 };
 
