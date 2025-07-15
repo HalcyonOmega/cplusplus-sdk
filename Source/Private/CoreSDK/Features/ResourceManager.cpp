@@ -130,7 +130,7 @@ std::optional<std::variant<TextResourceContents, BlobResourceContents>> Resource
 	return std::nullopt;
 }
 
-ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequestParams& InRequest) const
+ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequestParams* InRequest)
 {
 	Logger::Debug("Listing resources - Count: " + std::to_string(m_Resources.size()));
 
@@ -149,7 +149,7 @@ ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequ
 	};
 }
 
-ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const PaginatedRequestParams& InRequest) const
+ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const PaginatedRequestParams* InRequest)
 {
 	Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
 

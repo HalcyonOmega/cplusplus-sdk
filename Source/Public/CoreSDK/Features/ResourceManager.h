@@ -70,13 +70,13 @@ public:
 	 * List all registered resources.
 	 * @return Vector containing all registered resources
 	 */
-	ListResourcesResponse::Result ListResources(const PaginatedRequestParams& InRequest) const;
+	ListResourcesResponse::Result ListResources(const PaginatedRequestParams* InRequest);
 
 	/**
 	 * List all registered templates.
 	 * @return Vector containing all registered templates
 	 */
-	ListResourceTemplatesResponse::Result ListTemplates(const PaginatedRequestParams& InRequest) const;
+	ListResourceTemplatesResponse::Result ListTemplates(const PaginatedRequestParams* InRequest);
 
 	/**
 	 * Check if a resource with the given URI exists.
@@ -100,8 +100,8 @@ private:
 	 * @param InURI The URI to match
 	 * @return Optional map of template parameters if matched
 	 */
-	static std::optional<std::unordered_map<std::string, std::string>> MatchTemplate(
-		const ResourceTemplate& InTemplate, const MCP::URI& InURI);
+	static std::optional<std::unordered_map<std::string, std::string>> MatchTemplate(const ResourceTemplate& InTemplate,
+		const MCP::URI& InURI);
 };
 
 MCP_NAMESPACE_END

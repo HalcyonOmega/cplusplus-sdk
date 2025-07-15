@@ -101,12 +101,12 @@ public:
 
 			void SetRawResponse(const JSONData& RawResponse) { m_RawResponse = RawResponse; }
 
-			[[nodiscard]] std::optional<T> Get() const
+			[[nodiscard]] std::optional<T*> Get()
 			{
 				// If we already have a successfully parsed response, return it.
 				if (m_Response)
 				{
-					return *m_Response;
+					return { m_Response.get() };
 				}
 
 				// Otherwise, try to parse the raw JSON.
@@ -115,7 +115,7 @@ public:
 					T Response = m_RawResponse.get<T>();
 					// Cache the successful conversion.
 					m_Response = std::make_unique<T>(Response);
-					return Response;
+					return { m_Response.get() };
 				}
 				catch (const nlohmann::json::type_error& Exception)
 				{
@@ -124,11 +124,11 @@ public:
 				}
 			}
 
-			[[nodiscard]] std::optional<JSONData> Raw() const
+			[[nodiscard]] std::optional<JSONData> Raw()
 			{
 				if (!m_RawResponse.is_null())
 				{
-					return m_RawResponse;
+					return std::move(m_RawResponse);
 				}
 				return std::nullopt;
 			}
@@ -146,11 +146,11 @@ public:
 				}
 			}
 
-			[[nodiscard]] std::optional<typename T::Result> Result() const
+			[[nodiscard]] std::optional<typename T::Result> Result()
 			{
 				if (const auto& ExpectedResponse = Get())
 				{
-					return GetResponseResult<T::Result>(ExpectedResponse.value());
+					return std::move(GetResponseResult<T::Result>(ExpectedResponse.value()));
 				}
 				return std::nullopt;
 			}
@@ -261,7 +261,7 @@ public:
 		ResponseTask<T> Task = InternalCoro();
 
 		// Populate dependencies for coroutine to execute message sending
-		Task.SetDependencies(std::make_unique<RequestBase>(InRequest), m_Transport, m_MessageManager);
+		Task.SetDependencies(std::make_unique<RequestBase>(*InRequest), m_Transport, m_MessageManager);
 
 		// Return a task which is fully prepped for co_await
 		return Task;

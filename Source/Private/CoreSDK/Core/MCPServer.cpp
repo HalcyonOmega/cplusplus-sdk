@@ -210,7 +210,7 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest)
 {
 	try
 	{
-		const GetPromptRequest::Params Request = GetRequestParams<GetPromptRequest::Params>(InRequest).value();
+		const auto Request = GetRequestParams<GetPromptRequest::Params>(InRequest).value();
 
 		const GetPromptResponse::Result Result = m_PromptManager->GetPrompt(Request);
 
@@ -280,7 +280,8 @@ void MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params
 
 OptTask<ListRootsResponse::Result> MCPServer::Request_ListRoots(const PaginatedRequestParams& InParams)
 {
-	if (const auto& Response = co_await SendRequest<ListRootsResponse>(ListRootsRequest{ InParams }); Response.Result())
+	if (auto Response = std::move(co_await SendRequest<ListRootsResponse>(ListRootsRequest{ InParams }));
+		Response.Result())
 	{
 		co_return Response.Result().value();
 	}
@@ -361,7 +362,7 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 {
 	try
 	{
-		const UnsubscribeRequest::Params Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest).value();
+		const auto Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest).value();
 
 		const std::string_view ClientID = GetCurrentClientID();
 
@@ -403,7 +404,7 @@ void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InPa
 
 Task<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
 {
-	const auto& Response = SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
+	const auto Response = SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
 	co_return GetResponseResult<CreateMessageResponse::Result>(Response.Get());
 }
 
@@ -411,7 +412,7 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 {
 	try
 	{
-		CompleteRequest::Params Request = GetRequestParams<CompleteRequest::Params>(InRequest).value();
+		const CompleteRequest::Params* Request = GetRequestParams<CompleteRequest::Params>(InRequest).value();
 
 		if (!m_CompletionHandler)
 		{
@@ -448,8 +449,7 @@ void MCPServer::OnNotified_Progress(const ProgressNotification& InNotification)
 		return;
 	}
 
-	const ProgressNotification::Params Params
-		= GetNotificationParams<ProgressNotification::Params>(InNotification).value();
+	const auto Params = GetNotificationParams<ProgressNotification::Params>(InNotification).value();
 
 	// TODO: Implement progress notification handling
 	(void)Params;

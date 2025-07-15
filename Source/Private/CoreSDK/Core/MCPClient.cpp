@@ -16,12 +16,12 @@
 		return;                                     \
 	}
 
-#define SEND_REQUEST_RETURN_RESULT(ResponseType, Request)                                      \
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED                                                          \
-	if (const auto& Response = co_await SendRequest<ResponseType>(Request); Response.Result()) \
-	{                                                                                          \
-		co_return Response.Result().value();                                                   \
-	}                                                                                          \
+#define SEND_REQUEST_RETURN_RESULT(ResponseType, Request)                                          \
+	CO_RETURN_IF_CLIENT_NOT_CONNECTED                                                              \
+	if (auto Response = std::move(co_await SendRequest<ResponseType>(Request)); Response.Result()) \
+	{                                                                                              \
+		co_return Response.Result().value();                                                       \
+	}                                                                                              \
 	co_return std::nullopt;
 
 MCP_NAMESPACE_BEGIN
@@ -93,7 +93,7 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 		// Start transport
 		co_await m_Transport->Connect();
 
-		const auto& Response = co_await SendRequest<InitializeResponse>(InitializeRequest{ InParams });
+		auto Response = std::move(co_await SendRequest<InitializeResponse>(InitializeRequest{ InParams }));
 		if (Response.Result())
 		{
 			const auto Result = Response.Result().value();
@@ -164,7 +164,7 @@ VoidTask MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
 {
 	CO_RETURN_IF_CLIENT_NOT_CONNECTED
 
-	if (const auto& Response = co_await SendRequest<EmptyResponse>(SubscribeRequest{ InParams }); Response.Get())
+	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(SubscribeRequest{ InParams })); Response.Get())
 	{
 		Logger::Notice("Subscribe Successful");
 		co_return;

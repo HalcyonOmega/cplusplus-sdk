@@ -214,11 +214,11 @@ concept ConcreteRequest = std::is_base_of_v<RequestBase, T>;
 
 // Get typed params - cast the base Params to the derived request's Params type
 template <typename TParamsType, ConcreteRequest T>
-[[nodiscard]] std::optional<TParamsType*> GetRequestParams(const T& InRequest)
+[[nodiscard]] std::optional<const TParamsType*> GetRequestParams(const T& InRequest)
 {
 	if (InRequest.ParamsData)
 	{
-		return static_cast<const TParamsType*>(InRequest.ParamsData.value().get());
+		return { static_cast<const TParamsType*>(InRequest.ParamsData.value().get()) };
 	}
 	return std::nullopt;
 }

@@ -10,7 +10,7 @@ MCP_NAMESPACE_BEGIN
 // Base message types
 struct MessageBase
 {
-	const std::string JSONRPC{ "2.0" };
+	std::string JSONRPC{ "2.0" };
 
 	JKEY(JSONRPCKEY, JSONRPC, "jsonrpc")
 
@@ -18,6 +18,11 @@ struct MessageBase
 
 	virtual ~MessageBase() = default;
 	MessageBase() = default;
+
+	MessageBase(const MessageBase&) = default;
+	MessageBase(MessageBase&&) = default;
+	MessageBase& operator=(const MessageBase&) = default;
+	MessageBase& operator=(MessageBase&&) = default;
 };
 
 template <typename T>

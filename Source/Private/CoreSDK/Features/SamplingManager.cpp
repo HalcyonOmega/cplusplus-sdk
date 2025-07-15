@@ -52,7 +52,7 @@ CreateMessageResponse::Result SamplingManager::CreateMessage(const CreateMessage
 {
 	(void)InParams;
 
-	return std::nullopt;
+	return {};
 }
 
 std::optional<ModelPreferences> SamplingManager::GetEffectiveModelPreferences(

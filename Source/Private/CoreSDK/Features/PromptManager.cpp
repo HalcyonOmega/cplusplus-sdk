@@ -43,24 +43,22 @@ bool PromptManager::RemovePrompt(const Prompt& InPrompt)
 	return true;
 }
 
-GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Params& InRequest) const
+GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Params* InRequest) const
 {
 	std::lock_guard Lock(m_Mutex);
 
-	const std::optional<Prompt> FoundPrompt = FindPrompt(InRequest.Name);
+	const std::optional<Prompt> FoundPrompt = FindPrompt(InRequest->Name);
 	if (!FoundPrompt)
 	{
-		Logger::Warning("Prompt does not exist: " + InRequest.Name);
-		return GetPromptResponse::Result{};
+		Logger::Warning("Prompt does not exist: " + InRequest->Name);
+		return {};
 	}
 
-	return GetPromptResponse::Result{
-		.Messages = m_Prompts.find(FoundPrompt.value())->second(InRequest.Arguments.value()),
-		.Description = FoundPrompt->Description,
-	};
+	return GetPromptResponse::Result(m_Prompts.find(FoundPrompt.value())->second(InRequest->Arguments.value()),
+		FoundPrompt->Description);
 }
 
-ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestParams& InRequest) const
+ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestParams* InRequest) const
 {
 	std::lock_guard Lock(m_Mutex);
 
@@ -75,7 +73,7 @@ ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestPar
 	ListPromptsResponse::Result Result;
 	Result.Prompts = Prompts;
 	// TODO: @HalcyonOmega - Add Cursor support
-	Result.NextCursor = InRequest.Cursor;
+	Result.NextCursor = InRequest->Cursor;
 
 	return Result;
 }

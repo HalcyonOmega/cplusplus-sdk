@@ -35,10 +35,8 @@ struct ResultParams
 
 	DEFINE_TYPE_JSON(ResultParams, METAKEY)
 
-	ResultParams() = default;
-	virtual ~ResultParams() = default;
-
 	explicit ResultParams(const std::optional<JSONData>& InMeta = std::nullopt) : Meta(InMeta) {}
+	virtual ~ResultParams() = default;
 };
 
 // PaginatedResult {
@@ -68,14 +66,12 @@ struct PaginatedResultParams : ResultParams
 
 	DEFINE_TYPE_JSON_DERIVED(PaginatedResultParams, ResultParams, NEXT_CURSORKEY)
 
-	PaginatedResultParams() = default;
-	~PaginatedResultParams() override = default;
-
 	explicit PaginatedResultParams(const std::optional<std::string>& InNextCursor = std::nullopt,
 		const std::optional<JSONData>& InMeta = std::nullopt)
 		: ResultParams(InMeta),
 		  NextCursor(InNextCursor)
 	{}
+	~PaginatedResultParams() override = default;
 };
 
 // ResponseBase {
@@ -125,7 +121,8 @@ concept UnexpectedResponseFunction
 	= std::invocable<F, const JSONData&> && std::same_as<std::invoke_result_t<F, const JSONData&>, void>;
 
 // Get typed result - cast the base Result to the derived response's Result type
-template <typename TResultType, ConcreteResponse T> [[nodiscard]] TResultType* GetResponseResult(const T& InResponse)
+template <typename TResultType, ConcreteResponse T>
+[[nodiscard]] const TResultType* GetResponseResult(const T& InResponse)
 {
 	return static_cast<const TResultType*>(InResponse.ResultData.get());
 }

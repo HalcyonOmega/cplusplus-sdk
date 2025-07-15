@@ -96,11 +96,11 @@ concept ConcreteNotification = std::is_base_of_v<NotificationBase, T>;
 
 // Get typed params - cast the base Params to the derived notification's Params type
 template <typename TParamsType, ConcreteNotification T>
-[[nodiscard]] std::optional<TParamsType*> GetNotificationParams(T& InNotification)
+[[nodiscard]] std::optional<const TParamsType*> GetNotificationParams(T& InNotification)
 {
 	if (InNotification.ParamsData)
 	{
-		return static_cast<const TParamsType*>(InNotification.ParamsData.get());
+		return { static_cast<const TParamsType*>(InNotification.ParamsData.value().get()) };
 	}
 	return std::nullopt;
 }

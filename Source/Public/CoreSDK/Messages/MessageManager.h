@@ -150,6 +150,9 @@ public:
 		return m_ResponseHandlers.erase(InRequestID.ToString()) > 0;
 	}
 
+	explicit MessageManager(const bool InWarnOnDuplicateHandlers) : m_WarnOnDuplicateHandlers(InWarnOnDuplicateHandlers)
+	{}
+
 private:
 	// Message type routing functions
 	bool RouteRequest(const JSONData& InMessage)
@@ -235,9 +238,6 @@ private:
 	std::mutex m_NotificationMutex;
 
 	bool m_WarnOnDuplicateHandlers{ true };
-
-	explicit MessageManager(const bool InWarnOnDuplicateHandlers) : m_WarnOnDuplicateHandlers(InWarnOnDuplicateHandlers)
-	{}
 };
 
 MCP_NAMESPACE_END
