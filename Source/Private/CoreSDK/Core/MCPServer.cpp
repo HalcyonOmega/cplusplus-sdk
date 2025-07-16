@@ -68,17 +68,17 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 	{
 		if (const auto Request = GetRequestParams<InitializeRequest::Params>(InRequest))
 		{
-			SendMessage(InitializeResponse{ InRequest.GetRequestID(),
+			SendMCPMessage(InitializeResponse{ InRequest.GetRequestID(),
 				InitializeResponse::Result{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities } });
 		}
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
-void MCPServer::Notify_Initialized() { SendMessage(InitializedNotification()); }
+void MCPServer::Notify_Initialized() { SendMCPMessage(InitializedNotification()); }
 
 bool MCPServer::AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction)
 {
@@ -104,7 +104,7 @@ bool MCPServer::RemoveTool(const Tool& InTool)
 	return true;
 }
 
-void MCPServer::Notify_ToolListChanged() { SendMessage(ToolListChangedNotification()); }
+void MCPServer::Notify_ToolListChanged() { SendMCPMessage(ToolListChangedNotification()); }
 
 void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest)
 {
@@ -114,11 +114,11 @@ void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest)
 
 		const ListToolsResponse::Result Result = m_ToolManager->ListTools(RequestParams.value());
 
-		SendMessage(ListToolsResponse(InRequest.GetRequestID(), Result));
+		SendMCPMessage(ListToolsResponse(InRequest.GetRequestID(), Result));
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -133,11 +133,11 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest)
 		const auto Result = m_ToolManager->CallTool(Request);
 
 		const CallToolResponse::Result ResponseResult{ Result.Content, Result.IsError };
-		SendMessage(CallToolResponse(InRequest.GetRequestID(), ResponseResult));
+		SendMCPMessage(CallToolResponse(InRequest.GetRequestID(), ResponseResult));
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -165,7 +165,7 @@ bool MCPServer::RemovePrompt(const Prompt& InPrompt)
 	return true;
 }
 
-void MCPServer::Notify_PromptListChanged() { SendMessage(PromptListChangedNotification()); }
+void MCPServer::Notify_PromptListChanged() { SendMCPMessage(PromptListChangedNotification()); }
 
 void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest)
 {
@@ -175,11 +175,11 @@ void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest)
 
 		const ListPromptsResponse::Result Result = m_PromptManager->ListPrompts(RequestParams.value());
 
-		SendMessage(ListPromptsResponse(InRequest.GetRequestID(), Result));
+		SendMCPMessage(ListPromptsResponse(InRequest.GetRequestID(), Result));
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -191,11 +191,11 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest)
 
 		const GetPromptResponse::Result Result = m_PromptManager->GetPrompt(Request);
 
-		SendMessage(GetPromptResponse(InRequest.GetRequestID(), Result));
+		SendMCPMessage(GetPromptResponse(InRequest.GetRequestID(), Result));
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -248,11 +248,11 @@ bool MCPServer::RemoveResourceTemplate(const ResourceTemplate& InTemplate)
 	return true;
 }
 
-void MCPServer::Notify_ResourceListChanged() { SendMessage(ResourceListChangedNotification()); }
+void MCPServer::Notify_ResourceListChanged() { SendMCPMessage(ResourceListChangedNotification()); }
 
 void MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams)
 {
-	SendMessage(ResourceUpdatedNotification(InParams));
+	SendMCPMessage(ResourceUpdatedNotification(InParams));
 }
 
 OptTask<ListRootsResponse::Result> MCPServer::Request_ListRoots(const PaginatedRequestParams& InParams)
@@ -273,11 +273,11 @@ void MCPServer::OnRequest_ListResources(const ListResourcesRequest& InRequest)
 
 		const ListResourcesResponse::Result Result = m_ResourceManager->ListResources(Request.value());
 
-		SendMessage(ListResourcesResponse(InRequest.GetRequestID(), Result));
+		SendMCPMessage(ListResourcesResponse(InRequest.GetRequestID(), Result));
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -295,11 +295,11 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest)
 		ReadResourceResponse::Result ResponseResult;
 		ResponseResult.Contents.emplace_back(ResourceContent);
 
-		SendMessage(ReadResourceResponse(InRequest.GetRequestID(), ResponseResult));
+		SendMCPMessage(ReadResourceResponse(InRequest.GetRequestID(), ResponseResult));
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -314,7 +314,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 		// Validate resource exists
 		if (!m_ResourceManager->HasResource(Request->URI))
 		{
-			SendMessage(ErrorInvalidRequest(InRequest.GetRequestID(),
+			SendMCPMessage(ErrorInvalidRequest(InRequest.GetRequestID(),
 				"Resource not found",
 				JSONData::object({ { "uri", Request->URI.toString() } })));
 			return;
@@ -324,11 +324,11 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 		m_ResourceManager->AddResourceSubscription(Request, std::string(ClientID));
 
 		// Send an empty response to indicate success
-		SendMessage(EmptyResponse{ InRequest.GetRequestID() });
+		SendMCPMessage(EmptyResponse{ InRequest.GetRequestID() });
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -340,11 +340,11 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 		const std::string_view ClientID = GetCurrentClientID();
 
 		m_ResourceManager->RemoveResourceSubscription(Request, std::string(ClientID));
-		SendMessage(EmptyResponse{ InRequest.GetRequestID() });
+		SendMCPMessage(EmptyResponse{ InRequest.GetRequestID() });
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
@@ -356,7 +356,7 @@ void MCPServer::OnNotified_RootsListChanged(const RootsListChangedNotification& 
 
 void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InParams)
 {
-	SendMessage(LoggingMessageNotification(InParams));
+	SendMCPMessage(LoggingMessageNotification(InParams));
 }
 
 OptTask<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
@@ -377,30 +377,30 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 
 		if (!m_CompletionHandler)
 		{
-			SendMessage(ErrorMethodNotFound(InRequest.GetRequestID(), "Completion not supported"));
+			SendMCPMessage(ErrorMethodNotFound(InRequest.GetRequestID(), "Completion not supported"));
 		}
 
 		(void)Request;
 		// Call handler
 		// auto response = m_CompletionHandler(request);
-		// SendMessage(InRequestID, JSONData(response));
+		// SendMCPMessage(InRequestID, JSONData(response));
 
 		// TODO: Implement actual completion handler call
 	}
 	catch (const std::exception& Except)
 	{
-		SendMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
+		SendMCPMessage(ErrorInternalError(InRequest.GetRequestID(), Except.what()));
 	}
 }
 
 void MCPServer::Notify_Progress(const ProgressNotification::Params& InParams)
 {
-	SendMessage(ProgressNotification(InParams));
+	SendMCPMessage(ProgressNotification(InParams));
 }
 
 void MCPServer::Notify_CancelRequest(const CancelledNotification::Params& InParams)
 {
-	SendMessage(CancelledNotification(InParams));
+	SendMCPMessage(CancelledNotification(InParams));
 }
 
 void MCPServer::OnNotified_Progress(const ProgressNotification& InNotification)
@@ -456,7 +456,7 @@ void MCPServer::Notify_ResourceSubscribers(const ResourceUpdatedNotification::Pa
 	if (const auto Subscribers = m_ResourceManager->GetSubscribers(InParams.URI))
 	{
 		// Send notification to all subscribers
-		SendMessage(ResourceUpdatedNotification{ InParams }, Subscribers.value());
+		SendMCPMessage(ResourceUpdatedNotification{ InParams }, Subscribers.value());
 	}
 }
 
@@ -482,7 +482,7 @@ VoidTask MCPServer::UpdateProgress(const double InProgress, std::optional<int64_
 			Params.Total = *InTotal;
 		}
 
-		SendMessage(ProgressNotification(Params));
+		SendMCPMessage(ProgressNotification(Params));
 	}
 	catch (const std::exception&)
 	{

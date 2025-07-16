@@ -56,7 +56,7 @@ public:
 	static const std::vector<std::string> SUPPORTED_PROTOCOL_VERSIONS;
 	static void ValidateProtocolVersion(const std::string& InVersion);
 
-	void SendMessage(const MessageBase& InMessage,
+	void SendMCPMessage(const MessageBase& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnections = std::nullopt) const;
 
 	void SetServerInfo(const Implementation& InServerInfo) { m_ServerInfo = InServerInfo; }

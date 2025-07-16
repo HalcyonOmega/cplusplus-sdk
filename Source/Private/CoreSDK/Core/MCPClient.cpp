@@ -228,7 +228,7 @@ bool MCPClient::RemoveRoot(const Root& InRoot)
 	return true;
 }
 
-void MCPClient::Notify_RootsListChanged() { SendMessage(RootsListChangedNotification()); }
+void MCPClient::Notify_RootsListChanged() { SendMCPMessage(RootsListChangedNotification()); }
 
 VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InParams)
 {
@@ -254,7 +254,7 @@ void MCPClient::OnRequest_ListRoots(const ListRootsRequest& InRequest)
 {
 	if (m_RootManager)
 	{
-		SendMessage(ListRootsResponse(InRequest.GetRequestID(), m_RootManager->ListRoots()));
+		SendMCPMessage(ListRootsResponse(InRequest.GetRequestID(), m_RootManager->ListRoots()));
 	}
 }
 
@@ -265,10 +265,10 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 	if (const auto RequestParams = GetRequestParams<CreateMessageRequest::Params>(InRequest))
 	{
 		const CreateMessageResponse::Result Result = m_SamplingManager->CreateMessage(RequestParams.value());
-		SendMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
+		SendMCPMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
 		return;
 	}
-	SendMessage(ErrorInvalidParams(InRequest.GetRequestID(), "Create Message Request params could not be retrieved"));
+	SendMCPMessage(ErrorInvalidParams(InRequest.GetRequestID(), "Create Message Request params could not be retrieved"));
 }
 
 OptTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
@@ -278,12 +278,12 @@ OptTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequ
 
 void MCPClient::Notify_Progress(const ProgressNotification::Params& InParams)
 {
-	return SendMessage(ProgressNotification{ InParams });
+	return SendMCPMessage(ProgressNotification{ InParams });
 }
 
 void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InParams)
 {
-	return SendMessage(CancelledNotification{ InParams });
+	return SendMCPMessage(CancelledNotification{ InParams });
 }
 
 void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification)
