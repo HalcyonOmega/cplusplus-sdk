@@ -134,7 +134,19 @@ VoidTask StdioClientTransport::Disconnect()
 
 std::string StdioClientTransport::GetConnectionInfo() const { return "Stdio transport to: " + m_Options.Command; }
 
+// TODO: @HalcyonOmega Cleanup
+void StdioClientTransport::ReaderThread(std::stop_token InStopToken) {}
+
 void StdioClientTransport::run() { ProcessIncomingData(); }
+
+Task<JSONData> StdioClientTransport::TransmitRequest(const JSONData& InRequest,
+	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+{
+	// TODO: @HalcyonOmega Implement properly
+	(void)InRequest;
+	(void)InConnectionIDs;
+	co_return JSONData{};
+}
 
 void StdioClientTransport::ProcessIncomingData()
 {
@@ -222,9 +234,6 @@ void StdioClientTransport::Cleanup()
 	m_StderrPipe.reset();
 
 	m_ProcessHandle.reset();
-
-	// Clear pending requests
-	m_MessageManager->m_PendingRequests.clear();
 }
 
 // StdioServerTransport Implementation
@@ -288,9 +297,6 @@ VoidTask StdioServerTransport::Disconnect()
 		{
 			m_ReadThread.join();
 		}
-
-		// Clear pending requests
-		m_MessageManager->m_PendingRequests.clear();
 
 		SetState(ETransportState::Disconnected);
 	}
@@ -357,6 +363,15 @@ void StdioServerTransport::TransmitMessage(const JSONData& InMessage,
 	{
 		HandleRuntimeError("Error writing message: " + std::string(e.what()));
 	}
+}
+
+Task<JSONData> StdioServerTransport::TransmitRequest(const JSONData& InRequest,
+	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
+{
+	// TODO: @HalcyonOmega Implement properly
+	(void)InRequest;
+	(void)InConnectionIDs;
+	co_return JSONData{};
 }
 
 // Factory functions

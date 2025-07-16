@@ -54,7 +54,7 @@ public:
 	void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
 
 	// Sampling
-	Task<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
+	OptTask<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
 
 	// Progress reporting
 	void Notify_Progress(const ProgressNotification::Params& InParams);

@@ -72,7 +72,7 @@ bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, const Reso
 	ResourceTemplate Template = InTemplate;
 	Template.URITemplate = MCP::URITemplate(InTemplate.URITemplate.ToString());
 
-	m_Templates[InTemplate.URITemplate.ToString()] = std::make_pair(Template, InFunction);
+	m_Templates.try_emplace(InTemplate.URITemplate.ToString(), Template, InFunction);
 
 	Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
 	return true;
@@ -169,12 +169,52 @@ bool ResourceManager::HasResource(const MCP::URI& InURI) const
 	return std::ranges::any_of(m_Resources, [InURI](const auto& Pair) { return Pair.first == InURI; });
 }
 
+bool ResourceManager::AddResourceSubscription(const SubscribeRequest::Params* InResource,
+	const std::string& InConnection)
+{
+	std::lock_guard Lock(m_ResourceSubscriptionsMutex);
+	if (const auto Iterator = m_ResourceSubscriptions.find(InResource->URI.toString());
+		Iterator != m_ResourceSubscriptions.end())
+	{
+		Iterator->second.emplace_back(InConnection);
+		return true;
+	}
+	std::vector<std::string> Connections{ InConnection };
+
+	auto [Iterator, Inserted] = m_ResourceSubscriptions.try_emplace(InResource->URI.toString(), Connections);
+	return Inserted;
+}
+
+bool ResourceManager::RemoveResourceSubscription(const UnsubscribeRequest::Params* InResource,
+	const std::string& InConnection)
+{
+	std::lock_guard Lock(m_ResourceSubscriptionsMutex);
+	if (const auto Iterator = m_ResourceSubscriptions.find(InResource->URI.toString());
+		Iterator != m_ResourceSubscriptions.end())
+	{
+		Iterator->second.erase(std::ranges::remove(Iterator->second, InConnection).begin());
+		return true;
+	}
+	return false;
+}
+
+std::optional<std::vector<std::string>> ResourceManager::GetSubscribers(const MCP::URI& InResource)
+{
+	std::lock_guard Lock(m_ResourceSubscriptionsMutex);
+
+	if (const auto Iterator = m_ResourceSubscriptions.find(InResource.toString());
+		Iterator != m_ResourceSubscriptions.end())
+	{
+		return Iterator->second;
+	}
+	return std::nullopt;
+}
+
 std::optional<std::unordered_map<std::string, std::string>>
 ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::URI& InURI)
 {
 	// Basic URI template matching - this is a simplified implementation
 	// A full implementation would use RFC 6570 URI template matching
-
 	const std::string TemplateString = InTemplate.URITemplate.ToString();
 	const std::string URIString = InURI.toString();
 

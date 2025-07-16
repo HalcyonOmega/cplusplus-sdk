@@ -321,10 +321,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 		}
 
 		// Add a subscription with proper client tracking
-		{
-			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-			m_ResourceSubscriptions[Request->URI.toString()].emplace_back(ClientID);
-		}
+		m_ResourceManager->AddResourceSubscription(Request, std::string(ClientID));
 
 		// Send an empty response to indicate success
 		SendMessage(EmptyResponse{ InRequest.GetRequestID() });
@@ -340,26 +337,9 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 	try
 	{
 		const auto Request = GetRequestParams<UnsubscribeRequest::Params>(InRequest).value();
-
 		const std::string_view ClientID = GetCurrentClientID();
 
-		// Remove from subscriptions
-		{
-			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-			if (const auto Iter = m_ResourceSubscriptions.find(Request->URI.toString());
-				Iter != m_ResourceSubscriptions.end())
-			{
-				auto& Subscribers = Iter->second;
-				std::erase(Subscribers, std::string(ClientID));
-				// Clean up empty subscription sets
-				if (Subscribers.empty())
-				{
-					m_ResourceSubscriptions.erase(Iter);
-				}
-			}
-		}
-
-		// Send empty response
+		m_ResourceManager->RemoveResourceSubscription(Request, std::string(ClientID));
 		SendMessage(EmptyResponse{ InRequest.GetRequestID() });
 	}
 	catch (const std::exception& Except)
@@ -379,10 +359,14 @@ void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InPa
 	SendMessage(LoggingMessageNotification(InParams));
 }
 
-Task<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
+OptTask<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
 {
-	const auto Response = SendRequest<CreateMessageResponse>(CreateMessageRequest(InParams));
-	co_return GetResponseResult<CreateMessageResponse::Result>(Response.Get());
+	if (auto Response = std::move(co_await SendRequest<CreateMessageResponse>(CreateMessageRequest{ InParams }));
+		Response.Result())
+	{
+		co_return Response.Result().value();
+	}
+	co_return std::nullopt;
 }
 
 void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
@@ -396,6 +380,7 @@ void MCPServer::OnRequest_Complete(const CompleteRequest& InRequest)
 			SendMessage(ErrorMethodNotFound(InRequest.GetRequestID(), "Completion not supported"));
 		}
 
+		(void)Request;
 		// Call handler
 		// auto response = m_CompletionHandler(request);
 		// SendMessage(InRequestID, JSONData(response));
@@ -434,14 +419,8 @@ void MCPServer::OnNotified_Progress(const ProgressNotification& InNotification)
 
 void MCPServer::OnNotified_CancelRequest(const CancelledNotification& InNotification)
 {
-	// Ensure this method requires instance access
-	if (!IsInitialized())
-	{
-		return;
-	}
-
-	(void)InNotification;
-	// TODO: Implement cancel request handling
+	const auto Params = GetNotificationParams<CancelledNotification::Params>(InNotification).value();
+	m_MessageManager->UnregisterResponseHandler(Params->CancelRequestID);
 }
 
 void MCPServer::SetHandlers()
@@ -473,24 +452,15 @@ void MCPServer::SetHandlers()
 void MCPServer::Notify_ResourceSubscribers(const ResourceUpdatedNotification::Params& InParams)
 {
 	// TODO: @HalcyonOmega - Get Actual Subscribers
-	std::vector<std::string> Subscribers;
 
-	std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-
-	if (const auto Iter = m_ResourceSubscriptions.find(InParams.URI.toString()); Iter != m_ResourceSubscriptions.end())
-	{
-		Subscribers = Iter->second;
-	}
-
-	if (!Subscribers.empty())
+	if (const auto Subscribers = m_ResourceManager->GetSubscribers(InParams.URI))
 	{
 		// Send notification to all subscribers
-		SendMessage(ResourceUpdatedNotification{ InParams }, Subscribers);
+		SendMessage(ResourceUpdatedNotification{ InParams }, Subscribers.value());
 	}
 }
 
-// Client identification helper (simplified - in production would use transport
-// session data)
+// Client identification helper (simplified - in production would use transport session data)
 // TODO: @HalcyonOmega - Implement this
 std::string_view MCPServer::GetCurrentClientID() const
 {
@@ -498,35 +468,6 @@ std::string_view MCPServer::GetCurrentClientID() const
 	// In a real implementation this would extract the client ID from the current
 	// transport session
 	return "default_client";
-}
-
-// Send notification to specific client (simplified implementation)
-// TODO: @HalcyonOmega - Implement this
-void MCPServer::SendMessageToClient(const std::string_view InClientID,
-	const ResourceUpdatedNotification& InNotification)
-{
-	(void)InClientID;
-	// For now, send to all clients via the protocol
-	// In a real implementation this would route to the specific client
-	SendMessage(InNotification);
-}
-
-// Enhanced tool execution with progress reporting
-Task<CallToolResponse> MCPServer::ExecuteToolWithProgress(const Tool& InTool,
-	const std::optional<std::unordered_map<std::string, JSONData>>& InArguments,
-	const RequestID& InRequestID)
-{
-	// Update progress at 0%
-	co_await UpdateProgress(0.0);
-
-	// Use ToolManager to execute a tool
-	const auto Result = m_ToolManager->CallTool(InTool, InArguments);
-
-	// Complete progress
-	co_await UpdateProgress(1.0);
-
-	CallToolResponse Response(InRequestID, Result);
-	co_return Response;
 }
 
 VoidTask MCPServer::UpdateProgress(const double InProgress, std::optional<int64_t> InTotal)

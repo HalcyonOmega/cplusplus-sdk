@@ -114,7 +114,7 @@ private:
 class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler
 {
 public:
-	explicit MCPHTTPRequestHandler(HTTPTransportServer* InServer);
+	explicit MCPHTTPRequestHandler(const Poco::Net::HTTPServerRequest& InResponse, HTTPTransportServer* InServer);
 	~MCPHTTPRequestHandler() noexcept override;
 	void handleRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse) override;
 
@@ -126,13 +126,14 @@ private:
 class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerFactory
 {
 public:
-	explicit MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer);
+	explicit MCPHTTPRequestHandlerFactory();
 	~MCPHTTPRequestHandlerFactory() noexcept override;
 	[[nodiscard]] Poco::Net::HTTPRequestHandler* createRequestHandler(
 		const Poco::Net::HTTPServerRequest& InRequest) override;
+	bool SetServer(HTTPTransportServer* InServer);
 
 private:
-	HTTPTransportServer* m_Server;
+	HTTPTransportServer* m_Server{ nullptr };
 };
 
 MCP_NAMESPACE_END

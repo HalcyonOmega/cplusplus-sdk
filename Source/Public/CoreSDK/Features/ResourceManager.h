@@ -85,6 +85,12 @@ public:
 	 */
 	bool HasResource(const MCP::URI& InURI) const;
 
+	bool AddResourceSubscription(const SubscribeRequest::Params* InResource, const std::string& InConnection);
+
+	bool RemoveResourceSubscription(const UnsubscribeRequest::Params* InResource, const std::string& InConnection);
+
+	std::optional<std::vector<std::string>> GetSubscribers(const MCP::URI& InResource);
+
 private:
 	std::unordered_map<MCP::URI, Resource> m_Resources;
 	std::unordered_map<std::string, std::pair<ResourceTemplate, ResourceFunction>> m_Templates;

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "CoreSDK/Common/Macros.h"
+#include "CoreSDK/Common/ProtocolInfo.h"
 #include "JSONProxy.h"
 #include "Utilities/Async/Task.h"
 
@@ -59,6 +60,7 @@ struct HTTPTransportOptions final : TransportOptions
 	std::string Path = std::string{ DEFAULT_PATH };
 	std::chrono::milliseconds ConnectTimeout{ DEFAULT_CONNECT_TIMEOUT };
 	std::chrono::milliseconds RequestTimeout{ DEFAULT_REQUEST_TIMEOUT };
+	EProtocolVersion ProtocolVersion{ EProtocolVersion::V2025_03_26 };
 };
 
 // Transport interface

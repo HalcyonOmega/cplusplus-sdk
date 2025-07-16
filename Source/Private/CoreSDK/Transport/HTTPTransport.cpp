@@ -166,7 +166,7 @@ void HTTPTransportClient::TransmitMessage(const JSONData& InMessage,
 			m_Options.Path,
 			Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.setContentType("application/json");
-		Request.set("MCP-Protocol-Version", m_Client.ProtocolVersion);
+		Request.set("MCP-Protocol-Version", ToString(m_Options.ProtocolVersion));
 
 		const std::string Body = InMessage.dump();
 		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
@@ -264,13 +264,13 @@ void HTTPTransportClient::Cleanup()
 
 	// Close HTTP session
 	m_HTTPSession.reset();
-
-	// Clear pending requests
-	m_Client->m_MessageManager->ClearPendingRequests;
 }
 
 // MCPHTTPRequestHandler Implementation
-MCPHTTPRequestHandler::MCPHTTPRequestHandler(HTTPTransportServer* InServer) : m_Server(InServer) {}
+MCPHTTPRequestHandler::MCPHTTPRequestHandler(const Poco::Net::HTTPServerRequest& InResponse,
+	HTTPTransportServer* InServer)
+	: m_Server(InServer)
+{}
 
 void MCPHTTPRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& InRequest,
 	Poco::Net::HTTPServerResponse& InResponse)
@@ -279,15 +279,24 @@ void MCPHTTPRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& InReques
 }
 
 // MCPHTTPRequestHandlerFactory Implementation
-MCPHTTPRequestHandlerFactory::MCPHTTPRequestHandlerFactory() : m_Server() {}
+MCPHTTPRequestHandlerFactory::MCPHTTPRequestHandlerFactory() {}
+
+bool MCPHTTPRequestHandlerFactory::SetServer(HTTPTransportServer* InServer)
+{
+	if (InServer)
+	{
+		m_Server = InServer;
+		return true;
+	}
+	return false;
+}
 
 Poco::Net::HTTPRequestHandler* MCPHTTPRequestHandlerFactory::createRequestHandler(
 	const Poco::Net::HTTPServerRequest& InRequest)
 {
-	(void)InRequest;
 	if (m_Server)
 	{
-		return new MCPHTTPRequestHandler(m_Server);
+		return new MCPHTTPRequestHandler(InRequest, m_Server);
 	}
 	return nullptr;
 }
@@ -324,18 +333,12 @@ VoidTask HTTPTransportServer::Connect()
 	{
 		SetState(ETransportState::Connecting);
 
-		// Create server socket
 		m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
-
 		const auto& Params = new Poco::Net::HTTPServerParams();
-
-		// Create an HTTP server
 		m_HTTPServer
 			= std::make_unique<Poco::Net::HTTPServer>(new MCPHTTPRequestHandlerFactory(), *m_ServerSocket, Params);
 
-		// Start the server
 		m_HTTPServer->start();
-
 		SetState(ETransportState::Connected);
 	}
 	catch (const std::exception& e)
@@ -372,13 +375,7 @@ VoidTask HTTPTransportServer::Disconnect()
 			m_SSEClients.clear();
 		}
 
-		// Clear pending requests
-		{
-			m_MessageManager->ClearPendingRequests();
-		}
-
 		m_HTTPServer.reset();
-		m_HandlerFactory.reset();
 		m_ServerSocket.reset();
 
 		SetState(ETransportState::Disconnected);
@@ -391,9 +388,6 @@ VoidTask HTTPTransportServer::Disconnect()
 
 	co_return;
 }
-void HTTPTransportServer::TransmitMessage(const JSONData& InMessage,
-	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
-{}
 
 std::string HTTPTransportServer::GetConnectionInfo() const
 {
@@ -469,7 +463,6 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 				{
 					break;
 				}
-				Lock.unlock();
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 		}
@@ -543,7 +536,8 @@ void HTTPTransportServer::UnregisterSSEClient(const std::string& InClientID)
 	}
 }
 
-void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
+void HTTPTransportServer::TransmitMessage(const JSONData& InMessage,
+	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 {
 	std::lock_guard Lock(m_ClientsMutex);
 
@@ -571,8 +565,6 @@ void HTTPTransportServer::TransmitMessage(const JSONData& InMessage)
 			Iterator = m_SSEClients.erase(Iterator);
 		}
 	}
-
-	co_return;
 }
 
 void HTTPTransportServer::ProcessReceivedMessage(const std::string& InMessage) { CallMessageRouter(InMessage); }

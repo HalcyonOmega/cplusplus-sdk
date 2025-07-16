@@ -83,12 +83,10 @@ struct RequestParams
 
 		DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
 
-		RequestParamsMeta() = default;
-		virtual ~RequestParamsMeta() = default;
-
 		explicit RequestParamsMeta(const std::optional<MCP::ProgressToken>& InProgressToken = std::nullopt)
 			: ProgressToken(InProgressToken)
 		{}
+		virtual ~RequestParamsMeta() = default;
 	};
 
 	std::optional<RequestParamsMeta> Meta{ std::nullopt };

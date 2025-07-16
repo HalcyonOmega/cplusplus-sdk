@@ -27,6 +27,22 @@ MCP_NAMESPACE_BEGIN
 
 struct EmptyResponse : ResponseBase
 {
+	struct Result : ResultParams
+	{
+
+		friend void to_json(JSONData& InJSON, const EmptyResponse::Result& InResult)
+		{
+			InJSON = JSONData::object();
+			(void)InResult;
+		}
+
+		friend void from_json(const JSONData& InJSON, EmptyResponse::Result& InResult)
+		{
+			(void)InJSON;
+			InResult = EmptyResponse::Result{};
+		}
+	};
+
 	EmptyResponse() = default;
 	explicit EmptyResponse(const RequestID& InRequest) : ResponseBase(InRequest) {};
 };

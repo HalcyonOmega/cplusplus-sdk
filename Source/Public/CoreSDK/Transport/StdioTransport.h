@@ -24,7 +24,11 @@ public:
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
+	void run();
+
 	void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	Task<JSONData> TransmitRequest(const JSONData& InRequest,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	std::string GetConnectionInfo() const override;
@@ -63,6 +67,8 @@ public:
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
+	void run();
+
 	void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 	Task<JSONData> TransmitRequest(const JSONData& InRequest,
@@ -77,6 +83,7 @@ private:
 	void ProcessIncomingData();
 	void ProcessLine(const std::string& InLine);
 
+	bool m_ShouldStop{ false };
 	std::jthread m_ReadThread;
 	std::string m_Buffer;
 
