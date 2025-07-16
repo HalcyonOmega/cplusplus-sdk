@@ -14,18 +14,18 @@
 
 MCP_NAMESPACE_BEGIN
 
-class StdioClientTransport final: public ITransport
+class StdioClientTransport final : public ITransport
 {
 public:
-	explicit StdioClientTransport(StdioClientTransportOptions  InOptions);
+	explicit StdioClientTransport(StdioClientTransportOptions InOptions);
 	~StdioClientTransport() noexcept override;
 
 	// ITransport interface
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
-	void TransmitMessage(
-		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	std::string GetConnectionInfo() const override;
 
@@ -63,10 +63,10 @@ public:
 	VoidTask Connect() override;
 	VoidTask Disconnect() override;
 
-	void TransmitMessage(
-		const JSONData& InMessage, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
-	Task<JSONData> TransmitRequest(
-		const JSONData& InRequest, const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	void TransmitMessage(const JSONData& InMessage,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	Task<JSONData> TransmitRequest(const JSONData& InRequest,
+		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	std::string GetConnectionInfo() const override;
 

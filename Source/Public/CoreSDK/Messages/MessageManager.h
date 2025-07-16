@@ -95,7 +95,8 @@ public:
 		return true;
 	}
 
-	// Main routing function - receives JSON string and routes to the appropriate handler
+	// Main routing function - receives JSON string and routes to the appropriate
+	// handler
 	bool RouteMessage(const std::string& InMessage)
 	{
 		try

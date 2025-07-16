@@ -114,7 +114,7 @@ public:
 				{
 					T Response = m_RawResponse.get<T>();
 					// Cache the successful conversion.
-					m_Response = std::make_unique<T>(Response);
+					m_Response = std::make_unique<T>(std::move(Response));
 					return { m_Response.get() };
 				}
 				catch (const nlohmann::json::type_error& Exception)
@@ -150,8 +150,10 @@ public:
 			{
 				if (auto ExpectedResponse = Get())
 				{
-					auto& Response = *ExpectedResponse.value();
-					return std::move(GetResponseResult<typename T::Result>(Response));
+					auto* Response = ExpectedResponse.value();
+					auto* ResultPtr = GetResponseResult<typename T::Result>(*Response);
+					if (ResultPtr)
+						return *ResultPtr;
 				}
 				return std::nullopt;
 			}
@@ -253,7 +255,7 @@ public:
 		friend class MCPProtocol;
 	};
 
-	template <ConcreteResponse T> [[nodiscard]] ResponseTask<T> SendRequest(const RequestBase& InRequest)
+	template <ConcreteResponse T> [[nodiscard]] ResponseTask<T> SendRequest(RequestBase&& InRequest)
 	{
 		// Create promise & handle for coroutine
 		auto InternalCoro = []() -> ResponseTask<T> { co_return; };
@@ -262,7 +264,9 @@ public:
 		ResponseTask<T> Task = InternalCoro();
 
 		// Populate dependencies for coroutine to execute message sending
-		Task.SetDependencies(std::make_unique<RequestBase>(InRequest), m_Transport, m_MessageManager);
+		Task.SetDependencies(std::make_unique<std::decay_t<decltype(InRequest)>>(std::move(InRequest)),
+			m_Transport,
+			m_MessageManager);
 
 		// Return a task which is fully prepped for co_await
 		return Task;
