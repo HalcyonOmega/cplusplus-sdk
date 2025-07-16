@@ -161,10 +161,10 @@ struct ModelPreferences
 
 	DEFINE_TYPE_JSON(ModelPreferences, HINTSKEY, COSTPRIORITYKEY, SPEEDPRIORITYKEY, INTELLIGENCEPRIORITYKEY)
 
-	explicit ModelPreferences(const std::optional<std::vector<ModelHint>>& InHints,
-		const std::optional<double> InCostPriority,
-		const std::optional<double> InSpeedPriority,
-		const std::optional<double> InIntelligencePriority)
+	explicit ModelPreferences(const std::optional<std::vector<ModelHint>>& InHints = std::nullopt,
+		const std::optional<double> InCostPriority = std::nullopt,
+		const std::optional<double> InSpeedPriority = std::nullopt,
+		const std::optional<double> InIntelligencePriority = std::nullopt)
 		: Hints(InHints),
 		  CostPriority(BoundedDouble::CreateOptional(InCostPriority, 0.0, 1.0, true)),
 		  SpeedPriority(BoundedDouble::CreateOptional(InSpeedPriority, 0.0, 1.0, true)),

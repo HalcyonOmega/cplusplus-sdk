@@ -73,7 +73,7 @@ public:
 	 * @param InContext Optional context for the tool execution
 	 * @return The result of the tool execution
 	 */
-	CallToolResponse::Result CallTool(const CallToolRequest::Params& InRequest, MCPContext* InContext = nullptr);
+	CallToolResponse::Result CallTool(const CallToolRequest::Params* InRequest, MCPContext* InContext = nullptr);
 
 	/**
 	 * List all registered tools.

@@ -66,36 +66,11 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 {
 	try
 	{
-		auto Request = GetRequestParams<InitializeRequest::Params>(InRequest).value();
-
-		// CRITICAL: Validate protocol version first
-		// TODO: @HalcyonOmega - Replace with map, Enum to bool, check bool for supported
-		static const std::vector<EProtocolVersion> SUPPORTED_PROTOCOL_VERSIONS
-			= { EProtocolVersion::V2025_06_18, EProtocolVersion::V2025_03_26 };
-
-		if (const auto Iter = std::ranges::find(SUPPORTED_PROTOCOL_VERSIONS, Request->ProtocolVersion);
-			Iter == SUPPORTED_PROTOCOL_VERSIONS.end())
+		if (const auto Request = GetRequestParams<InitializeRequest::Params>(InRequest))
 		{
-			std::string SupportedVersions;
-			for (size_t Index = 0; Index < SUPPORTED_PROTOCOL_VERSIONS.size(); ++Index)
-			{
-				if (Index > 0)
-				{
-					SupportedVersions += ", ";
-				}
-				SupportedVersions += SUPPORTED_PROTOCOL_VERSIONS[Index];
-			}
-
-			SendMessage(ErrorInvalidRequest(InRequest.GetRequestID(),
-				"Supported versions: "
-					+ ("Unsupported protocol version: " + static_cast<long long>(Request->ProtocolVersion))
-					+ SupportedVersions));
-			return;
+			SendMessage(InitializeResponse{ InRequest.GetRequestID(),
+				InitializeResponse::Result{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities } });
 		}
-
-		const InitializeResponse::Result Result{ Request->ProtocolVersion, m_ServerInfo, m_ServerCapabilities };
-
-		SendMessage(InitializeResponse{ InRequest.GetRequestID(), Result });
 	}
 	catch (const std::exception& Except)
 	{
@@ -155,10 +130,9 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest)
 		Tool Tool = m_ToolManager->FindTool(Request->Name).value();
 
 		// Use ToolManager to call the tool
-		auto Result = m_ToolManager->CallTool(Request);
+		const auto Result = m_ToolManager->CallTool(Request);
 
-		CallToolResponse::Result ResponseResult{ Result.Content, Result.IsError };
-
+		const CallToolResponse::Result ResponseResult{ Result.Content, Result.IsError };
 		SendMessage(CallToolResponse(InRequest.GetRequestID(), ResponseResult));
 	}
 	catch (const std::exception& Except)
@@ -349,7 +323,7 @@ void MCPServer::OnRequest_SubscribeResource(const SubscribeRequest& InRequest)
 		// Add a subscription with proper client tracking
 		{
 			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-			m_ResourceSubscriptions[Request.URI.toString()].emplace_back(ClientID);
+			m_ResourceSubscriptions[Request->URI.toString()].emplace_back(ClientID);
 		}
 
 		// Send an empty response to indicate success
@@ -372,7 +346,7 @@ void MCPServer::OnRequest_UnsubscribeResource(const UnsubscribeRequest& InReques
 		// Remove from subscriptions
 		{
 			std::lock_guard<std::mutex> Lock(m_ResourceSubscriptionsMutex);
-			if (const auto Iter = m_ResourceSubscriptions.find(Request.URI.toString());
+			if (const auto Iter = m_ResourceSubscriptions.find(Request->URI.toString());
 				Iter != m_ResourceSubscriptions.end())
 			{
 				auto& Subscribers = Iter->second;

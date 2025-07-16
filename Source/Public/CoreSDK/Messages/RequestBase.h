@@ -97,10 +97,8 @@ struct RequestParams
 
 	DEFINE_TYPE_JSON(RequestParams, METAKEY)
 
-	RequestParams() = default;
-	virtual ~RequestParams() = default;
-
 	explicit RequestParams(const std::optional<RequestParamsMeta>& InMeta = std::nullopt) : Meta(InMeta) {}
+	virtual ~RequestParams() = default;
 };
 
 // PaginatedRequest {

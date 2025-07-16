@@ -1,6 +1,5 @@
 #include "CoreSDK/Features/ResourceManager.h"
 
-#include <map>
 #include <regex>
 #include <stdexcept>
 
@@ -10,7 +9,8 @@
 MCP_NAMESPACE_BEGIN
 
 ResourceManager::ResourceManager(const bool InWarnOnDuplicateResources)
-	: m_WarnOnDuplicateResources(InWarnOnDuplicateResources)
+	: m_Resources(),
+	  m_WarnOnDuplicateResources(InWarnOnDuplicateResources)
 {}
 
 bool ResourceManager::AddResource(const Resource& InResource)
@@ -143,10 +143,7 @@ ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequ
 		Result.push_back(ResourceData);
 	}
 
-	return ListResourcesResponse::Result{
-		.Resources = Result,
-		.NextCursor = InRequest.NextCursor,
-	};
+	return ListResourcesResponse::Result{ Result, InRequest->Cursor, std::nullopt };
 }
 
 ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const PaginatedRequestParams* InRequest)
@@ -162,10 +159,7 @@ ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const Pagin
 		Result.push_back(Template);
 	}
 
-	return ListResourceTemplatesResponse::Result{
-		.ResourceTemplates = Result,
-		= InRequest.NextCursor,
-	};
+	return ListResourceTemplatesResponse::Result{ Result, InRequest->Cursor, std::nullopt };
 }
 
 bool ResourceManager::HasResource(const MCP::URI& InURI) const

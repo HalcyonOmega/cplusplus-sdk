@@ -37,7 +37,7 @@ public:
 	 * Constructor
 	 * @param InDefaultModelPreferences Default model preferences to use for sampling
 	 */
-	explicit SamplingManager(const std::optional<ModelPreferences>& InDefaultModelPreferences = std::nullopt);
+	explicit SamplingManager(std::optional<ModelPreferences> InDefaultModelPreferences = std::nullopt);
 
 	/**
 	 * Set the sampling function to handle sampling requests.
@@ -68,7 +68,7 @@ public:
 	 */
 	bool HasSamplingFunction() const;
 
-	CreateMessageResponse::Result CreateMessage(const CreateMessageRequest::Params& InParams) const;
+	CreateMessageResponse::Result CreateMessage(const CreateMessageRequest::Params* InParams) const;
 
 private:
 	std::optional<ModelPreferences> m_DefaultModelPreferences;

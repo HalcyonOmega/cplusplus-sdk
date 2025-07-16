@@ -62,7 +62,7 @@ struct InitializeRequest : RequestBase
 	struct Params : RequestParams
 	{
 		EProtocolVersion ProtocolVersion{
-			EProtocolVersion::Unspecified
+			EProtocolVersion::V2025_03_26
 		}; // The latest version of the Model Context Protocol
 		   // that the client supports. The client MAY decide to
 		   // support older versions as well.
@@ -80,7 +80,7 @@ struct InitializeRequest : RequestBase
 			CLIENTINFOKEY)
 
 		Params() = default;
-		explicit Params(EProtocolVersion InProtocolVersion,
+		explicit Params(const EProtocolVersion InProtocolVersion,
 			ClientCapabilities InCapabilities,
 			Implementation InClientInfo,
 			const std::optional<RequestParamsMeta>& InMeta = std::nullopt)
@@ -91,7 +91,7 @@ struct InitializeRequest : RequestBase
 		{}
 	};
 
-	InitializeRequest() : RequestBase("initialize") {}
+	InitializeRequest() : RequestBase("initialize", std::make_unique<InitializeRequest::Params>()) {}
 	explicit InitializeRequest(const InitializeRequest::Params& InParams)
 		: RequestBase("initialize", std::make_unique<InitializeRequest::Params>(InParams))
 	{}
@@ -134,7 +134,7 @@ struct InitializeResponse : ResponseBase
 	struct Result : ResultParams
 	{
 		EProtocolVersion ProtocolVersion{
-			EProtocolVersion::Unspecified
+			EProtocolVersion::V2025_03_26
 		}; // The version of the Model Context Protocol that the
 		   // server wants to use. This may not match the version
 		   // that the client requested. If the client cannot
@@ -161,9 +161,9 @@ struct InitializeResponse : ResponseBase
 			INSTRUCTIONSKEY)
 
 		Result() = default;
-		explicit Result(EProtocolVersion InProtocolVersion,
-			ServerCapabilities InCapabilities,
+		explicit Result(const EProtocolVersion InProtocolVersion,
 			Implementation InServerInfo,
+			ServerCapabilities InCapabilities,
 			const std::optional<std::string>& InInstructions = std::nullopt,
 			const std::optional<JSONData>& InMeta = std::nullopt)
 			: ResultParams(InMeta),

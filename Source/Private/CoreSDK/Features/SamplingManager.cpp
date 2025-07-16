@@ -48,7 +48,7 @@ bool SamplingManager::HasSamplingFunction() const
 	return m_SamplingFunction.has_value();
 }
 
-CreateMessageResponse::Result SamplingManager::CreateMessage(const CreateMessageRequest::Params& InParams) const
+CreateMessageResponse::Result SamplingManager::CreateMessage(const CreateMessageRequest::Params* InParams) const
 {
 	(void)InParams;
 

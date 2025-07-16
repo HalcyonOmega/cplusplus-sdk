@@ -148,9 +148,10 @@ public:
 
 			[[nodiscard]] std::optional<typename T::Result> Result()
 			{
-				if (const auto& ExpectedResponse = Get())
+				if (auto ExpectedResponse = Get())
 				{
-					return std::move(GetResponseResult<T::Result>(ExpectedResponse.value()));
+					auto& Response = *ExpectedResponse.value();
+					return std::move(GetResponseResult<typename T::Result>(Response));
 				}
 				return std::nullopt;
 			}
@@ -261,7 +262,7 @@ public:
 		ResponseTask<T> Task = InternalCoro();
 
 		// Populate dependencies for coroutine to execute message sending
-		Task.SetDependencies(std::make_unique<RequestBase>(*InRequest), m_Transport, m_MessageManager);
+		Task.SetDependencies(std::make_unique<RequestBase>(InRequest), m_Transport, m_MessageManager);
 
 		// Return a task which is fully prepped for co_await
 		return Task;

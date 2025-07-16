@@ -66,17 +66,17 @@ bool ToolManager::RemoveTool(const Tool& InTool)
 	return true;
 }
 
-CallToolResponse::Result ToolManager::CallTool(const CallToolRequest::Params& InRequest, MCPContext* InContext)
+CallToolResponse::Result ToolManager::CallTool(const CallToolRequest::Params* InRequest, MCPContext* InContext)
 {
 	std::lock_guard Lock(m_Mutex);
 
-	const std::optional<Tool> FoundTool = FindTool(InRequest.Name);
+	const std::optional<Tool> FoundTool = FindTool(InRequest->Name);
 	if (!FoundTool)
 	{
-		throw ToolError("Unknown tool: " + InRequest.Name);
+		throw ToolError("Unknown tool: " + InRequest->Name);
 	}
 
-	return m_Tools.find(FoundTool.value())->second(InRequest.Arguments, InContext);
+	return m_Tools.find(FoundTool.value())->second(InRequest->Arguments, InContext);
 }
 
 std::optional<Tool> ToolManager::FindTool(const std::string& InName) const

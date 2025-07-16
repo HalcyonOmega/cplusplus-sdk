@@ -17,7 +17,7 @@
 #include "CoreSDK/Transport/ITransport.h"
 
 // Forward declarations
-class HTTPTransportServer;
+class MCPHTTPRequestHandlerFactory;
 
 MCP_NAMESPACE_BEGIN
 
@@ -65,31 +65,6 @@ private:
 	mutable std::mutex m_ConnectionMutex;
 };
 
-// HTTP Server Transport Request Handler
-class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler
-{
-public:
-	explicit MCPHTTPRequestHandler(HTTPTransportServer* InServer);
-	~MCPHTTPRequestHandler() noexcept override;
-	void handleRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse) override;
-
-private:
-	HTTPTransportServer* m_Server;
-};
-
-// HTTP Server Transport Request Handler Factory
-class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerFactory
-{
-public:
-	explicit MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer);
-	~MCPHTTPRequestHandlerFactory() noexcept override;
-	[[nodiscard]] Poco::Net::HTTPRequestHandler* createRequestHandler(
-		const Poco::Net::HTTPServerRequest& InRequest) override;
-
-private:
-	HTTPTransportServer* m_Server;
-};
-
 // HTTP Server Transport
 class HTTPTransportServer : public ITransport
 {
@@ -120,7 +95,6 @@ private:
 	HTTPTransportOptions m_Options;
 	std::unique_ptr<Poco::Net::HTTPServer> m_HTTPServer;
 	std::unique_ptr<Poco::Net::ServerSocket> m_ServerSocket;
-	std::unique_ptr<MCPHTTPRequestHandlerFactory> m_HandlerFactory;
 
 	// SSE client management
 	struct SSEClient
@@ -134,6 +108,31 @@ private:
 
 	std::unordered_map<std::string, std::unique_ptr<SSEClient>> m_SSEClients;
 	mutable std::mutex m_ClientsMutex;
+};
+
+// HTTP Server Transport Request Handler
+class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler
+{
+public:
+	explicit MCPHTTPRequestHandler(HTTPTransportServer* InServer);
+	~MCPHTTPRequestHandler() noexcept override;
+	void handleRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse) override;
+
+private:
+	HTTPTransportServer* m_Server;
+};
+
+// HTTP Server Transport Request Handler Factory
+class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerFactory
+{
+public:
+	explicit MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer);
+	~MCPHTTPRequestHandlerFactory() noexcept override;
+	[[nodiscard]] Poco::Net::HTTPRequestHandler* createRequestHandler(
+		const Poco::Net::HTTPServerRequest& InRequest) override;
+
+private:
+	HTTPTransportServer* m_Server;
 };
 
 MCP_NAMESPACE_END

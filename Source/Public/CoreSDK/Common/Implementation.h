@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 
 #include "CoreSDK/Common/Macros.h"
 #include "JSONProxy.h"
@@ -25,13 +26,24 @@ MCP_NAMESPACE_BEGIN
 // Describes the name and version of an MCP implementation.
 struct Implementation
 {
-	std::string Name;
-	EProtocolVersion Version;
+	std::string Name{};
+	std::string Version{};
+
+	EProtocolVersion ProtocolVersion{ EProtocolVersion::V2025_03_26 };
 
 	JKEY(NAMEKEY, Name, "name")
 	JKEY(VERSIONKEY, Version, "version")
 
 	DEFINE_TYPE_JSON(Implementation, NAMEKEY, VERSIONKEY)
+
+	Implementation() = default;
+	Implementation(std::string InName,
+		std::string InVersion,
+		const std::optional<EProtocolVersion> InProtocolVersion = std::nullopt)
+		: Name(std::move(InName)),
+		  Version(std::move(InVersion)),
+		  ProtocolVersion(InProtocolVersion.value_or(EProtocolVersion::V2025_03_26))
+	{}
 };
 
 MCP_NAMESPACE_END

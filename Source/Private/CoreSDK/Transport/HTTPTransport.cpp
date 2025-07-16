@@ -72,7 +72,7 @@ VoidTask HTTPTransportClient::Disconnect()
 		m_ShouldStop = true;
 
 		// Stop SSE thread
-		if (m_SSEThread.isRunning())
+		if (m_SSEThread.joinable())
 		{
 			m_SSEThread.join();
 		}
@@ -135,7 +135,8 @@ VoidTask HTTPTransportClient::ConnectToServer()
 
 		// Start SSE connection for real-time communication
 		m_ShouldStop = false;
-		m_SSEThread.start(*this);
+		// TODO: @HalcyonOmega This should start automatically
+		// m_SSEThread.start(*this);
 	}
 	catch (const std::exception& e)
 	{
@@ -165,7 +166,7 @@ void HTTPTransportClient::TransmitMessage(const JSONData& InMessage,
 			m_Options.Path,
 			Poco::Net::HTTPMessage::HTTP_1_1);
 		Request.setContentType("application/json");
-		Request.set("MCP-Protocol-Version", m_ClientInfo.ProtocolVersion);
+		Request.set("MCP-Protocol-Version", m_Client.ProtocolVersion);
 
 		const std::string Body = InMessage.dump();
 		Request.setContentLength(static_cast<std::streamsize>(Body.length()));
@@ -278,14 +279,17 @@ void MCPHTTPRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& InReques
 }
 
 // MCPHTTPRequestHandlerFactory Implementation
-MCPHTTPRequestHandlerFactory::MCPHTTPRequestHandlerFactory(HTTPTransportServer* InServer) : m_Server(InServer) {}
+MCPHTTPRequestHandlerFactory::MCPHTTPRequestHandlerFactory() : m_Server() {}
 
 Poco::Net::HTTPRequestHandler* MCPHTTPRequestHandlerFactory::createRequestHandler(
 	const Poco::Net::HTTPServerRequest& InRequest)
 {
-	// TODO: @HalcyonOmega - Why does the request need to be passed in?
 	(void)InRequest;
-	return new MCPHTTPRequestHandler(m_Server);
+	if (m_Server)
+	{
+		return new MCPHTTPRequestHandler(m_Server);
+	}
+	return nullptr;
 }
 
 // HTTPTransportServer Implementation
@@ -323,13 +327,11 @@ VoidTask HTTPTransportServer::Connect()
 		// Create server socket
 		m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
 
-		// Create a request handler factory
-		m_HandlerFactory = std::make_unique<MCPHTTPRequestHandlerFactory>(this);
-
 		const auto& Params = new Poco::Net::HTTPServerParams();
 
 		// Create an HTTP server
-		m_HTTPServer = std::make_unique<Poco::Net::HTTPServer>(m_HandlerFactory.get(), *m_ServerSocket, Params);
+		m_HTTPServer
+			= std::make_unique<Poco::Net::HTTPServer>(new MCPHTTPRequestHandlerFactory(), *m_ServerSocket, Params);
 
 		// Start the server
 		m_HTTPServer->start();

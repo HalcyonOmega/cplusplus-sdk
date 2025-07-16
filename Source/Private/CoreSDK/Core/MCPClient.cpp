@@ -2,11 +2,11 @@
 
 #include "CoreSDK/Transport/ITransport.h"
 
-#define CO_RETURN_IF_CLIENT_NOT_CONNECTED           \
+#define CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED      \
 	if (!IsConnected())                             \
 	{                                               \
 		HandleRuntimeError("Client not connected"); \
-		co_return std::nullopt;                     \
+		co_return;                                  \
 	}
 
 #define RETURN_IF_CLIENT_NOT_CONNECTED              \
@@ -17,7 +17,11 @@
 	}
 
 #define SEND_REQUEST_RETURN_RESULT(ResponseType, Request)                                          \
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED                                                              \
+	if (!IsConnected())                                                                            \
+	{                                                                                              \
+		HandleRuntimeError("Client not connected");                                                \
+		co_return std::nullopt;                                                                    \
+	}                                                                                              \
 	if (auto Response = std::move(co_await SendRequest<ResponseType>(Request)); Response.Result()) \
 	{                                                                                              \
 		co_return Response.Result().value();                                                       \
@@ -38,12 +42,12 @@ MCPClient::MCPClient(const ETransportType InTransportType,
 
 VoidTask MCPClient::Start()
 {
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED
+	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
 
 	try
 	{
 		const InitializeRequest::Params InitParams{
-			m_ClientInfo.Version,
+			m_ClientInfo.ProtocolVersion,
 			m_ClientCapabilities,
 			m_ClientInfo,
 		};
@@ -63,7 +67,7 @@ VoidTask MCPClient::Start()
 
 VoidTask MCPClient::Stop()
 {
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED
+	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
 
 	try
 	{
@@ -162,7 +166,7 @@ OptTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const Read
 
 VoidTask MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
 {
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED
+	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
 
 	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(SubscribeRequest{ InParams })); Response.Get())
 	{
@@ -176,9 +180,9 @@ VoidTask MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
 
 VoidTask MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InParams)
 {
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED
+	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
 
-	if (const auto& Response = co_await SendRequest<EmptyResponse>(UnsubscribeRequest{ InParams }); Response.Get())
+	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(UnsubscribeRequest{ InParams })); Response.Get())
 	{
 		Logger::Notice("Unsubscribe Successful");
 		co_return;
@@ -228,9 +232,9 @@ void MCPClient::Notify_RootsListChanged() { SendMessage(RootsListChangedNotifica
 
 VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InParams)
 {
-	CO_RETURN_IF_CLIENT_NOT_CONNECTED
+	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
 
-	if (const auto& Response = co_await SendRequest<EmptyResponse>(SetLevelRequest{ InParams }); Response.Get())
+	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(SetLevelRequest{ InParams })); Response.Get())
 	{
 		Logger::Notice("Set Logging Level Successful");
 		co_return;
@@ -258,7 +262,7 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 {
 	RETURN_IF_CLIENT_NOT_CONNECTED
 
-	if (const auto& RequestParams = GetRequestParams<CreateMessageRequest::Params>(InRequest))
+	if (const auto RequestParams = GetRequestParams<CreateMessageRequest::Params>(InRequest))
 	{
 		const CreateMessageResponse::Result Result = m_SamplingManager->CreateMessage(RequestParams.value());
 		SendMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
@@ -284,14 +288,11 @@ void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InPara
 
 void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification)
 {
-	const std::optional<ProgressNotification::Params> Data
-		= GetNotificationParams<ProgressNotification::Params>(InNotification);
-
-	if (Data)
+	if (const auto Data = GetNotificationParams<ProgressNotification::Params>(InNotification))
 	{
 		Logger::Notice(std::string("Progress Notification: ") + "\n	Progress Token: "
-			+ Data.value().ProgressToken.ToString() + "\n	Progress: " + std::to_string(Data.value().Progress)
-			+ "\n	Message: " + Data.value().Message.value());
+			+ Data.value()->ProgressToken.ToString() + "\n	Progress: " + std::to_string(Data.value()->Progress)
+			+ "\n	Message: " + Data.value()->Message.value());
 	}
 
 	Logger::Error("Invalid progress notification");
@@ -299,14 +300,14 @@ void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification)
 
 void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotification)
 {
-	if (const auto& Data = GetNotificationParams<CancelledNotification::Params>(InNotification))
+	if (const auto Data = GetNotificationParams<CancelledNotification::Params>(InNotification))
 	{
-		if (const bool Success = m_MessageManager->UnregisterResponseHandler(Data.value().CancelRequestID); !Success)
+		if (const bool Success = m_MessageManager->UnregisterResponseHandler(Data.value()->CancelRequestID); !Success)
 		{
-			Logger::Error("Failed to cancel request: " + Data->CancelRequestID.ToString());
+			Logger::Error("Failed to cancel request: " + Data.value()->CancelRequestID.ToString());
 			return;
 		}
-		Logger::Notice("Cancelled request: " + Data->CancelRequestID.ToString());
+		Logger::Notice("Cancelled request: " + Data.value()->CancelRequestID.ToString());
 	}
 
 	Logger::Error("Invalid cancel request");
