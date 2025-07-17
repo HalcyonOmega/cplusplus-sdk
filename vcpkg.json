@@ -6,7 +6,8 @@
     {
       "name": "poco",
       "features": [
-        "net"
+        "net",
+        "util"
       ]
     }
   ]

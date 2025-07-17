@@ -163,12 +163,12 @@ struct ResourceTemplate
 		{
 			return Name < InOther.Name;
 		}
-		return URITemplate.ToString() < InOther.URITemplate.ToString();
+		return URITemplate.toString() < InOther.URITemplate.toString();
 	}
 
 	bool operator==(const ResourceTemplate& InOther) const
 	{
-		return URITemplate.ToString() == InOther.URITemplate.ToString() && Name == InOther.Name;
+		return URITemplate.toString() == InOther.URITemplate.toString() && Name == InOther.Name;
 	}
 };
 

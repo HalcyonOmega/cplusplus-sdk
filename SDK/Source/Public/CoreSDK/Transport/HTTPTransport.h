@@ -39,8 +39,6 @@ public:
 
 	void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
-	Task<JSONData> TransmitRequest(const JSONData& InRequest,
-		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
 
 	[[nodiscard]] std::string GetConnectionInfo() const override;
 
@@ -115,7 +113,6 @@ class MCPHTTPRequestHandler final : public Poco::Net::HTTPRequestHandler
 {
 public:
 	explicit MCPHTTPRequestHandler(const Poco::Net::HTTPServerRequest& InResponse, HTTPTransportServer* InServer);
-	~MCPHTTPRequestHandler() noexcept override;
 	void handleRequest(Poco::Net::HTTPServerRequest& InRequest, Poco::Net::HTTPServerResponse& InResponse) override;
 
 private:
@@ -127,7 +124,6 @@ class MCPHTTPRequestHandlerFactory final : public Poco::Net::HTTPRequestHandlerF
 {
 public:
 	explicit MCPHTTPRequestHandlerFactory();
-	~MCPHTTPRequestHandlerFactory() noexcept override;
 	[[nodiscard]] Poco::Net::HTTPRequestHandler* createRequestHandler(
 		const Poco::Net::HTTPServerRequest& InRequest) override;
 	bool SetServer(HTTPTransportServer* InServer);

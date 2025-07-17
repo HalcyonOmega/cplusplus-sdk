@@ -21,8 +21,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(
-            /W4
-            /WX
     )
 endif ()
 
@@ -36,12 +34,12 @@ endif ()
 
 # Gather all source and header files for the library
 file(GLOB_RECURSE SDK_SOURCES
-        "Source/Private/**/*.cpp"
-        "Source/Public/**/*.cpp"
+        "SDK/Source/Private/**/*.cpp"
+        "SDK/Source/Public/**/*.cpp"
 )
 file(GLOB_RECURSE SDK_HEADERS
-        "Source/Public/**/*.h"
-        "Source/Public/**/*.hpp"
+        "SDK/Source/Public/**/*.h"
+        "SDK/Source/Public/**/*.hpp"
 )
 
 # Create the SDK library
@@ -49,25 +47,25 @@ add_library(${PROJECT_NAME} STATIC ${SDK_SOURCES} ${SDK_HEADERS})
 
 # Set C++ standard for the library
 set_target_properties(${PROJECT_NAME} PROPERTIES
-        CXX_STANDARD ${CMAKE_CXX_STANDARD}
         CXX_STANDARD_REQUIRED ON
-        COMPILE_FLAGS "-P"
+        #COMPILE_FLAGS "-P"
 )
 
 # Public include directories for the library
 target_include_directories(${PROJECT_NAME}
         PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Source/Public>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/Proxies>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/Utilities/ThirdParty>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/SDK/Source/Public>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/SDK/Source/Public/Proxies>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/SDK/Source/Public/Utilities/ThirdParty>
         $<INSTALL_INTERFACE:include>
         PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Private
+        ${CMAKE_CURRENT_SOURCE_DIR}/SDK/Source/Private
 )
 
 # Poco Setup
-find_package(Poco REQUIRED COMPONENTS Foundation Net)
-target_link_libraries(${PROJECT_NAME} PUBLIC Poco::Foundation Poco::Net)
+set(Poco_STATIC ON)
+find_package(Poco REQUIRED COMPONENTS Foundation Net Util)
+target_link_libraries(${PROJECT_NAME} PUBLIC Poco::Foundation Poco::Net Poco::Util)
 
 # On Windows, Poco::Net requires the system networking library.
 if (WIN32)
@@ -77,17 +75,9 @@ endif ()
 # HTTP Test Executable
 add_executable(HTTPTest SDK/Source/T_HTTPServer.cpp)
 
-target_link_libraries(HTTPTest PUBLIC Poco::Foundation Poco::Net)
+target_link_libraries(HTTPTest PUBLIC Poco::Foundation Poco::Net Poco::Util)
 target_link_libraries(HTTPTest PUBLIC ${PROJECT_NAME})
 
-
-# Print the files being included in the build
-message(STATUS "Source files:")
-foreach (SOURCE ${SDK_SOURCES})
-    message(STATUS "  ${SOURCE}")
-endforeach ()
-
-message(STATUS "Header files:")
-foreach (HEADER ${SDK_HEADERS})
-    message(STATUS "  ${HEADER}")
-endforeach ()
+if (MINGW)
+    target_link_options(HTTPTest PRIVATE -static)
+endif ()

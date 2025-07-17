@@ -3,6 +3,7 @@
 #include <future>
 
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/RuntimeError.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -15,7 +16,7 @@ void SamplingManager::SetSamplingFunction(SamplingFunction InSamplingFunction)
 	std::lock_guard Lock(m_SamplingMutex);
 
 	m_SamplingFunction = std::move(InSamplingFunction);
-	Logger::Debug("Sampling function has been configured");
+	HandleRuntimeError("Sampling function has been configured");
 }
 
 void SamplingManager::SetDefaultModelPreferences(const ModelPreferences& InModelPreferences)
@@ -23,7 +24,7 @@ void SamplingManager::SetDefaultModelPreferences(const ModelPreferences& InModel
 	std::lock_guard Lock(m_SamplingMutex);
 
 	m_DefaultModelPreferences = InModelPreferences;
-	Logger::Debug("Default model preferences updated");
+	HandleRuntimeError("Default model preferences updated");
 }
 
 std::optional<ModelPreferences> SamplingManager::GetDefaultModelPreferences() const
@@ -38,7 +39,7 @@ void SamplingManager::ClearDefaultModelPreferences()
 	std::lock_guard Lock(m_SamplingMutex);
 
 	m_DefaultModelPreferences.reset();
-	Logger::Debug("Default model preferences cleared");
+	HandleRuntimeError("Default model preferences cleared");
 }
 
 bool SamplingManager::HasSamplingFunction() const

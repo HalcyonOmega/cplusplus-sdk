@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/RuntimeError.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -17,7 +18,7 @@ bool RootManager::AddRoot(const Root& InRoot)
 	{
 		if (m_WarnOnDuplicateRoots)
 		{
-			Logger::Warning("Root already exists: " + InRoot.URI.toString());
+			HandleRuntimeError("Root already exists: " + InRoot.URI.toString());
 		}
 		ExistingIt->second;
 		return false;

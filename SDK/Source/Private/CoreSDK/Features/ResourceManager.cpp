@@ -5,6 +5,7 @@
 
 #include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/RuntimeError.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -17,14 +18,14 @@ bool ResourceManager::AddResource(const Resource& InResource)
 {
 	const MCP::URI& URI = InResource.URI;
 	// Log the addition attempt
-	Logger::Debug("Adding resource - URI: " + URI.toString() + ", Name: " + InResource.Name);
+	HandleRuntimeError("Adding resource - URI: " + URI.toString() + ", Name: " + InResource.Name);
 	std::lock_guard Lock(m_Mutex);
 
 	if (const auto ExistingIt = m_Resources.find(URI); ExistingIt != m_Resources.end())
 	{
 		if (m_WarnOnDuplicateResources)
 		{
-			Logger::Warning("Resource already exists: " + URI.toString());
+			HandleRuntimeError("Resource already exists: " + URI.toString());
 		}
 		return false;
 	}
@@ -40,7 +41,7 @@ bool ResourceManager::RemoveResource(const Resource& InResource)
 	const auto ExistingIt = m_Resources.find(InResource.URI);
 	if (ExistingIt == m_Resources.end())
 	{
-		Logger::Warning("Resource does not exist: " + InResource.URI.toString());
+		HandleRuntimeError("Resource does not exist: " + InResource.URI.toString());
 		return false;
 	}
 
@@ -51,7 +52,7 @@ bool ResourceManager::RemoveResource(const Resource& InResource)
 bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, const ResourceFunction& InFunction)
 {
 	// Validate URI template
-	if (InTemplate.URITemplate.ToString().empty())
+	if (InTemplate.URITemplate.toString().empty())
 	{
 		throw std::invalid_argument("URI template cannot be empty");
 	}
@@ -59,31 +60,31 @@ bool ResourceManager::AddTemplate(const ResourceTemplate& InTemplate, const Reso
 	std::lock_guard Lock(m_Mutex);
 
 	// Check for existing template
-	if (const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString()); ExistingIt != m_Templates.end())
+	if (const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.toString()); ExistingIt != m_Templates.end())
 	{
 		if (m_WarnOnDuplicateResources)
 		{
-			Logger::Warning("Resource template already exists: " + InTemplate.URITemplate.ToString());
+			HandleRuntimeError("Resource template already exists: " + InTemplate.URITemplate.toString());
 		}
 		return false;
 	}
 
 	// Create a copy of the template with the correct URI template
 	ResourceTemplate Template = InTemplate;
-	Template.URITemplate = MCP::URITemplate(InTemplate.URITemplate.ToString());
+	Template.URITemplate = MCP::URITemplate(InTemplate.URITemplate.toString());
 
-	m_Templates.try_emplace(InTemplate.URITemplate.ToString(), Template, InFunction);
+	m_Templates.try_emplace(InTemplate.URITemplate.toString(), Template, InFunction);
 
-	Logger::Debug("Added resource template: " + InTemplate.URITemplate.ToString());
+	HandleRuntimeError("Added resource template: " + InTemplate.URITemplate.toString());
 	return true;
 }
 
 bool ResourceManager::RemoveTemplate(const ResourceTemplate& InTemplate)
 {
-	const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.ToString());
+	const auto ExistingIt = m_Templates.find(InTemplate.URITemplate.toString());
 	if (ExistingIt == m_Templates.end())
 	{
-		Logger::Warning("Resource template does not exist: " + InTemplate.URITemplate.ToString());
+		HandleRuntimeError("Resource template does not exist: " + InTemplate.URITemplate.toString());
 		return false;
 	}
 
@@ -94,7 +95,7 @@ bool ResourceManager::RemoveTemplate(const ResourceTemplate& InTemplate)
 std::optional<std::variant<TextResourceContents, BlobResourceContents>> ResourceManager::GetResource(
 	const MCP::URI& InURI)
 {
-	Logger::Debug("Getting resource: " + InURI.toString());
+	HandleRuntimeError("Getting resource: " + InURI.toString());
 	std::lock_guard Lock(m_Mutex);
 
 	// First check concrete resources
@@ -132,7 +133,7 @@ std::optional<std::variant<TextResourceContents, BlobResourceContents>> Resource
 
 ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequestParams* InRequest)
 {
-	Logger::Debug("Listing resources - Count: " + std::to_string(m_Resources.size()));
+	HandleRuntimeError("Listing resources - Count: " + std::to_string(m_Resources.size()));
 
 	std::vector<Resource> Result;
 	std::lock_guard Lock(m_Mutex);
@@ -148,7 +149,7 @@ ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequ
 
 ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const PaginatedRequestParams* InRequest)
 {
-	Logger::Debug("Listing templates - Count: " + std::to_string(m_Templates.size()));
+	HandleRuntimeError("Listing templates - Count: " + std::to_string(m_Templates.size()));
 
 	std::vector<ResourceTemplate> Result;
 	std::lock_guard Lock(m_Mutex);
@@ -215,7 +216,7 @@ ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::UR
 {
 	// Basic URI template matching - this is a simplified implementation
 	// A full implementation would use RFC 6570 URI template matching
-	const std::string TemplateString = InTemplate.URITemplate.ToString();
+	const std::string TemplateString = InTemplate.URITemplate.toString();
 	const std::string URIString = InURI.toString();
 
 	// Convert URI template to a regex pattern
@@ -264,7 +265,7 @@ ResourceManager::MatchTemplate(const ResourceTemplate& InTemplate, const MCP::UR
 	catch (const std::regex_error& Except)
 	{
 		// Regex compilation failed, log the error
-		Logger::Error("Regex error in MatchTemplate: " + std::string(Except.what()));
+		HandleRuntimeError("Regex error in MatchTemplate: " + std::string(Except.what()));
 		return std::nullopt;
 	}
 

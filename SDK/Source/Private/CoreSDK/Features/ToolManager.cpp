@@ -1,6 +1,7 @@
 #include "CoreSDK/Features/ToolManager.h"
 
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/MCPMessages.h"
 
 MCP_NAMESPACE_BEGIN
@@ -35,14 +36,14 @@ ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams* I
 
 bool ToolManager::AddTool(const Tool& InTool, const ToolFunction& InFunction)
 {
-	Logger::Debug("Adding tool: " + InTool.Name);
+	HandleRuntimeError("Adding tool: " + InTool.Name);
 	std::lock_guard Lock(m_Mutex);
 
 	if (const auto ExistingIt = m_Tools.find(InTool); ExistingIt != m_Tools.end())
 	{
 		if (m_WarnOnDuplicateTools)
 		{
-			Logger::Warning("Tool already exists: " + InTool.Name);
+			HandleRuntimeError("Tool already exists: " + InTool.Name);
 		}
 		return false;
 	}
@@ -58,7 +59,7 @@ bool ToolManager::RemoveTool(const Tool& InTool)
 	const auto ExistingIt = m_Tools.find(InTool);
 	if (ExistingIt == m_Tools.end())
 	{
-		Logger::Warning("Tool does not exist: " + InTool.Name);
+		HandleRuntimeError("Tool does not exist: " + InTool.Name);
 		return false;
 	}
 

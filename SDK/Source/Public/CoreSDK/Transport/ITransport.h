@@ -79,9 +79,6 @@ public:
 	virtual void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 		= 0;
-	virtual Task<JSONData> TransmitRequest(const JSONData& InRequest,
-		const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
-		= 0;
 	[[nodiscard]] virtual std::string GetConnectionInfo() const = 0;
 
 	// Default Implementations

@@ -1,5 +1,6 @@
 #include "CoreSDK/Core/MCPClient.h"
 
+#include "CoreSDK/Common/Logging.h"
 #include "CoreSDK/Transport/ITransport.h"
 
 #define CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED      \
@@ -170,11 +171,11 @@ VoidTask MCPClient::Request_Subscribe(const SubscribeRequest::Params& InParams)
 
 	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(SubscribeRequest{ InParams })); Response.Get())
 	{
-		Logger::Notice("Subscribe Successful");
+		HandleRuntimeError("Subscribe Successful");
 		co_return;
 	}
 
-	Logger::Emergency("Subscribe Failed");
+	HandleRuntimeError("Subscribe Failed");
 	co_return;
 }
 
@@ -184,11 +185,11 @@ VoidTask MCPClient::Request_Unsubscribe(const UnsubscribeRequest::Params& InPara
 
 	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(UnsubscribeRequest{ InParams })); Response.Get())
 	{
-		Logger::Notice("Unsubscribe Successful");
+		HandleRuntimeError("Unsubscribe Successful");
 		co_return;
 	}
 
-	Logger::Emergency("Unsubscribe Failed");
+	HandleRuntimeError("Unsubscribe Failed");
 	co_return;
 }
 
@@ -236,11 +237,11 @@ VoidTask MCPClient::Request_SetLoggingLevel(const SetLevelRequest::Params& InPar
 
 	if (auto Response = std::move(co_await SendRequest<EmptyResponse>(SetLevelRequest{ InParams })); Response.Get())
 	{
-		Logger::Notice("Set Logging Level Successful");
+		HandleRuntimeError("Set Logging Level Successful");
 		co_return;
 	}
 
-	Logger::Error("Set Logging Level Failed");
+	HandleRuntimeError("Set Logging Level Failed");
 	co_return;
 }
 
@@ -268,7 +269,8 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 		SendMCPMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
 		return;
 	}
-	SendMCPMessage(ErrorInvalidParams(InRequest.GetRequestID(), "Create Message Request params could not be retrieved"));
+	SendMCPMessage(
+		ErrorInvalidParams(InRequest.GetRequestID(), "Create Message Request params could not be retrieved"));
 }
 
 OptTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
@@ -285,17 +287,18 @@ void MCPClient::Notify_CancelRequest(const CancelledNotification::Params& InPara
 {
 	return SendMCPMessage(CancelledNotification{ InParams });
 }
+void MCPClient::SetHandlers() {}
 
 void MCPClient::OnNotified_Progress(const ProgressNotification& InNotification)
 {
 	if (const auto Data = GetNotificationParams<ProgressNotification::Params>(InNotification))
 	{
-		Logger::Notice(std::string("Progress Notification: ") + "\n	Progress Token: "
+		HandleRuntimeError(std::string("Progress Notification: ") + "\n	Progress Token: "
 			+ Data.value()->ProgressToken.ToString() + "\n	Progress: " + std::to_string(Data.value()->Progress)
 			+ "\n	Message: " + Data.value()->Message.value());
 	}
 
-	Logger::Error("Invalid progress notification");
+	HandleRuntimeError("Invalid progress notification");
 }
 
 void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotification)
@@ -304,13 +307,13 @@ void MCPClient::OnNotified_CancelRequest(const CancelledNotification& InNotifica
 	{
 		if (const bool Success = m_MessageManager->UnregisterResponseHandler(Data.value()->CancelRequestID); !Success)
 		{
-			Logger::Error("Failed to cancel request: " + Data.value()->CancelRequestID.ToString());
+			HandleRuntimeError("Failed to cancel request: " + Data.value()->CancelRequestID.ToString());
 			return;
 		}
-		Logger::Notice("Cancelled request: " + Data.value()->CancelRequestID.ToString());
+		HandleRuntimeError("Cancelled request: " + Data.value()->CancelRequestID.ToString());
 	}
 
-	Logger::Error("Invalid cancel request");
+	HandleRuntimeError("Invalid cancel request");
 }
 
 MCP_NAMESPACE_END

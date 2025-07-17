@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "CoreSDK/Common/Logging.h"
+#include "CoreSDK/Common/RuntimeError.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -12,14 +13,14 @@ PromptManager::PromptManager(const bool InWarnOnDuplicatePrompts) : m_WarnOnDupl
 bool PromptManager::AddPrompt(const Prompt& InPrompt, const PromptFunction& InFunction)
 {
 	// Log the addition attempt
-	Logger::Debug("Adding prompt: " + InPrompt.Name);
+	HandleRuntimeError("Adding prompt: " + InPrompt.Name);
 	std::lock_guard Lock(m_Mutex);
 
 	if (const auto ExistingIt = m_Prompts.find(InPrompt); ExistingIt != m_Prompts.end())
 	{
 		if (m_WarnOnDuplicatePrompts)
 		{
-			Logger::Warning("Prompt already exists: " + InPrompt.Name);
+			HandleRuntimeError("Prompt already exists: " + InPrompt.Name);
 		}
 		return false;
 	}
@@ -35,7 +36,7 @@ bool PromptManager::RemovePrompt(const Prompt& InPrompt)
 	const auto ExistingIt = m_Prompts.find(InPrompt);
 	if (ExistingIt == m_Prompts.end())
 	{
-		Logger::Warning("Prompt does not exist: " + InPrompt.Name);
+		HandleRuntimeError("Prompt does not exist: " + InPrompt.Name);
 		return false;
 	}
 
@@ -50,7 +51,7 @@ GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Param
 	const std::optional<Prompt> FoundPrompt = FindPrompt(InRequest->Name);
 	if (!FoundPrompt)
 	{
-		Logger::Warning("Prompt does not exist: " + InRequest->Name);
+		HandleRuntimeError("Prompt does not exist: " + InRequest->Name);
 		return {};
 	}
 

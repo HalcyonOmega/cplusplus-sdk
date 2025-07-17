@@ -139,15 +139,6 @@ void StdioClientTransport::ReaderThread(std::stop_token InStopToken) {}
 
 void StdioClientTransport::run() { ProcessIncomingData(); }
 
-Task<JSONData> StdioClientTransport::TransmitRequest(const JSONData& InRequest,
-	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
-{
-	// TODO: @HalcyonOmega Implement properly
-	(void)InRequest;
-	(void)InConnectionIDs;
-	co_return JSONData{};
-}
-
 void StdioClientTransport::ProcessIncomingData()
 {
 	static constexpr std::chrono::milliseconds DEFAULT_SLEEP_FOR{ 10 };
@@ -363,15 +354,6 @@ void StdioServerTransport::TransmitMessage(const JSONData& InMessage,
 	{
 		HandleRuntimeError("Error writing message: " + std::string(e.what()));
 	}
-}
-
-Task<JSONData> StdioServerTransport::TransmitRequest(const JSONData& InRequest,
-	const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
-{
-	// TODO: @HalcyonOmega Implement properly
-	(void)InRequest;
-	(void)InConnectionIDs;
-	co_return JSONData{};
 }
 
 // Factory functions
