@@ -52,8 +52,8 @@ struct Annotations
 	   // effectively required, while 0 means "least important," and
 	   // indicates that the data is entirely optional.
 
-	JKEY(AUDIENCEKEY, Audience, "audience")
-	JKEY(PRIORITYKEY, Priority, "priority")
+	JSON_KEY(AUDIENCEKEY, Audience, "audience")
+	JSON_KEY(PRIORITYKEY, Priority, "priority")
 
 	DEFINE_TYPE_JSON(Annotations, AUDIENCEKEY, PRIORITYKEY)
 

@@ -13,7 +13,7 @@ struct AutocompleteReference
 {
 	std::string Type;
 
-	JKEY(TYPEKEY, Type, "type")
+	JSON_KEY(TYPEKEY, Type, "type")
 
 	DEFINE_TYPE_JSON(AutocompleteReference, TYPEKEY)
 
@@ -44,7 +44,7 @@ struct ResourceReference : AutocompleteReference
 
 	ResourceReference() : AutocompleteReference("ref/resource") {}
 
-	JKEY(URIKEY, URI, "uri")
+	JSON_KEY(URIKEY, URI, "uri")
 
 	DEFINE_TYPE_JSON_DERIVED(ResourceReference, AutocompleteReference, URIKEY)
 };
@@ -71,7 +71,7 @@ struct PromptReference : AutocompleteReference
 
 	PromptReference() : AutocompleteReference("ref/prompt") {}
 
-	JKEY(NAMEKEY, Name, "name")
+	JSON_KEY(NAMEKEY, Name, "name")
 
 	DEFINE_TYPE_JSON_DERIVED(PromptReference, AutocompleteReference, NAMEKEY)
 };

@@ -85,9 +85,9 @@ struct InitializeRequest : RequestBase
 		ClientCapabilities Capabilities{}; // The capabilities of the client.
 		Implementation ClientInfo{};	   // The implementation of the client.
 
-		JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
-		JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
-		JKEY(CLIENTINFOKEY, ClientInfo, "clientInfo")
+		JSON_KEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
+		JSON_KEY(CAPABILITIESKEY, Capabilities, "capabilities")
+		JSON_KEY(CLIENTINFOKEY, ClientInfo, "clientInfo")
 
 		DEFINE_TYPE_JSON_DERIVED(InitializeRequest::Params,
 			RequestParams,
@@ -164,10 +164,10 @@ struct InitializeResponse : ResponseBase
 																 // a "hint" to the model. For example, this
 																 // information MAY be added to the system prompt.
 
-		JKEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
-		JKEY(CAPABILITIESKEY, Capabilities, "capabilities")
-		JKEY(SERVERINFOKEY, ServerInfo, "serverInfo")
-		JKEY(INSTRUCTIONSKEY, Instructions, "instructions")
+		JSON_KEY(PROTOCOLVERSIONKEY, ProtocolVersion, "protocolVersion")
+		JSON_KEY(CAPABILITIESKEY, Capabilities, "capabilities")
+		JSON_KEY(SERVERINFOKEY, ServerInfo, "serverInfo")
+		JSON_KEY(INSTRUCTIONSKEY, Instructions, "instructions")
 
 		DEFINE_TYPE_JSON_DERIVED(InitializeResponse::Result,
 			ResultParams,
@@ -337,7 +337,7 @@ struct ListToolsResponse : ResponseBase
 	{
 		std::vector<Tool> Tools;
 
-		JKEY(TOOLSKEY, Tools, "tools")
+		JSON_KEY(TOOLSKEY, Tools, "tools")
 
 		DEFINE_TYPE_JSON_DERIVED(ListToolsResponse::Result, PaginatedResultParams, TOOLSKEY)
 
@@ -384,8 +384,8 @@ struct CallToolRequest : RequestBase
 		std::string Name;
 		std::optional<std::unordered_map<std::string, JSONData>> Arguments{ std::nullopt };
 
-		JKEY(NAMEKEY, Name, "name")
-		JKEY(ARGUMENTSKEY, Arguments, "arguments")
+		JSON_KEY(NAMEKEY, Name, "name")
+		JSON_KEY(ARGUMENTSKEY, Arguments, "arguments")
 
 		DEFINE_TYPE_JSON_DERIVED(CallToolRequest::Params, RequestParams, NAMEKEY, ARGUMENTSKEY)
 
@@ -457,8 +457,8 @@ struct CallToolResponse : ResponseBase
 		std::vector<MCP::Content> Content;
 		std::optional<bool> IsError{ std::nullopt };
 
-		JKEY(CONTENTKEY, Content, "content")
-		JKEY(ISERRORKEY, IsError, "isError")
+		JSON_KEY(CONTENTKEY, Content, "content")
+		JSON_KEY(ISERRORKEY, IsError, "isError")
 
 		DEFINE_TYPE_JSON_DERIVED(CallToolResponse::Result, ResultParams, CONTENTKEY, ISERRORKEY)
 
@@ -583,7 +583,7 @@ struct ListPromptsResponse : ResponseBase
 	{
 		std::vector<Prompt> Prompts;
 
-		JKEY(PROMPTSKEY, Prompts, "prompts")
+		JSON_KEY(PROMPTSKEY, Prompts, "prompts")
 
 		DEFINE_TYPE_JSON_DERIVED(ListPromptsResponse::Result, PaginatedResultParams, PROMPTSKEY)
 
@@ -638,8 +638,8 @@ struct GetPromptRequest : RequestBase
 			std::nullopt
 		}; // Arguments to use for templating the prompt.
 
-		JKEY(NAMEKEY, Name, "name")
-		JKEY(ARGUMENTSKEY, Arguments, "arguments")
+		JSON_KEY(NAMEKEY, Name, "name")
+		JSON_KEY(ARGUMENTSKEY, Arguments, "arguments")
 
 		DEFINE_TYPE_JSON_DERIVED(GetPromptRequest::Params, RequestParams, NAMEKEY, ARGUMENTSKEY)
 
@@ -690,8 +690,8 @@ struct GetPromptResponse : ResponseBase
 		std::vector<PromptMessage> Messages;					// A list of prompt messages.
 		std::optional<std::string> Description{ std::nullopt }; // An optional description for the prompt.
 
-		JKEY(DESCRIPTIONKEY, Description, "description")
-		JKEY(MESSAGESKEY, Messages, "messages")
+		JSON_KEY(DESCRIPTIONKEY, Description, "description")
+		JSON_KEY(MESSAGESKEY, Messages, "messages")
 
 		DEFINE_TYPE_JSON_DERIVED(GetPromptResponse::Result, ResultParams, DESCRIPTIONKEY, MESSAGESKEY)
 
@@ -808,7 +808,7 @@ struct ListResourcesResponse : ResponseBase
 	{
 		std::vector<Resource> Resources;
 
-		JKEY(RESOURCESKEY, Resources, "resources")
+		JSON_KEY(RESOURCESKEY, Resources, "resources")
 
 		DEFINE_TYPE_JSON_DERIVED(ListResourcesResponse::Result, PaginatedResultParams, RESOURCESKEY)
 
@@ -897,7 +897,7 @@ struct ListResourceTemplatesResponse : ResponseBase
 	{
 		std::vector<ResourceTemplate> ResourceTemplates;
 
-		JKEY(RESOURCE_TEMPLATESKEY, ResourceTemplates, "resourceTemplates")
+		JSON_KEY(RESOURCE_TEMPLATESKEY, ResourceTemplates, "resourceTemplates")
 
 		DEFINE_TYPE_JSON_DERIVED(ListResourceTemplatesResponse::Result, PaginatedResultParams, RESOURCE_TEMPLATESKEY)
 
@@ -953,7 +953,7 @@ struct ResourceUpdatedNotification : NotificationBase
 		MCP::URI URI; // The URI of the resource that has been updated. This might be a
 					  // sub-resource of the one that the client actually subscribed to.
 
-		JKEY(URIKEY, URI, "uri")
+		JSON_KEY(URIKEY, URI, "uri")
 
 		DEFINE_TYPE_JSON_DERIVED(ResourceUpdatedNotification::Params, NotificationParams, URIKEY)
 
@@ -1002,7 +1002,7 @@ struct ReadResourceRequest : RequestBase
 		MCP::URI URI; // The URI of the resource to read. The URI can use any
 					  // protocol; it is up to the server how to interpret it.
 
-		JKEY(URIKEY, URI, "uri")
+		JSON_KEY(URIKEY, URI, "uri")
 
 		DEFINE_TYPE_JSON_DERIVED(ReadResourceRequest::Params, RequestParams, URIKEY)
 
@@ -1055,7 +1055,7 @@ struct ReadResourceResponse : ResponseBase
 	{
 		std::vector<std::variant<TextResourceContents, BlobResourceContents>> Contents;
 
-		JKEY(CONTENTSKEY, Contents, "contents")
+		JSON_KEY(CONTENTSKEY, Contents, "contents")
 
 		DEFINE_TYPE_JSON_DERIVED(ReadResourceResponse::Result, ResultParams, CONTENTSKEY)
 
@@ -1110,7 +1110,7 @@ struct SubscribeRequest : RequestBase
 		MCP::URI URI{}; // The URI of the resource to subscribe to. The URI can use
 						// any protocol; it is up to the server how to interpret it.
 
-		JKEY(URIKEY, URI, "uri")
+		JSON_KEY(URIKEY, URI, "uri")
 
 		DEFINE_TYPE_JSON_DERIVED(SubscribeRequest::Params, RequestParams, URIKEY)
 
@@ -1159,7 +1159,7 @@ struct UnsubscribeRequest : RequestBase
 	{
 		MCP::URI URI{}; // The URI of the resource to unsubscribe from.
 
-		JKEY(URIKEY, URI, "uri")
+		JSON_KEY(URIKEY, URI, "uri")
 
 		DEFINE_TYPE_JSON_DERIVED(UnsubscribeRequest::Params, RequestParams, URIKEY)
 
@@ -1302,14 +1302,14 @@ struct CreateMessageRequest : RequestBase
 		std::optional<JSONData> Metadata{ std::nullopt }; // Optional metadata to pass through to the LLM provider.
 														  // The format of this metadata is provider-specific.
 
-		JKEY(MESSAGESKEY, Messages, "messages")
-		JKEY(MAXTOKENSKEY, MaxTokens, "maxTokens")
-		JKEY(SYSTEMPROMPTKEY, SystemPrompt, "systemPrompt")
-		JKEY(INCLUDECONTEXTKEY, IncludeContext, "includeContext")
-		JKEY(TEMPERATUREKEY, Temperature, "temperature")
-		JKEY(STOPSEQUENCESKEY, StopSequences, "stopSequences")
-		JKEY(MODELPREFSKEY, ModelPreferences, "modelPreferences")
-		JKEY(METADATAKEY, Metadata, "metadata")
+		JSON_KEY(MESSAGESKEY, Messages, "messages")
+		JSON_KEY(MAXTOKENSKEY, MaxTokens, "maxTokens")
+		JSON_KEY(SYSTEMPROMPTKEY, SystemPrompt, "systemPrompt")
+		JSON_KEY(INCLUDECONTEXTKEY, IncludeContext, "includeContext")
+		JSON_KEY(TEMPERATUREKEY, Temperature, "temperature")
+		JSON_KEY(STOPSEQUENCESKEY, StopSequences, "stopSequences")
+		JSON_KEY(MODELPREFSKEY, ModelPreferences, "modelPreferences")
+		JSON_KEY(METADATAKEY, Metadata, "metadata")
 
 		DEFINE_TYPE_JSON_DERIVED(CreateMessageRequest::Params,
 			RequestParams,
@@ -1410,9 +1410,9 @@ struct CreateMessageResponse : ResponseBase
 			std::nullopt
 		}; // The reason why sampling stopped, if known.
 
-		JKEY(MODELKEY, Model, "model")
-		JKEY(RESPONSEROLEKEY, ResponseRole, "role")
-		JKEY(RESPONSECONTENTKEY, ResponseContent, "content")
+		JSON_KEY(MODELKEY, Model, "model")
+		JSON_KEY(RESPONSEROLEKEY, ResponseRole, "role")
+		JSON_KEY(RESPONSECONTENTKEY, ResponseContent, "content")
 
 		DEFINE_TYPE_JSON_DERIVED(CreateMessageResponse::Result,
 			ResultParams,
@@ -1524,7 +1524,7 @@ struct ListRootsResponse : ResponseBase
 	{
 		std::vector<Root> Roots;
 
-		JKEY(ROOTSKEY, Roots, "roots")
+		JSON_KEY(ROOTSKEY, Roots, "roots")
 
 		DEFINE_TYPE_JSON_DERIVED(ListRootsResponse::Result, PaginatedResultParams, ROOTSKEY)
 
@@ -1616,7 +1616,7 @@ struct SetLevelRequest : RequestBase
 													   // this level and higher (i.e., more severe) to the
 													   // client as notifications/messages.
 
-		JKEY(LEVELKEY, Level, "level")
+		JSON_KEY(LEVELKEY, Level, "level")
 
 		DEFINE_TYPE_JSON_DERIVED(SetLevelRequest::Params, RequestParams, LEVELKEY)
 
@@ -1678,9 +1678,9 @@ struct LoggingMessageNotification : NotificationBase
 														   // object. Any JSON serializable type is allowed here.
 		std::optional<std::string> Logger{ std::nullopt }; // An optional name of the logger issuing this message.
 
-		JKEY(LEVELKEY, Level, "level")
-		JKEY(LOGGERKEY, Logger, "logger")
-		JKEY(DATAKEY, Data, "data")
+		JSON_KEY(LEVELKEY, Level, "level")
+		JSON_KEY(LOGGERKEY, Logger, "logger")
+		JSON_KEY(DATAKEY, Data, "data")
 
 		DEFINE_TYPE_JSON_DERIVED(LoggingMessageNotification::Params, NotificationParams, LEVELKEY, LOGGERKEY, DATAKEY)
 
@@ -1757,10 +1757,10 @@ struct ProgressNotification : NotificationBase
 		std::optional<int64_t> Total{ std::nullopt };  // Total number of items to process (or total
 													   // progress required), if known.
 
-		JKEY(MESSAGEKEY, Message, "message")
-		JKEY(PROGRESSTOKENKEY, ProgressToken, "progressToken")
-		JKEY(PROGRESSKEY, Progress, "progress")
-		JKEY(TOTALKEY, Total, "total")
+		JSON_KEY(MESSAGEKEY, Message, "message")
+		JSON_KEY(PROGRESSTOKENKEY, ProgressToken, "progressToken")
+		JSON_KEY(PROGRESSKEY, Progress, "progress")
+		JSON_KEY(TOTALKEY, Total, "total")
 
 		DEFINE_TYPE_JSON_DERIVED(ProgressNotification::Params,
 			NotificationParams,
@@ -1839,8 +1839,8 @@ struct CancelledNotification : NotificationBase
 		std::optional<std::string> Reason{ std::nullopt }; // An optional string describing the reason for the
 														   // cancellation. This MAY be logged or presented to the user.
 
-		JKEY(CANCELREQUESTIDKEY, CancelRequestID, "requestId")
-		JKEY(REASONKEY, Reason, "reason")
+		JSON_KEY(CANCELREQUESTIDKEY, CancelRequestID, "requestId")
+		JSON_KEY(REASONKEY, Reason, "reason")
 
 		DEFINE_TYPE_JSON_DERIVED(CancelledNotification::Params, NotificationParams, CANCELREQUESTIDKEY, REASONKEY)
 
@@ -1911,8 +1911,8 @@ struct CompleteRequest : RequestBase
 			std::string Name;  // The name of the argument
 			std::string Value; // The value of the argument to use for completion matching.
 
-			JKEY(NAMEKEY, Name, "name")
-			JKEY(VALUEKEY, Value, "value")
+			JSON_KEY(NAMEKEY, Name, "name")
+			JSON_KEY(VALUEKEY, Value, "value")
 
 			DEFINE_TYPE_JSON(CompleteRequest::Params::CompleteArgument, NAMEKEY, VALUEKEY)
 
@@ -1923,8 +1923,8 @@ struct CompleteRequest : RequestBase
 			{}
 		} Argument;
 
-		JKEY(REFERENCEKEY, Reference, "ref")
-		JKEY(ARGUMENTKEY, Argument, "argument")
+		JSON_KEY(REFERENCEKEY, Reference, "ref")
+		JSON_KEY(ARGUMENTKEY, Argument, "argument")
 
 		DEFINE_TYPE_JSON_DERIVED(CompleteRequest::Params, RequestParams, REFERENCEKEY, ARGUMENTKEY)
 
@@ -2004,9 +2004,9 @@ struct CompleteResponse : ResponseBase
 														  // options beyond those provided in the current response,
 														  // even if the exact total is unknown.
 
-			JKEY(VALUESKEY, Values, "values")
-			JKEY(TOTALKEY, Total, "total")
-			JKEY(HASMOREKEY, HasMore, "hasMore")
+			JSON_KEY(VALUESKEY, Values, "values")
+			JSON_KEY(TOTALKEY, Total, "total")
+			JSON_KEY(HASMOREKEY, HasMore, "hasMore")
 
 			DEFINE_TYPE_JSON(CompleteResponse::Result::Completion, VALUESKEY, TOTALKEY, HASMOREKEY)
 
@@ -2020,7 +2020,7 @@ struct CompleteResponse : ResponseBase
 			{}
 		} CompletionData;
 
-		JKEY(COMPLETIONDATAKEY, CompletionData, "completion")
+		JSON_KEY(COMPLETIONDATAKEY, CompletionData, "completion")
 
 		DEFINE_TYPE_JSON_DERIVED(CompleteResponse::Result, ResultParams, COMPLETIONDATAKEY)
 

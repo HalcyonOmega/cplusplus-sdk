@@ -75,7 +75,7 @@ struct ModelHint
 									 // similar niche; for example: - `gemini-1.5-flash` could match
 									 // `claude-3-haiku-20240307`
 
-	JKEY(NAMEKEY, Name, "name")
+	JSON_KEY(NAMEKEY, Name, "name")
 
 	DEFINE_TYPE_JSON(ModelHint, NAMEKEY)
 };
@@ -154,10 +154,10 @@ struct ModelPreferences
 	   // intelligence is not important, while a value of 1
 	   // means intelligence is the most important factor.
 
-	JKEY(HINTSKEY, Hints, "hints")
-	JKEY(COSTPRIORITYKEY, CostPriority, "costPriority")
-	JKEY(SPEEDPRIORITYKEY, SpeedPriority, "speedPriority")
-	JKEY(INTELLIGENCEPRIORITYKEY, IntelligencePriority, "intelligencePriority")
+	JSON_KEY(HINTSKEY, Hints, "hints")
+	JSON_KEY(COSTPRIORITYKEY, CostPriority, "costPriority")
+	JSON_KEY(SPEEDPRIORITYKEY, SpeedPriority, "speedPriority")
+	JSON_KEY(INTELLIGENCEPRIORITYKEY, IntelligencePriority, "intelligencePriority")
 
 	DEFINE_TYPE_JSON(ModelPreferences, HINTSKEY, COSTPRIORITYKEY, SPEEDPRIORITYKEY, INTELLIGENCEPRIORITYKEY)
 
@@ -194,8 +194,8 @@ struct SamplingMessage
 	MCP::ERole Role;
 	std::variant<TextContent, ImageContent, AudioContent> Content; // The content of the message.
 
-	JKEY(ROLEKEY, Role, "role")
-	JKEY(CONTENTKEY, Content, "content")
+	JSON_KEY(ROLEKEY, Role, "role")
+	JSON_KEY(CONTENTKEY, Content, "content")
 
 	DEFINE_TYPE_JSON(SamplingMessage, ROLEKEY, CONTENTKEY)
 };
@@ -208,9 +208,9 @@ struct SamplingResult
 	std::optional<std::string> Model;
 	std::optional<std::string> StopReason;
 
-	JKEY(RESULTKEY, Result, "result")
-	JKEY(MODELKEY, Model, "model")
-	JKEY(STOPREASONKEY, StopReason, "stopReason")
+	JSON_KEY(RESULTKEY, Result, "result")
+	JSON_KEY(MODELKEY, Model, "model")
+	JSON_KEY(STOPREASONKEY, StopReason, "stopReason")
 
 	DEFINE_TYPE_JSON(SamplingResult, RESULTKEY, MODELKEY, STOPREASONKEY)
 };

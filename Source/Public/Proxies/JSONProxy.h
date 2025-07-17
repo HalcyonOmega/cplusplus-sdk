@@ -50,21 +50,17 @@ concept IsOptional = requires { typename T::value_type; }
 // -----------------------------------------------------------------------------
 // Custom JSON serialization macros with key renaming support
 // -----------------------------------------------------------------------------
-#define TO_JSON(Member, Key) JSON_J[Key] = JSON_T.Member;
-#define FROM_JSON(Member, Key) JSON_J.at(Key).get_to(JSON_T.Member);
-
-// User-facing macro for aliasing members - both serialization directions
-#define KEY(Member, Key) TO_JSON(Member, Key) FROM_JSON(Member, Key)
+#define JSON_EXPAND(x) x
 
 // JSON Key mapping system with default member name and optional override
-#define JKEY(...) JKEY_OVERLOAD(__VA_ARGS__, JKEY_3, JKEY_2)(__VA_ARGS__)
-#define JKEY_OVERLOAD(_1, _2, _3, NAME, ...) NAME
+#define JSON_KEY(...) JSON_EXPAND(JSON_KEY_OVERLOAD(__VA_ARGS__, JSON_KEY_3, JSON_KEY_2)(__VA_ARGS__))
+#define JSON_KEY_OVERLOAD(_1, _2, _3, NAME, ...) NAME
 
-// JKEY with default JSON key (uses member name)
-#define JKEY_2(VarName, Member) JKEY_3(VarName, Member, #Member)
+// JSON_KEY with default JSON key (uses member name)
+#define JSON_KEY_2(VarName, Member) JSON_KEY_3(VarName, Member, #Member)
 
-// JKEY with custom JSON key
-#define JKEY_3(VarName, Member, JSONKey)                        \
+// JSON_KEY with custom JSON key
+#define JSON_KEY_3(VarName, Member, JSONKey)                    \
 	static constexpr struct VarName##_t                         \
 	{                                                           \
 		static constexpr const char* json_key = JSONKey;        \
@@ -98,11 +94,11 @@ concept IsOptional = requires { typename T::value_type; }
 		}                                                       \
 	} VarName{};
 
-// Usage macros for JKEY tokens
+// Usage macros for JSON_KEY tokens
 #define USE_JKEY_TO_JSON(KeyToken) KeyToken.to_json(JSON_J, JSON_T);
 #define USE_JKEY_FROM_JSON(KeyToken) KeyToken.from_json(JSON_J, JSON_T);
 
-// Combined DEFINE_TYPE_JSON that works with JKEY tokens
+// Combined DEFINE_TYPE_JSON that works with JSON_KEY tokens
 #define DEFINE_TYPE_JSON(Type, ...)                       \
 	DEFINE_TO_JSON(Type, APPLY_TO_JSON_KEYS(__VA_ARGS__)) \
 	DEFINE_FROM_JSON(Type, APPLY_FROM_JSON_KEYS(__VA_ARGS__))
@@ -111,32 +107,32 @@ concept IsOptional = requires { typename T::value_type; }
 	DEFINE_TO_JSON_DERIVED(Type, BaseType, APPLY_TO_JSON_KEYS(__VA_ARGS__)) \
 	DEFINE_FROM_JSON_DERIVED(Type, BaseType, APPLY_FROM_JSON_KEYS(__VA_ARGS__))
 
-// Helper macros to apply operations to all JKEY tokens
-#define APPLY_TO_JSON_KEYS(...) FOR_EACH_JKEY(USE_JKEY_TO_JSON, __VA_ARGS__)
-#define APPLY_FROM_JSON_KEYS(...) FOR_EACH_JKEY(USE_JKEY_FROM_JSON, __VA_ARGS__)
+// Helper macros to apply operations to all JSON_KEY tokens
+#define APPLY_TO_JSON_KEYS(...) FOR_EACH_JSON_KEY(USE_JKEY_TO_JSON, __VA_ARGS__)
+#define APPLY_FROM_JSON_KEYS(...) FOR_EACH_JSON_KEY(USE_JKEY_FROM_JSON, __VA_ARGS__)
 
-// Variadic macro processor for JKEY tokens (simplified)
-#define FOR_EACH_JKEY_1(Macro, x) Macro(x)
-#define FOR_EACH_JKEY_2(Macro, x, ...) Macro(x) FOR_EACH_JKEY_1(Macro, __VA_ARGS__)
-#define FOR_EACH_JKEY_3(Macro, x, ...) Macro(x) FOR_EACH_JKEY_2(Macro, __VA_ARGS__)
-#define FOR_EACH_JKEY_4(Macro, x, ...) Macro(x) FOR_EACH_JKEY_3(Macro, __VA_ARGS__)
-#define FOR_EACH_JKEY_5(Macro, x, ...) Macro(x) FOR_EACH_JKEY_4(Macro, __VA_ARGS__)
-#define FOR_EACH_JKEY_6(Macro, x, ...) Macro(x) FOR_EACH_JKEY_5(Macro, __VA_ARGS__)
-#define FOR_EACH_JKEY_7(Macro, x, ...) Macro(x) FOR_EACH_JKEY_6(Macro, __VA_ARGS__)
-#define FOR_EACH_JKEY_8(Macro, x, ...) Macro(x) FOR_EACH_JKEY_7(Macro, __VA_ARGS__)
+// Variadic macro processor for JSON_KEY tokens (simplified)
+#define FOR_EACH_JSON_KEY_1(Macro, x) Macro(x)
+#define FOR_EACH_JSON_KEY_2(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_1(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY_3(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_2(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY_4(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_3(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY_5(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_4(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY_6(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_5(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY_7(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_6(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY_8(Macro, x, ...) Macro(x) FOR_EACH_JSON_KEY_7(Macro, __VA_ARGS__)
 
-#define FOR_EACH_JKEY(Macro, ...)        \
-	FOR_EACH_JKEY_GET_MACRO(__VA_ARGS__, \
-		FOR_EACH_JKEY_8,                 \
-		FOR_EACH_JKEY_7,                 \
-		FOR_EACH_JKEY_6,                 \
-		FOR_EACH_JKEY_5,                 \
-		FOR_EACH_JKEY_4,                 \
-		FOR_EACH_JKEY_3,                 \
-		FOR_EACH_JKEY_2,                 \
-		FOR_EACH_JKEY_1)(Macro, __VA_ARGS__)
+#define FOR_EACH_JSON_KEY(Macro, ...)        \
+	FOR_EACH_JSON_KEY_GET_MACRO(__VA_ARGS__, \
+		FOR_EACH_JSON_KEY_8,                 \
+		FOR_EACH_JSON_KEY_7,                 \
+		FOR_EACH_JSON_KEY_6,                 \
+		FOR_EACH_JSON_KEY_5,                 \
+		FOR_EACH_JSON_KEY_4,                 \
+		FOR_EACH_JSON_KEY_3,                 \
+		FOR_EACH_JSON_KEY_2,                 \
+		FOR_EACH_JSON_KEY_1)(Macro, __VA_ARGS__)
 
-#define FOR_EACH_JKEY_GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, NAME, ...) NAME
+#define FOR_EACH_JSON_KEY_GET_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, NAME, ...) NAME
 
 // Macro for custom key mapping - generates the functions directly
 #define DEFINE_TO_JSON(Type, ...)                                  \
@@ -225,10 +221,10 @@ struct JSONSchema
 	std::optional<std::vector<std::string>> Required;
 	std::optional<JSONData> AdditionalProperties;
 
-	JKEY(TYPEKEY, Type, "type")
-	JKEY(PROPERTIESKEY, Properties, "properties")
-	JKEY(REQUIREDKEY, Required, "required")
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(TYPEKEY, Type, "type")
+	JSON_KEY(PROPERTIESKEY, Properties, "properties")
+	JSON_KEY(REQUIREDKEY, Required, "required")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(JSONSchema, TYPEKEY, PROPERTIESKEY, REQUIREDKEY, ADDITIONALPROPERTIESKEY)
 };

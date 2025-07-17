@@ -27,9 +27,9 @@ struct FErrorData
 	std::string Message{ "Unknown Error" };
 	std::optional<JSONData> Data{ std::nullopt };
 
-	JKEY(CODEKEY, Code, "code")
-	JKEY(MESSAGEKEY, Message, "message")
-	JKEY(DATAKEY, Data, "data")
+	JSON_KEY(CODEKEY, Code, "code")
+	JSON_KEY(MESSAGEKEY, Message, "message")
+	JSON_KEY(DATAKEY, Data, "data")
 
 	DEFINE_TYPE_JSON(FErrorData, CODEKEY, MESSAGEKEY, DATAKEY)
 
@@ -48,7 +48,7 @@ struct ErrorResponseBase : ResponseBase
 {
 	FErrorData ErrorData{};
 
-	JKEY(ERRORKEY, ErrorData, "error")
+	JSON_KEY(ERRORKEY, ErrorData, "error")
 
 	DEFINE_TYPE_JSON_DERIVED(ErrorResponseBase, ResponseBase, IDKEY, ERRORKEY)
 

@@ -69,12 +69,12 @@ struct Resource
 												  // encoding or any tokenization), if known. Hosts can use this
 												  // to display file sizes and estimate context window usage.
 
-	JKEY(URIKEY, URI, "uri")
-	JKEY(NAMEKEY, Name, "name")
-	JKEY(DESCRIPTIONKEY, Description, "description")
-	JKEY(MIMETYPEKEY, MIMEType, "mimeType")
-	JKEY(ANNOTATIONSKEY, Annotations, "annotations")
-	JKEY(SIZEKEY, Size, "size")
+	JSON_KEY(URIKEY, URI, "uri")
+	JSON_KEY(NAMEKEY, Name, "name")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
+	JSON_KEY(ANNOTATIONSKEY, Annotations, "annotations")
+	JSON_KEY(SIZEKEY, Size, "size")
 
 	DEFINE_TYPE_JSON(Resource, URIKEY, NAMEKEY, DESCRIPTIONKEY, MIMETYPEKEY, ANNOTATIONSKEY, SIZEKEY)
 
@@ -149,11 +149,11 @@ struct ResourceTemplate
 				  // be included if all resources matching this template have the same type.
 	std::optional<Annotations> Annotations; // Optional annotations for the client.
 
-	JKEY(URITEMPLATEKEY, URITemplate, "uriTemplate")
-	JKEY(NAMEKEY, Name, "name")
-	JKEY(DESCRIPTIONKEY, Description, "description")
-	JKEY(MIMETYPEKEY, MIMEType, "mimeType")
-	JKEY(ANNOTATIONSKEY, Annotations, "annotations")
+	JSON_KEY(URITEMPLATEKEY, URITemplate, "uriTemplate")
+	JSON_KEY(NAMEKEY, Name, "name")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
+	JSON_KEY(ANNOTATIONSKEY, Annotations, "annotations")
 
 	DEFINE_TYPE_JSON(ResourceTemplate, URITEMPLATEKEY, NAMEKEY, DESCRIPTIONKEY, MIMETYPEKEY, ANNOTATIONSKEY)
 

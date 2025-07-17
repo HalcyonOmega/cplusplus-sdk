@@ -35,7 +35,7 @@ struct NotificationParams
 
 	const std::optional<NotificationParamsMeta>& Meta{ std::nullopt };
 
-	JKEY(METAKEY, Meta, "_meta")
+	JSON_KEY(METAKEY, Meta, "_meta")
 
 	DEFINE_TYPE_JSON(NotificationParams, METAKEY)
 
@@ -72,8 +72,8 @@ struct NotificationBase : MessageBase
 	std::string Method{};
 	std::optional<std::unique_ptr<NotificationParams>> ParamsData{ std::nullopt };
 
-	JKEY(METHODKEY, Method, "method")
-	JKEY(PARAMSKEY, ParamsData, "params")
+	JSON_KEY(METHODKEY, Method, "method")
+	JSON_KEY(PARAMSKEY, ParamsData, "params")
 
 	DEFINE_TYPE_JSON_DERIVED(NotificationBase, MessageBase, METHODKEY, PARAMSKEY)
 

@@ -79,7 +79,7 @@ struct RequestParams
 		   // by notifications/progress). The value of this parameter is an opaque token that will be attached to any
 		   // subsequent notifications. The receiver is not obligated to provide these notifications.
 
-		JKEY(PROGRESS_TOKENKEY, ProgressToken, "progressToken")
+		JSON_KEY(PROGRESS_TOKENKEY, ProgressToken, "progressToken")
 
 		DEFINE_TYPE_JSON(RequestParamsMeta, PROGRESS_TOKENKEY)
 
@@ -91,7 +91,7 @@ struct RequestParams
 
 	std::optional<RequestParamsMeta> Meta{ std::nullopt };
 
-	JKEY(METAKEY, Meta, "_meta")
+	JSON_KEY(METAKEY, Meta, "_meta")
 
 	DEFINE_TYPE_JSON(RequestParams, METAKEY)
 
@@ -123,7 +123,7 @@ struct PaginatedRequestParams : RequestParams
 	std::optional<std::string> Cursor{ std::nullopt }; // An opaque token representing the current pagination
 													   // position. If provided, the server should return
 													   // results starting after this cursor.
-	JKEY(CURSORKEY, Cursor, "cursor")
+	JSON_KEY(CURSORKEY, Cursor, "cursor")
 
 	DEFINE_TYPE_JSON_DERIVED(PaginatedRequestParams, RequestParams, CURSORKEY)
 
@@ -174,9 +174,9 @@ struct RequestBase : MessageBase
 	std::string Method{ "DefaultRequest" };
 	std::optional<std::unique_ptr<RequestParams>> ParamsData{ std::nullopt };
 
-	JKEY(IDKEY, ID, "id")
-	JKEY(METHODKEY, Method, "method")
-	JKEY(PARAMSKEY, ParamsData, "params")
+	JSON_KEY(IDKEY, ID, "id")
+	JSON_KEY(METHODKEY, Method, "method")
+	JSON_KEY(PARAMSKEY, ParamsData, "params")
 
 	DEFINE_TYPE_JSON_DERIVED(RequestBase, MessageBase, IDKEY, METHODKEY, PARAMSKEY)
 

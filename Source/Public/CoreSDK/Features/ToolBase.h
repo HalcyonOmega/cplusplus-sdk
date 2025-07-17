@@ -81,11 +81,11 @@ struct ToolAnnotations {
                        // is closed. For example, the world of a web search tool is open,
                        // whereas that of a memory tool is not. Default: true
 
-    JKEY(TITLEKEY, Title, "title")
-    JKEY(READONLYHINTKEY, ReadOnlyHint, "readOnlyHint")
-    JKEY(DESTRUCTIVEHINTKEY, DestructiveHint, "destructiveHint")
-    JKEY(IDEMPOTENTHINTKEY, IdempotentHint, "idempotentHint")
-    JKEY(OPENWORLDHINTKEY, OpenWorldHint, "openWorldHint")
+    JSON_KEY(TITLEKEY, Title, "title")
+    JSON_KEY(READONLYHINTKEY, ReadOnlyHint, "readOnlyHint")
+    JSON_KEY(DESTRUCTIVEHINTKEY, DestructiveHint, "destructiveHint")
+    JSON_KEY(IDEMPOTENTHINTKEY, IdempotentHint, "idempotentHint")
+    JSON_KEY(OPENWORLDHINTKEY, OpenWorldHint, "openWorldHint")
 
     DEFINE_TYPE_JSON(ToolAnnotations, TITLEKEY, READONLYHINTKEY, DESTRUCTIVEHINTKEY,
                      IDEMPOTENTHINTKEY, OPENWORLDHINTKEY)
@@ -145,11 +145,11 @@ struct Tool {
                       // returned in the StructuredContent field of a CallToolResult.
     std::optional<ToolAnnotations> Annotations; // Optional additional tool information.
 
-    JKEY(NAMEKEY, Name, "name")
-    JKEY(DESCRIPTIONKEY, Description, "description")
-    JKEY(INPUTSCHEMAKEY, InputSchema, "inputSchema")
-    JKEY(OUTPUTSCHEMAKEY, OutputSchema, "outputSchema")
-    JKEY(ANNOTATIONSKEY, Annotations, "annotations")
+    JSON_KEY(NAMEKEY, Name, "name")
+    JSON_KEY(DESCRIPTIONKEY, Description, "description")
+    JSON_KEY(INPUTSCHEMAKEY, InputSchema, "inputSchema")
+    JSON_KEY(OUTPUTSCHEMAKEY, OutputSchema, "outputSchema")
+    JSON_KEY(ANNOTATIONSKEY, Annotations, "annotations")
 
     DEFINE_TYPE_JSON(Tool, NAMEKEY, DESCRIPTIONKEY, INPUTSCHEMAKEY, OUTPUTSCHEMAKEY, ANNOTATIONSKEY)
 

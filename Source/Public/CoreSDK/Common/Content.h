@@ -21,8 +21,8 @@ struct Content
 	std::string Type;						// The type of content.
 	std::optional<Annotations> Annotations; // Optional annotations for the client.
 
-	JKEY(TYPEKEY, Type, "type")
-	JKEY(ANNOTATIONSKEY, Annotations, "annotations")
+	JSON_KEY(TYPEKEY, Type, "type")
+	JSON_KEY(ANNOTATIONSKEY, Annotations, "annotations")
 
 	DEFINE_TYPE_JSON(Content, TYPEKEY, ANNOTATIONSKEY)
 };
@@ -49,7 +49,7 @@ struct TextContent : Content
 {
 	std::string Text; // The text content of the message.
 
-	JKEY(TEXTKEY, Text, "text")
+	JSON_KEY(TEXTKEY, Text, "text")
 
 	DEFINE_TYPE_JSON_DERIVED(TextContent, Content, TEXTKEY)
 
@@ -92,8 +92,8 @@ struct ImageContent : Content
 	Poco::Net::MediaType MIMEType{ "image", "png" }; // The MIME type of the image. Different
 													 // providers may support different image types.
 
-	JKEY(DATAKEY, Data, "data")
-	JKEY(MIMETYPEKEY, MIMEType, "mimeType")
+	JSON_KEY(DATAKEY, Data, "data")
+	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
 
 	DEFINE_TYPE_JSON_DERIVED(ImageContent, Content, DATAKEY, MIMETYPEKEY)
 
@@ -137,8 +137,8 @@ struct AudioContent : Content
 													  // providers may support different audio
 													  // types.
 
-	JKEY(DATAKEY, Data, "data")
-	JKEY(MIMETYPEKEY, MIMEType, "mimeType")
+	JSON_KEY(DATAKEY, Data, "data")
+	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
 
 	DEFINE_TYPE_JSON_DERIVED(AudioContent, Content, DATAKEY, MIMETYPEKEY)
 
@@ -173,8 +173,8 @@ struct ResourceContents
 	MCP::URI URI;								  // The URI of this resource.
 	std::optional<Poco::Net::MediaType> MIMEType; // The MIME type of this resource, if known.
 
-	JKEY(URIKEY, URI, "uri")
-	JKEY(MIMETYPEKEY, MIMEType, "mimeType")
+	JSON_KEY(URIKEY, URI, "uri")
+	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
 
 	DEFINE_TYPE_JSON(ResourceContents, URIKEY, MIMETYPEKEY)
 };
@@ -208,7 +208,7 @@ struct TextResourceContents : ResourceContents
 	std::string Text; // The text of the item. This must only be set if the item can actually be
 					  // represented as text (not binary data).
 
-	JKEY(TEXTKEY, Text, "text")
+	JSON_KEY(TEXTKEY, Text, "text")
 
 	DEFINE_TYPE_JSON_DERIVED(TextResourceContents, ResourceContents, TEXTKEY)
 
@@ -250,7 +250,7 @@ struct BlobResourceContents : ResourceContents
 	// TODO: @HalcyonOmega @format byte (base64) blob
 	MCP::BLOB Blob; // A base64-encoded string representing the binary data of the item.
 
-	JKEY(BLOBKEY, Blob, "blob")
+	JSON_KEY(BLOBKEY, Blob, "blob")
 
 	DEFINE_TYPE_JSON_DERIVED(BlobResourceContents, ResourceContents, BLOBKEY)
 
@@ -290,7 +290,7 @@ struct EmbeddedResource : Content
 {
 	std::variant<TextResourceContents, BlobResourceContents> Resource{ TextResourceContents{ "", MCP::URI{} } };
 
-	JKEY(RESOURCEKEY, Resource, "resource")
+	JSON_KEY(RESOURCEKEY, Resource, "resource")
 
 	DEFINE_TYPE_JSON_DERIVED(EmbeddedResource, Content, RESOURCEKEY)
 

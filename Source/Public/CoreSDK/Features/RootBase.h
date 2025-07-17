@@ -41,8 +41,8 @@ struct Root
 									 // identifier for the root, which may be useful for display purposes or for
 									 // referencing the root in other parts of the application.
 
-	JKEY(URIKEY, URI, "uri")
-	JKEY(NAMEKEY, Name, "name")
+	JSON_KEY(URIKEY, URI, "uri")
+	JSON_KEY(NAMEKEY, Name, "name")
 
 	DEFINE_TYPE_JSON(Root, URIKEY, NAMEKEY)
 

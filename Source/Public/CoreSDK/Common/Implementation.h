@@ -31,8 +31,8 @@ struct Implementation
 
 	EProtocolVersion ProtocolVersion{ EProtocolVersion::V2025_03_26 };
 
-	JKEY(NAMEKEY, Name, "name")
-	JKEY(VERSIONKEY, Version, "version")
+	JSON_KEY(NAMEKEY, Name, "name")
+	JSON_KEY(VERSIONKEY, Version, "version")
 
 	DEFINE_TYPE_JSON(Implementation, NAMEKEY, VERSIONKEY)
 

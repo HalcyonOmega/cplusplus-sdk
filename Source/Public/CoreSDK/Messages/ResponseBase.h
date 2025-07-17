@@ -31,7 +31,7 @@ struct ResultParams
 	std::optional<JSONData> Meta{ std::nullopt }; // The protocol reserves this result property to allow clients and
 												  // servers to attach additional metadata to their responses.
 
-	JKEY(METAKEY, Meta, "_meta")
+	JSON_KEY(METAKEY, Meta, "_meta")
 
 	DEFINE_TYPE_JSON(ResultParams, METAKEY)
 
@@ -62,7 +62,7 @@ struct PaginatedResultParams : ResultParams
 														   // position. If provided, the client should use this
 														   // cursor to fetch the next page of results.
 
-	JKEY(NEXT_CURSORKEY, NextCursor, "nextCursor")
+	JSON_KEY(NEXT_CURSORKEY, NextCursor, "nextCursor")
 
 	DEFINE_TYPE_JSON_DERIVED(PaginatedResultParams, ResultParams, NEXT_CURSORKEY)
 
@@ -91,8 +91,8 @@ struct ResponseBase : MessageBase
 	RequestID ID{};
 	std::unique_ptr<ResultParams> ResultData{ std::make_unique<ResultParams>(std::nullopt) };
 
-	JKEY(IDKEY, ID, "id")
-	JKEY(RESULTKEY, ResultData, "result")
+	JSON_KEY(IDKEY, ID, "id")
+	JSON_KEY(RESULTKEY, ResultData, "result")
 
 	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 

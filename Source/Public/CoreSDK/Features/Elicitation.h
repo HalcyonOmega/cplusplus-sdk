@@ -19,10 +19,10 @@ struct BooleanSchema
 	std::optional<std::string> Description;
 	std::optional<bool> Default;
 
-	JKEY(TYPEKEY, Type, "type")
-	JKEY(TITLEKEY, Title, "title")
-	JKEY(DESCRIPTIONKEY, Description, "description")
-	JKEY(DEFAULTKEY, Default, "default")
+	JSON_KEY(TYPEKEY, Type, "type")
+	JSON_KEY(TITLEKEY, Title, "title")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(DEFAULTKEY, Default, "default")
 
 	DEFINE_TYPE_JSON(BooleanSchema, TYPEKEY, TITLEKEY, DESCRIPTIONKEY, DEFAULTKEY)
 };
@@ -53,12 +53,12 @@ struct StringSchema
 	std::optional<uint32_t> MaxLength;
 	std::optional<EStringFormat> Format;
 
-	JKEY(TYPEKEY, Type, "type")
-	JKEY(TITLEKEY, Title, "title")
-	JKEY(DESCRIPTIONKEY, Description, "description")
-	JKEY(MINLENGTHKEY, MinLength, "minLength")
-	JKEY(MAXLENGTHKEY, MaxLength, "maxLength")
-	JKEY(FORMATKEY, Format, "format")
+	JSON_KEY(TYPEKEY, Type, "type")
+	JSON_KEY(TITLEKEY, Title, "title")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(MINLENGTHKEY, MinLength, "minLength")
+	JSON_KEY(MAXLENGTHKEY, MaxLength, "maxLength")
+	JSON_KEY(FORMATKEY, Format, "format")
 
 	DEFINE_TYPE_JSON(StringSchema, TYPEKEY, TITLEKEY, DESCRIPTIONKEY, MINLENGTHKEY, MAXLENGTHKEY, FORMATKEY)
 };
@@ -82,11 +82,11 @@ struct NumberSchema
 	std::optional<double> Minimum;
 	std::optional<double> Maximum;
 
-	JKEY(TYPEKEY, Type, "type")
-	JKEY(TITLEKEY, Title, "title")
-	JKEY(DESCRIPTIONKEY, Description, "description")
-	JKEY(MINIMUMKEY, Minimum, "minimum")
-	JKEY(MAXIMUMKEY, Maximum, "maximum")
+	JSON_KEY(TYPEKEY, Type, "type")
+	JSON_KEY(TITLEKEY, Title, "title")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(MINIMUMKEY, Minimum, "minimum")
+	JSON_KEY(MAXIMUMKEY, Maximum, "maximum")
 
 	DEFINE_TYPE_JSON(NumberSchema, TYPEKEY, TITLEKEY, DESCRIPTIONKEY, MINIMUMKEY, MAXIMUMKEY)
 };
@@ -102,11 +102,11 @@ struct EnumSchema
 	std::vector<std::string> Enum;
 	std::optional<std::vector<std::string>> EnumNames;
 
-	JKEY(TYPEKEY, Type, "type")
-	JKEY(TITLEKEY, Title, "title")
-	JKEY(DESCRIPTIONKEY, Description, "description")
-	JKEY(ENUMKEY, Enum, "enum")
-	JKEY(ENUMNAMESKEY, EnumNames, "enumNames")
+	JSON_KEY(TYPEKEY, Type, "type")
+	JSON_KEY(TITLEKEY, Title, "title")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(ENUMKEY, Enum, "enum")
+	JSON_KEY(ENUMNAMESKEY, EnumNames, "enumNames")
 
 	DEFINE_TYPE_JSON(EnumSchema, TYPEKEY, TITLEKEY, DESCRIPTIONKEY, ENUMKEY, ENUMNAMESKEY)
 };
@@ -138,15 +138,15 @@ struct ElicitRequest : RequestBase
 			std::unordered_map<std::string, PrimitiveSchemaDefinitions> Properties;
 			std::optional<std::vector<std::string>> Required;
 
-			JKEY(TYPEKEY, Type, "type")
-			JKEY(PROPERTIESKEY, Properties, "properties")
-			JKEY(REQUIREDKEY, Required, "required")
+			JSON_KEY(TYPEKEY, Type, "type")
+			JSON_KEY(PROPERTIESKEY, Properties, "properties")
+			JSON_KEY(REQUIREDKEY, Required, "required")
 
 			DEFINE_TYPE_JSON(FRequestedSchema, TYPEKEY, PROPERTIESKEY, REQUIREDKEY)
 		} RequestedSchema;
 
-		JKEY(MESSAGEKEY, Message, "message")
-		JKEY(REQUESTEDSCHEMAKEY, requestedSchema, "requestedSchema")
+		JSON_KEY(MESSAGEKEY, Message, "message")
+		JSON_KEY(REQUESTEDSCHEMAKEY, requestedSchema, "requestedSchema")
 
 		DEFINE_TYPE_JSON_DERIVED(ElicitRequest::Params, RequestParams, MESSAGEKEY, REQUESTEDSCHEMAKEY)
 
@@ -191,8 +191,8 @@ struct ElicitResponse : ResponseBase
 		 */
 		std::optional<std::unordered_map<std::string, JSONData>> Content{ std::nullopt };
 
-		JKEY(ACTIONKEY, Action, "action")
-		JKEY(CONTENTKEY, Content, "content")
+		JSON_KEY(ACTIONKEY, Action, "action")
+		JSON_KEY(CONTENTKEY, Content, "content")
 
 		DEFINE_TYPE_JSON_DERIVED(ElicitResponse::Result, ResultParams, ACTIONKEY, CONTENTKEY)
 

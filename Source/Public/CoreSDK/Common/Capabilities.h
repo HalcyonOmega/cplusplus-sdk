@@ -9,93 +9,102 @@ MCP_NAMESPACE_BEGIN
 
 struct RootsCapability
 {
-	std::optional<bool> ListChanged; // Whether the client supports notifications for changes to the roots list.
-	JSONData AdditionalProperties;
+	std::optional<bool> ListChanged{
+		std::nullopt
+	}; // Whether the client supports notifications for changes to the roots list.
+	JSONData AdditionalProperties{};
 
-	JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(RootsCapability, LISTCHANGEDKEY, ADDITIONALPROPERTIESKEY)
+
+	explicit RootsCapability(const std::optional<bool> InListChanged = std::nullopt)
+		: ListChanged(InListChanged),
+		  AdditionalProperties(JSONData{})
+	{}
 };
 
 struct SamplingCapability
 {
-	JSONData AdditionalProperties;
+	JSONData AdditionalProperties{};
 
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(SamplingCapability, ADDITIONALPROPERTIESKEY)
 };
 
 struct ExperimentalCapability
 {
-	JSONData AdditionalProperties;
+	JSONData AdditionalProperties{};
 
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(ExperimentalCapability, ADDITIONALPROPERTIESKEY)
 };
 
 struct LoggingCapability
 {
-	JSONData AdditionalProperties;
+	JSONData AdditionalProperties{};
 
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(LoggingCapability, ADDITIONALPROPERTIESKEY)
 };
 
 struct PromptsCapability
 {
-	std::optional<bool> ListChanged; // Whether this server supports notifications for changes
-									 // to the prompt list.
-	JSONData AdditionalProperties;
+	std::optional<bool> ListChanged{ std::nullopt }; // Whether this server supports notifications for changes
+													 // to the prompt list.
+	JSONData AdditionalProperties{};
 
-	JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(PromptsCapability, LISTCHANGEDKEY, ADDITIONALPROPERTIESKEY)
 };
 
 struct ResourcesCapability
 {
-	std::optional<bool> Subscribe;	 // Whether this server supports subscribing to resource updates.
-	std::optional<bool> ListChanged; // Whether this server supports notifications for changes
-									 // to the resource list.
-	JSONData AdditionalProperties;
+	std::optional<bool> Subscribe{ std::nullopt };	 // Whether this server supports subscribing to resource updates.
+	std::optional<bool> ListChanged{ std::nullopt }; // Whether this server supports notifications for changes
+													 // to the resource list.
+	JSONData AdditionalProperties{};
 
-	JKEY(SUBSCRIBEKEY, Subscribe, "subscribe")
-	JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(SUBSCRIBEKEY, Subscribe, "subscribe")
+	JSON_KEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(ResourcesCapability, SUBSCRIBEKEY, LISTCHANGEDKEY, ADDITIONALPROPERTIESKEY)
 };
 
 struct CompletionCapability
 {
-	JSONData AdditionalProperties;
+	JSONData AdditionalProperties{};
 
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(CompletionCapability, ADDITIONALPROPERTIESKEY)
 };
 
 struct ToolsCapability
 {
-	std::optional<bool> ListChanged; // Whether this server supports notifications for changes to the tool list.
-	JSONData AdditionalProperties;
+	std::optional<bool> ListChanged{
+		std::nullopt
+	}; // Whether this server supports notifications for changes to the tool list.
+	JSONData AdditionalProperties{};
 
-	JKEY(LISTCHANGEDKEY, ListChanged, "listChanged")
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(LISTCHANGEDKEY, ListChanged, "listChanged")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(ToolsCapability, LISTCHANGEDKEY, ADDITIONALPROPERTIESKEY)
 };
 
 struct ElicitationCapability
 {
-	JSONData AdditionalProperties;
+	JSONData AdditionalProperties{};
 
-	JKEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
+	JSON_KEY(ADDITIONALPROPERTIESKEY, AdditionalProperties, "additionalProperties")
 
 	DEFINE_TYPE_JSON(ElicitationCapability, ADDITIONALPROPERTIESKEY)
 };
@@ -138,16 +147,19 @@ struct ElicitationCapability
  */
 struct ClientCapabilities
 {
-	std::optional<ExperimentalCapability>
-		Experimental;							// Experimental, non-standard capabilities that the client supports.
-	std::optional<SamplingCapability> Sampling; // Present if the client supports sampling from an LLM.
-	std::optional<RootsCapability> Roots;		// Present if the client supports listing roots.
-	std::optional<ElicitationCapability> Elicitation; // Present if the client supports eliciting user input.
+	std::optional<ExperimentalCapability> Experimental{
+		std::nullopt
+	}; // Experimental, non-standard capabilities that the client supports.
+	std::optional<SamplingCapability> Sampling{ std::nullopt }; // Present if the client supports sampling from an LLM.
+	std::optional<RootsCapability> Roots{ std::nullopt };		// Present if the client supports listing roots.
+	std::optional<ElicitationCapability> Elicitation{
+		std::nullopt
+	}; // Present if the client supports eliciting user input.
 
-	JKEY(ROOTSKEY, Roots, "roots")
-	JKEY(SAMPLINGKEY, Sampling, "sampling")
-	JKEY(EXPERIMENTALKEY, Elicitation, "elicitation")
-	JKEY(ELICITATIONKEY, Experimental, "experimental")
+	JSON_KEY(ROOTSKEY, Roots, "roots")
+	JSON_KEY(SAMPLINGKEY, Sampling, "sampling")
+	JSON_KEY(EXPERIMENTALKEY, Elicitation, "elicitation")
+	JSON_KEY(ELICITATIONKEY, Experimental, "experimental")
 
 	DEFINE_TYPE_JSON(ClientCapabilities, ROOTSKEY, SAMPLINGKEY, EXPERIMENTALKEY)
 };
@@ -228,20 +240,24 @@ struct ClientCapabilities
  */
 struct ServerCapabilities
 {
-	std::optional<ExperimentalCapability>
-		Experimental;						  // Experimental, non-standard capabilities that the server supports.
-	std::optional<LoggingCapability> Logging; // Present if the server supports sending log messages to the client.
-	std::optional<CompletionCapability>
-		Completions;							  // Present if the server supports sending completions to the client.
-	std::optional<PromptsCapability> Prompts;	  // Present if the server offers any prompt templates.
-	std::optional<ResourcesCapability> Resources; // Present if the server offers any resources to read.
-	std::optional<ToolsCapability> Tools;		  // Present if the server offers any tools to call.
+	std::optional<ExperimentalCapability> Experimental{
+		std::nullopt
+	}; // Experimental, non-standard capabilities that the server supports.
+	std::optional<LoggingCapability> Logging{
+		std::nullopt
+	}; // Present if the server supports sending log messages to the client.
+	std::optional<CompletionCapability> Completions{
+		std::nullopt
+	}; // Present if the server supports sending completions to the client.
+	std::optional<PromptsCapability> Prompts{ std::nullopt };	  // Present if the server offers any prompt templates.
+	std::optional<ResourcesCapability> Resources{ std::nullopt }; // Present if the server offers any resources to read.
+	std::optional<ToolsCapability> Tools{ std::nullopt };		  // Present if the server offers any tools to call.
 
-	JKEY(EXPERIMENTALKEY, Experimental, "experimental")
-	JKEY(LOGGINGKEY, Logging, "logging")
-	JKEY(PROMPTSKEY, Prompts, "prompts")
-	JKEY(RESOURCESKEY, Resources, "resources")
-	JKEY(TOOLSKEY, Tools, "tools")
+	JSON_KEY(EXPERIMENTALKEY, Experimental, "experimental")
+	JSON_KEY(LOGGINGKEY, Logging, "logging")
+	JSON_KEY(PROMPTSKEY, Prompts, "prompts")
+	JSON_KEY(RESOURCESKEY, Resources, "resources")
+	JSON_KEY(TOOLSKEY, Tools, "tools")
 
 	DEFINE_TYPE_JSON(ServerCapabilities, EXPERIMENTALKEY, LOGGINGKEY, PROMPTSKEY, RESOURCESKEY, TOOLSKEY)
 };

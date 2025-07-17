@@ -12,7 +12,7 @@ struct MessageBase
 {
 	std::string JSONRPC{ "2.0" };
 
-	JKEY(JSONRPCKEY, JSONRPC, "jsonrpc")
+	JSON_KEY(JSONRPCKEY, JSONRPC, "jsonrpc")
 
 	DEFINE_TYPE_JSON(MessageBase, JSONRPCKEY)
 
