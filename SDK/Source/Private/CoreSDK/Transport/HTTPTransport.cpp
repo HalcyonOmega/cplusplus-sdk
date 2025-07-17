@@ -259,10 +259,7 @@ void HTTPTransportClient::ProcessSSELine(const std::string& InLine)
 
 void HTTPTransportClient::Cleanup()
 {
-	// Close SSE stream
 	m_SSEStream.reset();
-
-	// Close HTTP session
 	m_HTTPSession.reset();
 }
 
@@ -359,7 +356,6 @@ VoidTask HTTPTransportServer::Disconnect()
 
 	try
 	{
-		// Stop HTTP server
 		if (m_HTTPServer)
 		{
 			m_HTTPServer->stop();
