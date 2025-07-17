@@ -75,7 +75,7 @@ if (WIN32)
 endif ()
 
 # HTTP Test Executable
-add_executable(HTTPTest Source/Public/T_HTTPServer.cpp)
+add_executable(HTTPTest SDK/Source/T_HTTPServer.cpp)
 
 target_link_libraries(HTTPTest PUBLIC Poco::Foundation Poco::Net)
 target_link_libraries(HTTPTest PUBLIC ${PROJECT_NAME})
