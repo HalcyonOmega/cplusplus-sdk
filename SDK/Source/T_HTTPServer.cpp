@@ -22,6 +22,11 @@ protected:
 
 		Server.Start();
 
+		MCP::PingRequest pingRequest;
+		MCP::JSONData Json = pingRequest;
+		std::cout << "\n PingRequest JSON:" << std::endl;
+		std::cout << Json.dump(2) << std::endl;
+
 		waitForTerminationRequest();
 
 		std::cout << "🛑 Shutting down server..." << std::endl;

@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.20)
 
 # Add test executable
 add_executable(sdk_tests
-        ../Source/T_HTTPServer.cpp
 )
 
 find_package(Poco REQUIRED COMPONENTS Foundation Net)
