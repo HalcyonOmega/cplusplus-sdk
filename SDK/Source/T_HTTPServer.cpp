@@ -29,7 +29,6 @@ protected:
 
 		waitForTerminationRequest();
 
-		std::cout << "🛑 Shutting down server..." << std::endl;
 		Server.Stop();
 		return Application::EXIT_OK;
 	}

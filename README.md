@@ -1,32 +1,30 @@
 # MCP C++ SDK
 
-**Status**: Updated for MCP Specification 2025-03-26 Compliance
+***Work In Progress***
 
-## Usage
+## Overview
 
-The SDK provides both simple and advanced APIs:
+This SDK provides both simple and advanced APIs for implementing MCP clients and servers. It supports all MCP features including tools, prompts, resources, sampling, and real-time communication over Stdio and StreamableHTTP transports.
 
-```cpp
-// Simple API
-auto server = SimpleMCPServer::CreateHTTP(8080);
-server->AddTool(CreateTool("example", "Example tool", [](auto args) -> ToolResult {
-    return {{"Hello from tool!"}, false, ""};
-}));
-co_await server->Start();
+**MCP Specification Compliance**: 2025-03-26
+- JSON-RPC 2.0 message handling
+- StreamableHTTP transport with GET /message endpoint
+- Resource pagination with cursor support
+- Standard error code handling
+- JSON schema validation for tools
+- Progress reporting and cancellation
+- Resource subscriptions and notifications
 
-// Advanced API with error codes
-try {
-    auto result = co_await protocol->CallTool("example", {});
-} catch (const MCPException& e) {
-    if (e.GetCode() == MCPErrorCodes::TOOL_NOT_FOUND) {
-        // Handle tool not found
-    }
-}
-```
+## Table Of Contents
+- [Prerequisites](#prerequisites)
+- [Building](#building)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Dependencies
-
-- **C++20 Compiler**: Coroutines, concepts, ranges support
+## Prerequisites
+- CMake 3.20+
+- C++20 compatible compiler
 
 ### Third-Party Libraries
 
@@ -44,46 +42,60 @@ try {
 - **Purpose**: JSON parsing and serialization
 - **Location**: `Source/Public/Utilities/ThirdParty/json.hpp`
 
-## MCP Specification Compliance
+## Building
 
-This implementation targets **MCP Specification 2025-03-26** with:
-- ✅ JSON-RPC 2.0 message handling
-- ✅ StreamableHTTP transport with GET /message endpoint
-- ✅ Resource pagination with cursor support
-- ✅ Standard error code handling
-- ✅ JSON schema validation for tools
-- ✅ Progress reporting and cancellation
-- ✅ Resource subscriptions and notifications
+```cmake
+find_package(Poco REQUIRED COMPONENTS Foundation Net)
+target_link_libraries(your_target PRIVATE Poco::Foundation Poco::Net)
+target_compile_features(your_target PRIVATE cxx_std_20)
+```
 
-## Overview
+### Build Steps
+1. Clone the repository:
+   ```bash
+   ```
 
-This SDK provides both simple and advanced APIs for implementing MCP clients and servers. It supports all MCP features including tools, prompts, resources, sampling, and real-time communication over Stdio and StreamableHTTP transports.
+2. Create a build directory:
+   ```bash
+   ```
 
-## Features
+3. Configure and build:
+   ```bash
+   ```
 
-- ✅ **Complete MCP 2024-11-05 Specification Coverage**
-- ✅ **Modern C++20 Coroutines** - No callbacks, clean async/await syntax
-- ✅ **Dual Transport Support** - Stdio and StreamableHTTP
-- ✅ **Client & Server Implementations** - Full bidirectional communication
-- ✅ **Strongly Typed Messages** - JSON-RPC with C++ type safety
-- ✅ **Two-Tier API Design** - Simple for beginners, advanced for power users
-- ✅ **Progress Reporting & Cancellation** - Full lifecycle management
-- ✅ **Resource Subscriptions** - Real-time resource updates
-- ✅ **Sampling Requests** - LLM integration support
-- ✅ **Thread-Safe Operations** - Safe for concurrent use
-- ✅ **Comprehensive Error Handling** - Robust error propagation
-- ✅ **Schema Validation** - JSON Schema support for tools/prompts
+4. Install (optional):
+   ```bash
+   ```
 
-## Quick Start
+## Usage
 
-### Simple Server
+The SDK provides both simple and advanced APIs:
+```cpp
+// Simple API
+auto server = MCPServer::CreateHTTP(8080);
+server->AddTool(CreateTool("example", "Example tool", [](auto args) -> ToolResult {
+    return {{"Hello from tool!"}, false, ""};
+}));
+co_await server->Start();
+
+// Advanced API with error codes
+try {
+    auto result = co_await protocol->CallTool("example", {});
+} catch (const MCPException& e) {
+    if (e.GetCode() == MCPErrorCodes::TOOL_NOT_FOUND) {
+        // Handle tool not found
+    }
+}
+```
+
+#### Simple Server
 
 ```cpp
 #include "MCPSDK.h"
 
 MCPTaskVoid RunServer()
 {
-    auto server = SimpleMCPServer::CreateStdio();
+    auto server = MCPServer::CreateStdio();
     
     // Add a greeting tool
     server->AddTool(CreateTool("greet", "Greets a person",
@@ -114,7 +126,7 @@ MCPTaskVoid RunServer()
 
 MCPTaskVoid RunClient()
 {
-    auto client = SimpleMCPClient::CreateStdio("my-mcp-server", {"--config", "dev"});
+    auto client = MCPClient::CreateStdio("my-mcp-server", {"--config", "dev"});
     
     bool connected = co_await client->Connect();
     if (!connected) {
@@ -147,7 +159,7 @@ MCPTaskVoid RunClient()
 
 MCPTaskVoid RunHTTPServer()
 {
-    auto server = SimpleMCPServer::CreateHTTP(8080);
+    auto server = MCPServer::CreateHTTP(8080);
     
     // Add your tools, prompts, and resources...
     
@@ -158,32 +170,6 @@ MCPTaskVoid RunHTTPServer()
     co_await server->Stop();
 }
 ```
-
-## Architecture
-
-The SDK follows a layered architecture:
-
-```
-┌─────────────────────────────────┐
-│           User Code             │
-├─────────────────────────────────┤
-│        SimpleMCP API            │ ← Easy to use, minimal setup
-│    (SimpleMCPServer/Client)     │
-├─────────────────────────────────┤
-│       MCPProtocol Layer         │ ← Full MCP specification
-│     (MCPServer/MCPClient)       │
-├─────────────────────────────────┤
-│      Transport Abstraction      │ ← Pluggable transports
-│        (ITransport)             │
-├─────────────────────────────────┤
-│   StdioTransport │ HTTPTransport│ ← Concrete implementations
-├─────────────────────────────────┤
-│      Poco Libraries             │ ← Networking & process
-│      nlohmann/json              │   management
-└─────────────────────────────────┘
-```
-
-## Advanced Usage
 
 ### Custom Tool with Schema Validation
 
@@ -268,7 +254,7 @@ void SetupDynamicResource(MCPServer& server)
 }
 
 // Client side - subscribe to resource updates
-MCPTaskVoid SubscribeToLogs(SimpleMCPClient& client)
+MCPTaskVoid SubscribeToLogs(MCPClient& client)
 {
     // Subscribe to log updates
     co_await client.SubscribeToResource("log://application/events");
@@ -311,127 +297,11 @@ MCPTaskVoid HandleComplexQuery(MCPServer& server, const std::string& query)
 }
 ```
 
-## Message Flow
+## Contributing
 
-The SDK handles the complete MCP message lifecycle:
-
-1. **User Action** → SimpleMCP API
-2. **API Call** → MCPProtocol layer 
-3. **Protocol** → Serializes to JSON-RPC → ITransport
-4. **Transport** → Sends over Stdio/HTTP → Remote endpoint
-5. **Remote** → Processes → Sends response
-6. **Transport** → Receives response → MCPProtocol
-7. **Protocol** → Deserializes → SimpleMCP API
-8. **API** → Returns result → User code
-
-## Transport Details
-
-### Stdio Transport
-- Communicates over stdin/stdout with external processes
-- Supports both client (launching process) and server (being launched) modes
-- Line-delimited JSON messages
-- Automatic process lifecycle management
-
-### StreamableHTTP Transport
-- Client: Sends requests via HTTP POST, receives responses via Server-Sent Events
-- Server: HTTP server with POST endpoint for requests, SSE for responses/notifications
-- Supports multiple concurrent clients
-- Automatic connection management and failover
-
-## Thread Safety
-
-All SDK components are thread-safe:
-- Transport operations use internal mutexes
-- Protocol handlers can be called from multiple threads
-- SimpleMCP API is safe for concurrent access
-- Coroutines handle async operations without blocking
-
-## Error Handling
-
-The SDK provides comprehensive error handling:
-- Transport errors (connection failures, timeouts)
-- Protocol errors (malformed messages, unsupported methods)
-- Application errors (tool execution failures, resource access issues)
-- All errors propagate through the coroutine system with proper exception handling
-
-## Building
-
-```cmake
-find_package(Poco REQUIRED COMPONENTS Foundation Net)
-target_link_libraries(your_target PRIVATE Poco::Foundation Poco::Net)
-target_compile_features(your_target PRIVATE cxx_std_20)
-```
-
-### Prerequisites
-- CMake 3.10 or higher
-- C++20 compatible compiler
-- Git
-
-### Build Steps
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/mcp-sdk.git
-   cd mcp-sdk
-   ```
-
-2. Create a build directory:
-   ```bash
-   mkdir build
-   cd build
-   ```
-
-3. Configure and build:
-   ```bash
-   cmake ..
-   make
-   ```
-
-4. Install (optional):
-   ```bash
-   make install
-   ```
-
-## Integration Examples
-
-### With Existing Applications
-
-```cpp
-class MyApplicationServer
-{
-private:
-    std::unique_ptr<SimpleMCPServer> m_MCPServer;
-    
-public:
-    void Initialize()
-    {
-        m_MCPServer = SimpleMCPServer::CreateHTTP(9001);
-        
-        // Expose application functions as MCP tools
-        m_MCPServer->AddTool(CreateTool("get_user", "Get user info",
-            [this](const auto& args) -> ToolResult {
-                auto userInfo = GetUserFromDatabase(args.at("id"));
-                return {{userInfo.ToJSON()}, false, ""};
-            }));
-        
-        // Expose application data as MCP resources
-        m_MCPServer->AddResource(CreateResource("app://config", "Configuration",
-            [this]() -> ResourceContent {
-                return {"app://config", GetConfigAsJSON(), "application/json"};
-            }));
-    }
-    
-    MCPTaskVoid Start()
-    {
-        co_await m_MCPServer->Start();
-        m_MCPServer->LogInfo("MCP interface ready");
-    }
-};
-```
+This is an implementation of the MCP specification. For issues or enhancements, please refer to the MCP specification documentation. 
 
 ## License
 
 This project is licensed under the MIT License. See LICENSE.md for details.
 
-## Contributing
-
-This is an implementation of the MCP specification. For issues or enhancements, please refer to the MCP specification documentation. 
