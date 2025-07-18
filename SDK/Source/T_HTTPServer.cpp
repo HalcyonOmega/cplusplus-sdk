@@ -22,10 +22,10 @@ protected:
 
 		Server.Start();
 
-		MCP::PingRequest pingRequest;
-		MCP::JSONData Json = pingRequest;
-		std::cout << "\n PingRequest JSON:" << std::endl;
-		std::cout << Json.dump(2) << std::endl;
+		if (const auto Transport = Server.GetTransport().lock())
+		{
+			MCP::LogMessage("Transport Connection Info: " + Transport->GetConnectionInfo());
+		}
 
 		waitForTerminationRequest();
 

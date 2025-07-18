@@ -16,13 +16,30 @@
 MCP_NAMESPACE_BEGIN
 
 // Transport events
-enum class ETransportState : uint8_t
+enum class ETransportState
 {
 	Disconnected,
 	Connecting,
 	Connected,
 	Error
 };
+
+inline std::string ToString(const ETransportState InState)
+{
+	switch (InState)
+	{
+		case ETransportState::Disconnected:
+			return "Disconnected";
+		case ETransportState::Connecting:
+			return "Connecting";
+		case ETransportState::Connected:
+			return "Connected";
+		case ETransportState::Error:
+			return "Error";
+		default:
+			return "Unknown";
+	}
+}
 
 // Connection identifier type
 using ConnectionID = std::string;
@@ -74,8 +91,8 @@ public:
 	ITransport& operator=(const ITransport&) noexcept = default;
 	ITransport& operator=(ITransport&&) noexcept = default;
 
-	virtual VoidTask Connect() = 0;
-	virtual VoidTask Disconnect() = 0;
+	virtual void Connect() = 0;
+	virtual void Disconnect() = 0;
 	virtual void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs)
 		= 0;
@@ -125,7 +142,8 @@ public:
 	// Convenience factory methods
 	[[nodiscard]] static std::unique_ptr<ITransport> CreateStdioClientTransport(
 		const StdioClientTransportOptions& InOptions);
-	[[nodiscard]] static std::unique_ptr<ITransport> CreateHTTPTransport(const HTTPTransportOptions& InOptions);
+	[[nodiscard]] static std::unique_ptr<ITransport> CreateHTTPServerTransport(const HTTPTransportOptions& InOptions);
+	[[nodiscard]] static std::unique_ptr<ITransport> CreateHTTPClientTransport(const HTTPTransportOptions& InOptions);
 };
 
 MCP_NAMESPACE_END

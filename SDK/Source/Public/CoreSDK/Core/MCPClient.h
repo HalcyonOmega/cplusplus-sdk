@@ -16,8 +16,8 @@ public:
 		const Implementation& InClientInfo,
 		const ClientCapabilities& InCapabilities);
 
-	VoidTask Start() override;
-	VoidTask Stop() override;
+	void Start() override;
+	void Stop() override;
 
 	// Initialization
 	OptTask<InitializeResponse::Result> Request_Initialize(const InitializeRequest::Params& InParams);

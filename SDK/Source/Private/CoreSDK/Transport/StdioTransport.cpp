@@ -5,7 +5,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <stdexcept>
 #include <thread>
 #include <utility>
 
@@ -22,7 +21,7 @@ StdioClientTransport::~StdioClientTransport()
 	{
 		try
 		{
-			Disconnect().await_resume();
+			Disconnect();
 		}
 		catch (...)
 		{
@@ -31,12 +30,12 @@ StdioClientTransport::~StdioClientTransport()
 	}
 }
 
-VoidTask StdioClientTransport::Connect()
+void StdioClientTransport::Connect()
 {
 	if (GetState() != ETransportState::Disconnected)
 	{
 		HandleRuntimeError("Transport already started or in progress");
-		co_return;
+		return;
 	}
 
 	try
@@ -91,17 +90,14 @@ VoidTask StdioClientTransport::Connect()
 	{
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Failed to start stdio transport: " + std::string(e.what()));
-		co_return;
 	}
-
-	co_return;
 }
 
-VoidTask StdioClientTransport::Disconnect()
+void StdioClientTransport::Disconnect()
 {
 	if (GetState() == ETransportState::Disconnected)
 	{
-		co_return;
+		return;
 	}
 
 	try
@@ -128,8 +124,6 @@ VoidTask StdioClientTransport::Disconnect()
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Error stopping stdio transport: " + std::string(e.what()));
 	}
-
-	co_return;
 }
 
 std::string StdioClientTransport::GetConnectionInfo() const { return "Stdio transport to: " + m_Options.Command; }
@@ -236,7 +230,7 @@ StdioServerTransport::~StdioServerTransport()
 	{
 		try
 		{
-			Disconnect().await_resume();
+			Disconnect();
 		}
 		catch (...)
 		{
@@ -245,12 +239,12 @@ StdioServerTransport::~StdioServerTransport()
 	}
 }
 
-VoidTask StdioServerTransport::Connect()
+void StdioServerTransport::Connect()
 {
 	if (GetState() != ETransportState::Disconnected)
 	{
 		HandleRuntimeError("Transport already started");
-		co_return;
+		return;
 	}
 
 	try
@@ -268,15 +262,13 @@ VoidTask StdioServerTransport::Connect()
 	{
 		SetState(ETransportState::Error);
 	}
-
-	co_return;
 }
 
-VoidTask StdioServerTransport::Disconnect()
+void StdioServerTransport::Disconnect()
 {
 	if (GetState() == ETransportState::Disconnected)
 	{
-		co_return;
+		return;
 	}
 
 	try
@@ -296,8 +288,6 @@ VoidTask StdioServerTransport::Disconnect()
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Error stopping stdio server transport: " + std::string(e.what()));
 	}
-
-	co_return;
 }
 
 std::string StdioServerTransport::GetConnectionInfo() const { return "Stdio server transport (stdin/stdout)"; }

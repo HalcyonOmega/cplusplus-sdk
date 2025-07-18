@@ -17,49 +17,43 @@ MCPServer::MCPServer(const ETransportType InTransportType,
 	SetServerCapabilities(InCapabilities);
 }
 
-VoidTask MCPServer::Start()
+void MCPServer::Start()
 {
 	if (m_IsRunning)
 	{
 		HandleRuntimeError("Server already running");
-		co_return;
+		return;
 	}
 
 	try
 	{
 		// Start transport
-		co_await m_Transport->Connect();
+		m_Transport->Connect();
 		m_IsRunning = true;
 	}
 	catch (const std::exception& Except)
 	{
 		HandleRuntimeError("Failed to start server: " + std::string(Except.what()));
-		co_return;
 	}
-
-	co_return;
 }
 
-VoidTask MCPServer::Stop()
+void MCPServer::Stop()
 {
 	if (!m_IsRunning)
 	{
 		HandleRuntimeError("Server already stopped");
-		co_return;
+		return;
 	}
 
 	try
 	{
-		co_await m_Transport->Disconnect();
+		m_Transport->Disconnect();
 		m_IsRunning = false;
 	}
 	catch (const std::exception& Except)
 	{
 		HandleRuntimeError("Failed to stop server: " + std::string(Except.what()));
-		co_return;
 	}
-
-	co_return;
 }
 
 void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
@@ -446,6 +440,8 @@ void MCPServer::SetHandlers()
 		[this](const auto& Request) { OnRequest_UnsubscribeResource(Request); });
 	m_MessageManager->RegisterRequestHandler<CompleteRequest>(
 		[this](const auto& Request) { OnRequest_Complete(Request); });
+	m_MessageManager->RegisterRequestHandler<PingRequest>(
+		[this](const auto& Request) { SendMCPMessage(PingResponse{ Request.GetRequestID() }); });
 }
 
 // Enhanced resource change notification

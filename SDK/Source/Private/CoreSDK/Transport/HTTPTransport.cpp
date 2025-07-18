@@ -25,7 +25,7 @@ HTTPTransportClient::~HTTPTransportClient() noexcept
 	{
 		try
 		{
-			HTTPTransportClient::Disconnect().await_resume();
+			HTTPTransportClient::Disconnect();
 		}
 		catch (...)
 		{
@@ -34,19 +34,19 @@ HTTPTransportClient::~HTTPTransportClient() noexcept
 	}
 }
 
-VoidTask HTTPTransportClient::Connect()
+void HTTPTransportClient::Connect()
 {
 	if (GetState() != ETransportState::Disconnected)
 	{
 		HandleRuntimeError("Transport already started or in progress");
-		co_return;
+		return;
 	}
 
 	try
 	{
 		SetState(ETransportState::Connecting);
 
-		co_await ConnectToServer();
+		ConnectToServer();
 
 		SetState(ETransportState::Connected);
 	}
@@ -54,17 +54,14 @@ VoidTask HTTPTransportClient::Connect()
 	{
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Failed to start HTTP transport: " + std::string(e.what()));
-		co_return;
 	}
-
-	co_return;
 }
 
-VoidTask HTTPTransportClient::Disconnect()
+void HTTPTransportClient::Disconnect()
 {
 	if (GetState() == ETransportState::Disconnected)
 	{
-		co_return;
+		return;
 	}
 
 	try
@@ -85,8 +82,6 @@ VoidTask HTTPTransportClient::Disconnect()
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Error stopping HTTP transport: " + std::string(Except.what()));
 	}
-
-	co_return;
 }
 
 std::string HTTPTransportClient::GetConnectionInfo() const
@@ -272,7 +267,18 @@ MCPHTTPRequestHandler::MCPHTTPRequestHandler(const Poco::Net::HTTPServerRequest&
 void MCPHTTPRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& InRequest,
 	Poco::Net::HTTPServerResponse& InResponse)
 {
-	m_Server->HandleHTTPRequest(InRequest, InResponse);
+	LogMessage("HTTP Request Handler - Request Received: " + InRequest.getURI() + " " + InRequest.getMethod());
+	if (InRequest.getMethod() == "GET")
+	{
+		InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		InResponse.setContentType("text/plain");
+		std::ostream& responseStream = InResponse.send();
+		responseStream << "Hey Hey Hey it's MCP!\n";
+	}
+	else
+	{
+		m_Server->HandleHTTPRequest(InRequest, InResponse);
+	}
 }
 
 // MCPHTTPRequestHandlerFactory Implementation
@@ -283,6 +289,7 @@ bool MCPHTTPRequestHandlerFactory::SetServer(HTTPTransportServer* InServer)
 	if (InServer)
 	{
 		m_Server = InServer;
+		LogMessage("Server Set Successfully For Handler Factory!");
 		return true;
 	}
 	return false;
@@ -310,7 +317,7 @@ HTTPTransportServer::~HTTPTransportServer()
 	{
 		try
 		{
-			HTTPTransportServer::Disconnect().await_resume();
+			HTTPTransportServer::Disconnect();
 		}
 		catch (...)
 		{
@@ -319,21 +326,28 @@ HTTPTransportServer::~HTTPTransportServer()
 	}
 }
 
-VoidTask HTTPTransportServer::Connect()
+void HTTPTransportServer::Connect()
 {
 	if (GetState() != ETransportState::Disconnected)
 	{
 		HandleRuntimeError("Transport already started");
+		return;
 	}
 
+	LogMessage("Connecting...");
 	try
 	{
 		SetState(ETransportState::Connecting);
 
+		LogMessage("Make HTTP Server...");
 		m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
 		const auto& Params = new Poco::Net::HTTPServerParams();
-		m_HTTPServer
-			= std::make_unique<Poco::Net::HTTPServer>(new MCPHTTPRequestHandlerFactory(), *m_ServerSocket, Params);
+		const auto HandlerFactory = new MCPHTTPRequestHandlerFactory();
+
+		LogMessage("Try Set Server For Handler Factory!");
+		HandlerFactory->SetServer(this);
+
+		m_HTTPServer = std::make_unique<Poco::Net::HTTPServer>(HandlerFactory, *m_ServerSocket, Params);
 
 		m_HTTPServer->start();
 		SetState(ETransportState::Connected);
@@ -343,15 +357,13 @@ VoidTask HTTPTransportServer::Connect()
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Failed to start HTTP server transport: " + std::string(e.what()));
 	}
-
-	co_return;
 }
 
-VoidTask HTTPTransportServer::Disconnect()
+void HTTPTransportServer::Disconnect()
 {
 	if (GetState() == ETransportState::Disconnected)
 	{
-		co_return;
+		return;
 	}
 
 	try
@@ -381,21 +393,18 @@ VoidTask HTTPTransportServer::Disconnect()
 		SetState(ETransportState::Error);
 		HandleRuntimeError("Error stopping HTTP server transport: " + std::string(Except.what()));
 	}
-
-	co_return;
 }
 
 std::string HTTPTransportServer::GetConnectionInfo() const
 {
 	const std::string Protocol = m_Options.UseHTTPS ? "https" : "http";
-	// TODO: @HalcyonOmega - Pretty sure spec says you should use 127.0.0.1
-	// instead of 0.0.0.0
 	return Protocol + "://127.0.0.1:" + std::to_string(m_Options.Port) + m_Options.Path;
 }
 
 void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest,
 	Poco::Net::HTTPServerResponse& InResponse)
 {
+	LogMessage("HTTP Request Received");
 	try
 	{
 		const std::string Path = InRequest.getURI();
@@ -617,7 +626,12 @@ VoidTask HTTPTransportServer::StreamMessagesToClient(const std::string& InClient
 }
 
 // Factory functions
-std::unique_ptr<ITransport> CreateHTTPTransportImpl(const HTTPTransportOptions& InOptions)
+std::unique_ptr<ITransport> CreateHTTPServerTransportImpl(const HTTPTransportOptions& InOptions)
+{
+	return std::make_unique<HTTPTransportServer>(InOptions);
+}
+
+std::unique_ptr<ITransport> CreateHTTPClientTransportImpl(const HTTPTransportOptions& InOptions)
 {
 	return std::make_unique<HTTPTransportClient>(InOptions);
 }

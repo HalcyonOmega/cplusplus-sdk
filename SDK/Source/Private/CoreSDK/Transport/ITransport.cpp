@@ -1,5 +1,7 @@
 #include "CoreSDK/Transport/ITransport.h"
 
+#include "CoreSDK/Common/RuntimeError.h"
+
 MCP_NAMESPACE_BEGIN
 
 // ITransport implementation
@@ -10,8 +12,9 @@ MCP_NAMESPACE_BEGIN
 void ITransport::SetState(const ETransportState InNewState)
 {
 	m_CurrentState = InNewState;
-	// TODO: Implement state change handler
+	LogMessage("Transport State: " + ToString(m_CurrentState));
 }
+
 void ITransport::SetMessageRouter(std::function<void(const JSONData&)> InRouter)
 {
 	m_MessageRouter = std::move(InRouter);
@@ -40,27 +43,11 @@ void ITransport::UnregisterConnection(const ConnectionID& InConnectionID) { m_Ac
 	return std::vector<ConnectionID>{ m_ActiveConnections.begin(), m_ActiveConnections.end() };
 }
 
-// TODO: @HalcyonOmega [Critical] - Implement this
-// MCPTask_Void
-// ITransport::TransmitMessage(const JSONData& InMessage,
-//                             const std::optional<std::vector<ConnectionID>>& InConnectionIDs) {
-//     if (InConnectionIDs.has_value()) {
-//         for (const auto& ConnectionID : InConnectionIDs.value()) {
-//             if (IsConnectionRegistered(ConnectionID)) {
-//                 co_await TransmitMessageToConnection(ConnectionID, InMessage);
-//             } else {
-//                 Logger::Warning("Connection not registered: " + ConnectionID);
-//             }
-//         }
-//     }
-// }
-
 // TransportFactory implementation
 std::unique_ptr<ITransport> TransportFactory::CreateTransport(const ETransportType InType,
 	const ETransportSide InSide,
 	const std::optional<std::unique_ptr<TransportOptions>>& InOptions)
 {
-	(void)InSide; // TODO: Use transport side parameter
 	if (!InOptions)
 	{
 		throw std::invalid_argument("Transport options are required");
@@ -75,6 +62,7 @@ std::unique_ptr<ITransport> TransportFactory::CreateTransport(const ETransportTy
 			{
 				throw std::invalid_argument("Invalid options for stdio transport");
 			}
+
 			return CreateStdioClientTransport(*StdioOptions);
 		}
 		case ETransportType::StreamableHTTP:
@@ -84,7 +72,13 @@ std::unique_ptr<ITransport> TransportFactory::CreateTransport(const ETransportTy
 			{
 				throw std::invalid_argument("Invalid options for HTTP transport");
 			}
-			return CreateHTTPTransport(*HTTPOptions);
+
+			if (InSide == ETransportSide::Server)
+			{
+				return CreateHTTPServerTransport(*HTTPOptions);
+			}
+
+			return CreateHTTPClientTransport(*HTTPOptions);
 		}
 		default:
 			throw std::invalid_argument("Unsupported transport type");
@@ -98,11 +92,18 @@ std::unique_ptr<ITransport> TransportFactory::CreateStdioClientTransport(const S
 	return CreateStdioClientTransportImpl(InOptions);
 }
 
-std::unique_ptr<ITransport> TransportFactory::CreateHTTPTransport(const HTTPTransportOptions& InOptions)
+std::unique_ptr<ITransport> TransportFactory::CreateHTTPServerTransport(const HTTPTransportOptions& InOptions)
 {
 	// Forward declaration - will be implemented in HTTPTransport.cpp
-	extern std::unique_ptr<ITransport> CreateHTTPTransportImpl(const HTTPTransportOptions& InImplOpts);
-	return CreateHTTPTransportImpl(InOptions);
+	extern std::unique_ptr<ITransport> CreateHTTPServerTransportImpl(const HTTPTransportOptions& InImplOpts);
+	return CreateHTTPServerTransportImpl(InOptions);
+}
+
+std::unique_ptr<ITransport> TransportFactory::CreateHTTPClientTransport(const HTTPTransportOptions& InOptions)
+{
+	// Forward declaration - will be implemented in HTTPTransport.cpp
+	extern std::unique_ptr<ITransport> CreateHTTPClientTransportImpl(const HTTPTransportOptions& InImplOpts);
+	return CreateHTTPClientTransportImpl(InOptions);
 }
 
 MCP_NAMESPACE_END

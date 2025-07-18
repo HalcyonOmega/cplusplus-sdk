@@ -41,47 +41,39 @@ MCPClient::MCPClient(const ETransportType InTransportType,
 	SetClientCapabilities(InCapabilities);
 }
 
-VoidTask MCPClient::Start()
+void MCPClient::Start()
 {
-	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
-
 	try
 	{
+		m_Transport->Connect();
+
 		const InitializeRequest::Params InitParams{
 			m_ClientInfo.ProtocolVersion,
 			m_ClientCapabilities,
 			m_ClientInfo,
 		};
 
-		const auto Result = co_await Request_Initialize(InitParams);
+		const auto Result = Request_Initialize(InitParams);
 
 		m_Transport->SetState(ETransportState::Connected);
 	}
 	catch (const std::exception& e)
 	{
 		HandleRuntimeError("Failed to connect: " + std::string(e.what()));
-		co_return;
 	}
-
-	co_return;
 }
 
-VoidTask MCPClient::Stop()
+void MCPClient::Stop()
 {
-	CO_RETURN_VOID_IF_CLIENT_NOT_CONNECTED
-
 	try
 	{
-		co_await m_Transport->Disconnect();
+		m_Transport->Disconnect();
 		m_Transport->SetState(ETransportState::Disconnected);
 	}
 	catch (const std::exception& Except)
 	{
 		HandleRuntimeError("Failed to disconnect: " + std::string(Except.what()));
-		co_return;
 	}
-
-	co_return;
 }
 
 OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const InitializeRequest::Params& InParams)
@@ -95,8 +87,6 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 	try
 	{
 		SetState(EProtocolState::Initializing);
-		// Start transport
-		co_await m_Transport->Connect();
 
 		auto Response = std::move(co_await SendRequest<InitializeResponse>(InitializeRequest{ InParams }));
 		if (Response.Result())

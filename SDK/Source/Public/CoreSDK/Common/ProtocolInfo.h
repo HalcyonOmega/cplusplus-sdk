@@ -31,4 +31,5 @@ inline std::string ToString(const EProtocolVersion& InVersion)
 			return "unknown";
 	}
 }
+
 MCP_NAMESPACE_END

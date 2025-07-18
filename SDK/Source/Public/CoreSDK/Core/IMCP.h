@@ -28,11 +28,11 @@ enum class EProtocolState
 };
 
 DEFINE_ENUM_JSON(EProtocolState,
-	{ { EProtocolState::Uninitialized, "uninitialized" },
-		{ EProtocolState::Initializing, "initializing" },
-		{ EProtocolState::Initialized, "initialized" },
-		{ EProtocolState::Error, "error" },
-		{ EProtocolState::Shutdown, "shutdown" } });
+	{ EProtocolState::Uninitialized, "uninitialized" },
+	{ EProtocolState::Initializing, "initializing" },
+	{ EProtocolState::Initialized, "initialized" },
+	{ EProtocolState::Error, "error" },
+	{ EProtocolState::Shutdown, "shutdown" })
 
 // Base protocol handler
 class MCPProtocol
@@ -42,8 +42,8 @@ public:
 	virtual ~MCPProtocol() = default;
 
 	// Lifecycle
-	virtual VoidTask Start() = 0;
-	virtual VoidTask Stop() = 0;
+	virtual void Start() = 0;
+	virtual void Stop() = 0;
 	[[nodiscard]] bool IsInitialized() const;
 	[[nodiscard]] EProtocolState GetState() const;
 	void SetState(EProtocolState InNewState);

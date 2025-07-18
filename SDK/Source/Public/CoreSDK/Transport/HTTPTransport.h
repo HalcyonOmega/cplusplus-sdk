@@ -34,8 +34,8 @@ public:
 	HTTPTransportClient& operator=(HTTPTransportClient&&) noexcept = delete;
 
 	// ITransport interface
-	VoidTask Connect() override;
-	VoidTask Disconnect() override;
+	void Connect() override;
+	void Disconnect() override;
 
 	void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
@@ -71,8 +71,8 @@ public:
 	~HTTPTransportServer() noexcept override;
 
 	// ITransport interface
-	VoidTask Connect() override;
-	VoidTask Disconnect() override;
+	void Connect() override;
+	void Disconnect() override;
 
 	void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;

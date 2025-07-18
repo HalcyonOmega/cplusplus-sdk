@@ -21,8 +21,8 @@ public:
 	~StdioClientTransport() noexcept override;
 
 	// ITransport interface
-	VoidTask Connect() override;
-	VoidTask Disconnect() override;
+	void Connect() override;
+	void Disconnect() override;
 
 	void run();
 
@@ -62,8 +62,8 @@ public:
 	~StdioServerTransport() noexcept override;
 
 	// ITransport interface
-	VoidTask Connect() override;
-	VoidTask Disconnect() override;
+	void Connect() override;
+	void Disconnect() override;
 
 	void run();
 

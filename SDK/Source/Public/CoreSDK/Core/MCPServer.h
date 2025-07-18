@@ -23,8 +23,8 @@ public:
 		const ServerCapabilities& InCapabilities);
 
 	// Lifecycle methods
-	VoidTask Start() override;
-	VoidTask Stop() override;
+	void Start() override;
+	void Stop() override;
 
 	// Initialization
 	void Notify_Initialized();
@@ -98,6 +98,7 @@ public:
 	std::weak_ptr<ToolManager> GetToolManager() { return m_ToolManager; }
 	std::weak_ptr<ResourceManager> GetResourceManager() { return m_ResourceManager; }
 	std::weak_ptr<PromptManager> GetPromptManager() { return m_PromptManager; }
+	std::weak_ptr<ITransport> GetTransport() { return m_Transport; }
 
 private:
 	// Server state
