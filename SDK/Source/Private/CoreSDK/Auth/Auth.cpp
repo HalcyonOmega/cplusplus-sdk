@@ -1,4 +1,4 @@
-#include "Auth.h"
+#include "../../../Public/CoreSDK/Auth/Auth.h"
 
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPCredentials.h>
