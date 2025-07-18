@@ -1,0 +1,34 @@
+meta {
+  name: InitializeRequest
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/mcp
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {
+        "roots": {
+          "listChanged": true
+        },
+        "sampling": {},
+        "elicitation": {}
+      },
+      "clientInfo": {
+        "name": "ExampleClient",
+        "title": "Example Client Display Name",
+        "version": "1.0.0"
+      }
+    }
+  }
+}

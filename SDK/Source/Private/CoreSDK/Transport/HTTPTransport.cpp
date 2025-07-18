@@ -267,18 +267,7 @@ MCPHTTPRequestHandler::MCPHTTPRequestHandler(const Poco::Net::HTTPServerRequest&
 void MCPHTTPRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& InRequest,
 	Poco::Net::HTTPServerResponse& InResponse)
 {
-	LogMessage("HTTP Request Handler - Request Received: " + InRequest.getURI() + " " + InRequest.getMethod());
-	if (InRequest.getMethod() == "GET")
-	{
-		InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-		InResponse.setContentType("text/plain");
-		std::ostream& responseStream = InResponse.send();
-		responseStream << "Hey Hey Hey it's MCP!\n";
-	}
-	else
-	{
-		m_Server->HandleHTTPRequest(InRequest, InResponse);
-	}
+	m_Server->HandleHTTPRequest(InRequest, InResponse);
 }
 
 // MCPHTTPRequestHandlerFactory Implementation
@@ -334,17 +323,13 @@ void HTTPTransportServer::Connect()
 		return;
 	}
 
-	LogMessage("Connecting...");
 	try
 	{
 		SetState(ETransportState::Connecting);
 
-		LogMessage("Make HTTP Server...");
 		m_ServerSocket = std::make_unique<Poco::Net::ServerSocket>(m_Options.Port);
 		const auto& Params = new Poco::Net::HTTPServerParams();
 		const auto HandlerFactory = new MCPHTTPRequestHandlerFactory();
-
-		LogMessage("Try Set Server For Handler Factory!");
 		HandlerFactory->SetServer(this);
 
 		m_HTTPServer = std::make_unique<Poco::Net::HTTPServer>(HandlerFactory, *m_ServerSocket, Params);
