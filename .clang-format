@@ -1,0 +1,97 @@
+---
+# Clang-format configuration for MCP C++ SDK
+
+Language: Cpp
+Standard: c++20
+BasedOnStyle: LLVM
+
+# Alignment
+AlignTrailingComments: true
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: DontAlign
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Breaking
+AlwaysBreakBeforeMultilineStrings: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BreakInheritanceList: AfterComma
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+BreakStringLiterals: false
+BreakAfterReturnType: Automatic
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Custom
+BinPackParameters: OnePerLine
+PackConstructorInitializers: CurrentLine
+BinPackArguments: false
+BraceWrapping:
+  AfterNamespace: true
+  AfterClass: true
+  AfterStruct: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterControlStatement: Always
+  AfterCaseLabel: true
+  AfterObjCDeclaration: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: true
+  BeforeLambdaBody: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+# Constructor Initializer
+Cpp11BracedListStyle: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# Formatting
+UseTab: Always
+TabWidth: 4
+MaxEmptyLinesToKeep: 1
+AccessModifierOffset: -4
+ColumnLimit: 120
+IndentWidth: 4
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentPPDirectives: BeforeHash
+NamespaceIndentation: All
+FixNamespaceComments: true
+EmptyLineBeforeAccessModifier: Always
+
+# Includes
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # System headers
+  - Regex: '^<.*\.h>'
+    Priority: 1
+  # System C++ headers  
+  - Regex: '^<.*>'
+    Priority: 2
+  # Project headers
+  - Regex: '^".*"'
+    Priority: 3
+
+
+# Spaces
+SpaceAfterCStyleCast: false
+SpaceBeforeCaseColon: false
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceInEmptyParentheses: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesBeforeTrailingComments: 1

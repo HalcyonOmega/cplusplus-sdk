@@ -1,0 +1,74 @@
+CompileFlags:
+  Remove: 
+    - "-std=*"
+  Add:
+    - "-std=c++20"
+  Compiler: "clang++"
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+Hover:
+  ShowAKA: true
+
+Completion:
+  AllScopes: true
+
+Diagnostics:
+  ClangTidy:
+    Add: 
+      - "modernize-*"
+      - "readability-*"
+      - "performance-*"
+      - "cppcoreguidelines-*"
+    Remove:
+      - "modernize-use-trailing-return-type"
+      - "cppcoreguidelines-pro-bounds-pointer-arithmetic"
+      - "cppcoreguidelines-macro-usage"
+    CheckOptions:
+      # Classes, Structs, Enums - PascalCase
+      readability-identifier-naming.ClassCase: CamelCase
+      readability-identifier-naming.StructCase: CamelCase
+      readability-identifier-naming.EnumCase: CamelCase
+      readability-identifier-naming.UnionCase: CamelCase
+      readability-identifier-naming.TypedefCase: CamelCase
+      readability-identifier-naming.TypeAliasCase: CamelCase
+
+  # Functions and Methods - PascalCase
+      readability-identifier-naming.FunctionCase: CamelCase
+      readability-identifier-naming.MethodCase: CamelCase
+
+  # Variables - PascalCase
+      readability-identifier-naming.VariableCase: CamelCase
+      readability-identifier-naming.ParameterCase: CamelCase
+      readability-identifier-naming.MemberCase: CamelCase
+      readability-identifier-naming.StaticVariableCase: CamelCase
+      readability-identifier-naming.StaticVariablePrefix: s_
+      readability-identifier-naming.GlobalVariableCase: CamelCase
+      readability-identifier-naming.GlobalVariablePrefix: g_
+      readability-identifier-naming.PrivateMemberCase: CamelCase
+      readability-identifier-naming.PrivateMemberPrefix: m_
+      readability-identifier-naming.ProtectedMemberCase: CamelCase
+      readability-identifier-naming.ProtectedMemberPrefix: m_
+
+  # Constants - UPPER_CASE for non-acronym constants
+      readability-identifier-naming.ConstantCase: CamelCase
+      readability-identifier-naming.EnumConstantCase: CamelCase
+      readability-identifier-naming.StaticConstantCase: UPPER_CASE
+      readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+
+  # Namespaces - PascalCase
+      readability-identifier-naming.NamespaceCase: CamelCase
+
+  # Template Parameters - PascalCase
+      readability-identifier-naming.TemplateParameterCase: CamelCase
+
+  # Allow acronym patterns (HTTP, JSON, API, MCP, XML, RPC, JSON_RPC, etc.)
+      readability-identifier-naming.ClassIgnoredRegexp: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+      readability-identifier-naming.FunctionIgnoredRegexp: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'
+      readability-identifier-naming.VariableIgnoredRegexp: '^(HTTP|JSON|API|MCP|XML|RPC|JSON_RPC).*'

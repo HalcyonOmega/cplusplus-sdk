@@ -1,0 +1,5 @@
+#include "CoreSDK/Common/MCPContext.h"
+
+MCP_NAMESPACE_BEGIN
+
+MCP_NAMESPACE_END

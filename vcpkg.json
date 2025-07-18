@@ -1,0 +1,14 @@
+{
+  "name": "cplusplus-sdk",
+  "description": "",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "poco",
+      "features": [
+        "net",
+        "util"
+      ]
+    }
+  ]
+}

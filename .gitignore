@@ -32,4 +32,21 @@
 *.app
 
 # Cursor
-.cursor/
+.cursor/rules/
+
+# Build
+SDK/Build/
+.cache/
+
+*.idx
+*.idx.gz
+*.idx.bz2
+*.idx.lzma
+*.idx.zstd
+*.idx.lz4
+*.idx.snappy
+
+.vs/
+
+# References
+SDK/References/typescript-sdk/
