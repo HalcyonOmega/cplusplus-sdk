@@ -6,14 +6,7 @@
 
 This SDK provides both simple and advanced APIs for implementing MCP clients and servers. It supports all MCP features including tools, prompts, resources, sampling, and real-time communication over Stdio and StreamableHTTP transports.
 
-**MCP Specification Compliance**: 2025-03-26
-- JSON-RPC 2.0 message handling
-- StreamableHTTP transport with GET /message endpoint
-- Resource pagination with cursor support
-- Standard error code handling
-- JSON schema validation for tools
-- Progress reporting and cancellation
-- Resource subscriptions and notifications
+**MCP Specification Compliance Target**: 2025-03-26
 
 ## Table Of Contents
 - [Prerequisites](#prerequisites)
@@ -40,7 +33,6 @@ This SDK provides both simple and advanced APIs for implementing MCP clients and
 - **License**: MIT
 - **Source**: https://github.com/nlohmann/json
 - **Purpose**: JSON parsing and serialization
-- **Location**: `Source/Public/Utilities/ThirdParty/json.hpp`
 
 ## Building
 
