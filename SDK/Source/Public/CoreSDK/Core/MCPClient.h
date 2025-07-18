@@ -51,7 +51,7 @@ public:
 	void Notify_CancelRequest(const CancelledNotification::Params& InParams);
 
 	// ===============================
-	// Handlers
+	// Default Handlers
 	// ===============================
 
 	// Setup Default Handlers
