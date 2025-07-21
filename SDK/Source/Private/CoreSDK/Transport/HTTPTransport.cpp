@@ -4,14 +4,13 @@
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/StreamCopier.h>
-#include <Poco/URI.h>
+#include <Poco/Net/HTTPServerRequest.h>
+#include <Poco/Net/HTTPServerResponse.h>
 
 #include <utility>
 
 #include "CoreSDK/Common/RuntimeError.h"
 #include "CoreSDK/Messages/MCPMessages.h"
-#include "Poco/Net/HTTPServerRequest.h"
-#include "Poco/Net/HTTPServerResponse.h"
 #include "Utilities/JSON/JSONMessages.h"
 
 MCP_NAMESPACE_BEGIN

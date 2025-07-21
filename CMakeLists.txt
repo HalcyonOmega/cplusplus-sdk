@@ -72,6 +72,8 @@ if (WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32.lib iphlpapi.lib)
 endif ()
 
+target_precompile_headers(${PROJECT_NAME} PUBLIC SDK/Source/Public/CoreSDK/Common/PCH.h)
+
 # HTTP Test Executable
 add_executable(HTTPTest SDK/Source/T_HTTPServer.cpp)
 
@@ -81,3 +83,5 @@ target_link_libraries(HTTPTest PUBLIC ${PROJECT_NAME})
 if (MINGW)
     target_link_options(HTTPTest PRIVATE -static)
 endif ()
+
+target_precompile_headers(HTTPTest PUBLIC SDK/Source/Public/CoreSDK/Common/PCH.h)

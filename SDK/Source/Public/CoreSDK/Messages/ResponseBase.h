@@ -89,7 +89,7 @@ struct PaginatedResultParams : ResultParams
 struct ResponseBase : MessageBase
 {
 	RequestID ID{};
-	std::unique_ptr<ResultParams> ResultData{ std::make_unique<ResultParams>(std::nullopt) };
+	std::unique_ptr<ResultParams> ResultData{ std::make_unique<ResultParams>(JSONData{ "TestString" }) };
 
 	JSON_KEY(IDKEY, ID, "id")
 	JSON_KEY(RESULTKEY, ResultData, "result")
@@ -97,7 +97,7 @@ struct ResponseBase : MessageBase
 	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
 	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
-	explicit ResponseBase(RequestID InID, std::unique_ptr<ResultParams> InResult)
+	explicit ResponseBase(RequestID InID, std::unique_ptr<ResultParams>&& InResult)
 		: MessageBase(),
 		  ID(std::move(InID)),
 		  ResultData(std::move(InResult))
