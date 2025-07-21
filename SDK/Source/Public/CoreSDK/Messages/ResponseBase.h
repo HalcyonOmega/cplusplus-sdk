@@ -86,10 +86,10 @@ struct PaginatedResultParams : ResultParams
 // };
 
 // A successful (non-error) response to a request. Supports JSON-RPC 2.0.
-struct ResponseBase : MessageBase
+template <typename TResultType = ResultParams> struct ResponseBase : MessageBase
 {
 	RequestID ID{};
-	std::unique_ptr<ResultParams> ResultData{ std::make_unique<ResultParams>(JSONData{ "TestString" }) };
+	TResultType ResultData{ ResultParams{ JSONData{ "TestString" } } };
 
 	JSON_KEY(IDKEY, ID, "id")
 	JSON_KEY(RESULTKEY, ResultData, "result")
@@ -97,7 +97,7 @@ struct ResponseBase : MessageBase
 	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
 	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
-	explicit ResponseBase(RequestID InID, std::unique_ptr<ResultParams>&& InResult)
+	explicit ResponseBase(RequestID InID, std::unique_ptr<ResultParams> InResult)
 		: MessageBase(),
 		  ID(std::move(InID)),
 		  ResultData(std::move(InResult))
@@ -111,7 +111,7 @@ struct ResponseBase : MessageBase
 };
 
 template <typename T>
-concept ConcreteResponse = std::is_base_of_v<ResponseBase, T>;
+concept ConcreteResponse = std::is_base_of_v<ResponseBase<>, T>;
 
 template <typename F, typename T>
 concept ExpectedResponseFunction

@@ -25,28 +25,25 @@
 
 MCP_NAMESPACE_BEGIN
 
-struct EmptyResponse : ResponseBase
+struct EmptyResult : ResultParams
 {
-	struct Result : ResultParams
+	template <typename BasicJSONData> friend void to_json(BasicJSONData& InJSON, const EmptyResult& InResult)
 	{
+		InJSON = JSONData::object();
+		(void)InResult;
+	}
 
-		template <typename BasicJSONData>
-		friend void to_json(BasicJSONData& InJSON, const EmptyResponse::Result& InResult)
-		{
-			InJSON = JSONData::object();
-			(void)InResult;
-		}
+	template <typename BasicJSONData> friend void from_json(const BasicJSONData& InJSON, EmptyResult& InResult)
+	{
+		(void)InJSON;
+		InResult = EmptyResult{};
+	}
+};
 
-		template <typename BasicJSONData>
-		friend void from_json(const BasicJSONData& InJSON, EmptyResponse::Result& InResult)
-		{
-			(void)InJSON;
-			InResult = EmptyResponse::Result{};
-		}
-	};
-
+struct EmptyResponse : ResponseBase<EmptyResult>
+{
 	EmptyResponse() = default;
-	explicit EmptyResponse(const RequestID& InRequest) : ResponseBase(InRequest) {};
+	explicit EmptyResponse(const RequestID& InRequest) : ResponseBase<EmptyResult>(InRequest) {};
 };
 
 // InitializeRequest {
