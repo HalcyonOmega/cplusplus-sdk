@@ -111,10 +111,9 @@ OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const Initiali
 	co_return std::nullopt;
 }
 
-void MCPClient::OnNotified_Initialized(const InitializedNotification& InNotification)
+void MCPClient::Notify_Initialized(const InitializedNotification& InNotification)
 {
-	// TODO: @HalcyonOmega
-	(void)InNotification;
+	SendMCPMessage(InitializedNotification());
 }
 
 OptTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams){

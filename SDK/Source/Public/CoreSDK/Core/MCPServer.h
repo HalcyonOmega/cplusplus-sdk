@@ -26,9 +26,6 @@ public:
 	void Start() override;
 	void Stop() override;
 
-	// Initialization
-	void Notify_Initialized();
-
 	// Tool management
 	bool AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction);
 	bool RemoveTool(const Tool& InTool);
@@ -69,6 +66,7 @@ public:
 
 	// Initialization
 	void OnRequest_Initialize(const InitializeRequest& InRequest);
+	void OnNotified_Initialized(const InitializedNotification& InNotification);
 
 	// Tool
 	void OnRequest_ListTools(const ListToolsRequest& InRequest);

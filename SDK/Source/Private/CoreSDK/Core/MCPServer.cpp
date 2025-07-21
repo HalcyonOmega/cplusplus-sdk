@@ -72,7 +72,10 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 	}
 }
 
-void MCPServer::Notify_Initialized() { SendMCPMessage(InitializedNotification()); }
+void MCPServer::OnNotified_Initialized(const InitializedNotification& InNotification)
+{
+	LogMessage("Initialized Notification received");
+}
 
 bool MCPServer::AddTool(const Tool& InTool, const ToolManager::ToolFunction& InFunction)
 {
@@ -442,6 +445,14 @@ void MCPServer::SetHandlers()
 		[this](const auto& Request) { OnRequest_Complete(Request); });
 	m_MessageManager->RegisterRequestHandler<PingRequest>(
 		[this](const auto& Request) { SendMCPMessage(PingResponse{ Request.GetRequestID() }); });
+	m_MessageManager->RegisterNotificationHandler<InitializedNotification>(
+		[this](const auto& Notification) { OnNotified_Initialized(Notification); });
+	m_MessageManager->RegisterNotificationHandler<RootsListChangedNotification>(
+		[this](const auto& Notification) { OnNotified_RootsListChanged(Notification); });
+	m_MessageManager->RegisterNotificationHandler<ProgressNotification>(
+		[this](const auto& Notification) { OnNotified_Progress(Notification); });
+	m_MessageManager->RegisterNotificationHandler<CancelledNotification>(
+		[this](const auto& Notification) { OnNotified_CancelRequest(Notification); });
 }
 
 // Enhanced resource change notification

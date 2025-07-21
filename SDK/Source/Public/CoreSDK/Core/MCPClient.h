@@ -21,6 +21,8 @@ public:
 
 	// Initialization
 	OptTask<InitializeResponse::Result> Request_Initialize(const InitializeRequest::Params& InParams);
+	void Notify_Initialized(const InitializedNotification& InNotification);
+
 	// Tools
 	OptTask<ListToolsResponse::Result> Request_ListTools(const PaginatedRequestParams& InParams);
 	OptTask<CallToolResponse::Result> Request_CallTool(const CallToolRequest::Params& InParams);
@@ -56,9 +58,6 @@ public:
 
 	// Setup Default Handlers
 	virtual void SetHandlers();
-
-	// Initialization
-	void OnNotified_Initialized(const InitializedNotification& InNotification);
 
 	// Tools
 	void OnNotified_ToolListChanged(const ToolListChangedNotification& InNotification);

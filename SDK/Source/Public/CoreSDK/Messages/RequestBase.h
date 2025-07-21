@@ -50,17 +50,20 @@ struct RequestID
 			Value);
 	}
 
-	friend void to_json(JSONData& InJSON, const RequestID& InRequestID) { InJSON = InRequestID.ToString(); }
+	template <typename BasicJSONData> friend void to_json(BasicJSONData& InJSON, const RequestID& InRequestID)
+	{
+		InJSON = InRequestID.ToString();
+	}
 
-	friend void from_json(const JSONData& InJSON, RequestID& InRequestID)
+	template <typename BasicJSONData> friend void from_json(const BasicJSONData& InJSON, RequestID& InRequestID)
 	{
 		if (InJSON.is_string())
 		{
-			InRequestID.Value = InJSON.get<std::string>();
+			InRequestID.Value = InJSON.template get<std::string>();
 		}
 		else if (InJSON.is_number_integer())
 		{
-			InRequestID.Value = InJSON.get<int64_t>();
+			InRequestID.Value = InJSON.template get<int64_t>();
 		}
 		else
 		{

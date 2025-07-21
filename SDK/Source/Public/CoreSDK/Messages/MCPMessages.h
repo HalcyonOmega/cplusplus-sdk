@@ -30,13 +30,15 @@ struct EmptyResponse : ResponseBase
 	struct Result : ResultParams
 	{
 
-		friend void to_json(JSONData& InJSON, const EmptyResponse::Result& InResult)
+		template <typename BasicJSONData>
+		friend void to_json(BasicJSONData& InJSON, const EmptyResponse::Result& InResult)
 		{
 			InJSON = JSONData::object();
 			(void)InResult;
 		}
 
-		friend void from_json(const JSONData& InJSON, EmptyResponse::Result& InResult)
+		template <typename BasicJSONData>
+		friend void from_json(const BasicJSONData& InJSON, EmptyResponse::Result& InResult)
 		{
 			(void)InJSON;
 			InResult = EmptyResponse::Result{};

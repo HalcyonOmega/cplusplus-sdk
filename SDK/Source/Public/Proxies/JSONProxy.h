@@ -7,7 +7,6 @@
 #include "../CoreSDK/Common/Macros.h"
 #include "../Utilities/ThirdParty/json.hpp"
 
-// Define a template for serializing/deserializing any std::unique_ptr
 template <typename T> struct nlohmann::adl_serializer<std::unique_ptr<T>>
 {
 	static void to_json(json& j, const std::unique_ptr<T>& ptr)
@@ -32,6 +31,34 @@ template <typename T> struct nlohmann::adl_serializer<std::unique_ptr<T>>
 		{
 			ptr = std::make_unique<T>(
 				j.get<T>()); // If the JSON is not null, create a new object and deserialize into it
+		}
+	}
+};
+
+template <typename T> struct nlohmann::adl_serializer<std::optional<T>>
+{
+
+	static void to_json(json& j, const std::optional<T>& opt)
+	{
+		if (opt)
+		{
+			j = opt.value();
+		}
+		else
+		{
+			j = nullptr;
+		}
+	}
+
+	static void from_json(const json& j, std::optional<T>& opt)
+	{
+		if (j.is_null())
+		{
+			opt = std::nullopt;
+		}
+		else
+		{
+			opt = j.get<T>();
 		}
 	}
 };
@@ -68,9 +95,9 @@ concept IsOptional = requires { typename T::value_type; }
 		{                                                       \
 			if constexpr (IsOptional<decltype(JSON_T.Member)>)  \
 			{                                                   \
-				if (JSON_T.Member.has_value())                  \
+				if (JSON_T.Member)                              \
 				{                                               \
-					JSON_J[json_key] = JSON_T.Member;           \
+					JSON_J[json_key] = JSON_T.Member.value();   \
 				}                                               \
 			}                                                   \
 			else                                                \

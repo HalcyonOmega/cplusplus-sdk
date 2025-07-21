@@ -17,13 +17,15 @@ struct NotificationParams
 {
 	struct NotificationParamsMeta
 	{
-		friend void to_json(JSONData& InJSON, const NotificationParamsMeta& InNotificationParamsMeta)
+		template <typename BasicJSONType>
+		friend void to_json(BasicJSONType& InJSON, const NotificationParamsMeta& InNotificationParamsMeta)
 		{
 			InJSON = JSONData::object();
 			(void)InNotificationParamsMeta;
 		}
 
-		friend void from_json(const JSONData& InJSON, NotificationParamsMeta& InNotificationParamsMeta)
+		template <typename BasicJSONType>
+		friend void from_json(const BasicJSONType& InJSON, NotificationParamsMeta& InNotificationParamsMeta)
 		{
 			(void)InJSON;
 			InNotificationParamsMeta = NotificationParamsMeta{};
@@ -33,7 +35,7 @@ struct NotificationParams
 		virtual ~NotificationParamsMeta() = default;
 	};
 
-	const std::optional<NotificationParamsMeta>& Meta{ std::nullopt };
+	std::optional<NotificationParamsMeta> Meta{ std::nullopt };
 
 	JSON_KEY(METAKEY, Meta, "_meta")
 
