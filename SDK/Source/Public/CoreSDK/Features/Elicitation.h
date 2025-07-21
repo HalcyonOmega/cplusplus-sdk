@@ -36,10 +36,10 @@ enum class EStringFormat
 };
 
 DEFINE_ENUM_JSON(EStringFormat,
-	{ EStringFormat::Email, "email" },
-	{ EStringFormat::URI, "uri" },
-	{ EStringFormat::Date, "date" },
-	{ EStringFormat::DateTime, "date-time" })
+	{ { EStringFormat::Email, "email" },
+		{ EStringFormat::URI, "uri" },
+		{ EStringFormat::Date, "date" },
+		{ EStringFormat::DateTime, "date-time" } })
 
 /**
  * Primitive schema definition for string fields.
@@ -69,7 +69,7 @@ enum class ENumberType
 	Integer
 };
 
-DEFINE_ENUM_JSON(ENumberType, { ENumberType::Number, "number" }, { ENumberType::Integer, "integer" })
+DEFINE_ENUM_JSON(ENumberType, { { ENumberType::Number, "number" }, { ENumberType::Integer, "integer" } })
 
 /**
  * Primitive schema definition for number fields.
@@ -170,9 +170,9 @@ enum class EElicitationAction
 };
 
 DEFINE_ENUM_JSON(EElicitationAction,
-	{ EElicitationAction::Accept, "accept" },
-	{ EElicitationAction::Decline, "decline" },
-	{ EElicitationAction::Cancel, "cancel" })
+	{ { EElicitationAction::Accept, "accept" },
+		{ EElicitationAction::Decline, "decline" },
+		{ EElicitationAction::Cancel, "cancel" } })
 
 /**
  * The client's response to an elicitation/create request from the server.

@@ -13,9 +13,9 @@ enum class EProtocolVersion
 };
 
 DEFINE_ENUM_JSON(EProtocolVersion,
-	{ EProtocolVersion::V2024_11_05, "2024-11-05" },
-	{ EProtocolVersion::V2025_03_26, "2025-03-26" },
-	{ EProtocolVersion::V2025_06_18, "2025-06-18" })
+	{ { EProtocolVersion::V2024_11_05, "2024-11-05" },
+		{ EProtocolVersion::V2025_03_26, "2025-03-26" },
+		{ EProtocolVersion::V2025_06_18, "2025-06-18" } })
 
 inline std::string ToString(const EProtocolVersion& InVersion)
 {

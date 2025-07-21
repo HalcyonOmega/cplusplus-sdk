@@ -19,9 +19,9 @@ enum class EIncludeContext
 };
 
 DEFINE_ENUM_JSON(EIncludeContext,
-	{ EIncludeContext::None, "none" },
-	{ EIncludeContext::ThisServer, "thisServer" },
-	{ EIncludeContext::AllServers, "allServers" })
+	{ { EIncludeContext::None, "none" },
+		{ EIncludeContext::ThisServer, "thisServer" },
+		{ EIncludeContext::AllServers, "allServers" } })
 
 enum class EStopReason
 {
@@ -31,9 +31,9 @@ enum class EStopReason
 };
 
 DEFINE_ENUM_JSON(EStopReason,
-	{ EStopReason::EndTurn, "endTurn" },
-	{ EStopReason::MaxTokens, "maxTokens" },
-	{ EStopReason::StopSequences, "stopSequences" })
+	{ { EStopReason::EndTurn, "endTurn" },
+		{ EStopReason::MaxTokens, "maxTokens" },
+		{ EStopReason::StopSequences, "stopSequences" } })
 
 // ModelHint {
 //   MSG_DESCRIPTION: "Hints to use for model selection.\n\nKeys not declared here are "

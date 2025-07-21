@@ -19,6 +19,6 @@ enum class ERole
 	Assistant
 };
 
-DEFINE_ENUM_JSON(ERole, { ERole::Unknown, "unknown" }, { ERole::User, "user" }, { ERole::Assistant, "assistant" })
+DEFINE_ENUM_JSON(ERole, { { ERole::Unknown, "unknown" }, { ERole::User, "user" }, { ERole::Assistant, "assistant" } })
 
 MCP_NAMESPACE_END

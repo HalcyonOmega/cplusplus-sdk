@@ -9,35 +9,27 @@
 
 template <typename T> struct nlohmann::adl_serializer<std::unique_ptr<T>>
 {
-	static void to_json(json& j, const std::unique_ptr<T>& ptr)
+	template <typename BasicJsonType> static void to_json(BasicJsonType& json_value, const std::unique_ptr<T>& ptr)
 	{
-		if (ptr)
+		if (ptr.get())
 		{
-			j = *ptr; // If the pointer is not null, serialize the object it points to
+			json_value = *ptr;
 		}
 		else
 		{
-			j = nullptr; // If the pointer is null, serialize it as a JSON null
+			json_value = nullptr;
 		}
 	}
 
-	static void from_json(const json& j, std::unique_ptr<T>& ptr)
+	template <typename BasicJsonType> static void from_json(const BasicJsonType& json_value, std::unique_ptr<T>& ptr)
 	{
-		if (j.is_null())
-		{
-			ptr = nullptr; // If the JSON is null, make the pointer null
-		}
-		else
-		{
-			ptr = std::make_unique<T>(
-				j.get<T>()); // If the JSON is not null, create a new object and deserialize into it
-		}
+		T inner_val = json_value.template get<T>();
+		ptr = std::make_unique<T>(std::move(inner_val));
 	}
 };
 
 template <typename T> struct nlohmann::adl_serializer<std::optional<T>>
 {
-
 	static void to_json(json& j, const std::optional<T>& opt)
 	{
 		if (opt)
@@ -203,40 +195,41 @@ concept IsOptional = requires { typename T::value_type; }
 // C++20 concept to check if a type is an enum
 template <typename EnumerationType>
 concept IsEnumType = std::is_enum_v<EnumerationType>;
+#define DEFINE_ENUM_JSON(ENUM_TYPE, ...) NLOHMANN_JSON_SERIALIZE_ENUM(ENUM_TYPE, __VA_ARGS__)
 
-#define DEFINE_ENUM_JSON(EnumerationType, ...)                                                                      \
-	template <typename BasicJSONType>                                                                               \
-		requires IsBasicJSON<BasicJSONType> && IsEnumType<EnumerationType>                                          \
-	inline void to_json(BasicJSONType& jsonObject, const EnumerationType& enumValue)                                \
-	{                                                                                                               \
-		static constexpr auto enumMappings = std::to_array<std::pair<EnumerationType, BasicJSONType>>(__VA_ARGS__); \
-		if constexpr (auto mappingIterator = std::ranges::find_if(enumMappings,                                     \
-						  [enumValue](const auto& enumJsonPair) { return enumJsonPair.first == enumValue; });       \
-			mappingIterator != std::ranges::end(enumMappings))                                                      \
-		{                                                                                                           \
-			jsonObject = mappingIterator->second;                                                                   \
-		}                                                                                                           \
-		else                                                                                                        \
-		{                                                                                                           \
-			jsonObject = std::ranges::begin(enumMappings)->second;                                                  \
-		}                                                                                                           \
-	}                                                                                                               \
-	template <typename BasicJSONType>                                                                               \
-		requires IsBasicJSON<BasicJSONType> && IsEnumType<EnumerationType>                                          \
-	inline void from_json(const BasicJSONType& jsonObject, EnumerationType& enumValue)                              \
-	{                                                                                                               \
-		static constexpr auto enumMappings = std::to_array<std::pair<EnumerationType, BasicJSONType>>(__VA_ARGS__); \
-		if constexpr (auto mappingIterator = std::ranges::find_if(enumMappings,                                     \
-						  [&jsonObject](const auto& enumJsonPair) { return enumJsonPair.second == jsonObject; });   \
-			mappingIterator != std::ranges::end(enumMappings))                                                      \
-		{                                                                                                           \
-			enumValue = mappingIterator->first;                                                                     \
-		}                                                                                                           \
-		else                                                                                                        \
-		{                                                                                                           \
-			enumValue = std::ranges::begin(enumMappings)->first;                                                    \
-		}                                                                                                           \
-	}
+// #define DEFINE_ENUM_JSON(EnumerationType, ...)                                                                      \
+// 	template <typename BasicJSONType>                                                                               \
+// 		requires IsBasicJSON<BasicJSONType> && IsEnumType<EnumerationType>                                          \
+// 	inline void to_json(BasicJSONType& jsonObject, const EnumerationType& enumValue)                                \
+// 	{                                                                                                               \
+// 		static constexpr auto enumMappings = std::to_array<std::pair<EnumerationType, BasicJSONType>>(__VA_ARGS__); \
+// 		if constexpr (auto mappingIterator = std::ranges::find_if(enumMappings,                                     \
+// 						  [enumValue](const auto& enumJsonPair) { return enumJsonPair.first == enumValue; });       \
+// 			mappingIterator != std::ranges::end(enumMappings))                                                      \
+// 		{                                                                                                           \
+// 			jsonObject = mappingIterator->second;                                                                   \
+// 		}                                                                                                           \
+// 		else                                                                                                        \
+// 		{                                                                                                           \
+// 			jsonObject = std::ranges::begin(enumMappings)->second;                                                  \
+// 		}                                                                                                           \
+// 	}                                                                                                               \
+// 	template <typename BasicJSONType>                                                                               \
+// 		requires IsBasicJSON<BasicJSONType> && IsEnumType<EnumerationType>                                          \
+// 	inline void from_json(const BasicJSONType& jsonObject, EnumerationType& enumValue)                              \
+// 	{                                                                                                               \
+// 		static constexpr auto enumMappings = std::to_array<std::pair<EnumerationType, BasicJSONType>>(__VA_ARGS__); \
+// 		if constexpr (auto mappingIterator = std::ranges::find_if(enumMappings,                                     \
+// 						  [&jsonObject](const auto& enumJsonPair) { return enumJsonPair.second == jsonObject; });   \
+// 			mappingIterator != std::ranges::end(enumMappings))                                                      \
+// 		{                                                                                                           \
+// 			enumValue = mappingIterator->first;                                                                     \
+// 		}                                                                                                           \
+// 		else                                                                                                        \
+// 		{                                                                                                           \
+// 			enumValue = std::ranges::begin(enumMappings)->first;                                                    \
+// 		}                                                                                                           \
+// 	}
 
 using JSONData = nlohmann::json;
 

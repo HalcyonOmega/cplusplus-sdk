@@ -458,9 +458,9 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 		}
 		else if (Path == m_Options.Path && Method == "POST")
 		{
-			// JSON-RPC endpoint
 			InResponse.setContentType("application/json");
 			InResponse.set("Access-Control-Allow-Origin", "*");
+			SetActiveResponse(InResponse);
 
 			std::istream& requestStream = InRequest.stream();
 			std::string body;

@@ -193,8 +193,8 @@ struct InitializeResponse : ResponseBase
 	};
 
 	InitializeResponse() = default;
-	explicit InitializeResponse(const RequestID& InRequestID, const InitializeResponse::Result& InResult)
-		: ResponseBase(InRequestID, std::make_unique<InitializeResponse::Result>(InResult))
+	explicit InitializeResponse(const RequestID& InRequestID, std::unique_ptr<InitializeResponse::Result> InResult)
+		: ResponseBase(InRequestID, std::move(InResult))
 	{}
 };
 

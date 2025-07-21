@@ -3,6 +3,7 @@
 #include "CoreSDK/Common/Content.h"
 #include "CoreSDK/Common/Progress.h"
 #include "CoreSDK/Messages/MCPMessages.h"
+#include "Poco/Net/HTTPServerResponse.h"
 
 MCP_NAMESPACE_BEGIN
 
@@ -62,8 +63,21 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 	{
 		if (const auto Request = GetRequestParams<InitializeRequest::Params>(InRequest))
 		{
-			SendMCPMessage(InitializeResponse{ InRequest.GetRequestID(),
-				InitializeResponse::Result{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities } });
+			if (const auto Response = m_Transport->GetActiveResponse())
+			{
+				Response->setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+				std::ostream& responseStream = Response->send();
+				InitializeResponse::Result Result{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities };
+				InitializeResponse ResponseMsg{ InRequest.GetRequestID(),
+					std::make_unique<InitializeResponse::Result>(m_ServerInfo.ProtocolVersion,
+						m_ServerInfo,
+						m_ServerCapabilities) };
+				const JSONData JSONMsg = ResponseMsg;
+				responseStream << JSONMsg.dump();
+				responseStream << "\n";
+				const JSONData ResultMsg = *GetResponseResult<InitializeResponse::Result>(ResponseMsg);
+				responseStream << ResultMsg.dump();
+			}
 		}
 	}
 	catch (const std::exception& Except)

@@ -28,11 +28,11 @@ enum class EProtocolState
 };
 
 DEFINE_ENUM_JSON(EProtocolState,
-	{ EProtocolState::Uninitialized, "uninitialized" },
-	{ EProtocolState::Initializing, "initializing" },
-	{ EProtocolState::Initialized, "initialized" },
-	{ EProtocolState::Error, "error" },
-	{ EProtocolState::Shutdown, "shutdown" })
+	{ { EProtocolState::Uninitialized, "uninitialized" },
+		{ EProtocolState::Initializing, "initializing" },
+		{ EProtocolState::Initialized, "initialized" },
+		{ EProtocolState::Error, "error" },
+		{ EProtocolState::Shutdown, "shutdown" } })
 
 // Base protocol handler
 class MCPProtocol

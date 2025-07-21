@@ -34,15 +34,15 @@ enum class ELoggingLevel
 };
 
 DEFINE_ENUM_JSON(ELoggingLevel,
-	{ ELoggingLevel::Unknown, "unknown" },
-	{ ELoggingLevel::Debug, "debug" },
-	{ ELoggingLevel::Info, "info" },
-	{ ELoggingLevel::Notice, "notice" },
-	{ ELoggingLevel::Warning, "warning" },
-	{ ELoggingLevel::Error, "error" },
-	{ ELoggingLevel::Critical, "critical" },
-	{ ELoggingLevel::Alert, "alert" },
-	{ ELoggingLevel::Emergency, "emergency" })
+	{ { ELoggingLevel::Unknown, "unknown" },
+		{ ELoggingLevel::Debug, "debug" },
+		{ ELoggingLevel::Info, "info" },
+		{ ELoggingLevel::Notice, "notice" },
+		{ ELoggingLevel::Warning, "warning" },
+		{ ELoggingLevel::Error, "error" },
+		{ ELoggingLevel::Critical, "critical" },
+		{ ELoggingLevel::Alert, "alert" },
+		{ ELoggingLevel::Emergency, "emergency" } })
 
 class Logger
 {

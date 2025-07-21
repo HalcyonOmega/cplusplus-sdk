@@ -28,6 +28,10 @@ void ITransport::CallMessageRouter(const JSONData& InMessage) const
 	}
 }
 
+void ITransport::SetActiveResponse(Poco::Net::HTTPServerResponse& InResponse) { ActiveResponse = &InResponse; }
+
+Poco::Net::HTTPServerResponse* ITransport::GetActiveResponse() const { return ActiveResponse; }
+
 // Connection management implementations
 void ITransport::RegisterConnection(const ConnectionID& InConnectionID) { m_ActiveConnections.insert(InConnectionID); }
 

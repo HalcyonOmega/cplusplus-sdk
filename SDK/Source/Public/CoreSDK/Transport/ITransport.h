@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Poco/Net/HTTPServerResponse.h>
+
 #include <chrono>
 #include <memory>
 #include <optional>
@@ -102,10 +104,10 @@ public:
 	[[nodiscard]] bool IsConnected() const;
 	[[nodiscard]] ETransportState GetState() const;
 	void SetState(ETransportState InNewState);
-
 	void SetMessageRouter(std::function<void(const JSONData&)> InRouter);
-
 	void CallMessageRouter(const JSONData& InMessage) const;
+	void SetActiveResponse(Poco::Net::HTTPServerResponse& InResponse);
+	[[nodiscard]] Poco::Net::HTTPServerResponse* GetActiveResponse() const;
 
 	// Connection management
 	void RegisterConnection(const ConnectionID& InConnectionID);
@@ -117,6 +119,9 @@ private:
 	ETransportState m_CurrentState{ ETransportState::Disconnected };
 	std::function<void(const JSONData&)> m_MessageRouter;
 	std::unordered_set<ConnectionID> m_ActiveConnections;
+
+protected:
+	Poco::Net::HTTPServerResponse* ActiveResponse{ nullptr };
 };
 
 // Transport factory
