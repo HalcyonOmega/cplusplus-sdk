@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Poco/Net/MediaType.h>
 #include <Poco/URI.h>
 
 #include "../CoreSDK/Common/Macros.h"
@@ -10,6 +11,13 @@ template <> struct std::hash<Poco::URI>
 };
 
 MCP_NAMESPACE_BEGIN
+
+struct FMIMEType : Poco::Net::MediaType
+{
+	FMIMEType() : MediaType("text") {}
+	explicit FMIMEType(const std::string& InType) : MediaType(InType) {}
+	explicit FMIMEType(const std::string& InType, const std::string& InSubType) : MediaType(InType, InSubType) {}
+};
 
 // TODO: @HalcyonOmega create URI, URIFile, & URITemplate classes
 using URI = Poco::URI;

@@ -65,8 +65,7 @@ struct TextContent : Content
 
 // ImageContent {
 //   MSG_DESCRIPTION: "An image provided to or from an LLM.",
-//                   MSG_PROPERTIES
-//      : {
+//       MSG_PROPERTIES: {
 //         MSG_ANNOTATIONS: {
 //           "$ref": "#/definitions/FAnnotations",
 //           MSG_DESCRIPTION: "Optional annotations for the client."
@@ -91,9 +90,9 @@ struct TextContent : Content
 struct ImageContent : Content
 {
 	// TODO: @HalcyonOmega @format byte (base64)
-	std::string Data{ "" };							 // The base64-encoded image data.
-	Poco::Net::MediaType MIMEType{ "image", "png" }; // The MIME type of the image. Different
-													 // providers may support different image types.
+	std::string Data{ "" };				  // The base64-encoded image data.
+	FMIMEType MIMEType{ "image", "png" }; // The MIME type of the image. Different
+										  // providers may support different image types.
 
 	JSON_KEY(DATAKEY, Data, "data")
 	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
@@ -101,7 +100,7 @@ struct ImageContent : Content
 	DEFINE_TYPE_JSON_DERIVED(ImageContent, Content, DATAKEY, MIMETYPEKEY)
 
 	ImageContent() : Content("image", std::nullopt) {}
-	ImageContent(const std::string_view InData, const Poco::Net::MediaType& InMediaType)
+	ImageContent(const std::string_view InData, const FMIMEType& InMediaType)
 		: Content("image", std::nullopt),
 		  Data(InData),
 		  MIMEType(InMediaType)
@@ -135,9 +134,9 @@ struct ImageContent : Content
 struct AudioContent : Content
 {
 	// TODO: @HalcyonOmega @format byte (base64)
-	std::string Data{ "" };							  // The base64-encoded audio data.
-	Poco::Net::MediaType MIMEType{ "audio", "mpeg" }; // The MIME type of the audio. Different
-													  // providers may support different audio types.
+	std::string Data{ "" };				   // The base64-encoded audio data.
+	FMIMEType MIMEType{ "audio", "mpeg" }; // The MIME type of the audio. Different
+										   // providers may support different audio types.
 
 	JSON_KEY(DATAKEY, Data, "data")
 	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
@@ -145,7 +144,7 @@ struct AudioContent : Content
 	DEFINE_TYPE_JSON_DERIVED(AudioContent, Content, DATAKEY, MIMETYPEKEY)
 
 	AudioContent() : Content("audio", std::nullopt) {}
-	AudioContent(const std::string_view InData, const Poco::Net::MediaType& InMediaType)
+	AudioContent(const std::string_view InData, const FMIMEType& InMediaType)
 		: Content("audio", std::nullopt),
 		  Data(InData),
 		  MIMEType(InMediaType)
@@ -172,8 +171,8 @@ struct AudioContent : Content
 // The contents of a specific resource or sub-resource.
 struct ResourceContents
 {
-	MCP::URI URI{};												  // The URI of this resource.
-	std::optional<Poco::Net::MediaType> MIMEType{ std::nullopt }; // The MIME type of this resource, if known.
+	MCP::URI URI{};									   // The URI of this resource.
+	std::optional<FMIMEType> MIMEType{ std::nullopt }; // The MIME type of this resource, if known.
 
 	JSON_KEY(URIKEY, URI, "uri")
 	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
@@ -181,8 +180,7 @@ struct ResourceContents
 	DEFINE_TYPE_JSON(ResourceContents, URIKEY, MIMETYPEKEY)
 
 	ResourceContents() = default;
-	explicit ResourceContents(const MCP::URI& InURI,
-		const std::optional<Poco::Net::MediaType>& InMIMEType = std::nullopt)
+	explicit ResourceContents(const MCP::URI& InURI, const std::optional<FMIMEType>& InMIMEType = std::nullopt)
 		: URI(InURI),
 		  MIMEType(InMIMEType)
 	{}
@@ -223,14 +221,14 @@ struct TextResourceContents : ResourceContents
 
 	TextResourceContents(const std::string_view& InText,
 		const MCP::URI& InURI,
-		const std::optional<Poco::Net::MediaType>& InMIMEType = std::nullopt)
-		: ResourceContents(InURI, Poco::Net::MediaType{ "text", "plain" }),
+		const std::optional<FMIMEType>& InMIMEType = std::nullopt)
+		: ResourceContents(InURI, FMIMEType{ "text", "plain" }),
 		  Text(InText)
 	{
 		MIMEType->setParameter("charset", "utf-8");
 	}
 
-	TextResourceContents() : ResourceContents(MCP::URI{}, Poco::Net::MediaType{ "text", "plain" })
+	TextResourceContents() : ResourceContents(MCP::URI{}, FMIMEType{ "text", "plain" })
 	{
 		MIMEType->setParameter("charset", "utf-8");
 	}
@@ -270,11 +268,11 @@ struct BlobResourceContents : ResourceContents
 	DEFINE_TYPE_JSON_DERIVED(BlobResourceContents, ResourceContents, BLOBKEY)
 
 	BlobResourceContents(const MCP::BLOB& InBlob, const MCP::URI& InURI)
-		: ResourceContents(InURI, Poco::Net::MediaType{ "application", "octet-stream" }),
+		: ResourceContents(InURI, FMIMEType{ "application", "octet-stream" }),
 		  Blob(InBlob)
 	{}
 
-	BlobResourceContents() : ResourceContents(MCP::URI{}, Poco::Net::MediaType{ "application", "octet-stream" }) {}
+	BlobResourceContents() : ResourceContents(MCP::URI{}, FMIMEType{ "application", "octet-stream" }) {}
 };
 
 // EmbeddedResource {
@@ -302,9 +300,28 @@ struct EmbeddedResource : Content
 {
 	std::variant<TextResourceContents, BlobResourceContents> Resource{ TextResourceContents{ "", MCP::URI{} } };
 
-	JSON_KEY(RESOURCEKEY, Resource, "resource")
+	template <typename BasicJSONType> friend void to_json(BasicJSONType& JSON_J, const EmbeddedResource& JSON_T)
+	{
+		to_json(JSON_J, static_cast<const Content&>(JSON_T));
+		JSON_J["resource"] = JSON_T.Resource;
+	}
 
-	DEFINE_TYPE_JSON_DERIVED(EmbeddedResource, Content, RESOURCEKEY)
+	template <typename BasicJSONType> friend void from_json(const BasicJSONType& JSON_J, EmbeddedResource& JSON_T)
+	{
+		from_json(JSON_J, static_cast<Content&>(JSON_T));
+		if (const auto& Content = JSON_J.at("resource"); Content.contains("text"))
+		{
+			JSON_T.Resource = Content.template get<TextResourceContents>();
+		}
+		else if (Content.contains("blob"))
+		{
+			JSON_T.Resource = Content.template get<BlobResourceContents>();
+		}
+		else
+		{
+			JSON_T.Resource = TextResourceContents{ "", MCP::URI{} };
+		}
+	}
 
 	template <typename T>
 		requires(std::is_same_v<std::decay_t<T>, TextResourceContents>
@@ -312,6 +329,7 @@ struct EmbeddedResource : Content
 	explicit EmbeddedResource(T&& InResource) : Content("resource", std::nullopt),
 												Resource(std::forward<T>(InResource))
 	{}
+	EmbeddedResource() : Content("resource", std::nullopt) {}
 };
 
 MCP_NAMESPACE_END

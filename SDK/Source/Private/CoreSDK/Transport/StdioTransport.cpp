@@ -193,6 +193,8 @@ void StdioClientTransport::TransmitMessage(const JSONData& InMessage,
 	}
 }
 
+void StdioClientTransport::TransmitResponse(const JSONData& InMessage) { TransmitMessage(InMessage, std::nullopt); }
+
 void StdioClientTransport::Cleanup()
 {
 	// Terminate the process if still running
@@ -345,6 +347,8 @@ void StdioServerTransport::TransmitMessage(const JSONData& InMessage,
 		HandleRuntimeError("Error writing message: " + std::string(e.what()));
 	}
 }
+
+void StdioServerTransport::TransmitResponse(const JSONData& InMessage) { TransmitMessage(InMessage, std::nullopt); }
 
 // Factory functions
 std::unique_ptr<ITransport> CreateStdioClientTransportImpl(const StdioClientTransportOptions& InOptions)

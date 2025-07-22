@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "CoreSDK/Common/BaseTypes.h"
+#include "URIProxy.h"
 #include "json.hpp"
 
 template <typename T> struct nlohmann::adl_serializer<std::vector<T>>
@@ -113,16 +114,15 @@ template <> struct nlohmann::adl_serializer<Poco::URI>
 	}
 };
 
-template <> struct nlohmann::adl_serializer<Poco::Net::MediaType>
+template <> struct nlohmann::adl_serializer<MCP::FMIMEType>
 {
-	static void to_json(json& j, const Poco::Net::MediaType& mediaType) { j = mediaType.toString(); }
+	static void to_json(json& j, const MCP::FMIMEType& mediaType) { j = mediaType.toString(); }
 
-	static void from_json(const json& j, Poco::Net::MediaType& mediaType)
+	static void from_json(const json& j, MCP::FMIMEType& mediaType)
 	{
 		if (j.is_string())
 		{
-			// TODO: @HalconOmega - Missing default initializer, so nlohmann json not picking up properly
-			mediaType = Poco::Net::MediaType(j.get<std::string>());
+			mediaType = MCP::FMIMEType(j.get<std::string>());
 		}
 	}
 };

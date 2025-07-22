@@ -28,16 +28,17 @@ MCP_NAMESPACE_BEGIN
 /**
  * Describes an argument that a prompt can accept.
  */
-struct PromptArgument {
-    std::string Name;                       // The name of the argument.
-    std::optional<std::string> Description; // A human-readable description of the argument.
-    std::optional<bool> Required;           // Whether this argument must be provided.
+struct PromptArgument
+{
+	std::string Name;						// The name of the argument.
+	std::optional<std::string> Description; // A human-readable description of the argument.
+	std::optional<bool> Required;			// Whether this argument must be provided.
 
-    JSON_KEY(NAMEKEY, Name, "name")
-    JSON_KEY(DESCRIPTIONKEY, Description, "description")
-    JSON_KEY(REQUIREDKEY, Required, "required")
+	JSON_KEY(NAMEKEY, Name, "name")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(REQUIREDKEY, Required, "required")
 
-    DEFINE_TYPE_JSON(PromptArgument, NAMEKEY, DESCRIPTIONKEY, REQUIREDKEY)
+	DEFINE_TYPE_JSON(PromptArgument, NAMEKEY, DESCRIPTIONKEY, REQUIREDKEY)
 };
 
 // PromptMessage {
@@ -63,14 +64,44 @@ struct PromptArgument {
 /**
  * Describes a message returned as part of a prompt.
  */
-struct PromptMessage {
-    MCP::ERole Role;
-    std::variant<TextContent, ImageContent, AudioContent, EmbeddedResource> Content;
+struct PromptMessage
+{
+	MCP::ERole Role{ ERole::Unknown };
+	std::variant<TextContent, ImageContent, AudioContent, EmbeddedResource> Content{ TextContent{ "" } };
 
-    JSON_KEY(ROLEKEY, Role, "role")
-    JSON_KEY(CONTENTKEY, Content, "content")
+	template <typename BasicJSONType> friend void to_json(BasicJSONType& JSON_J, const PromptMessage& JSON_T)
+	{
+		JSON_J["role"] = JSON_T.Role;
+		JSON_J["content"] = JSON_T.Content;
+	}
 
-    DEFINE_TYPE_JSON(PromptMessage, ROLEKEY, CONTENTKEY)
+	template <typename BasicJSONType> friend void from_json(const BasicJSONType& JSON_J, PromptMessage& JSON_T)
+	{
+		JSON_J.at("role").get_to(JSON_T.Role);
+
+		if (const auto& Content = JSON_J.at("content"); Content.contains("text"))
+		{
+			JSON_T.Content = Content.template get<TextContent>();
+		}
+		else if (Content.contains("image"))
+		{
+			JSON_T.Content = Content.template get<ImageContent>();
+		}
+		else if (Content.contains("audio"))
+		{
+			JSON_T.Content = Content.template get<AudioContent>();
+		}
+		else if (Content.contains("resource"))
+		{
+			JSON_T.Content = Content.template get<EmbeddedResource>();
+		}
+		else
+		{
+			JSON_T.Content = TextContent{ "" };
+		}
+	}
+
+	PromptMessage() = default;
 };
 
 // Prompt {
@@ -100,34 +131,39 @@ struct PromptMessage {
 /**
  * A prompt or prompt template that the server offers.
  */
-struct Prompt {
-    std::string Name;                       // The name of the prompt or prompt template.
-    std::optional<std::string> Description; // An optional description of what this prompt provides.
-    std::optional<std::vector<PromptArgument>>
-        Arguments; // A list of arguments to use for templating the prompt.
+struct Prompt
+{
+	std::string Name;									  // The name of the prompt or prompt template.
+	std::optional<std::string> Description;				  // An optional description of what this prompt provides.
+	std::optional<std::vector<PromptArgument>> Arguments; // A list of arguments to use for templating the prompt.
 
-    JSON_KEY(NAMEKEY, Name, "name")
-    JSON_KEY(DESCRIPTIONKEY, Description, "description")
-    JSON_KEY(ARGUMENTSKEY, Arguments, "arguments")
+	JSON_KEY(NAMEKEY, Name, "name")
+	JSON_KEY(DESCRIPTIONKEY, Description, "description")
+	JSON_KEY(ARGUMENTSKEY, Arguments, "arguments")
 
-    DEFINE_TYPE_JSON(Prompt, NAMEKEY, DESCRIPTIONKEY, ARGUMENTSKEY)
+	DEFINE_TYPE_JSON(Prompt, NAMEKEY, DESCRIPTIONKEY, ARGUMENTSKEY)
 
-    bool operator<(const Prompt& InOther) const {
-        if (Name != InOther.Name) { return Name < InOther.Name; }
-        if (Description != InOther.Description) { return Description < InOther.Description; }
-        return false;
-    }
+	bool operator<(const Prompt& InOther) const
+	{
+		if (Name != InOther.Name)
+		{
+			return Name < InOther.Name;
+		}
+		if (Description != InOther.Description)
+		{
+			return Description < InOther.Description;
+		}
+		return false;
+	}
 
-    bool operator==(const Prompt& InOther) const {
-        return Name == InOther.Name && Description == InOther.Description;
-    }
+	bool operator==(const Prompt& InOther) const { return Name == InOther.Name && Description == InOther.Description; }
 };
 
 template <typename T>
 concept PromptType = requires(T Type) {
-    { Type.Name } -> std::convertible_to<std::string>;
-    { Type.Description } -> std::same_as<std::optional<std::string>>;
-    { Type.Arguments } -> std::same_as<std::optional<std::vector<PromptArgument>>>;
+	{ Type.Name } -> std::convertible_to<std::string>;
+	{ Type.Description } -> std::same_as<std::optional<std::string>>;
+	{ Type.Arguments } -> std::same_as<std::optional<std::vector<PromptArgument>>>;
 };
 
 MCP_NAMESPACE_END

@@ -63,15 +63,9 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 	{
 		if (const auto Request = GetRequestParams<InitializeRequest::Params>(InRequest))
 		{
-			if (const auto Response = m_Transport->GetActiveResponse())
-			{
-				Response->setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-				std::ostream& responseStream = Response->send();
-				InitializeResponse ResponseMsg{ InRequest.GetRequestID(),
-					InitializeResult{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities } };
-				const JSONData JSONMsg = ResponseMsg;
-				responseStream << JSONMsg.dump();
-			}
+			InitializeResponse ResponseMsg{ InRequest.GetRequestID(),
+				InitializeResult{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities } };
+			m_Transport->TransmitResponse(ResponseMsg);
 		}
 	}
 	catch (const std::exception& Except)

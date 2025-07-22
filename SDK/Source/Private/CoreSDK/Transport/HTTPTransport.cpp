@@ -3,9 +3,9 @@
 #include <Poco/Net/HTTPMessage.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
-#include <Poco/StreamCopier.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/Net/HTTPServerResponse.h>
+#include <Poco/StreamCopier.h>
 
 #include <utility>
 
@@ -180,6 +180,16 @@ void HTTPTransportClient::TransmitMessage(const JSONData& InMessage,
 	catch (const std::exception& Except)
 	{
 		HandleRuntimeError("Error sending HTTP message: " + std::string(Except.what()));
+	}
+}
+
+void HTTPTransportClient::TransmitResponse(const JSONData& InMessage)
+{
+	if (const auto Response = GetActiveResponse())
+	{
+		Response->setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		std::ostream& responseStream = Response->send();
+		responseStream << InMessage.dump();
 	}
 }
 
@@ -388,12 +398,11 @@ std::string HTTPTransportServer::GetConnectionInfo() const
 void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequest,
 	Poco::Net::HTTPServerResponse& InResponse)
 {
-	LogMessage("HTTP Request Received");
+	const std::string Path = InRequest.getURI();
+	const std::string Method = InRequest.getMethod();
 	try
 	{
-		const std::string Path = InRequest.getURI();
-
-		if (const std::string Method = InRequest.getMethod(); Path == "/message" && Method == "GET")
+		if (Path == "/message" && Method == "GET")
 		{
 			// MCP StreamableHTTP GET endpoint implementation
 			InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
@@ -466,10 +475,6 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 			Poco::StreamCopier::copyToString(requestStream, body);
 
 			ProcessReceivedMessage(body);
-
-			InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			std::ostream& responseStream = InResponse.send();
-			responseStream << "{\"status\":\"received\"}\n";
 		}
 		else if (Method == "OPTIONS")
 		{
@@ -479,24 +484,24 @@ void HTTPTransportServer::HandleHTTPRequest(Poco::Net::HTTPServerRequest& InRequ
 			InResponse.set("Access-Control-Allow-Headers", "Content-Type");
 			InResponse.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 			InResponse.set("Access-Control-Max-Age", "86400");
-			std::ostream& responseStream = InResponse.send();
-			responseStream << "";
+			std::ostream& ResponseStream = InResponse.send();
+			ResponseStream << "";
 		}
 		else
 		{
 			// Not found
 			InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
 			InResponse.setReason("Not Found");
-			std::ostream& responseStream = InResponse.send();
-			responseStream << "404 Not Found\n";
+			std::ostream& ResponseStream = InResponse.send();
+			ResponseStream << "404 Not Found\n";
 		}
 	}
 	catch (const std::exception& Except)
 	{
 		InResponse.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
 		InResponse.setReason("Internal Server Error");
-		std::ostream& responseStream = InResponse.send();
-		responseStream << "500 Internal Server Error: " << Except.what() << "\n";
+		std::ostream& ResponseStream = InResponse.send();
+		ResponseStream << "500 Internal Server Error: " << Except.what() << "\n";
 	}
 }
 
@@ -553,6 +558,15 @@ void HTTPTransportServer::TransmitMessage(const JSONData& InMessage,
 			// Client disconnected
 			Iterator = m_SSEClients.erase(Iterator);
 		}
+	}
+}
+void HTTPTransportServer::TransmitResponse(const JSONData& InMessage)
+{
+	if (const auto Response = GetActiveResponse())
+	{
+		Response->setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		std::ostream& responseStream = Response->send();
+		responseStream << InMessage.dump();
 	}
 }
 

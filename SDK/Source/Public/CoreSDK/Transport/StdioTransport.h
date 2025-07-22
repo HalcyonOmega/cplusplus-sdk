@@ -28,6 +28,7 @@ public:
 
 	void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	void TransmitResponse(const JSONData& InMessage) override;
 
 	std::string GetConnectionInfo() const override;
 
@@ -69,6 +70,7 @@ public:
 
 	void TransmitMessage(const JSONData& InMessage,
 		const std::optional<std::vector<ConnectionID>>& InConnectionIDs) override;
+	void TransmitResponse(const JSONData& InMessage) override;
 
 	std::string GetConnectionInfo() const override;
 

@@ -63,7 +63,7 @@ struct Resource
 	std::optional<std::string> Description;		  // A description of what this resource represents. Clients can
 												  // use this to improve the LLM's understanding of available
 												  // resources. It can be thought of as a "hint" to the model.
-	std::optional<Poco::Net::MediaType> MIMEType; // The MIME type of this resource, if known.
+	std::optional<FMIMEType> MIMEType; // The MIME type of this resource, if known.
 	std::optional<FAnnotations> Annotations;	  // Optional annotations for the client.
 	std::optional<int64_t> Size;				  // The size of the raw resource content, in bytes (i.e., before base64
 												  // encoding or any tokenization), if known. Hosts can use this
@@ -137,7 +137,7 @@ struct ResourceTemplate
 											// can use this to improve the LLM's
 											// understanding of available resources. It can be
 											// thought of as a "hint" to the model.
-	std::optional<Poco::Net::MediaType>
+	std::optional<FMIMEType>
 		MIMEType; // The MIME type for all resources that match this template. This should only
 				  // be included if all resources matching this template have the same type.
 	std::optional<FAnnotations> Annotations; // Optional annotations for the client.
@@ -170,7 +170,7 @@ concept ResourceType = requires(T Type) {
 	{ Type.URI } -> std::same_as<MCP::URI>;
 	{ Type.Name } -> std::convertible_to<std::string>;
 	{ Type.Description } -> std::same_as<std::optional<std::string>>;
-	{ Type.MIMEType } -> std::same_as<std::optional<Poco::Net::MediaType>>;
+	{ Type.MIMEType } -> std::same_as<std::optional<FMIMEType>>;
 	{ Type.Annotations } -> std::same_as<std::optional<FAnnotations>>;
 	{ Type.Size } -> std::same_as<std::optional<int64_t>>;
 };
@@ -180,7 +180,7 @@ concept ResourceTemplateType = requires(T Type) {
 	{ Type.URITemplate } -> std::same_as<MCP::URITemplate>;
 	{ Type.Name } -> std::convertible_to<std::string>;
 	{ Type.Description } -> std::same_as<std::optional<std::string>>;
-	{ Type.MIMEType } -> std::same_as<std::optional<Poco::Net::MediaType>>;
+	{ Type.MIMEType } -> std::same_as<std::optional<FMIMEType>>;
 	{ Type.Annotations } -> std::same_as<std::optional<FAnnotations>>;
 };
 
