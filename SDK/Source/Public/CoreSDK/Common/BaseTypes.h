@@ -1,10 +1,10 @@
 #pragma once
+
 #include <algorithm>
 #include <optional>
 
 class BoundedDouble
 {
-
 public:
 	explicit BoundedDouble(const double InValue = 0.0,
 		const double InMin = 0.0,
@@ -14,6 +14,9 @@ public:
 		  m_Min(InMin),
 		  m_Max(InMax),
 		  m_BoundsLocked(InLocked) {};
+
+	// Unlocked, unbound constructor
+	explicit BoundedDouble(const double InValue) : m_Value(InValue), m_BoundsLocked(false) {};
 
 	/*
 	 * Set the value of the bounded double, including the ability to set new min & max.
@@ -73,7 +76,7 @@ public:
 	[[nodiscard]] double GetValue() const { return m_Value; }
 
 	// ReSharper disable once CppNonExplicitConversionOperator
-	operator double() const { return m_Value; }
+	operator double() const { return m_Value; } // NOLINT(*-explicit-constructor)
 
 	BoundedDouble& operator=(const double InValue)
 	{

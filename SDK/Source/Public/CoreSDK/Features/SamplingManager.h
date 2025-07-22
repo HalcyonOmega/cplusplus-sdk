@@ -68,7 +68,7 @@ public:
 	 */
 	bool HasSamplingFunction() const;
 
-	CreateMessageResponse::Result CreateMessage(const CreateMessageRequest::Params* InParams) const;
+	CreateMessageResult CreateMessage(const CreateMessageRequest::Params* InParams) const;
 
 private:
 	std::optional<ModelPreferences> m_DefaultModelPreferences;

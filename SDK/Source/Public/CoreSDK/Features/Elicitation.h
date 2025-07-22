@@ -194,7 +194,7 @@ struct ElicitResponse : ResponseBase
 		JSON_KEY(ACTIONKEY, Action, "action")
 		JSON_KEY(CONTENTKEY, Content, "content")
 
-		DEFINE_TYPE_JSON_DERIVED(ElicitResponse::Result, ResultParams, ACTIONKEY, CONTENTKEY)
+		DEFINE_TYPE_JSON_DERIVED(ElicitResult, ResultParams, ACTIONKEY, CONTENTKEY)
 
 		explicit Result(const EElicitationAction InAction,
 			const std::optional<std::unordered_map<std::string, JSONData>>& InContent,
@@ -205,7 +205,7 @@ struct ElicitResponse : ResponseBase
 		{}
 	};
 
-	explicit ElicitResponse(const RequestID& InRequestID, const ElicitResponse::Result& InResult)
+	explicit ElicitResponse(const RequestID& InRequestID, const ElicitResult& InResult)
 		: ResponseBase(InRequestID, InResult)
 	{}
 };

@@ -34,7 +34,7 @@ public:
 class ToolManager
 {
 public:
-	using ToolFunction = std::function<CallToolResponse::Result(const JSONData&, MCPContext*)>;
+	using ToolFunction = std::function<CallToolResult(const JSONData&, MCPContext*)>;
 
 	/**
 	 * Constructor
@@ -73,13 +73,13 @@ public:
 	 * @param InContext Optional context for the tool execution
 	 * @return The result of the tool execution
 	 */
-	CallToolResponse::Result CallTool(const CallToolRequest::Params* InRequest, MCPContext* InContext = nullptr);
+	CallToolResult CallTool(const CallToolRequest::Params* InRequest, MCPContext* InContext = nullptr);
 
 	/**
 	 * List all registered tools.
 	 * @return Vector containing all registered tools
 	 */
-	ListToolsResponse::Result ListTools(const PaginatedRequestParams* InRequest) const;
+	ListToolsResult ListTools(const PaginatedRequestParams* InRequest) const;
 
 private:
 	std::map<Tool, ToolFunction> m_Tools;

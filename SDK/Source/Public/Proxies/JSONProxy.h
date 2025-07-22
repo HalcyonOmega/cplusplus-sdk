@@ -6,54 +6,7 @@
 
 #include "../CoreSDK/Common/Macros.h"
 #include "../Utilities/ThirdParty/json.hpp"
-
-template <typename T> struct nlohmann::adl_serializer<std::unique_ptr<T>>
-{
-	template <typename BasicJsonType> static void to_json(BasicJsonType& json_value, const std::unique_ptr<T>& ptr)
-	{
-		if (ptr.get())
-		{
-			json_value = *ptr;
-		}
-		else
-		{
-			json_value = nullptr;
-		}
-	}
-
-	template <typename BasicJsonType> static void from_json(const BasicJsonType& json_value, std::unique_ptr<T>& ptr)
-	{
-		T inner_val = json_value.template get<T>();
-		ptr = std::make_unique<T>(std::move(inner_val));
-	}
-};
-
-template <typename T> struct nlohmann::adl_serializer<std::optional<T>>
-{
-	static void to_json(json& j, const std::optional<T>& opt)
-	{
-		if (opt)
-		{
-			j = opt.value();
-		}
-		else
-		{
-			j = nullptr;
-		}
-	}
-
-	static void from_json(const json& j, std::optional<T>& opt)
-	{
-		if (j.is_null())
-		{
-			opt = std::nullopt;
-		}
-		else
-		{
-			opt = j.get<T>();
-		}
-	}
-};
+#include "Utilities/JSON/Serializers.h"
 
 MCP_NAMESPACE_BEGIN
 

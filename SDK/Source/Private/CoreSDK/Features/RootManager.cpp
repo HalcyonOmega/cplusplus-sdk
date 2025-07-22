@@ -79,7 +79,7 @@ std::optional<Root> RootManager::GetRootByName(const std::string& InName) const
 	return std::nullopt;
 }
 
-ListRootsResponse::Result RootManager::ListRoots() const
+ListRootsResult RootManager::ListRoots() const
 {
 	std::lock_guard Lock(m_RootsMutex);
 
@@ -91,7 +91,7 @@ ListRootsResponse::Result RootManager::ListRoots() const
 		Roots.push_back(RootData);
 	}
 
-	return ListRootsResponse::Result{ Roots };
+	return ListRootsResult{ Roots };
 }
 
 bool RootManager::HasRoot(const MCP::URIFile& InURI) const

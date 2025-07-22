@@ -88,8 +88,10 @@ struct PaginatedResultParams : ResultParams
 // A successful (non-error) response to a request. Supports JSON-RPC 2.0.
 template <typename TResultType = ResultParams> struct ResponseBase : MessageBase
 {
+	using ResultType = TResultType;
+
 	RequestID ID{};
-	TResultType ResultData{ ResultParams{ JSONData{ "TestString" } } };
+	TResultType ResultData{};
 
 	JSON_KEY(IDKEY, ID, "id")
 	JSON_KEY(RESULTKEY, ResultData, "result")
@@ -97,12 +99,15 @@ template <typename TResultType = ResultParams> struct ResponseBase : MessageBase
 	DEFINE_TYPE_JSON_DERIVED(ResponseBase, MessageBase, IDKEY, RESULTKEY)
 
 	explicit ResponseBase(RequestID InID) : MessageBase(), ID(std::move(InID)) {}
-	explicit ResponseBase(RequestID InID, std::unique_ptr<ResultParams> InResult)
+	explicit ResponseBase(RequestID InID, const TResultType& InResult)
 		: MessageBase(),
 		  ID(std::move(InID)),
-		  ResultData(std::move(InResult))
+		  ResultData(InResult)
 	{}
+
 	[[nodiscard]] RequestID GetRequestID() const { return ID; }
+
+	[[nodiscard]] const TResultType& GetResult() { return ResultData; }
 
 	ResponseBase() = default;
 	~ResponseBase() override = default;
@@ -111,7 +116,11 @@ template <typename TResultType = ResultParams> struct ResponseBase : MessageBase
 };
 
 template <typename T>
-concept ConcreteResponse = std::is_base_of_v<ResponseBase<>, T>;
+concept ConcreteResponse
+	= requires { typename T::ResultType; } && std::is_base_of_v<ResponseBase<typename T::ResultType>, T>;
+
+template <typename T>
+concept ResultType = std::is_base_of_v<ResultParams, T>;
 
 template <typename F, typename T>
 concept ExpectedResponseFunction
@@ -123,9 +132,14 @@ concept UnexpectedResponseFunction
 
 // Get typed result - cast the base Result to the derived response's Result type
 template <typename TResultType, ConcreteResponse T>
-[[nodiscard]] const TResultType* GetResponseResult(const T& InResponse)
+[[nodiscard]] const TResultType& GetResponseResult(const T& InResponse)
 {
-	return static_cast<const TResultType*>(InResponse.ResultData.get());
+	return static_cast<const TResultType&>(InResponse.ResultData);
+}
+
+template <typename TResultType, ConcreteResponse T> [[nodiscard]] const TResultType& GetResult(const T& InResponse)
+{
+	return InResponse.ResultData;
 }
 
 MCP_NAMESPACE_END

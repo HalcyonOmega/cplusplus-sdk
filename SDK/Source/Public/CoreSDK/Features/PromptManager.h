@@ -48,13 +48,13 @@ public:
 	 * @return The prompt if found, nullopt if the prompt does not exist or the arguments are
 	 * invalid
 	 */
-	GetPromptResponse::Result GetPrompt(const GetPromptRequest::Params* InRequest) const;
+	GetPromptResult GetPrompt(const GetPromptRequest::Params* InRequest) const;
 
 	/**
 	 * List all registered prompts.
 	 * @return Vector containing all registered prompts
 	 */
-	ListPromptsResponse::Result ListPrompts(const PaginatedRequestParams* InRequest) const;
+	ListPromptsResult ListPrompts(const PaginatedRequestParams* InRequest) const;
 
 	/**
 	 * Check if a prompt with the given name exists.

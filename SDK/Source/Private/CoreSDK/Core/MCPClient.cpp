@@ -76,7 +76,7 @@ void MCPClient::Stop()
 	}
 }
 
-OptTask<InitializeResponse::Result> MCPClient::Request_Initialize(const InitializeRequest::Params& InParams)
+OptTask<InitializeResult> MCPClient::Request_Initialize(const InitializeRequest::Params& InParams)
 {
 	if (IsInitialized())
 	{
@@ -116,11 +116,11 @@ void MCPClient::Notify_Initialized(const InitializedNotification& InNotification
 	SendMCPMessage(InitializedNotification());
 }
 
-OptTask<ListToolsResponse::Result> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams){
+OptTask<ListToolsResult> MCPClient::Request_ListTools(const PaginatedRequestParams& InParams){
 	SEND_REQUEST_RETURN_RESULT(ListToolsResponse, ListToolsRequest{ InParams })
 }
 
-OptTask<CallToolResponse::Result> MCPClient::Request_CallTool(const CallToolRequest::Params& InParams)
+OptTask<CallToolResult> MCPClient::Request_CallTool(const CallToolRequest::Params& InParams)
 {
 	SEND_REQUEST_RETURN_RESULT(CallToolResponse, CallToolRequest{ InParams })
 }
@@ -131,11 +131,11 @@ void MCPClient::OnNotified_ToolListChanged(const ToolListChangedNotification& In
 	(void)InNotification;
 }
 
-OptTask<ListPromptsResponse::Result> MCPClient::Request_ListPrompts(const PaginatedRequestParams& InParams){
+OptTask<ListPromptsResult> MCPClient::Request_ListPrompts(const PaginatedRequestParams& InParams){
 	SEND_REQUEST_RETURN_RESULT(ListPromptsResponse, ListPromptsRequest{ InParams })
 }
 
-OptTask<GetPromptResponse::Result> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
+OptTask<GetPromptResult> MCPClient::Request_GetPrompt(const GetPromptRequest::Params& InParams)
 {
 	SEND_REQUEST_RETURN_RESULT(GetPromptResponse, GetPromptRequest{ InParams })
 }
@@ -146,11 +146,11 @@ void MCPClient::OnNotified_PromptListChanged(const PromptListChangedNotification
 	(void)InNotification;
 }
 
-OptTask<ListResourcesResponse::Result> MCPClient::Request_ListResources(const PaginatedRequestParams& InParams){
+OptTask<ListResourcesResult> MCPClient::Request_ListResources(const PaginatedRequestParams& InParams){
 	SEND_REQUEST_RETURN_RESULT(ListResourcesResponse, ListResourcesRequest{ InParams })
 }
 
-OptTask<ReadResourceResponse::Result> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InParams){
+OptTask<ReadResourceResult> MCPClient::Request_ReadResource(const ReadResourceRequest::Params& InParams){
 	SEND_REQUEST_RETURN_RESULT(ReadResourceResponse, ReadResourceRequest{ InParams })
 }
 
@@ -254,7 +254,7 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 
 	if (const auto RequestParams = GetRequestParams<CreateMessageRequest::Params>(InRequest))
 	{
-		const CreateMessageResponse::Result Result = m_SamplingManager->CreateMessage(RequestParams.value());
+		const CreateMessageResult Result = m_SamplingManager->CreateMessage(RequestParams.value());
 		SendMCPMessage(CreateMessageResponse{ InRequest.GetRequestID(), Result });
 		return;
 	}
@@ -262,7 +262,7 @@ void MCPClient::OnRequest_CreateMessage(const CreateMessageRequest& InRequest)
 		ErrorInvalidParams(InRequest.GetRequestID(), "Create Message Request params could not be retrieved"));
 }
 
-OptTask<CompleteResponse::Result> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
+OptTask<CompleteResult> MCPClient::Request_Complete(const CompleteRequest::Params& InParams)
 {
 	SEND_REQUEST_RETURN_RESULT(CompleteResponse, CompleteRequest{ InParams })
 }

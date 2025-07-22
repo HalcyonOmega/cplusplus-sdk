@@ -18,7 +18,7 @@ ToolManager::ToolManager(const bool InWarnOnDuplicateTools, const std::map<Tool,
 	}
 }
 
-ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams* InRequest) const
+ListToolsResult ToolManager::ListTools(const PaginatedRequestParams* InRequest) const
 {
 	std::lock_guard Lock(m_Mutex);
 	(void)InRequest; // TODO: @HalcyonOmega - Implement pagination
@@ -31,7 +31,7 @@ ListToolsResponse::Result ToolManager::ListTools(const PaginatedRequestParams* I
 		Result.emplace_back(ToolItem);
 	}
 
-	return ListToolsResponse::Result{ Result };
+	return ListToolsResult{ Result };
 }
 
 bool ToolManager::AddTool(const Tool& InTool, const ToolFunction& InFunction)
@@ -67,7 +67,7 @@ bool ToolManager::RemoveTool(const Tool& InTool)
 	return true;
 }
 
-CallToolResponse::Result ToolManager::CallTool(const CallToolRequest::Params* InRequest, MCPContext* InContext)
+CallToolResult ToolManager::CallTool(const CallToolRequest::Params* InRequest, MCPContext* InContext)
 {
 	std::lock_guard Lock(m_Mutex);
 

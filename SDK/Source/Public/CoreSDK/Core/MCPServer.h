@@ -45,13 +45,13 @@ public:
 	void Notify_ResourceUpdated(const ResourceUpdatedNotification::Params& InParams);
 
 	// Roots
-	OptTask<ListRootsResponse::Result> Request_ListRoots(const PaginatedRequestParams& InParams);
+	OptTask<ListRootsResult> Request_ListRoots(const PaginatedRequestParams& InParams);
 
 	// Logging
 	void Notify_LogMessage(const LoggingMessageNotification::Params& InParams);
 
 	// Sampling
-	OptTask<CreateMessageResponse::Result> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
+	OptTask<CreateMessageResult> Request_CreateMessage(const CreateMessageRequest::Params& InParams);
 
 	// Progress reporting
 	void Notify_Progress(const ProgressNotification::Params& InParams);

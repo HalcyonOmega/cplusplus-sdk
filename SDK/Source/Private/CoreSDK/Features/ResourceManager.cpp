@@ -131,7 +131,7 @@ std::optional<std::variant<TextResourceContents, BlobResourceContents>> Resource
 	return std::nullopt;
 }
 
-ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequestParams* InRequest)
+ListResourcesResult ResourceManager::ListResources(const PaginatedRequestParams* InRequest)
 {
 	HandleRuntimeError("Listing resources - Count: " + std::to_string(m_Resources.size()));
 
@@ -144,10 +144,10 @@ ListResourcesResponse::Result ResourceManager::ListResources(const PaginatedRequ
 		Result.push_back(ResourceData);
 	}
 
-	return ListResourcesResponse::Result{ Result, InRequest->Cursor, std::nullopt };
+	return ListResourcesResult{ Result, InRequest->Cursor, std::nullopt };
 }
 
-ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const PaginatedRequestParams* InRequest)
+ListResourceTemplatesResult ResourceManager::ListTemplates(const PaginatedRequestParams* InRequest)
 {
 	HandleRuntimeError("Listing templates - Count: " + std::to_string(m_Templates.size()));
 
@@ -160,7 +160,7 @@ ListResourceTemplatesResponse::Result ResourceManager::ListTemplates(const Pagin
 		Result.push_back(Template);
 	}
 
-	return ListResourceTemplatesResponse::Result{ Result, InRequest->Cursor, std::nullopt };
+	return ListResourceTemplatesResult{ Result, InRequest->Cursor, std::nullopt };
 }
 
 bool ResourceManager::HasResource(const MCP::URI& InURI) const

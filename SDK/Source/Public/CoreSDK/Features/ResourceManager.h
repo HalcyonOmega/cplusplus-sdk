@@ -70,13 +70,13 @@ public:
 	 * List all registered resources.
 	 * @return Vector containing all registered resources
 	 */
-	ListResourcesResponse::Result ListResources(const PaginatedRequestParams* InRequest);
+	ListResourcesResult ListResources(const PaginatedRequestParams* InRequest);
 
 	/**
 	 * List all registered templates.
 	 * @return Vector containing all registered templates
 	 */
-	ListResourceTemplatesResponse::Result ListTemplates(const PaginatedRequestParams* InRequest);
+	ListResourceTemplatesResult ListTemplates(const PaginatedRequestParams* InRequest);
 
 	/**
 	 * Check if a resource with the given URI exists.

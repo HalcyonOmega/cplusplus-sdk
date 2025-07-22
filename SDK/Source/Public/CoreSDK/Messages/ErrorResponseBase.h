@@ -44,7 +44,7 @@ struct FErrorData
 	{}
 };
 
-struct ErrorResponseBase : ResponseBase
+struct ErrorResponseBase : ResponseBase<>
 {
 	FErrorData ErrorData{};
 

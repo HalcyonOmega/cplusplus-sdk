@@ -79,7 +79,7 @@ public:
 	 * List all registered roots.
 	 * @return Vector containing all registered roots
 	 */
-	ListRootsResponse::Result ListRoots() const;
+	ListRootsResult ListRoots() const;
 
 	/**
 	 * Check if a root with the given URI exists.

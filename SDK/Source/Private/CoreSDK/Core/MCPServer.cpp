@@ -67,16 +67,10 @@ void MCPServer::OnRequest_Initialize(const InitializeRequest& InRequest)
 			{
 				Response->setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 				std::ostream& responseStream = Response->send();
-				InitializeResponse::Result Result{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities };
 				InitializeResponse ResponseMsg{ InRequest.GetRequestID(),
-					std::make_unique<InitializeResponse::Result>(m_ServerInfo.ProtocolVersion,
-						m_ServerInfo,
-						m_ServerCapabilities) };
+					InitializeResult{ m_ServerInfo.ProtocolVersion, m_ServerInfo, m_ServerCapabilities } };
 				const JSONData JSONMsg = ResponseMsg;
 				responseStream << JSONMsg.dump();
-				responseStream << "\n";
-				const JSONData ResultMsg = *GetResponseResult<InitializeResponse::Result>(ResponseMsg);
-				responseStream << ResultMsg.dump();
 			}
 		}
 	}
@@ -123,7 +117,7 @@ void MCPServer::OnRequest_ListTools(const ListToolsRequest& InRequest)
 	{
 		const auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-		const ListToolsResponse::Result Result = m_ToolManager->ListTools(RequestParams.value());
+		const ListToolsResult Result = m_ToolManager->ListTools(RequestParams.value());
 
 		SendMCPMessage(ListToolsResponse(InRequest.GetRequestID(), Result));
 	}
@@ -143,7 +137,7 @@ void MCPServer::OnRequest_CallTool(const CallToolRequest& InRequest)
 		// Use ToolManager to call the tool
 		const auto Result = m_ToolManager->CallTool(Request);
 
-		const CallToolResponse::Result ResponseResult{ Result.Content, Result.IsError };
+		const CallToolResult ResponseResult{ Result.Content, Result.IsError };
 		SendMCPMessage(CallToolResponse(InRequest.GetRequestID(), ResponseResult));
 	}
 	catch (const std::exception& Except)
@@ -184,7 +178,7 @@ void MCPServer::OnRequest_ListPrompts(const ListPromptsRequest& InRequest)
 	{
 		const auto RequestParams = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-		const ListPromptsResponse::Result Result = m_PromptManager->ListPrompts(RequestParams.value());
+		const ListPromptsResult Result = m_PromptManager->ListPrompts(RequestParams.value());
 
 		SendMCPMessage(ListPromptsResponse(InRequest.GetRequestID(), Result));
 	}
@@ -200,7 +194,7 @@ void MCPServer::OnRequest_GetPrompt(const GetPromptRequest& InRequest)
 	{
 		const auto Request = GetRequestParams<GetPromptRequest::Params>(InRequest).value();
 
-		const GetPromptResponse::Result Result = m_PromptManager->GetPrompt(Request);
+		const GetPromptResult Result = m_PromptManager->GetPrompt(Request);
 
 		SendMCPMessage(GetPromptResponse(InRequest.GetRequestID(), Result));
 	}
@@ -266,7 +260,7 @@ void MCPServer::Notify_ResourceUpdated(const ResourceUpdatedNotification::Params
 	SendMCPMessage(ResourceUpdatedNotification(InParams));
 }
 
-OptTask<ListRootsResponse::Result> MCPServer::Request_ListRoots(const PaginatedRequestParams& InParams)
+OptTask<ListRootsResult> MCPServer::Request_ListRoots(const PaginatedRequestParams& InParams)
 {
 	if (auto Response = std::move(co_await SendRequest<ListRootsResponse>(ListRootsRequest{ InParams }));
 		Response.Result())
@@ -282,7 +276,7 @@ void MCPServer::OnRequest_ListResources(const ListResourcesRequest& InRequest)
 	{
 		const auto Request = GetRequestParams<PaginatedRequestParams>(InRequest);
 
-		const ListResourcesResponse::Result Result = m_ResourceManager->ListResources(Request.value());
+		const ListResourcesResult Result = m_ResourceManager->ListResources(Request.value());
 
 		SendMCPMessage(ListResourcesResponse(InRequest.GetRequestID(), Result));
 	}
@@ -303,7 +297,7 @@ void MCPServer::OnRequest_ReadResource(const ReadResourceRequest& InRequest)
 		std::variant<TextResourceContents, BlobResourceContents> ResourceContent
 			= m_ResourceManager->GetResource(Request->URI).value();
 
-		ReadResourceResponse::Result ResponseResult;
+		ReadResourceResult ResponseResult;
 		ResponseResult.Contents.emplace_back(ResourceContent);
 
 		SendMCPMessage(ReadResourceResponse(InRequest.GetRequestID(), ResponseResult));
@@ -370,7 +364,7 @@ void MCPServer::Notify_LogMessage(const LoggingMessageNotification::Params& InPa
 	SendMCPMessage(LoggingMessageNotification(InParams));
 }
 
-OptTask<CreateMessageResponse::Result> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
+OptTask<CreateMessageResult> MCPServer::Request_CreateMessage(const CreateMessageRequest::Params& InParams)
 {
 	if (auto Response = std::move(co_await SendRequest<CreateMessageResponse>(CreateMessageRequest{ InParams }));
 		Response.Result())

@@ -10,7 +10,7 @@
 
 MCP_NAMESPACE_BEGIN
 
-// Annotations {
+// FAnnotations {
 //     MSG_DESCRIPTION: "Optional annotations for the client. The client can use annotations to inform how objects are
 //     used or displayed",
 //     MSG_PROPERTIES: {
@@ -38,7 +38,7 @@ MCP_NAMESPACE_BEGIN
  * Optional annotations for the client. The client can use annotations to inform how objects are
  * used or displayed
  */
-struct Annotations
+struct FAnnotations
 {
 	std::optional<std::vector<ERole>> Audience{
 		std::nullopt
@@ -52,14 +52,47 @@ struct Annotations
 	   // effectively required, while 0 means "least important," and
 	   // indicates that the data is entirely optional.
 
-	JSON_KEY(AUDIENCEKEY, Audience, "audience")
-	JSON_KEY(PRIORITYKEY, Priority, "priority")
+	template <typename BasicJSONType> friend void to_json(BasicJSONType& JSON_J, const FAnnotations& JSON_T)
+	{
+		if (JSON_T.Audience)
+		{
+			JSON_J["audience"] = JSON_T.Audience.value();
+		}
+		if (JSON_T.Priority)
+		{
+			JSON_J["priority"] = JSON_T.Priority.value();
+		}
+	}
 
-	DEFINE_TYPE_JSON(Annotations, AUDIENCEKEY, PRIORITYKEY)
+	template <typename BasicJSONType> friend void from_json(const BasicJSONType& JSON_J, FAnnotations& JSON_T)
+	{
+		if (JSON_J.contains("audience") && JSON_J["audience"].is_array())
+		{
+			std::vector<ERole> Audience{};
+			Audience.reserve(JSON_J["audience"].size());
 
-	explicit Annotations(const std::optional<std::vector<ERole>>& InAudience, const std::optional<double> InPriority) :
-		Audience(InAudience), Priority(BoundedDouble::CreateOptional(InPriority, 0.0, 1.0, true))
+			for (const auto& AudienceItem : JSON_J["audience"])
+			{
+				Audience.emplace_back(AudienceItem.template get<ERole>());
+			}
+
+			JSON_T.Audience = Audience;
+		}
+		if (JSON_J.contains("priority"))
+		{
+			JSON_T.Priority = BoundedDouble::CreateOptional(JSON_J["priority"].template get<double>(), 0.0, 1.0, true);
+		}
+		else
+		{
+			JSON_T.Priority = std::nullopt;
+		}
+	}
+
+	explicit FAnnotations(const std::optional<std::vector<ERole>>& InAudience, const std::optional<double> InPriority)
+		: Audience(InAudience),
+		  Priority(BoundedDouble::CreateOptional(InPriority, 0.0, 1.0, true))
 	{}
+	FAnnotations() = default;
 };
 
 MCP_NAMESPACE_END

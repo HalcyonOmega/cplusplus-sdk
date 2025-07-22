@@ -146,14 +146,11 @@ public:
 				}
 			}
 
-			[[nodiscard]] std::optional<typename T::Result> Result()
+			[[nodiscard]] std::optional<typename T::ResultType> Result()
 			{
 				if (auto ExpectedResponse = Get())
 				{
-					auto* Response = ExpectedResponse.value();
-					auto* ResultPtr = GetResponseResult<typename T::Result>(*Response);
-					if (ResultPtr)
-						return *ResultPtr;
+					return ExpectedResponse.value()->GetResult();
 				}
 				return std::nullopt;
 			}

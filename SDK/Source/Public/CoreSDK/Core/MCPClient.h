@@ -20,20 +20,20 @@ public:
 	void Stop() override;
 
 	// Initialization
-	OptTask<InitializeResponse::Result> Request_Initialize(const InitializeRequest::Params& InParams);
+	OptTask<InitializeResult> Request_Initialize(const InitializeRequest::Params& InParams);
 	void Notify_Initialized(const InitializedNotification& InNotification);
 
 	// Tools
-	OptTask<ListToolsResponse::Result> Request_ListTools(const PaginatedRequestParams& InParams);
-	OptTask<CallToolResponse::Result> Request_CallTool(const CallToolRequest::Params& InParams);
+	OptTask<ListToolsResult> Request_ListTools(const PaginatedRequestParams& InParams);
+	OptTask<CallToolResult> Request_CallTool(const CallToolRequest::Params& InParams);
 
 	// Prompts
-	OptTask<ListPromptsResponse::Result> Request_ListPrompts(const PaginatedRequestParams& InParams);
-	OptTask<GetPromptResponse::Result> Request_GetPrompt(const GetPromptRequest::Params& InParams);
+	OptTask<ListPromptsResult> Request_ListPrompts(const PaginatedRequestParams& InParams);
+	OptTask<GetPromptResult> Request_GetPrompt(const GetPromptRequest::Params& InParams);
 
 	// Resources
-	OptTask<ListResourcesResponse::Result> Request_ListResources(const PaginatedRequestParams& InParams);
-	OptTask<ReadResourceResponse::Result> Request_ReadResource(const ReadResourceRequest::Params& InParams);
+	OptTask<ListResourcesResult> Request_ListResources(const PaginatedRequestParams& InParams);
+	OptTask<ReadResourceResult> Request_ReadResource(const ReadResourceRequest::Params& InParams);
 	VoidTask Request_Subscribe(const SubscribeRequest::Params& InParams);
 	VoidTask Request_Unsubscribe(const UnsubscribeRequest::Params& InParams);
 
@@ -46,7 +46,7 @@ public:
 	VoidTask Request_SetLoggingLevel(const SetLevelRequest::Params& InParams);
 
 	// Autocomplete
-	OptTask<CompleteResponse::Result> Request_Complete(const CompleteRequest::Params& InParams);
+	OptTask<CompleteResult> Request_Complete(const CompleteRequest::Params& InParams);
 
 	// Progress
 	void Notify_Progress(const ProgressNotification::Params& InParams);

@@ -44,7 +44,7 @@ bool PromptManager::RemovePrompt(const Prompt& InPrompt)
 	return true;
 }
 
-GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Params* InRequest) const
+GetPromptResult PromptManager::GetPrompt(const GetPromptRequest::Params* InRequest) const
 {
 	std::lock_guard Lock(m_Mutex);
 
@@ -55,11 +55,11 @@ GetPromptResponse::Result PromptManager::GetPrompt(const GetPromptRequest::Param
 		return {};
 	}
 
-	return GetPromptResponse::Result(m_Prompts.find(FoundPrompt.value())->second(InRequest->Arguments.value()),
+	return GetPromptResult(m_Prompts.find(FoundPrompt.value())->second(InRequest->Arguments.value()),
 		FoundPrompt->Description);
 }
 
-ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestParams* InRequest) const
+ListPromptsResult PromptManager::ListPrompts(const PaginatedRequestParams* InRequest) const
 {
 	std::lock_guard Lock(m_Mutex);
 
@@ -71,7 +71,7 @@ ListPromptsResponse::Result PromptManager::ListPrompts(const PaginatedRequestPar
 		Prompts.emplace_back(Prompt);
 	}
 
-	ListPromptsResponse::Result Result;
+	ListPromptsResult Result;
 	Result.Prompts = Prompts;
 	// TODO: @HalcyonOmega - Add Cursor support
 	Result.NextCursor = InRequest->Cursor;

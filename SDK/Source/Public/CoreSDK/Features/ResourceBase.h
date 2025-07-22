@@ -12,7 +12,7 @@ MCP_NAMESPACE_BEGIN
 //   MSG_DESCRIPTION: "A known resource that the server is capable of reading.",
 //                   MSG_PROPERTIES: {
 //         MSG_ANNOTATIONS: {
-//           "$ref": "#/definitions/Annotations",
+//           "$ref": "#/definitions/FAnnotations",
 //           MSG_DESCRIPTION: "Optional annotations for the client."
 //         },
 //         MSG_DESCRIPTION: {
@@ -64,7 +64,7 @@ struct Resource
 												  // use this to improve the LLM's understanding of available
 												  // resources. It can be thought of as a "hint" to the model.
 	std::optional<Poco::Net::MediaType> MIMEType; // The MIME type of this resource, if known.
-	std::optional<Annotations> Annotations;		  // Optional annotations for the client.
+	std::optional<FAnnotations> Annotations;	  // Optional annotations for the client.
 	std::optional<int64_t> Size;				  // The size of the raw resource content, in bytes (i.e., before base64
 												  // encoding or any tokenization), if known. Hosts can use this
 												  // to display file sizes and estimate context window usage.
@@ -94,35 +94,28 @@ struct Resource
 //   MSG_DESCRIPTION: "A template description for resources available on the server.",
 //         MSG_PROPERTIES: {
 //         MSG_ANNOTATIONS: {
-//           "$ref": "#/definitions/Annotations",
+//           "$ref": "#/definitions/FAnnotations",
 //           MSG_DESCRIPTION: "Optional annotations for the client."
 //         },
 //         MSG_DESCRIPTION: {
-//           MSG_DESCRIPTION:
-//               "A description of what this template is for.\n\nThis can be
-//               used " "by clients to improve the LLM's understanding of
-//               available " "resources. It can be thought of like a \"hint\" to
-//               the model.",
+//           MSG_DESCRIPTION: "A description of what this template is for.
+//           This can be used by clients to improve the LLM's understanding of available resources. It can be thought of
+//           like a \"hint\" to the model.",
 //           MSG_TYPE: MSG_STRING
 //         },
 //         MSG_MIME_TYPE: {
 //           MSG_DESCRIPTION:
-//               "The MIME type for all resources that match this template. This
-//               " "should only be included if all resources matching this
-//               template " "have the same type.",
+//               "The MIME type for all resources that match this template. This should only be included if all
+//               resources matching this template have the same type.",
 //           MSG_TYPE: MSG_STRING
 //         },
 //         MSG_NAME: {
-//           MSG_DESCRIPTION: "A human-readable name for the type of resource
-//           this "
-//                           "template refers to.\n\nThis can be used by clients
-//                           " "to populate UI elements.",
+//           MSG_DESCRIPTION: "A human-readable name for the type of resource this template refers to.\n\nThis can be
+//           used by clients to populate UI elements.",
 //           MSG_TYPE: MSG_STRING
 //         },
 //         MSG_URI_TEMPLATE: {
-//           MSG_DESCRIPTION: "A URI template (according to RFC 6570) that can be
-//           "
-//                           "used to construct resource URIs.",
+//           MSG_DESCRIPTION: "A URI template (according to RFC 6570) that can be used to construct resource URIs.",
 //           MSG_FORMAT: MSG_URITEMPLATE,
 //           MSG_TYPE: MSG_STRING
 //         }
@@ -147,7 +140,7 @@ struct ResourceTemplate
 	std::optional<Poco::Net::MediaType>
 		MIMEType; // The MIME type for all resources that match this template. This should only
 				  // be included if all resources matching this template have the same type.
-	std::optional<Annotations> Annotations; // Optional annotations for the client.
+	std::optional<FAnnotations> Annotations; // Optional annotations for the client.
 
 	JSON_KEY(URITEMPLATEKEY, URITemplate, "uriTemplate")
 	JSON_KEY(NAMEKEY, Name, "name")
@@ -178,7 +171,7 @@ concept ResourceType = requires(T Type) {
 	{ Type.Name } -> std::convertible_to<std::string>;
 	{ Type.Description } -> std::same_as<std::optional<std::string>>;
 	{ Type.MIMEType } -> std::same_as<std::optional<Poco::Net::MediaType>>;
-	{ Type.Annotations } -> std::same_as<std::optional<Annotations>>;
+	{ Type.Annotations } -> std::same_as<std::optional<FAnnotations>>;
 	{ Type.Size } -> std::same_as<std::optional<int64_t>>;
 };
 
@@ -188,7 +181,7 @@ concept ResourceTemplateType = requires(T Type) {
 	{ Type.Name } -> std::convertible_to<std::string>;
 	{ Type.Description } -> std::same_as<std::optional<std::string>>;
 	{ Type.MIMEType } -> std::same_as<std::optional<Poco::Net::MediaType>>;
-	{ Type.Annotations } -> std::same_as<std::optional<Annotations>>;
+	{ Type.Annotations } -> std::same_as<std::optional<FAnnotations>>;
 };
 
 MCP_NAMESPACE_END

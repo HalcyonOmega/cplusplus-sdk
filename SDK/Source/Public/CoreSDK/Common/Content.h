@@ -18,20 +18,26 @@ using BLOB = std::vector<char>;
 
 struct Content
 {
-	std::string Type;						// The type of content.
-	std::optional<Annotations> Annotations; // Optional annotations for the client.
+	std::string Type{ "ContentType" };						 // The type of content.
+	std::optional<FAnnotations> Annotations{ std::nullopt }; // Optional annotations for the client.
 
 	JSON_KEY(TYPEKEY, Type, "type")
 	JSON_KEY(ANNOTATIONSKEY, Annotations, "annotations")
 
 	DEFINE_TYPE_JSON(Content, TYPEKEY, ANNOTATIONSKEY)
+
+	explicit Content(const std::string_view InType, const std::optional<FAnnotations>& InAnnotations = std::nullopt)
+		: Type(InType),
+		  Annotations(InAnnotations) {};
+	Content() = default;
+	~Content() = default;
 };
 
 // TextContent {
 //   MSG_DESCRIPTION: "Text provided to or from an LLM.",
 //                   MSG_PROPERTIES: {
 //                     MSG_ANNOTATIONS: {
-//                       "$ref": "#/definitions/Annotations",
+//                       "$ref": "#/definitions/FAnnotations",
 //                       MSG_DESCRIPTION: "Optional annotations for the client."
 //                     },
 //                     MSG_TEXT: {
@@ -47,17 +53,14 @@ struct Content
 // Text provided to or from an LLM.
 struct TextContent : Content
 {
-	std::string Text; // The text content of the message.
+	std::string Text{ "Message" }; // The text content of the message.
 
 	JSON_KEY(TEXTKEY, Text, "text")
 
 	DEFINE_TYPE_JSON_DERIVED(TextContent, Content, TEXTKEY)
 
-	TextContent()
-	{
-		Type = "text";
-		Annotations = std::nullopt;
-	}
+	TextContent() : Content("text", std::nullopt) {}
+	explicit TextContent(const std::string_view InText) : Content("text", std::nullopt), Text(InText) {}
 };
 
 // ImageContent {
@@ -65,7 +68,7 @@ struct TextContent : Content
 //                   MSG_PROPERTIES
 //      : {
 //         MSG_ANNOTATIONS: {
-//           "$ref": "#/definitions/Annotations",
+//           "$ref": "#/definitions/FAnnotations",
 //           MSG_DESCRIPTION: "Optional annotations for the client."
 //         },
 //         MSG_DATA: {
@@ -88,7 +91,7 @@ struct TextContent : Content
 struct ImageContent : Content
 {
 	// TODO: @HalcyonOmega @format byte (base64)
-	std::string Data;								 // The base64-encoded image data.
+	std::string Data{ "" };							 // The base64-encoded image data.
 	Poco::Net::MediaType MIMEType{ "image", "png" }; // The MIME type of the image. Different
 													 // providers may support different image types.
 
@@ -97,19 +100,19 @@ struct ImageContent : Content
 
 	DEFINE_TYPE_JSON_DERIVED(ImageContent, Content, DATAKEY, MIMETYPEKEY)
 
-	ImageContent()
-	{
-		Type = "image";
-		Annotations = std::nullopt;
-	}
+	ImageContent() : Content("image", std::nullopt) {}
+	ImageContent(const std::string_view InData, const Poco::Net::MediaType& InMediaType)
+		: Content("image", std::nullopt),
+		  Data(InData),
+		  MIMEType(InMediaType)
+	{}
 };
 
 // AudioContent {
 //   MSG_DESCRIPTION: "Audio provided to or from an LLM.",
-//                   MSG_PROPERTIES
-//      : {
+//     MSG_PROPERTIES: {
 //         MSG_ANNOTATIONS: {
-//           "$ref": "#/definitions/Annotations",
+//           "$ref": "#/definitions/FAnnotations",
 //           MSG_DESCRIPTION: "Optional annotations for the client."
 //         },
 //         MSG_DATA: {
@@ -132,27 +135,26 @@ struct ImageContent : Content
 struct AudioContent : Content
 {
 	// TODO: @HalcyonOmega @format byte (base64)
-	std::string Data;								  // The base64-encoded audio data.
+	std::string Data{ "" };							  // The base64-encoded audio data.
 	Poco::Net::MediaType MIMEType{ "audio", "mpeg" }; // The MIME type of the audio. Different
-													  // providers may support different audio
-													  // types.
+													  // providers may support different audio types.
 
 	JSON_KEY(DATAKEY, Data, "data")
 	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
 
 	DEFINE_TYPE_JSON_DERIVED(AudioContent, Content, DATAKEY, MIMETYPEKEY)
 
-	AudioContent()
-	{
-		Type = "audio";
-		Annotations = std::nullopt;
-	}
+	AudioContent() : Content("audio", std::nullopt) {}
+	AudioContent(const std::string_view InData, const Poco::Net::MediaType& InMediaType)
+		: Content("audio", std::nullopt),
+		  Data(InData),
+		  MIMEType(InMediaType)
+	{}
 };
 
 // ResourceContents {
 //   MSG_DESCRIPTION: "The contents of a specific resource or sub-resource.",
-//                   MSG_PROPERTIES
-//      : {
+//     MSG_PROPERTIES: {
 //         MSG_MIME_TYPE: {
 //           MSG_DESCRIPTION: "The MIME type of this resource, if known.",
 //           MSG_TYPE: MSG_STRING
@@ -170,13 +172,20 @@ struct AudioContent : Content
 // The contents of a specific resource or sub-resource.
 struct ResourceContents
 {
-	MCP::URI URI;								  // The URI of this resource.
-	std::optional<Poco::Net::MediaType> MIMEType; // The MIME type of this resource, if known.
+	MCP::URI URI{};												  // The URI of this resource.
+	std::optional<Poco::Net::MediaType> MIMEType{ std::nullopt }; // The MIME type of this resource, if known.
 
 	JSON_KEY(URIKEY, URI, "uri")
 	JSON_KEY(MIMETYPEKEY, MIMEType, "mimeType")
 
 	DEFINE_TYPE_JSON(ResourceContents, URIKEY, MIMETYPEKEY)
+
+	ResourceContents() = default;
+	explicit ResourceContents(const MCP::URI& InURI,
+		const std::optional<Poco::Net::MediaType>& InMIMEType = std::nullopt)
+		: URI(InURI),
+		  MIMEType(InMIMEType)
+	{}
 };
 
 // TextResourceContents {
@@ -205,19 +214,25 @@ struct ResourceContents
 // The contents of a text resource.
 struct TextResourceContents : ResourceContents
 {
-	std::string Text; // The text of the item. This must only be set if the item can actually be
-					  // represented as text (not binary data).
+	std::string Text{ "" }; // The text of the item. This must only be set if the item can actually be
+							// represented as text (not binary data).
 
 	JSON_KEY(TEXTKEY, Text, "text")
 
 	DEFINE_TYPE_JSON_DERIVED(TextResourceContents, ResourceContents, TEXTKEY)
 
-	TextResourceContents(const std::string_view& InText, const MCP::URI& InURI)
+	TextResourceContents(const std::string_view& InText,
+		const MCP::URI& InURI,
+		const std::optional<Poco::Net::MediaType>& InMIMEType = std::nullopt)
+		: ResourceContents(InURI, Poco::Net::MediaType{ "text", "plain" }),
+		  Text(InText)
 	{
-		URI = InURI;
-		MIMEType = Poco::Net::MediaType{ "text", "plain" };
 		MIMEType->setParameter("charset", "utf-8");
-		Text = InText;
+	}
+
+	TextResourceContents() : ResourceContents(MCP::URI{}, Poco::Net::MediaType{ "text", "plain" })
+	{
+		MIMEType->setParameter("charset", "utf-8");
 	}
 };
 
@@ -248,29 +263,26 @@ struct TextResourceContents : ResourceContents
 struct BlobResourceContents : ResourceContents
 {
 	// TODO: @HalcyonOmega @format byte (base64) blob
-	MCP::BLOB Blob; // A base64-encoded string representing the binary data of the item.
+	MCP::BLOB Blob{}; // A base64-encoded string representing the binary data of the item.
 
 	JSON_KEY(BLOBKEY, Blob, "blob")
 
 	DEFINE_TYPE_JSON_DERIVED(BlobResourceContents, ResourceContents, BLOBKEY)
 
 	BlobResourceContents(const MCP::BLOB& InBlob, const MCP::URI& InURI)
-	{
-		URI = InURI;
-		MIMEType = Poco::Net::MediaType{ "application", "octet-stream" };
-		Blob = InBlob;
-	}
+		: ResourceContents(InURI, Poco::Net::MediaType{ "application", "octet-stream" }),
+		  Blob(InBlob)
+	{}
+
+	BlobResourceContents() : ResourceContents(MCP::URI{}, Poco::Net::MediaType{ "application", "octet-stream" }) {}
 };
 
 // EmbeddedResource {
-//   MSG_DESCRIPTION
-//      : "The contents of a resource, embedded into a prompt or tool call "
-//         "result.\n\nIt is up to the client how best to render embedded "
-//         "resources "
-//         "for the benefit\nof the LLM and/or the user.",
+//   MSG_DESCRIPTION: "The contents of a resource, embedded into a prompt or tool call result.
+//         It is up to the client how best to render embedded resources for the benefit of the LLM and/or the user.",
 //         MSG_PROPERTIES: {
 //           MSG_ANNOTATIONS: {
-//             "$ref": "#/definitions/Annotations",
+//             "$ref": "#/definitions/FAnnotations",
 //             MSG_DESCRIPTION: "Optional annotations for the client."
 //           },
 //           MSG_RESOURCE: {
@@ -296,13 +308,10 @@ struct EmbeddedResource : Content
 
 	template <typename T>
 		requires(std::is_same_v<std::decay_t<T>, TextResourceContents>
-			|| std::is_same_v<std::decay_t<T>, BlobResourceContents>)
-	explicit EmbeddedResource(T&& InResource)
-	{
-		Type = "resource";
-		Annotations = std::nullopt;
-		Resource = std::forward<T>(InResource);
-	}
+					|| std::is_same_v<std::decay_t<T>, BlobResourceContents>)
+	explicit EmbeddedResource(T&& InResource) : Content("resource", std::nullopt),
+												Resource(std::forward<T>(InResource))
+	{}
 };
 
 MCP_NAMESPACE_END
