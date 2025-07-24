@@ -79,9 +79,17 @@ add_executable(HTTPTest SDK/Source/T_HTTPServer.cpp)
 
 target_link_libraries(HTTPTest PUBLIC Poco::Foundation Poco::Net Poco::Util)
 target_link_libraries(HTTPTest PUBLIC ${PROJECT_NAME})
+target_precompile_headers(HTTPTest PUBLIC SDK/Source/Public/CoreSDK/Common/PCH.h)
 
 if (MINGW)
     target_link_options(HTTPTest PRIVATE -static)
 endif ()
 
-target_precompile_headers(HTTPTest PUBLIC SDK/Source/Public/CoreSDK/Common/PCH.h)
+
+# Sdtio Test Executable
+add_executable(StdioTest SDK/Source/T_StdioServer.cpp)
+
+target_link_libraries(StdioTest PUBLIC Poco::Foundation Poco::Util)
+target_link_libraries(StdioTest PUBLIC ${PROJECT_NAME})
+#target_precompile_headers(StdioTest PUBLIC SDK/Source/Public/CoreSDK/Common/PCH.h)
+

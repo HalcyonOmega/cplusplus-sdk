@@ -75,6 +75,8 @@ struct EmptyResponse : ResponseBase<EmptyResult>
  */
 struct InitializeRequest : RequestBase
 {
+	// TODO: @HalcyonOmega - Split out Params into separate structs for easy parsing with pointer in base class, like
+	// responses are handled
 	struct Params : RequestParams
 	{
 		EProtocolVersion ProtocolVersion{
